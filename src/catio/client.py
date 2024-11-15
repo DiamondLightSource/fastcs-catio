@@ -1,32 +1,20 @@
 from __future__ import annotations
 
 import asyncio
-from typing import SupportsInt, TypeVar, Union
+from collections import Counter
+from typing import SupportsInt, TypeVar
 
 import numpy as np
-from py_ads_client import ADSSymbol
-from py_ads_client.ams.ads_add_device_notification import (
-    ADSAddDeviceNotificationResponse,
-)
-from py_ads_client.ams.ads_delete_device_notification import (
-    ADSDeleteDeviceNotificationResponse,
-)
-from py_ads_client.ams.ads_device_notification import (
-    ADSDeviceNotificationResponse,
-)
-from py_ads_client.ams.ads_read import ADSReadResponse
-from py_ads_client.ams.ads_read_device_info import ADSReadDeviceInfoResponse
-from py_ads_client.ams.ads_read_state import ADSReadStateResponse
-from py_ads_client.ams.ads_read_write import ADSReadWriteRequest, ADSReadWriteResponse
-from py_ads_client.ams.ads_write import ADSWriteResponse
-from py_ads_client.ams.ads_write_control import (
-    ADSWriteControlResponse,
-)
+from py_ads_client.ads_symbol import ADSSymbol
 from py_ads_client.types import PLCData
 
 from .messages import (
     RESPONSE_CLASS,
-    ADSAddDeviceNotification,
+    ADSAddDeviceNotificationRequest,
+    ADSAddDeviceNotificationResponse,
+    AdsNotificationStream,
+    ADSReadWriteRequest,
+    ADSReadWriteResponse,
     AMSHeader,
     CommandId,
     ErrorCode,
@@ -85,8 +73,11 @@ class AsyncioADSClient:
             str, int
         ] = {}  # key is variable name, value is handle
         self.__device_notification_handles: dict[
-            int, ADSSymbol[PLCData]
+            SupportsInt, ADSSymbol[PLCData]
         ] = {}  # key is handle
+        self.__buffer: bytes | None = None
+        self.__first_notification = b""
+        self.__task = asyncio.create_task(self._recv_forever())
 
     @classmethod
     async def connected_to(
@@ -125,14 +116,19 @@ class AsyncioADSClient:
         self.__response_events[self.__current_invoke_id] = ev
         return ev
 
-    async def _recv_task(self):
+    async def _recv_forever(self):
         while True:
             header, body = await self._recv_ams_message()
             assert header.error_code == ErrorCode.ERR_NOERROR, header.error_code
             if header.command_id == CommandId.ADSSRVID_DEVICENOTE:
-                pass
+                if self.__buffer is not None:
+                    if self.__first_notification:
+                        assert len(body) == len(self.__first_notification)
+                    else:
+                        self.__first_notification = body
+                    self.__buffer += body
             else:
-                cls = RESPONSE_CLASS[header.command_id]
+                cls = RESPONSE_CLASS[CommandId(header.command_id)]
                 response = cls.from_bytes(body)
                 self.__response_events[header.invoke_id].set(response)
 
@@ -158,13 +154,13 @@ class AsyncioADSClient:
         return handle
 
     async def add_device_notification(
-        self, symbol: ADSSymbol, max_delay_ms: int = 0, cycle_time_ms: int = 0
-    ) -> int:
+        self, symbol: ADSSymbol[PLCData], max_delay_ms: int = 0, cycle_time_ms: int = 0
+    ) -> SupportsInt:
         variable_handle = self.__variable_handles.get(symbol.name, None)
         if variable_handle is None:
             variable_handle = await self.get_handle_by_name(name=symbol.name)
             self.__variable_handles[symbol.name] = variable_handle
-        request = ADSAddDeviceNotification(
+        request = ADSAddDeviceNotificationRequest(
             index_group=IndexGroup.SYMVAL_BYHANDLE,
             index_offset=variable_handle,
             length=symbol.plc_t.bytes_length,
@@ -177,10 +173,18 @@ class AsyncioADSClient:
         self.__device_notification_handles[response.handle] = symbol
         return response.handle
 
-    async def get_notifications(self, n=1000):
-        lengths = set()
-        for _ in range(n):
-            response = await self._recv_ams_message()
-            assert isinstance(response, ADSDeviceNotificationResponse)
-            lengths.add(len(response.samples))
-        print(f"Got {n} notifications with {lengths} samples in each")
+    def start(self):
+        self.__buffer = self.__first_notification = b""
+
+    async def get_notifications(self):
+        buffer = self.__buffer
+        self.__buffer = b""
+        first_notification = AdsNotificationStream.from_bytes(self.__first_notification)
+        array = np.frombuffer(
+            buffer,
+            dtype=first_notification.get_notification_dtype(
+                self.__device_notification_handles
+            ),
+        )
+        print(f"Got {len(array)} notifications with {array.dtype.fields}")
+        self.__notifications = []

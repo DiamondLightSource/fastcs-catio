@@ -6,6 +6,8 @@ from catio.client import AsyncioADSClient
 
 symbol1 = ADSSymbol(name="Term 31 (EL3702).Ch1 Sample 0", plc_t=INT)
 symbol2 = ADSSymbol(name="Term 30 (EL3702).Ch1 Sample 0", plc_t=INT)
+symbol3 = ADSSymbol(name="Term 31 (EL3702).Ch2 Sample 0", plc_t=INT)
+symbol4 = ADSSymbol(name="Term 30 (EL3702).Ch2 Sample 0", plc_t=INT)
 
 
 async def make_client():
@@ -21,9 +23,13 @@ async def run():
     client1 = await make_client()
     await client1.add_device_notification(symbol1)
     await client1.add_device_notification(symbol2)
-    for _ in range(3):
+    await client1.add_device_notification(symbol3)
+    await client1.add_device_notification(symbol4)
+    await asyncio.sleep(0.1)
+    client1.start()
+    for _ in range(10):
         await asyncio.sleep(1)
-        await client1.get_notifications(1000)
+        await client1.get_notifications()
     # client2 = await make_client()
     #
     # for _ in range(3):

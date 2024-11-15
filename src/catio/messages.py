@@ -4,16 +4,20 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, SupportsInt, get_type_hints
 
 import numpy as np
+from py_ads_client.ads_symbol import ADSSymbol
+from py_ads_client.types import PLCData
 from typing_extensions import Self, dataclass_transform
 
 if TYPE_CHECKING:
     UINT16 = SupportsInt
     UINT32 = SupportsInt
+    UINT64 = SupportsInt
     BYTES16 = bytes
     NETID = Sequence[int]
 else:
     UINT16 = np.uint16
     UINT32 = np.uint32
+    UINT64 = np.uint64
     BYTES16 = np.dtype("S16")
     NETID = np.dtype((np.uint8, 6))
 
@@ -51,20 +55,20 @@ class Message:
             self.data = data
 
     def __getattr__(self, name: str) -> Any:
-        return self._value[name]
+        return self._value[name][0]
 
     @cached_property
     def dtype(self) -> np.dtype:
         hints = get_type_hints(type(self))
         hints.pop("data")
-        return np.dtype(list(hints))
+        return np.dtype(list(hints.items()))
 
     @classmethod
     def from_bytes(cls, buffer: bytes) -> Self:
         return cls(buffer)
 
     def to_bytes(self) -> bytes:
-        return self._value.tobytes()
+        return self._value.tobytes() + self.data
 
 
 # AMS Header struct
@@ -428,7 +432,7 @@ class TransmissionMode(np.uint32, Enum):
 # https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115880971.html
 
 
-class ADSAddDeviceNotification(Message):
+class ADSAddDeviceNotificationRequest(Message):
     index_group: IndexGroup
     index_offset: UINT32
     length: UINT32
@@ -438,27 +442,32 @@ class ADSAddDeviceNotification(Message):
     reserved: BYTES16 = b""
 
 
+class ADSAddDeviceNotificationResponse(Message):
+    result: ErrorCode
+    handle: UINT32
+
+
+# Python Standard Encodings
+# https://docs.python.org/3.8/library/codecs.html#standard-encodings
+
+# A STRING constant is a string enclosed by single quotation marks.
+# The characters are encoded according to the Windows 1252 character set.
+# https://infosys.beckhoff.com/content/1033/tc3_plc_intro/2529327243.html
+
+TWINCAT_STRING_ENCODING = "cp1252"
+
+TWINCAT_WSTRING_ENCODING = "utf-16-le"
+
 # ADS Read Write packet
 # https://infosys.beckhoff.com/content/1033/tc3_grundlagen/115884043.html
 
 
-class ADSReadWrite(Message):
+class ADSReadWriteRequest(Message):
     index_group: IndexGroup
     index_offset: UINT32
     read_length: UINT32
-    write_data: bytes
-
-    def to_bytes(self) -> bytes:
-        write_length = len(self.write_data)
-        format = f"< I I I I {write_length}s"
-        return struct.pack(
-            format,
-            self.index_group.value,
-            self.index_offset,
-            self.read_length,
-            write_length,
-            self.write_data,
-        )
+    write_length: UINT32
+    data: bytes
 
     @classmethod
     def get_handle_by_name(cls, name: str) -> Self:
@@ -467,8 +476,60 @@ class ADSReadWrite(Message):
             index_group=IndexGroup.GET_SYMHANDLE_BYNAME,
             index_offset=0,
             read_length=4,
-            write_data=data,
+            write_length=len(data),
+            data=data,
         )
 
 
-RESPONSE_CLASS: dict[CommandId, type[Message]] = {}
+class ADSReadWriteResponse(Message):
+    result: ErrorCode
+    length: UINT32
+    data: bytes
+
+
+# https://infosys.beckhoff.com/content/1033/tc3_grundlagen/115884043.html
+class AdsNotificationStream(Message):
+    length: UINT32
+    stamps: UINT32
+    data: bytes
+
+    def get_notification_dtype(
+        self, symbols: dict[SupportsInt, ADSSymbol[PLCData]]
+    ) -> np.dtype:
+        dtypes = [("_length", np.uint32), ("_stamps", np.uint32)]
+        assert self.stamps == 1, self.stamps
+        stamp_header = AdsStampHeader.from_bytes(self.data)
+        dtypes += [("_timestamp", np.uint64), ("_samples", np.uint32)]
+        data = stamp_header.data
+        for _ in range(int(stamp_header.samples)):
+            assert data, data
+            sample = AdsNotificationSample.from_bytes(data)
+            symbol = symbols[sample.handle]
+            assert symbol.plc_t.bytes_length == sample.size
+            # TODO: use numpy type from Symbol when we have it
+            dtypes += [
+                (f"_{symbol.name} handle", np.uint32),
+                (f"_{symbol.name} size", np.uint32),
+                (symbol.name, f"|u{sample.size}"),
+            ]
+            data = data[8 + sample.size :]
+        assert data == b"", data
+        return np.dtype(dtypes)
+
+
+class AdsStampHeader(Message):
+    timestamp: UINT64
+    samples: UINT32
+    data: bytes
+
+
+class AdsNotificationSample(Message):
+    handle: UINT32
+    size: UINT32
+    data: bytes
+
+
+RESPONSE_CLASS: dict[CommandId, type[Message]] = {
+    CommandId.ADSSRVID_READWRITE: ADSReadWriteResponse,
+    CommandId.ADSSRVID_ADDDEVICENOTE: ADSAddDeviceNotificationResponse,
+}
