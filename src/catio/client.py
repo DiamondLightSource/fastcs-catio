@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Union
+from typing import SupportsInt, TypeVar, Union
 
 import numpy as np
 from py_ads_client import ADSSymbol
 from py_ads_client.ams.ads_add_device_notification import (
-    ADSAddDeviceNotificationRequest,
     ADSAddDeviceNotificationResponse,
 )
 from py_ads_client.ams.ads_delete_device_notification import (
@@ -23,28 +22,46 @@ from py_ads_client.ams.ads_write import ADSWriteResponse
 from py_ads_client.ams.ads_write_control import (
     ADSWriteControlResponse,
 )
-from py_ads_client.ams.ams_header import AMSHeader
-from py_ads_client.constants.command_id import ADSCommand
-from py_ads_client.constants.index_group import IndexGroup
-from py_ads_client.constants.return_code import ADSErrorCode
-from py_ads_client.constants.state_flag import StateFlag
-from py_ads_client.constants.transmission_mode import TransmissionMode
 from py_ads_client.types import PLCData
+
+from .messages import (
+    RESPONSE_CLASS,
+    ADSAddDeviceNotification,
+    AMSHeader,
+    CommandId,
+    ErrorCode,
+    IndexGroup,
+    Message,
+    StateFlag,
+    TransmissionMode,
+)
 
 ADS_TCP_PORT = 48898
 # https://infosys.beckhoff.com/content/1033/ipc_security_win7/11019143435.html
 
 
-ADSResponse = Union[
-    ADSReadResponse,
-    ADSReadDeviceInfoResponse,
-    ADSReadWriteResponse,
-    ADSWriteResponse,
-    ADSAddDeviceNotificationResponse,
-    ADSDeleteDeviceNotificationResponse,
-    ADSReadStateResponse,
-    ADSWriteControlResponse,
-]
+def netid_from_str(net_id: str) -> list[int]:
+    return [int(x) for x in net_id.split(".")]
+
+
+MessageT = TypeVar("MessageT", bound=Message)
+
+
+class ResponseEvent:
+    def __init__(self):
+        self._event = asyncio.Event()
+        self._value: Message | None = None
+
+    def set(self, response: Message):
+        self._value = response
+        self._event.set()
+
+    async def get(self, cls: type[MessageT]) -> MessageT:
+        await self._event.wait()
+        assert self._value and isinstance(
+            self._value, cls
+        ), f"Expected {cls}, got {self._value}"
+        return self._value
 
 
 class AsyncioADSClient:
@@ -56,13 +73,14 @@ class AsyncioADSClient:
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
     ):
-        self.__local_ams_net_id = local_ams_net_id
+        self.__local_ams_net_id = netid_from_str(local_ams_net_id)
         self.__local_ams_port = 8000
-        self.__target_ams_net_id = target_ams_net_id
+        self.__target_ams_net_id = netid_from_str(target_ams_net_id)
         self.__target_ams_port = target_ams_port
         self.__reader = reader
         self.__writer = writer
         self.__current_invoke_id = np.uint32(0)
+        self.__response_events: dict[SupportsInt, ResponseEvent] = {}
         self.__variable_handles: dict[
             str, int
         ] = {}  # key is variable name, value is handle
@@ -81,8 +99,11 @@ class AsyncioADSClient:
         reader, writer = await asyncio.open_connection(target_ip, ADS_TCP_PORT)
         return cls(local_ams_net_id, target_ams_net_id, target_ams_port, reader, writer)
 
-    async def _send_ams_packet(self, *, command: ADSCommand, payload: bytes) -> None:
+    async def _send_ams_message(
+        self, command: CommandId, message: Message
+    ) -> ResponseEvent:
         self.__current_invoke_id += 1
+        payload = message.to_bytes()
         ams_header = AMSHeader(
             target_net_id=self.__target_ams_net_id,
             target_port=self.__target_ams_port,
@@ -91,7 +112,7 @@ class AsyncioADSClient:
             command_id=command,
             state_flags=StateFlag.AMSCMDSF_ADSCMD,
             length=len(payload),
-            error_code=ADSErrorCode.ERR_NOERROR,
+            error_code=ErrorCode.ERR_NOERROR,
             invoke_id=self.__current_invoke_id,
         )
 
@@ -100,8 +121,22 @@ class AsyncioADSClient:
         length_bytes = total_length.to_bytes(4, byteorder="little", signed=False)
         self.__writer.write(b"\x00\x00" + length_bytes + header_raw + payload)
         await self.__writer.drain()
+        ev = ResponseEvent()
+        self.__response_events[self.__current_invoke_id] = ev
+        return ev
 
-    async def _recv_ams_packet(self) -> ADSResponse:
+    async def _recv_task(self):
+        while True:
+            header, body = await self._recv_ams_message()
+            assert header.error_code == ErrorCode.ERR_NOERROR, header.error_code
+            if header.command_id == CommandId.ADSSRVID_DEVICENOTE:
+                pass
+            else:
+                cls = RESPONSE_CLASS[header.command_id]
+                response = cls.from_bytes(body)
+                self.__response_events[header.invoke_id].set(response)
+
+    async def _recv_ams_message(self) -> tuple[AMSHeader, bytes]:
         assert await self.__reader.readexactly(2) == b"\x00\x00"
         length = int.from_bytes(
             await self.__reader.readexactly(4), byteorder="little", signed=False
@@ -109,37 +144,16 @@ class AsyncioADSClient:
         packet = await self.__reader.readexactly(length)
         AMS_HEADER_LENGTH = 32
         header = AMSHeader.from_bytes(packet[:AMS_HEADER_LENGTH])
-        assert header.error_code == ADSErrorCode.ERR_NOERROR, header.error_code
-        ads_body = packet[AMS_HEADER_LENGTH:]
-        if header.command_id == ADSCommand.ADSSRVID_READDEVICEINFO:
-            response = ADSReadDeviceInfoResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_READ:
-            response = ADSReadResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_WRITE:
-            response = ADSWriteResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_READSTATE:
-            response = ADSReadStateResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_WRITECTRL:
-            response = ADSWriteControlResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_ADDDEVICENOTE:
-            response = ADSAddDeviceNotificationResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_DELDEVICENOTE:
-            response = ADSDeleteDeviceNotificationResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_DEVICENOTE:
-            response = ADSDeviceNotificationResponse.from_bytes(ads_body)
-        elif header.command_id == ADSCommand.ADSSRVID_READWRITE:
-            response = ADSReadWriteResponse.from_bytes(ads_body)
-        return response
+        body = packet[AMS_HEADER_LENGTH:]
+        return header, body
 
     async def get_handle_by_name(self, name: str) -> int:
         # TODO: if get handle by name is called by multiple client, is the handle unique?
-        request = ADSReadWriteRequest.get_handle_by_name(name=name)
-        request_raw = request.to_bytes()
-        await self._send_ams_packet(
-            command=ADSCommand.ADSSRVID_READWRITE, payload=request_raw
+        ev = await self._send_ams_message(
+            CommandId.ADSSRVID_READWRITE,
+            ADSReadWriteRequest.get_handle_by_name(name=name),
         )
-        response = await self._recv_ams_packet()
-        assert isinstance(response, ADSReadWriteResponse), response
+        response = await ev.get(ADSReadWriteResponse)
         handle = int.from_bytes(bytes=response.data, byteorder="little", signed=False)
         return handle
 
@@ -150,7 +164,7 @@ class AsyncioADSClient:
         if variable_handle is None:
             variable_handle = await self.get_handle_by_name(name=symbol.name)
             self.__variable_handles[symbol.name] = variable_handle
-        request = ADSAddDeviceNotificationRequest(
+        request = ADSAddDeviceNotification(
             index_group=IndexGroup.SYMVAL_BYHANDLE,
             index_offset=variable_handle,
             length=symbol.plc_t.bytes_length,
@@ -158,17 +172,15 @@ class AsyncioADSClient:
             cycle_time_ms=cycle_time_ms,
             transmission_mode=TransmissionMode.ADSTRANS_SERVERCYCLE,
         )
-        request_raw = request.to_bytes()
-        await self._send_ams_packet(
-            command=ADSCommand.ADSSRVID_ADDDEVICENOTE, payload=request_raw
-        )
-        response = await self._recv_ams_packet()
-        assert isinstance(response, ADSAddDeviceNotificationResponse)
+        ev = await self._send_ams_message(CommandId.ADSSRVID_ADDDEVICENOTE, request)
+        response = await ev.get(ADSAddDeviceNotificationResponse)
         self.__device_notification_handles[response.handle] = symbol
         return response.handle
 
     async def get_notifications(self, n=1000):
+        lengths = set()
         for _ in range(n):
-            response = await self._recv_ams_packet()
+            response = await self._recv_ams_message()
             assert isinstance(response, ADSDeviceNotificationResponse)
-        print(f"Got {n} notifications")
+            lengths.add(len(response.samples))
+        print(f"Got {n} notifications with {lengths} samples in each")

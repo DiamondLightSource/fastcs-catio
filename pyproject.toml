@@ -53,6 +53,10 @@ name = "Gregory Gay"
 [tool.setuptools_scm]
 write_to = "src/catio/_version.py"
 
+[tool.pyright]
+typeCheckingMode = "standard"
+reportMissingImports = false  # Ignore missing stubs in imported modules
+
 [tool.mypy]
 ignore_missing_imports = true # Ignore missing stubs in imported modules
 
