@@ -10,6 +10,7 @@
         }
     },
     "remoteEnv": {
+        // Allow X11 apps to run inside the container
         "DISPLAY": "${localEnv:DISPLAY}"
     },
     // Add the URLs of features you want added when the container is built.
@@ -19,18 +20,21 @@
             "upgradePackages": false
         }
     },
-    // Set *default* container specific settings.json values on container create.
-    "settings": {
-        "python.defaultInterpreterPath": "/venv/bin/python"
-    },
     "customizations": {
         "vscode": {
+            // Set *default* container specific settings.json values on container create.
+            "settings": {
+                "python.defaultInterpreterPath": "/venv/bin/python"
+            },
             // Add the IDs of extensions you want installed when the container is created.
             "extensions": [
                 "ms-python.python",
                 "tamasfe.even-better-toml",
                 "redhat.vscode-yaml",
-                "ryanluker.vscode-coverage-gutters"
+                "ryanluker.vscode-coverage-gutters",
+                "github.vscode-github-actions",
+                "charliermarsh.ruff",
+                "ms-azuretools.vscode-docker"
             ]
         }
     },
