@@ -29,7 +29,7 @@ class CommandId(np.uint16, Enum):
     """Changes the ADS status and the device status of an ADS device."""
     ADSSRVID_ADDDEVICENOTE = 0x6
     """A notification is created in an ADS device."""
-    ADSSRVID_DELDEVICENOTE = 0x7
+    ADSSRVID_DELETEDEVICENOTE = 0x7
     """One before defined notification is deleted in an ADS device."""
     ADSSRVID_DEVICENOTE = 0x8
     """Data will carry forward independently from an ADS device to a Client."""
@@ -176,29 +176,38 @@ class IndexGroup(np.uint32, Flag, boundary=EJECT):
     https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/117463563.html&id=
     """
 
+    ADSIGRP_MASTER_STATEMACHINE = 0x0003
+    """Group used to access the state machine of the Master EtherCAT device"""
+    ADSIGRP_MASTER_COUNT_SLAVE = 0x0006
+    """Group used to access the number of configured slaves"""
+    ADSIGRP_MASTER_SLAVE_ADDRESSES = 0x0007
+    """Group used to access the fixed addresses of all slaves configured on a device"""
+    ADSIGRP_SLAVE_STATEMACHINE = 0x0009
+    """Group used to access the state machine of the slave terminal"""
+    ADSIGRP_MASTER_FRAME_COUNTERS = 0x000C
+    """Group used to access the frame counters of an EtherCAT device"""
+    ADSIGRP_MASTER_SLAVE_IDENTITY = 0x0011
+    """Group used to access the CANopen identity of an EtherCAT slave"""
+    ADSIGRP_SLAVE_CRC_COUNTERS = 0x0012
+    """Group used to access the CRC counters of all slaves configured on a device"""
+    ADSIGR_IODEVICE_STATE_BASE = 0x5000
+    """Group used to access information about the IO server"""
+    ADSIGR_GET_SYMHANDLE_BYNAME = 0xF003
+    """A handle (code word) is assigned to the name contained in the write data
+    and is returned to the caller as a result ('symHdl')."""
+    ADSIGR_GET_SYMVAL_BYHANDLE = 0xF005
+    """Reads the value of the variable identified by 'symHdl'
+    or assigns a value to the variable if not defined yet.
+    (symHdl index offset range: 0x00000000 - 0xFFFFFFFF)"""
+    ADSIGRP_RELEASE_SYMHANDLE = 0xF006
+    """The code (handle) which is contained in the write data for an interrogated,
+    named PLC variable is released."""
     ADSIGRP_SYM_UPLOAD = 0xF00B
     """Symbol uploads group, used to access the available symbol entries"""
     ADSIGRP_SYM_UPLOADINFO2 = 0xF00F
     """Symbol info uploads group, used to access info about the available symbols"""
     ADSIGRP_COE_LINK = 0xF302
     """IO link data channel, used to access the Can-over-EtherCAT (CoE) parameters"""
-    ADSIGR_IODEVICE_STATE_BASE = 0x5000
-    """Group used to access information about the IO server"""
-    ADSIGRP_MASTER_COUNT_SLAVE = 0x0006
-    """Group used to access the number of configured slaves"""
-    ADSIGRP_MASTER_SLAVE_ADDRESSES = 0x0007
-    """Group used to access the fixed addresses of all slaves configured on a device"""
-    ADSIGRP_MASTER_SLAVE_IDENTITY = 0x0011
-    """Group used to access the CANopen identity of an EtherCAT slave"""
-    ADSIGRP_MASTER_STATEMACHINE = 0x0003
-    """Group used to access the state machine of the Master EtherCAT device"""
-    ADSIGRP_SLAVE_STATEMACHINE = 0x0009
-    """Group used to access the state machine of the slave terminal"""
-    ADSIGRP_SLAVE_CRC_COUNTERS = 0x0012
-    """Group used to access the CRC counters of all slaves configured on a device"""
-    ADSIGRP_MASTER_FRAME_COUNTERS = 0x000C
-    """Group used to access the frame counters of an EtherCAT device"""
-    TEST_IGRP = 0x0007
 
 
 class CoEIndex(np.uint32, Enum):
@@ -221,6 +230,83 @@ class DeviceType(np.uint16, Enum):
 
     IODEVICETYPE_ETHERCAT = 94
     """EtherCAT in direct mode"""
+
+
+class AdsDataType(np.uint32, Enum):
+    """
+    Ads data type id
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_utilities/35330059.html&id=
+    """
+
+    ADS_TYPE_VOID = 0
+    """Reserved"""
+    ADS_TYPE_INT16 = 2
+    """Signed 16 bit integer (INT16)"""
+    ADS_TYPE_INT32 = 3
+    """Signed 32 bit integer (INT32)"""
+    ADS_TYPE_REAL32 = 4
+    """32 bit floating point number (REAL)"""
+    ADS_TYPE_REAL64 = 5
+    """64 bit floating point number (LREAL)"""
+    ADS_TYPE_INT8 = 16
+    """Signed 8 bit integer (INT8)"""
+    ADS_TYPE_UINT8 = 17
+    """Unsigned 8 bit integer (UINT8|BYTE)"""
+    ADS_TYPE_UINT16 = 18
+    """Unsigned 16 bit integer (UINT16|WORD)"""
+    ADS_TYPE_UINT32 = 19
+    """Unsigned 32 bit integer (UINT32|DWORD)"""
+    ADS_TYPE_INT64 = 20
+    """Signed 64 bit integer (INT64)"""
+    ADS_TYPE_UINT64 = 21
+    """Unsigned 64 bit integer (UINT64|LWORD)"""
+    ADS_TYPE_STRING = 30
+    """String type (STRING)"""
+    ADS_TYPE_WSTRING = 31
+    """Wide character type (WSTRING)"""
+    ADS_TYPE_REAL80 = 32
+    """Reserved"""
+    ADS_TYPE_BIT = 33
+    """Bit type (BIT)"""
+    ADS_TYPE_MAXTYPES = 34
+    """Maximum available type"""
+    ADS_TYPE_BIGTYPE = 65
+    """Structured type (STRUCT)"""
+
+
+class SymbolFlag(np.uint32, Enum):
+    """
+    Ads symbol flag used as one of the symbol table entry property
+    """
+
+    ADS_SYMBOLFLAG_PERSISTENT = 1 << 0
+    ADS_SYMBOLFLAG_BITVALUE = 1 << 1
+    ADS_SYMBOLFLAG_REFERENCETO = 1 << 2
+    ADS_SYMBOLFLAG_TYPEGUID = 1 << 3
+    ADS_SYMBOLFLAG_TCCOMIFACEPTR = 1 << 4
+    ADS_SYMBOLFLAG_READONLY = 1 << 5
+    ADS_SYMBOLFLAG_CONTEXTMASK = 0xF00
+
+
+class TransmissionMode(np.uint32, Enum):
+    """
+    C++ ADSTRANSMODE Enum
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/117558283.html&id=
+
+    C++ AdsNotificationAttrib structure
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/117553803.html&id=
+    """
+
+    ADSTRANS_NOTRANS = 0
+    """No notifications."""
+    ADSTRANS_CLIENTCYCLE = 1
+    """The notification's callback is invoked with the client cycle."""
+    ADSTRANS_CLIENT1REQ = 2
+    """The notification's callback function is invoked only once."""
+    ADSTRANS_SERVERCYCLE = 3
+    """The notification's callback function is invoked cyclically."""
+    ADSTRANS_SERVERONCHA = 4
+    """The notification's callback function is only invoked when the value changes."""
 
 
 class ErrorCode(np.uint32, Enum):
@@ -365,7 +451,7 @@ class ErrorCode(np.uint32, Enum):
     """Device (server) is in invalid state."""
     ADSERR_DEVICE_TRANSMODENOTSUPP = 0x0713
     """AdsTransMode not supported."""
-    ADSERR_DEVICE_NOTIFYHNDINVALID = 0x0714
+    ADSERR_DEVICE_NOTIFYHNDLINVALID = 0x0714
     """Notification handle is invalid."""
     ADSERR_DEVICE_CLIENTUNKNOWN = 0x0715
     """Notification client not registered."""
