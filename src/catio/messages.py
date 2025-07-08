@@ -105,7 +105,7 @@ class Message:
                 if fields is not None
                 else ()
             )
-            self._value = np.array(values, dtype=self.dtype)
+            self._value = np.array([values], dtype=self.dtype)
             self.data = data
 
     def __getattr__(self, name: str) -> Any:
@@ -675,6 +675,42 @@ class AdsReadRequest(MessageRequest):
             read_length=length,
         )
 
+    @classmethod
+    def read_symbol(
+        cls, group: SupportsInt, offset: SupportsInt, length: SupportsInt
+    ) -> Self:
+        """
+        An ADS request to get the value of a given ADS symbol.
+
+        :param group: the index group of the ADS symbol to read the value from
+        :param offset: the index offset of the ADS symbol to read the value from
+        :param length: the length of the symbol data in bytes to read
+
+        :returns: an AdsReadRequest message
+        """
+        return cls(
+            index_group=IndexGroup(group),
+            index_offset=offset,
+            read_length=length,
+        )
+
+    @classmethod
+    def read_coe_value(cls, index: str, subindex: str, datatype: Any) -> Self:
+        """
+        An ADS request to get the value of a CAN-over-EtherCAT parameter (sdo/pdo).
+
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY0000)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x000000YY)
+        :param type: the parameter data type
+
+        :returns: an AdsReadRequest message
+        """
+        return cls(
+            index_group=IndexGroup.ADSIGRP_COE_LINK,
+            index_offset=int(index + subindex, base=16),
+            read_length=np.dtype(datatype).itemsize,
+        )
+
 
 class AdsReadResponse(MessageResponse):
     """
@@ -724,6 +760,42 @@ class AdsWriteRequest(MessageRequest):
             data=b"",
         )
 
+    @classmethod
+    def write_symbol(cls, group: SupportsInt, offset: SupportsInt, data: bytes) -> Self:
+        """
+        An ADS request to write a given value to an ADS symbol.
+
+        :param group: the index group of the ADS symbol to write the value to
+        :param offset: the index offset of the ADS symbol to write the value to
+        :param data: the data in bytes to write
+
+        :returns: an AdsWriteRequest message
+        """
+        return cls(
+            index_group=IndexGroup(group),
+            index_offset=offset,
+            write_length=len(data),
+            data=data,
+        )
+
+    @classmethod
+    def write_coe_value(cls, index: str, subindex: str, data: bytes) -> Self:
+        """
+        An ADS request to write a given value to a CAN-over-EtherCAT parameter (sdo/pdo).
+
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY0000)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x000000YY)
+        :param data: the data in bytes to write
+
+        :returns: an AdsWriteRequest message
+        """
+        return cls(
+            index_group=IndexGroup.ADSIGRP_COE_LINK,
+            index_offset=int(index + subindex, base=16),
+            write_length=len(data),
+            data=data,
+        )
+
 
 class AdsWriteResponse(MessageResponse):
     """
@@ -771,6 +843,142 @@ class AdsReadWriteRequest(MessageRequest):
             index_group=IndexGroup.ADSIGR_GET_SYMHANDLE_BYNAME,
             index_offset=0,
             read_length=np.dtype(np.uint32).itemsize,
+            write_length=len(data),
+            data=data,
+        )
+
+    @classmethod
+    def readwrite_symbol(
+        cls, group: SupportsInt, offset: SupportsInt, length: SupportsInt, data: bytes
+    ) -> Self:
+        """
+        An ADS request to read the current value of a symbol \
+            and write a new value to it as part of a single data frame.
+
+        :param group: the index group of the ADS symbol to read from and write to
+        :param offset: the index offset of the ADS symbol to read from and write to
+        :param length: the length of the symbol data in bytes to read
+        :param data: the data in bytes to write
+
+        :returns: an AdsReadWriteRequest message
+        """
+        return cls(
+            index_group=IndexGroup(group),
+            index_offset=offset,
+            read_length=length,
+            write_length=len(data),
+            data=data,
+        )
+
+    @classmethod
+    def sumread_symbols(cls, reads: Sequence[AdsReadRequest]) -> Self:
+        """
+        Get the value of multiple variables which are not structured \
+            within a linear memory.
+        This function appears to be valid for ADS symbol variables, but not applicable \
+            to CoE parameters (returns invalid index group error).
+
+        :params reads: a list of AdsReadRequest sub-commands, \
+            each one of them associated with one of the variables to read
+
+        :returns: an AdsReadWriteRequest message
+        """
+        count = len(reads)
+        assert count, (
+            "Minimum one ADS ReadRequest is required to carry out an ADS SumRead call"
+        )
+        assert count < 500, (
+            "A maximum of 500 sub-commands can be requested in an ADS SumRead call."
+        )
+        data = b""
+        length = count * np.dtype(ErrorCode).itemsize
+        for request in reads:
+            data += request.to_bytes(include_data=False)
+            length += request.read_length
+
+        return cls(
+            index_group=IndexGroup.ADSIGRP_SUMUP_READ,
+            index_offset=count,
+            read_length=length,
+            write_length=len(data),
+            data=data,
+        )
+
+    @classmethod
+    def sumwrite_symbols(cls, writes: Sequence[AdsWriteRequest]) -> Self:
+        """
+        Set the value of multiple variables which are not structured \
+            within a linear memory.
+        This function appears to be valid for ADS symbol variables, but not applicable \
+            to CoE parameters (returns invalid index group error).
+
+        !Note that this service appears not to be supported by the CX2020 server \
+            (error 0x0701 ADSERR_DEVICE_SRVNOTSUPP)!
+
+        :params writes: a list of AdsWriteRequest sub-commands, each one of them \
+            associated with one of the variables to write
+
+        :returns: an AdsReadWriteRequest message
+        """
+        count = len(writes)
+        assert count, (
+            "Minimum one ADS WriteRequest is required to carry out an ADS SumWrite call"
+        )
+        assert count < 500, (
+            "A maximum of 500 sub-commands can be requested in an ADS SumWrite call."
+        )
+        data = b""
+        length = count * np.dtype(ErrorCode).itemsize
+        for request in writes:
+            data += request.to_bytes(include_data=False)
+        for request in writes:
+            data += request.data
+
+        return cls(
+            index_group=IndexGroup.ADSIGRP_SUMUP_WRITE,
+            index_offset=count,
+            read_length=length,
+            write_length=len(data),
+            data=data,
+        )
+
+    @classmethod
+    def sumreadwrite_symbols(cls, readwrites: Sequence[Self]) -> Self:
+        """
+        Get and set the value of multiple variables which are not structured \
+            within a linear memory.
+        This function appears to be valid for ADS symbol variables, but not applicable \
+            to CoE parameters (returns invalid index group error).
+
+        !Note that this service appears not to be supported by the CX2020 server \
+            (error 0x0701 ADSERR_DEVICE_SRVNOTSUPP)!
+
+        :params readwrites: a list of AdsReadWriteRequest sub-commands, \
+            each one of them associated with one of the variables to read then write
+
+        :returns: an AdsReadWriteRequest message
+        """
+        count = len(readwrites)
+        assert count, (
+            "Minimum one ADS ReadWrite request is required to carry out \
+                an ADS SumReadWrite call"
+        )
+        assert count < 500, (
+            "A maximum of 500 sub-commands can be requested in \
+                an ADS SumReadWrite call."
+        )
+        data = b""
+        length = count * (np.dtype(ErrorCode).itemsize + np.dtype(np.uint32).itemsize)
+        for cmd in readwrites:
+            length += cmd.read_length
+            data += cmd.to_bytes(include_data=False)
+        for cmd in readwrites:
+            data += cmd.data
+
+        return cls(
+            index_group=IndexGroup.ADSIGRP_SUMUP_READWRITE,
+            index_offset=count,
+            read_length=length,
             write_length=len(data),
             data=data,
         )

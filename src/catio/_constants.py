@@ -202,6 +202,35 @@ class IndexGroup(np.uint32, Flag, boundary=EJECT):
     ADSIGRP_RELEASE_SYMHANDLE = 0xF006
     """The code (handle) which is contained in the write data for an interrogated,
     named PLC variable is released."""
+    ADSIGRP_IOIMAGE_RWIB = 0xF020
+    """Group used to read and write input byte(s)
+    (the associated index offset is byte offset, range: 0x0001F400 - 0xFFFFFFFF)"""
+    ADSIGRP_IOIMAGE_RWIX = 0xF021
+    """Group used to read and write input bit
+    (the associated index offset contains the bit address calculated from:
+    base offset (0xFA000) + (byte number * 8) + bit number
+    range: 0x000FA000 - 0xFFFFFFFF)"""
+    ADSIGRP_IOIMAGE_RISIZE = 0xF025
+    """The size of the inputs in bytes"""
+    ADSIGRP_IOIMAGE_RWOB = 0xF030
+    """Group used to read and write output byte(s)
+    (the associated index offset is byte offset, range: 0x0003E800 - 0xFFFFFFFF)"""
+    ADSIGRP_IOIMAGE_RWOX = 0xF031
+    """Group used to read and write output bit
+    (the associated index offset contains the bit address calculated from:
+    base offset (0x1F4000) + (byte number * 8) + bit number
+    range: 0x001F4000 - 0xFFFFFFFF)"""
+    ADSIGRP_IOIMAGE_RWOSIZE = 0xF035
+    """The size of the outputs in bytes"""
+    ADSIGRP_SUMUP_READ = 0xF080
+    """Writes a list of multiple, separate AdsReadRequest sub-commands.
+    Reads a list of return codes followed by the requested data."""
+    ADSIGRP_SUMUP_WRITE = 0xF081
+    """Writes a list of multiple, separate AdsWriteRequest sub-commands.
+    Reads a list of return codes."""
+    ADSIGRP_SUMUP_READWRITE = 0xF082
+    """Writes a list of multiple, separate AdsReadWriteRequest sub-commands.
+    Reads a list of return code and data length followed by the requested data."""
     ADSIGRP_SYM_UPLOAD = 0xF00B
     """Symbol uploads group, used to access the available symbol entries"""
     ADSIGRP_SYM_UPLOADINFO2 = 0xF00F
@@ -212,7 +241,7 @@ class IndexGroup(np.uint32, Flag, boundary=EJECT):
 
 class CoEIndex(np.uint32, Enum):
     """
-    Specification of the CAN-over-Ethernet (CoE) parameter ranges
+    Specification of the CAN-over-EtherCAT (CoE) parameter ranges
     https://infosys.beckhoff.com/english.php?content=../content/1033/ethercatsystem/2469073803.html&id=274367601078044781
     """
 

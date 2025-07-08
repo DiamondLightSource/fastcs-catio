@@ -9,7 +9,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable, Sequence
-from typing import SupportsInt, TypeVar, overload
+from typing import Any, SupportsInt, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -408,27 +408,37 @@ class AsyncioADSClient:
                 break
 
     @overload
-    async def _ads_read(
+    async def _ads_command(
         self, request: AdsReadDeviceInfoRequest, **kwargs: AmsNetId | int
     ) -> AdsReadDeviceInfoResponse: ...
 
     @overload
-    async def _ads_read(
+    async def _ads_command(
         self, request: AdsReadStateRequest, **kwargs: AmsNetId | int
     ) -> AdsReadStateResponse: ...
 
     @overload
-    async def _ads_read(
+    async def _ads_command(
         self, request: AdsReadRequest, **kwargs: AmsNetId | int
     ) -> AdsReadResponse: ...
 
-    async def _ads_read(
+    @overload
+    async def _ads_command(
+        self, request: AdsWriteRequest, **kwargs: AmsNetId | int
+    ) -> AdsWriteResponse: ...
+
+    @overload
+    async def _ads_command(
+        self, request: AdsReadWriteRequest, **kwargs: AmsNetId | int
+    ) -> AdsReadWriteResponse: ...
+
+    async def _ads_command(
         self,
         request: MessageRequest,
         **kwargs: AmsNetId | int,
     ) -> MessageResponse:
         """
-        Send an ADS Read request to the server and return the ADS response.
+        Send an ADS Command request to the server and return the ADS response.
 
         :param request: the ADS message request to send
         :param kwargs: optional keyword parameters
@@ -458,7 +468,7 @@ class AsyncioADSClient:
 
         :returns: the number of EtherCAT devices
         """
-        response = await self._ads_read(
+        response = await self._ads_command(
             AdsReadRequest.read_device_count(), port=IO_SERVER_PORT
         )
 
@@ -472,7 +482,7 @@ class AsyncioADSClient:
 
         :returns: an instance of an IOServer object
         """
-        info_response = await self._ads_read(
+        info_response = await self._ads_command(
             AdsReadDeviceInfoRequest(), port=IO_SERVER_PORT
         )
 
@@ -496,7 +506,7 @@ class AsyncioADSClient:
 
         :returns: a list of device ids
         """
-        response = await self._ads_read(
+        response = await self._ads_command(
             AdsReadRequest.read_device_ids(dev_count), port=IO_SERVER_PORT
         )
 
@@ -528,7 +538,7 @@ class AsyncioADSClient:
         """
         types: Sequence[DeviceType] = []
         for id in dev_ids:
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_device_type(id), port=IO_SERVER_PORT
             )
             types.append(
@@ -554,7 +564,7 @@ class AsyncioADSClient:
         """
         names: Sequence[str] = []
         for id in dev_ids:
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_device_name(id), port=IO_SERVER_PORT
             )
             names.append(bytes_to_string(response.data))
@@ -574,7 +584,7 @@ class AsyncioADSClient:
         """
         netids: Sequence[AmsNetId] = []
         for id in dev_ids:
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_device_netid(id), port=IO_SERVER_PORT
             )
             netids.append(AmsNetId.from_bytes(response.data))
@@ -597,7 +607,7 @@ class AsyncioADSClient:
         for netid in dev_netids:
             data = bytearray()
             for subindex in subindexes:
-                response = await self._ads_read(
+                response = await self._ads_command(
                     AdsReadRequest.read_device_identity(subindex),
                     netid=netid,
                     port=ADS_MASTER_PORT,
@@ -620,7 +630,7 @@ class AsyncioADSClient:
         """
         frame_counters: Sequence[DeviceFrames] = []
         for netid in dev_netids:
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_device_frame_counters(),
                 netid=netid,
                 port=ADS_MASTER_PORT,
@@ -642,7 +652,7 @@ class AsyncioADSClient:
         """
         slave_counts: Sequence[int] = []
         for netid in dev_netids:
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_slave_count(),
                 netid=netid,
                 port=ADS_MASTER_PORT,
@@ -669,7 +679,7 @@ class AsyncioADSClient:
         """
         slave_crc_counters: Sequence[Sequence[np.uint32]] = []
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_slaves_crc(slave_count),
                 netid=netid,
                 port=ADS_MASTER_PORT,
@@ -700,7 +710,7 @@ class AsyncioADSClient:
 
         slave_addresses: Sequence[Sequence[np.uint16]] = []
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_slaves_addresses(slave_count),
                 netid=netid,
                 port=ADS_MASTER_PORT,
@@ -732,7 +742,7 @@ class AsyncioADSClient:
         for netid, slave_addresses in zip(dev_netids, dev_slave_addresses, strict=True):
             identities: Sequence[IOIdentity] = []
             for address in slave_addresses:
-                response = await self._ads_read(
+                response = await self._ads_command(
                     AdsReadRequest.read_slave_identity(address),
                     netid=netid,
                     port=ADS_MASTER_PORT,
@@ -760,7 +770,7 @@ class AsyncioADSClient:
             types: Sequence[str] = []
             for n in range(slave_count):
                 coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
-                response = await self._ads_read(
+                response = await self._ads_command(
                     AdsReadRequest.read_slave_type(coe_index),
                     netid=netid,
                     port=ADS_MASTER_PORT,
@@ -788,7 +798,7 @@ class AsyncioADSClient:
             names: Sequence[str] = []
             for n in range(slave_count):
                 coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
-                response = await self._ads_read(
+                response = await self._ads_command(
                     AdsReadRequest.read_slave_name(coe_index),
                     netid=netid,
                     port=ADS_MASTER_PORT,
@@ -816,7 +826,7 @@ class AsyncioADSClient:
         for netid, slave_addresses in zip(dev_netids, dev_slave_addresses, strict=True):
             states: Sequence[SlaveState] = []
             for address in slave_addresses:
-                response = await self._ads_read(
+                response = await self._ads_command(
                     AdsReadRequest.read_slave_states(address),
                     netid=netid,
                     port=ADS_MASTER_PORT,
@@ -1066,7 +1076,9 @@ class AsyncioADSClient:
 
         :returns: a tuple comprising both the ads link status and the ads device status
         """
-        response = await self._ads_read(AdsReadStateRequest(), netid=netid, port=port)
+        response = await self._ads_command(
+            AdsReadStateRequest(), netid=netid, port=port
+        )
 
         return response.ads_state, response.device_state
 
@@ -1135,7 +1147,7 @@ class AsyncioADSClient:
                 f"No slave terminal is defined at address {slave_address} \
                     on the EtherCAT device with id {device_id}."
             )
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_slave_states(slave_address),
                 netid=device.netid,
                 port=ADS_MASTER_PORT,
@@ -1171,7 +1183,7 @@ class AsyncioADSClient:
         try:
             for device in self._ecdevices.values():
                 # Check the device operation state.
-                dev_response = await self._ads_read(
+                dev_response = await self._ads_command(
                     AdsReadRequest.read_device_state(),
                     netid=device.netid,
                     port=ADS_MASTER_PORT,
@@ -1185,7 +1197,7 @@ class AsyncioADSClient:
                 )
 
                 # Check the slaves operation states.
-                slave_response = await self._ads_read(
+                slave_response = await self._ads_command(
                     AdsReadRequest.read_slaves_states(device.slave_count),
                     netid=device.netid,
                     port=ADS_MASTER_PORT,
@@ -1258,7 +1270,7 @@ class AsyncioADSClient:
                 f"No slave terminal is defined at address {slave_address} \
                     on the EtherCAT device with id {device_id}."
             )
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_slave_crc(slave_address),
                 netid=device.netid,
                 port=ADS_MASTER_PORT,
@@ -1284,7 +1296,7 @@ class AsyncioADSClient:
             await asyncio.sleep(1)
 
         for device in self._ecdevices.values():
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_slaves_crc(device.slave_count),
                 netid=device.netid,
                 port=ADS_MASTER_PORT,
@@ -1326,7 +1338,7 @@ class AsyncioADSClient:
                 f"No EtherCAT device with id {device_id} is registered \
                     with the I/O server."
             )
-            response = await self._ads_read(
+            response = await self._ads_command(
                 AdsReadRequest.read_device_frame_counters(),
                 netid=device.netid,
                 port=ADS_MASTER_PORT,
@@ -1471,7 +1483,7 @@ class AsyncioADSClient:
         :param device_id: the id of the EtherCAT device to get the symbols from
         """
         # Get the length of the symbol table
-        response = await self._ads_read(
+        response = await self._ads_command(
             AdsReadRequest.get_length_symbol_table(),
             netid=self.__target_ams_net_id,
             port=self.__target_ams_port,
@@ -1479,7 +1491,7 @@ class AsyncioADSClient:
         symbol_table = AdsSymbolTableInfo.from_bytes(response.data)
 
         # Get a list of the defined symbol nodes
-        response = await self._ads_read(
+        response = await self._ads_command(
             AdsReadRequest.fetch_symbol_table(symbol_table.table_length),
         )
         nodes = self._parse_symbol_table_entry(
@@ -1515,6 +1527,352 @@ class AsyncioADSClient:
         await self.get_device_symbols(dev_id)
 
         return self._ecsymbols
+
+    async def read_ads_symbol(self, symbol: AdsSymbol) -> tuple[str, npt.NDArray]:
+        """
+        Read the value of an ADS symbol configured with an EtherCAT device.
+
+        :param symbol: the ADS symbol to read
+
+        :returns: a tuple comprising the symbol name and its current value
+        """
+        logging.debug(f"Reading current value of symbol '{symbol.name}'.")
+        response = await self._ads_command(
+            AdsReadRequest.read_symbol(symbol.group, symbol.offset, symbol.nbytes),
+        )
+        return (
+            symbol.name,
+            np.frombuffer(response.data, symbol.datatype, count=1),
+        )
+
+    async def write_ads_symbol(self, symbol: AdsSymbol, value: Any) -> bool:
+        """
+        Write a value to an ADS symbol configured with an EtherCAT master device.
+        The command is ignored if the requested value to set is invalid.
+
+        :param symbol: the ADS symbol to write to
+        :param value: the value to write to the ADS symbol
+        """
+        logging.debug(f"Writing value {value} to symbol '{symbol.name}'.")
+        if isinstance(value, Sequence) and not (len(value) == symbol.size):
+            logging.error(
+                f"Symbol Write Value Error: value for '{symbol.name}' expects a "
+                + f"collection of {symbol.size} elements, got {len(value)} instead."
+            )
+        try:
+            val = np.array(value, dtype=symbol.datatype)
+            await self._ads_command(
+                AdsWriteRequest.write_symbol(symbol.group, symbol.offset, val.tobytes())
+            )
+            return True
+        except ValueError:
+            logging.error(
+                f"Symbol Write Type Error: wrong value type provided for {symbol.name}:"
+                + f" expected '{symbol.dtype}' but got '{type(value)}'."
+            )
+        return False
+
+    async def readwrite_ads_symbol(
+        self, symbol: AdsSymbol, value: Any
+    ) -> tuple[str, npt.NDArray]:
+        """
+        Read the value of an ADS symbol configured with the EtherCAT master device,
+        then write a new value to it.
+
+        :param symbol: the ADS symbol to read and write to
+        :param value: the value to write to the ADS symbol
+
+        :returns: a tuple comprising the symbol name and its current value
+        """
+        logging.debug(
+            f"Reading current value of symbol '{symbol.name}' "
+            + f"and writing new value {value}."
+        )
+        if isinstance(value, Sequence) and not (len(value) == symbol.size):
+            logging.error(
+                f"Symbol ReadWrite Value Error: value for '{symbol.name}' expects a "
+                + f"collection of {symbol.size} elements, got {len(value)} instead."
+            )
+        try:
+            new_val = np.array(value, dtype=symbol.datatype)
+            response = await self._ads_command(
+                AdsReadWriteRequest.readwrite_symbol(
+                    symbol.group, symbol.offset, symbol.nbytes, new_val.tobytes()
+                )
+            )
+            old_val = np.frombuffer(response.data, symbol.datatype, count=1)
+            return (
+                symbol.name,
+                old_val,
+            )
+        except ValueError:
+            logging.error(
+                f"Symbol Write Type Error: wrong value type provided for {symbol.name}:"
+                + f" expected '{symbol.dtype}' but got '{type(value)}'."
+            )
+        logging.warning(
+            f"ReadWrite command failed on symbol '{symbol.name}'. "
+            + "Reverting to read only."
+        )
+        return await self.read_ads_symbol(symbol)
+
+    def _get_sumread_responses(
+        self, sum_data: bytes, read_lengths: Sequence[np.uint32]
+    ) -> Sequence[AdsReadResponse]:
+        """
+        Parse a general ADS SumRead response into individual AdsReadResponse objects.
+
+        :param sum_data: the data byte stream from the ADS SumRead response
+        :param read_lengths: the length of the data in bytes for each expected \
+            ADSReadResponse object
+
+        :returns: a list of AdsReadResponse objects
+        """
+        responses = []
+        s_err = np.dtype(ErrorCode).itemsize
+        start = 0
+        num_responses = len(read_lengths)
+        offset = s_err * num_responses
+        for length in read_lengths:
+            body = (
+                sum_data[start : start + s_err]
+                + length.tobytes()
+                + sum_data[offset : offset + length]
+            )
+            responses.append(AdsReadResponse.from_bytes(body))
+            start = start + s_err
+            offset = offset + length
+        return responses
+
+    async def sumread_ads_symbols(
+        self, symbols: Sequence[AdsSymbol]
+    ) -> dict[str, npt.NDArray]:
+        """
+        Used as a container in which multiple AdsRead subcommands are transported
+        in the same ADS stream.
+
+        :param symbols: a list of ADS symbols to read
+
+        :returns: a dictionary mapping the symbol and its associated read value
+        """
+        read_subcommands: list[AdsReadRequest] = []
+        for symbol in symbols:
+            logging.debug(f"SUM read symbol: {symbol.name}")
+            read_subcommands.append(
+                AdsReadRequest.read_symbol(symbol.group, symbol.offset, symbol.nbytes),
+            )
+
+        sum_response = await self._ads_command(
+            AdsReadWriteRequest.sumread_symbols(
+                read_subcommands,
+            )
+        )
+        read_lengths = [request.read_length for request in read_subcommands]
+        read_responses = self._get_sumread_responses(sum_response.data, read_lengths)
+
+        zipped = list(zip(symbols, read_responses, strict=True))
+
+        reads = {}
+        for symbol, read in zipped:
+            if not (read.result == ErrorCode.ERR_NOERROR):
+                logging.error(
+                    f"ADS Read error with '{symbol.name}': {ErrorCode(read.result)}"
+                )
+            reads[symbol.name] = np.frombuffer(read.data, symbol.datatype, count=1)
+
+        return reads
+
+    def _get_sumwrite_responses(self, sum_data: bytes) -> Sequence[AdsWriteResponse]:
+        """
+        Parse a general ADS SumWrite response into individual AdsWriteResponse objects.
+
+        :param sum_data: the data byte stream from the ADS SumWrite response
+
+        :returns: a list of AdsWriteResponse objects
+        """
+        n = np.dtype(ErrorCode).itemsize
+
+        return [
+            AdsWriteResponse.from_bytes(sum_data[i : i + n])
+            for i in range(0, len(sum_data), n)
+        ]
+
+    async def sumwrite_ads_symbols(
+        self, targets: Sequence[tuple[AdsSymbol, Any]]
+    ) -> dict[str, bool]:
+        """
+        Used as a container in which multiple AdsWrite subcommands are transported \
+            in the same ADS stream.
+        The write command is ignored for any symbol whose requested value is invalid.
+
+        :param targets: a list of tuples, each comprising an ADS symbol and the \
+            associated value to write
+
+        :returns: a dictionary mapping the success of the write command to each symbol
+        """
+        processed_writes = len(targets)
+        processed_targets = targets
+        write_status = {}
+        write_subcommands: list[AdsWriteRequest] = []
+
+        for symbol, value in targets:
+            logging.debug(f"SUM write symbol: {symbol.name}, {value}")
+            if isinstance(value, Sequence) and not (len(value) == symbol.size):
+                logging.error(
+                    f"Symbol Write Value Error: value for '{symbol.name}' expects a "
+                    + f"collection of {symbol.size} elements, got {len(value)} instead."
+                )
+                processed_writes -= 1
+                processed_targets = filter(lambda target: target[0] != symbol, targets)
+                write_status[symbol.name] = False
+                continue
+
+            try:
+                val = np.array(value, dtype=symbol.datatype)
+                write_subcommands.append(
+                    AdsWriteRequest.write_symbol(
+                        symbol.group, symbol.offset, val.tobytes()
+                    ),
+                )
+            except ValueError:
+                logging.error(
+                    f"Write error: wrong value type provided for {symbol.name}: "
+                    + f"expected '{symbol.dtype}' but got '{type(value)}'."
+                )
+                processed_writes -= 1
+                processed_targets = filter(lambda target: target[0] != symbol, targets)
+                write_status[symbol.name] = False
+                continue
+
+        assert write_subcommands, "No valid AdsWrite subcommand to process."
+        sum_response = await self._ads_command(
+            AdsReadWriteRequest.sumwrite_symbols(
+                write_subcommands,
+            )
+        )
+        write_responses = self._get_sumwrite_responses(sum_response.data)
+        assert len(write_responses) == processed_writes, (
+            "Mismatch between number of 'SumWrite' commands and supplied responses."
+        )
+
+        zipped = list(zip(processed_targets, write_responses, strict=True))
+
+        for target, response in zipped:
+            assert response.result == ErrorCode.ERR_NOERROR, (
+                f"ADS Write error with '{target[0].name}': \
+                    {ErrorCode(response.result)}"
+            )
+            write_status[target[0].name] = True
+
+        return write_status
+
+    def _get_sumreadwrite_responses(
+        self, sum_data: bytes, read_lengths: Sequence[np.uint32]
+    ) -> Sequence[AdsReadWriteResponse]:
+        """
+        Parse a general ADS SumReadWrite response into individual AdsReadWriteResponse objects.
+
+        :param sum_data: the data byte stream from the ADS SumReadWrite response
+
+        :returns: a list of AdsReadWriteResponse objects
+        """
+        responses = []
+        l_err = np.dtype(ErrorCode).itemsize
+        l_data = np.dtype(np.uint32).itemsize
+        start = 0
+        num_responses = len(read_lengths)
+        offset = (l_err + l_data) * num_responses
+        for length in read_lengths:
+            assert sum_data[start + l_err : start + l_err + l_data] == length, (
+                f"Mismatch between read lengths: expected {length} bytes, \
+                    got {sum_data[start + l_err : start + l_err + l_data]} bytes"
+            )
+            body = (
+                sum_data[start : start + l_err + l_data]
+                + sum_data[offset : offset + length]
+            )
+            responses.append(AdsReadWriteResponse.from_bytes(body))
+            start = start + l_err + l_data
+            offset = offset + length
+        return responses
+
+    async def sumreadwrite_symbols(
+        self, targets: Sequence[tuple[AdsSymbol, Any]]
+    ) -> dict[str, npt.NDArray]:
+        """
+        Used as a container in which multiple AdsReadWrite subcommands are transported \
+            in the same ADS stream.
+
+        :param targets: a list of tuples, each comprising an ADS symbol and \
+            the associated value to write
+
+        :returns: a dictionary mapping the current read value of the symbols \
+            which have successfully been written to
+        """
+        processed_readwrites = len(targets)
+        processed_targets = targets
+        readwrite_status = {}
+        rw_subcommands: list[AdsReadWriteRequest] = []
+        for symbol, value in targets:
+            logging.debug(f"SUM readwrite symbol: {symbol.name}, {value}")
+            if isinstance(value, Sequence) and not (len(value) == symbol.size):
+                logging.error(
+                    f"Symbol ReadWrite Value Error: value for '{symbol.name}' expects a"
+                    + f" collection of {symbol.size} elements, got {len(value)} instead."
+                )
+                processed_readwrites -= 1
+                processed_targets = filter(lambda target: target[0] != symbol, targets)
+                readwrite_status[symbol.name] = False
+                continue
+
+            try:
+                val = np.array(value, dtype=symbol.datatype)
+                rw_subcommands.append(
+                    AdsReadWriteRequest.readwrite_symbol(
+                        symbol.group, symbol.offset, symbol.nbytes, val.tobytes()
+                    ),
+                )
+            except ValueError:
+                logging.error(
+                    f"ReadWrite error: wrong value type provided for {symbol.name}: "
+                    + f"expected '{symbol.dtype}' but got '{type(value)}'."
+                )
+                processed_readwrites -= 1
+                processed_targets = filter(lambda target: target[0] != symbol, targets)
+                readwrite_status[symbol.name] = False
+                continue
+
+        read_lengths = [
+            readwrite_request.read_length for readwrite_request in rw_subcommands
+        ]
+
+        assert rw_subcommands, "No valid AdsReadWrite subcommand to process."
+        sum_response = await self._ads_command(
+            AdsReadWriteRequest.sumreadwrite_symbols(
+                rw_subcommands,
+            )
+        )
+        rw_responses = self._get_sumreadwrite_responses(sum_response.data, read_lengths)
+        assert len(rw_responses) == processed_readwrites, (
+            "Mismatch between number of 'SumReadWrite' commands and supplied responses."
+        )
+
+        zipped = list(zip(processed_targets, rw_responses, strict=True))
+
+        reads = {}
+        for target, response in zipped:
+            assert response.result == ErrorCode.ERR_NOERROR, (
+                f"ADS ReadWrite error with '{target[0].name}': \
+                    {ErrorCode(response.result)}"
+            )
+            readwrite_status[target[0].name] = True
+            reads[target[0].name] = np.frombuffer(
+                response.data, target[0].datatype, count=1
+            )
+
+        logging.debug(f"ReadWrite command statuses: {readwrite_status}")
+
+        return reads
 
     # #################################################################
     # ### DEVICE NOTIFICATIONS ----------------------------------------
@@ -1889,3 +2247,110 @@ class AsyncioADSClient:
         # logging.info(
         #     f"Applied '{func.__name__}' function " + f"to notification data:\n{data}"
         # )
+
+    # #################################################################
+    # ### DEVICE CoE SETTINGS ----------------------------------------
+    # #################################################################
+
+    async def set_io_coe_parameter(
+        self,
+        device: IODevice | IOSlave,
+        index: str,
+        subindex: str,
+        value: Any,
+        timeout: int = 5,
+    ) -> bool:
+        """
+        Set a CAN-over-EtherCAT parameter to a given value.
+
+        :param device: the Master EtherCAT device or one of its slave terminal
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY0000)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x000000YY)
+        :param value: the value to assign to the CoE parameter
+        :param timeout: timeout value in seconds
+
+        :returns: true if the CoE write operation was successful
+        """
+        if isinstance(device, IODevice):
+            netid = self.__target_ams_net_id
+            port = ADS_MASTER_PORT
+        elif isinstance(device, IOSlave):
+            netid = self._ecdevices[next(iter(self._ecdevices))].netid
+            port = (int)(device.address)
+
+        try:
+            val = np.array(value)
+            dtype = val.dtype
+
+            async with asyncio.timeout(timeout):
+                # Read existing value
+                response = await self._ads_command(
+                    AdsReadRequest.read_coe_value(index, subindex, dtype),
+                    netid=netid,
+                    port=port,
+                )
+                logging.debug(
+                    f"Converting byte stream '{response.data.hex(' ')}' to {dtype}."
+                )
+                old_value = np.frombuffer(response.data, dtype)
+
+                # Write new value
+                response = await self._ads_command(
+                    AdsWriteRequest.write_coe_value(
+                        index,
+                        subindex,
+                        val.tobytes(),
+                    ),
+                    netid=netid,
+                    port=port,
+                )
+
+                # Read new value
+                response = await self._ads_command(
+                    AdsReadRequest.read_coe_value(index, subindex, dtype),
+                    netid=netid,
+                    port=port,
+                )
+                logging.debug(
+                    f"Converting byte stream '{response.data.hex(' ')}' to {dtype}."
+                )
+                new_value = np.frombuffer(response.data, dtype)
+
+                logging.info(
+                    f"{device.name}: CoE parameter at index '{index}:{subindex}' was "
+                    + f"changed from value {old_value} to value {new_value}."
+                )
+
+                return True
+
+        except ValueError:
+            logging.error(
+                "Write Type Error: wrong value type provided for CoE parameter "
+                + f"at index '{index}:{subindex}' for device {device.name}."
+            )
+
+        except TimeoutError:
+            logging.error(
+                f"{device.name}:Timeout: CoE parameter at index "
+                + f"'{index}:{subindex}' couldn't be modified."
+            )
+
+        return False
+
+    # #################################################################
+    # ### UTILITY METHODS (FOR TESTING) -------------------------------
+    # #################################################################
+
+    def find_slave_in_master_device(self, slave_type: str) -> None | IOSlave:
+        """
+        Find a slave object of the given type available on the EtherCAT Master device.
+
+        :param slave_type: the name of the slave terminal to look for
+
+        :returns: the slave object of the requested type or None if not available
+        """
+        id = next(iter(self._ecdevices))
+        for slave in self._ecdevices[id].slaves:
+            if slave_type in slave.name:
+                return slave
+        return None
