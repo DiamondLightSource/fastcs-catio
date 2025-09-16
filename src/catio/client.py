@@ -7,12 +7,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, SupportsInt, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
+
+from catio.catio_adapters import SubsystemParameter
+from catio.catio_terminals import SUPPORTED_TERMINALS
 
 from ._constants import (
     AdsState,
@@ -35,8 +39,10 @@ from .devices import (
     DeviceFrames,
     IODevice,
     IOIdentity,
+    IONodeType,
     IOServer,
     IOSlave,
+    IOTreeNode,
     SlaveState,
 )
 from .messages import (
@@ -82,6 +88,7 @@ IO_SERVER_PORT = 300
 
 
 MessageT = TypeVar("MessageT", bound=Message)
+FuncType = Callable[[Any, Any], Awaitable[Any]]
 
 
 class ResponseEvent:
@@ -201,6 +208,9 @@ class AsyncioADSClient:
         self._ecsymbols: dict[
             SupportsInt, Sequence[AdsSymbol]
         ] = {}  # key is device id, value is list of AdsSymbol objects
+        self.fastcs_io_map: dict[
+            str, IOServer | IODevice | IOSlave
+        ] = {}  # key is FastCs object group name, value is CATio object
 
     #################################################################
     ### CLIENT CONNECTION -------------------------------------------
@@ -663,7 +673,7 @@ class AsyncioADSClient:
 
         return slave_counts
 
-    async def _get_slave_crc_counters(
+    async def _get_slaves_crc_counters(
         self,
         dev_netids: Sequence[AmsNetId],
         dev_slave_counts: Sequence[int],
@@ -677,7 +687,7 @@ class AsyncioADSClient:
 
         :returns: a list of list of slave crc counters for each EtherCAT device
         """
-        slave_crc_counters: Sequence[Sequence[np.uint32]] = []
+        slaves_crc_counters: Sequence[Sequence[np.uint32]] = []
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             response = await self._ads_command(
                 AdsReadRequest.read_slaves_crc(slave_count),
@@ -689,9 +699,9 @@ class AsyncioADSClient:
                 dtype=np.uint32,
                 count=slave_count,
             )
-            slave_crc_counters.append(slaves_crc.tolist())
+            slaves_crc_counters.append(slaves_crc.tolist())
 
-        return slave_crc_counters
+        return slaves_crc_counters
 
     async def _get_slave_addresses(
         self,
@@ -836,17 +846,49 @@ class AsyncioADSClient:
 
         return slave_states
 
+    async def _get_slave_crcs(
+        self,
+        dev_netids: Sequence[AmsNetId],
+        dev_slave_addresses: Sequence[Sequence[np.uint16]],
+    ) -> Sequence[Sequence[SlaveCRC]]:
+        """
+        Get the detailed CRC error counters of all slaves for each EtherCAT device.
+
+        :param dev_netids: a list comprising the netid string of all registered devices
+        :param dev_slave_addresses: a list comprising the EtherCAT addresses of the
+            slave terminals on all devices
+
+        :returns: a list comprising a list of slave crcs for each EtherCAT device
+        """
+        slave_crcs: Sequence[Sequence[SlaveCRC]] = []
+        for netid, slave_addresses in zip(dev_netids, dev_slave_addresses, strict=True):
+            crcs: Sequence[SlaveCRC] = []
+            for address in slave_addresses:
+                response = await self._ads_command(
+                    AdsReadRequest.read_slave_crc(address),
+                    netid=netid,
+                    port=ADS_MASTER_PORT,
+                )
+                # Padding is required for the communication ports which aren't used.
+                crcs.append(SlaveCRC.from_bytes(response.data.ljust(32, b"\0")))
+            slave_crcs.append(crcs)
+
+        return slave_crcs
+
     async def _make_slave_objects(
         self,
+        dev_ids: Sequence[int],
         dev_slave_types: Sequence[Sequence[str]],
         dev_slave_names: Sequence[Sequence[str]],
         dev_slave_addresses: Sequence[Sequence[np.uint16]],
         dev_slave_identities: Sequence[Sequence[IOIdentity]],
         dev_slave_states: Sequence[Sequence[SlaveState]],
+        dev_slave_crcs: Sequence[Sequence[SlaveCRC]],
     ) -> Sequence[Sequence[IOSlave]]:
         """
         Create custom slave objects from slave specific parameters.
 
+        :param dev_ids: a list of configured EtherCAT devices
         :param dev_slave_types: a list of slave type arrays for each EtherCAT device
         :param dev_slave_names: a list of slave name arrays for each EtherCAT device
         :param dev_slave_identities: a list of slave identitie arrays for each device
@@ -855,20 +897,32 @@ class AsyncioADSClient:
         :returns: a list comprising an array of the slave objects configured on each
             EtherCAT device
         """
+        assert len(dev_ids) == len(dev_slave_addresses), (
+            "Registered device counts don't match."
+        )
+        dev_slave_parentIds: Sequence[Sequence[int]] = []
+        for i in range(len(dev_ids)):
+            num_slaves = len(dev_slave_addresses[i])
+            dev_slave_parentIds.append([dev_ids[i] for _ in range(num_slaves)])
+
         dev_slaves: Sequence[Sequence[IOSlave]] = []
         for (
+            dev_slave_parentId,
             dev_slave_type,
             dev_slave_name,
             dev_slave_addr,
             dev_slave_identity,
             dev_slave_state,
+            dev_slave_crc,
         ) in list(
             zip(
+                dev_slave_parentIds,
                 dev_slave_types,
                 dev_slave_names,
                 dev_slave_addresses,
                 dev_slave_identities,
                 dev_slave_states,
+                dev_slave_crcs,
                 strict=True,
             )
         ):
@@ -876,11 +930,13 @@ class AsyncioADSClient:
                 IOSlave(*tpl)
                 for tpl in list(
                     zip(
+                        dev_slave_parentId,
                         dev_slave_type,
                         dev_slave_name,
                         dev_slave_addr,
                         dev_slave_identity,
                         dev_slave_state,
+                        dev_slave_crc,
                         strict=True,
                     )
                 )
@@ -920,7 +976,7 @@ class AsyncioADSClient:
             dev_slave_counts = await self._get_slave_count(dev_netids)
             logging.debug(f"List of device slave counts: {dev_slave_counts}")
 
-            dev_slave_crc_counters = await self._get_slave_crc_counters(
+            dev_slave_crc_counters = await self._get_slaves_crc_counters(
                 dev_netids, dev_slave_counts
             )
             logging.debug(
@@ -955,12 +1011,20 @@ class AsyncioADSClient:
             )
             logging.debug(f"List of device slave states at start: {dev_slave_states}")
 
+            dev_slave_crcs = await self._get_slave_crcs(
+                dev_netids,
+                dev_slave_addresses,
+            )
+            logging.debug(f"List of device slave crcs at start: {dev_slave_crcs}")
+
             dev_slaves = await self._make_slave_objects(
+                dev_ids,
                 dev_slave_types,
                 dev_slave_names,
                 dev_slave_addresses,
                 dev_slave_identities,
                 dev_slave_states,
+                dev_slave_crcs,
             )
             logging.debug(f"List of device slaves: {dev_slaves}")
 
@@ -973,6 +1037,7 @@ class AsyncioADSClient:
                     dev_identities,
                     dev_frames,
                     dev_slave_counts,
+                    dev_slave_states,
                     dev_slave_crc_counters,
                     dev_slaves,
                     strict=True,
@@ -1027,16 +1092,44 @@ class AsyncioADSClient:
             )
 
         for device in self._ecdevices.values():
-            i, node, node_position = 0, 0, 0
+            node_count = 0
+            node, node_position = 0, 0
             for slave in device.slaves:
                 if slave.type == "EK1100":
+                    slave.category = IONodeType.Coupler
+                    node_count += 1
                     node += 1
                     node_position = 0
                 slave.loc_in_chain = ChainLocation(node, node_position)
                 node_position += 1
-                i += 1
-
+            device.node_count = node_count
             self._print_device_chain(device.id)
+
+    def _generate_system_tree(self) -> IOTreeNode:
+        """
+        Generate a tree structure from the components available on the EtherCAT system.
+        The root node is the I/O server whose child nodes are the EtherCAT devices.
+        Each device node may comprise either coupler terminals as child nodes or
+        slave terminals as leaf nodes.
+        Coupler nodes may comprise slave terminals as leaf nodes.
+        """
+        server_node = IOTreeNode(self.ioserver)
+        for device in self._ecdevices.values():
+            device_node = IOTreeNode(device, server_node.path)
+            server_node.add_child(device_node)
+            coupler_node = None
+            for slave in device.slaves:
+                if slave.type == "EK1100":
+                    coupler_node = IOTreeNode(slave, device_node.path)
+                    device_node.add_child(coupler_node)
+                else:
+                    if coupler_node is not None:
+                        coupler_node.add_child(IOTreeNode(slave, coupler_node.path))
+                    else:
+                        device_node.add_child(IOTreeNode(slave, device_node.path))
+        logging.debug(f"EtherCAT system tree has {server_node.tree_height()} levels.")
+        # server_node.print_tree()
+        return server_node
 
     async def introspect_IO_server(
         self,
@@ -1058,6 +1151,11 @@ class AsyncioADSClient:
 
         self._ecdevices = await self._get_ethercat_devices()
         logging.info(f"Available I/O devices: {self._ecdevices}")
+
+        self.master_device_id = next(iter(self._ecdevices))
+        logging.info(
+            f"Device id {self.master_device_id} registered as EtherCAT Master device."
+        )
 
         await self._get_EtherCAT_chains()
 
@@ -1168,6 +1266,100 @@ class AsyncioADSClient:
             raise
 
         return state
+
+    async def get_device_slaves_states(self, device_id: int) -> Sequence[SlaveState]:
+        """
+        Read the current states values of all slaves for a given EtherCAT device.
+
+        :param device_id: the id of the EtherCAT device which the slaves belong to
+
+        :returns: a list of SlaveState objects corresponding to each slave terminal
+        """
+        device = self._ecdevices[device_id]
+        response = await self._ads_command(
+            AdsReadRequest.read_slaves_states(device.slave_count),
+            netid=device.netid,
+            port=ADS_MASTER_PORT,
+        )
+        return np.frombuffer(
+            response.data,
+            dtype=SlaveState,
+            count=int(device.slave_count),
+        ).tolist()
+
+    def update_device_slaves_states(
+        self,
+        device_id: int,
+        slaves_states: Sequence[SlaveState],
+    ) -> None:
+        """
+        Update the states values for each registered slave terminal
+        (each slave comprises two state readings: machine state and link status)
+        Also check whether all slave terminals are currently in a valid state.
+
+        param device_id: the id of the EtherCAT device which the slave belongs to
+        param slaves_states: a container with the current slave terminal states
+        """
+        device = self._ecdevices[device_id]
+        # Only update slave attributes if the states values have changed.
+        if not np.array_equal(device.slaves_states, slaves_states):
+            device.slaves_states = slaves_states
+            logging.warning(
+                f"{device.name}: slaves states have changed and been updated."
+            )
+
+            for states, slave in list(
+                zip(
+                    device.slaves_states,
+                    device.slaves,
+                    strict=True,
+                )
+            ):
+                slave.states.eCAT_state = states.eCAT_state
+                slave.states.link_status = states.link_status
+
+            self.check_slaves_states_validity(device.slaves, device.slaves_states)
+
+    def check_slaves_states_validity(
+        self, slaves: Sequence[IOSlave], slave_states: Sequence[SlaveState]
+    ) -> bool:
+        """
+        Flag any slave terminal which is not operating as expected.
+
+        :param slaves: the list of slave terminals registered with the EtherCAT device
+        :param slave_states: a container with the current states of the slave terminals
+
+        :returns: true if the states of the slave terminals are ok, false otherwise
+        """
+
+        status = True
+        states = np.array(slave_states, dtype=SlaveState)
+        if not np.all(states["eCAT_state"] == SlaveStateMachine.SLAVE_STATE_OP):
+            status = False
+            bad_eCAT = np.nonzero(
+                states["eCAT_state"] != SlaveStateMachine.SLAVE_STATE_OP
+            )[0]
+            assert bad_eCAT.size
+            for idx in bad_eCAT:
+                slave: IOSlave = slaves[idx]
+                logging.critical(
+                    f"Slave terminal '{slave.name}' isn't in operational state."
+                )
+
+        if not np.all(states["link_status"] == SlaveLinkState.SLAVE_LINK_STATE_OK):
+            status = False
+            bad_link = np.nonzero(
+                states["link_status"] != SlaveLinkState.SLAVE_LINK_STATE_OK
+            )[0]
+            assert bad_link.size
+            for idx in bad_link:
+                slave: IOSlave = slaves[idx]
+                logging.critical(
+                    f"EtherCAT link for slave terminal '{slave.name}' isn't "
+                    + "in a good state."
+                )
+
+        return status
 
     async def poll_states(
         self,
@@ -1282,11 +1474,74 @@ class AsyncioADSClient:
             logging.critical(f"Problem reading a slave CRC value -> {err}")
             raise
 
+    async def get_slave_crc_error_counters(
+        self, device_id: SupportsInt, address: SupportsInt
+    ) -> SlaveCRC:
+        """
+        Read the current cyclic redundancy check error counters for a given terminal.
+
+        :param device_id: the id of the EtherCAT device which the terminal belongs to
+        :param address: EtherCAT address of the terminal
+
+        :returns: the EtherCAT terminal's CRC error counters
+        """
+        response = await self._ads_command(
+            AdsReadRequest.read_slave_crc(address),
+            netid=self._ecdevices[device_id].netid,
+            port=ADS_MASTER_PORT,
+        )
+        # Padding is required for the communication ports which aren't used.
+        return SlaveCRC.from_bytes(response.data.ljust(32, b"\0"))
+
+    async def get_device_slaves_crcs(self, device_id: int) -> Sequence[np.uint32]:
+        """
+        Read the current error sum counter values of the slaves' CRC for a given \
+            EtherCAT device.
+
+        :param device_id: the id of the EtherCAT device which the slave belongs to
+
+        :returns: a list of slave crc error sum counters for the EtherCAT device
+        """
+        device = self._ecdevices[device_id]
+        response = await self._ads_command(
+            AdsReadRequest.read_slaves_crc(device.slave_count),
+            netid=device.netid,
+            port=ADS_MASTER_PORT,
+        )
+        return np.frombuffer(
+            response.data,
+            dtype=np.uint32,
+            count=int(device.slave_count),
+        ).tolist()
+
+    def update_device_slaves_crcs(
+        self, device_id: int, slaves_crcs: Sequence[np.uint32]
+    ) -> None:
+        """
+        Update the crc error sum counter value for each slave terminal \
+            registered with a given EtherCAT device.
+
+        param device_id: the id of the EtherCAT device which the slave belongs to
+        param slaves_crcs: a list with the slave crc error sum counters for the device
+        """
+        device = self._ecdevices[device_id]
+        # Only update slave attributes if the crc values have changed.
+        if not np.array_equal(device.slaves_crc_counters, slaves_crcs):
+            device.slaves_crc_counters = slaves_crcs
+            logging.warning(
+                f"{device.name}: slave CRC sum counters have changed and been updated."
+            )
+
+            for crc, slave in list(
+                zip(device.slaves_crc_counters, device.slaves, strict=True)
+            ):
+                slave.crc_error_sum = crc
+
     async def poll_crc_counters(
         self,
     ) -> None:
         """
-        Read the current error counter values of the slaves' CRC for each device.
+        Read the current error sum counter values of the slaves' CRC for each device.
         """
         while not self._ecdevices:
             logging.warning(
@@ -1296,24 +1551,15 @@ class AsyncioADSClient:
             await asyncio.sleep(1)
 
         for device in self._ecdevices.values():
-            response = await self._ads_command(
-                AdsReadRequest.read_slaves_crc(device.slave_count),
-                netid=device.netid,
-                port=ADS_MASTER_PORT,
-            )
-            slaves_crc = np.frombuffer(
-                response.data,
-                dtype=np.uint32,
-                count=int(device.slave_count),
-            )
+            device_id = int(device.id)
+            slaves_crc = await self.get_device_slaves_crcs(device_id)
+            self.update_device_slaves_crcs(device_id, slaves_crc)
 
-            # TO DO:
-            # if required, this could be propagated down as an IOSlave class attribute.
-            if not np.array_equal(device.slave_crc_counters, slaves_crc):
-                device.slave_crc_counters = slaves_crc
-                logging.warning(
-                    f"{device.name}: slave CRC counters have changed and been updated."
-                )
+            # if not np.array_equal(device.slaves_crc_counters, slaves_crc):
+            #     device.slaves_crc_counters = slaves_crc
+            #     logging.warning(
+            #         f"{device.name}: slave CRC counters have changed and been updated."
+            #     )
 
     async def get_device_frames(self, device_id: SupportsInt) -> None:
         """
@@ -1368,7 +1614,7 @@ class AsyncioADSClient:
                     + f"cyclic_sent={device.frame_counters.cyclic_sent}, "
                     + f"cyclic_lost={device.frame_counters.cyclic_lost}, "
                     + f"acyclic_sent={device.frame_counters.acyclic_sent}, "
-                    + f"cyclic_lost={device.frame_counters.acyclic_lost}, "
+                    + f"acyclic_lost={device.frame_counters.acyclic_lost}, "
                 )
         except AssertionError as err:
             logging.critical(f"Problem polling device frame counter values -> {err}")
@@ -1482,11 +1728,15 @@ class AsyncioADSClient:
 
         :param device_id: the id of the EtherCAT device to get the symbols from
         """
+        # ideally, a device would be defined with its ads port info and netid
+        # ads_port = self._ecdevices[device_id].port
+
         # Get the length of the symbol table
         response = await self._ads_command(
             AdsReadRequest.get_length_symbol_table(),
             netid=self.__target_ams_net_id,
             port=self.__target_ams_port,
+            # to be updated if device ads port info can be accessed somehow
         )
         symbol_table = AdsSymbolTableInfo.from_bytes(response.data)
 
@@ -1499,9 +1749,17 @@ class AsyncioADSClient:
         )
 
         # Get a list of the available symbols
-        symbols = []
+        symbols: list[AdsSymbol] = []
         for node in nodes:
             symbols.extend(symbol_lookup(node))
+
+        # Adjust the device symbol names to include the device name as prefix
+        # Unfortunately, counter correction is required in 'add_device_notification()'
+        device_name = self._ecdevices[device_id].name
+        for symbol in symbols:
+            if symbol.name.startswith("Inputs") or symbol.name.startswith("Outputs"):
+                symbol.name = f"{device_name}.{symbol.name}"
+
         self._ecsymbols[device_id] = symbols
         logging.info(
             f"{symbol_table.symbol_count} entries in the symbol table returned "
@@ -1520,10 +1778,14 @@ class AsyncioADSClient:
             raise ValueError(
                 "EtherCAT devices have not been defined with the ADS client yet."
             )
+
+        # to be removed if device ads port info can be accessed somehow
         assert len(self._ecdevices) == 1, (
             "Only one EtherCAT device is supported for the moment."
         )
         dev_id = next(iter(self._ecdevices.keys()))
+
+        # for id, device in self._ecdevices.items():
         await self.get_device_symbols(dev_id)
 
         return self._ecsymbols
@@ -1922,7 +2184,14 @@ class AsyncioADSClient:
 
         variable_handle = self.__variable_handles.get(symbol.name, None)
         if variable_handle is None:
-            variable_handle = await self.get_handle_by_name(name=symbol.name)
+            # Adjust the stored device symbol names, i.e. remove the device name prefix
+            device_name = self._ecdevices[symbol.parent_id].name
+            if symbol.name.startswith(f"{device_name}."):
+                symbol_name = symbol.name.split(".", 1)[1]
+            else:
+                symbol_name = symbol.name
+            # Add the variable handle to the dictionary
+            variable_handle = await self.get_handle_by_name(name=symbol_name)
             assert variable_handle not in self.__variable_handles.values(), (
                 f"Handle assignment error: handle id {variable_handle} \
                     is already defined."
@@ -2013,8 +2282,8 @@ class AsyncioADSClient:
         """
         if symbol.handle is None:
             raise KeyError(
-                f"{symbol.name} notifications are not registered as an active \
-                    ADS subscription."
+                f"{symbol.name} notifications are not registered as an active "
+                + "ADS subscription."
             )
         request = AdsDeleteDeviceNotificationRequest(
             handle=symbol.handle,
@@ -2082,7 +2351,7 @@ class AsyncioADSClient:
 
     def start_notification_monitor(
         self,
-        flush_period: float = 0.5,
+        flush_period: float,
     ) -> None:
         """
         Trigger the appending of received ADS notifications into the buffer and \
@@ -2128,6 +2397,7 @@ class AsyncioADSClient:
                             "Flushing period is too short, \
                                 notification data has not been initialised yet."
                         )
+                        dev_id = next(iter(self._ecdevices.keys()))
 
                         if 1 in self.__notif_templates:
                             # Multiple ADS notification streams are used by the server
@@ -2143,7 +2413,8 @@ class AsyncioADSClient:
                                 size + template_data
                             )
                             streams_dtype = streams.get_combined_notifications_dtype(
-                                self.__device_notification_handles
+                                self._ecdevices[dev_id].name.replace(" ", ""),
+                                self.__device_notification_handles,
                             )
                         else:
                             # All requested notifications are reported in a single
@@ -2151,7 +2422,8 @@ class AsyncioADSClient:
                             template_data = self.__notif_templates[0]
                             streams = AdsNotificationStream.from_bytes(template_data)
                             streams_dtype = streams.get_notification_dtype(
-                                self.__device_notification_handles
+                                self._ecdevices[dev_id].name.replace(" ", ""),
+                                self.__device_notification_handles,
                             )
 
                         first_flush = False
@@ -2163,6 +2435,8 @@ class AsyncioADSClient:
                     if not len(self.__buffer) == 0:
                         buffer = self.__buffer
                         self.__buffer = bytearray()
+                        # print("TEMPLATE SIZES:")
+                        # print([(k, len(v)) for k, v in self.__notif_templates.items()])
                         assert len(buffer) % len(template_data) == 0, (
                             "Request to flush an incomplete notification buffer."
                         )
@@ -2171,6 +2445,7 @@ class AsyncioADSClient:
                                 streams_dtype, buffer
                             )
                         )
+                        logging.debug("Notification stream added to the queue.")
 
             except asyncio.CancelledError:
                 # Add the last notification buffer to the queue despite the flushing
@@ -2204,7 +2479,7 @@ class AsyncioADSClient:
             dtype=stream_dtype,
         )
 
-    async def get_notifications(self, timeout: int = 60) -> npt.NDArray:
+    async def get_notifications(self, timeout: int) -> npt.NDArray:
         """
         Get the notification array available on the notification queue.
         (Temporary) A timeout is in place to exit the method if no notification data \
@@ -2230,23 +2505,6 @@ class AsyncioADSClient:
             raise TimeoutError(
                 f"...no notification added to the queue for the past {timeout} seconds!"
             ) from err
-
-    def process_notifications(
-        self,
-        func: Callable,
-        notifications: npt.NDArray,
-    ) -> None:
-        """
-        Manipulate the received notification array by applying a given function.
-        This method may be used to test the load on the client resources.
-
-        :param func: the processing function to apply to the notification data
-        :param notifications: a numpy array comprising multiple ADS notifications
-        """
-        data = func(notifications)
-        # logging.info(
-        #     f"Applied '{func.__name__}' function " + f"to notification data:\n{data}"
-        # )
 
     # #################################################################
     # ### DEVICE CoE SETTINGS ----------------------------------------
@@ -2275,7 +2533,7 @@ class AsyncioADSClient:
             netid = self.__target_ams_net_id
             port = ADS_MASTER_PORT
         elif isinstance(device, IOSlave):
-            netid = self._ecdevices[next(iter(self._ecdevices))].netid
+            netid = self._ecdevices[self.master_device_id].netid
             port = (int)(device.address)
 
         try:
@@ -2349,8 +2607,371 @@ class AsyncioADSClient:
 
         :returns: the slave object of the requested type or None if not available
         """
-        id = next(iter(self._ecdevices))
+        id = self.master_device_id
         for slave in self._ecdevices[id].slaves:
             if slave_type in slave.name:
                 return slave
         return None
+
+    @staticmethod
+    def _check_system(function: FuncType):
+        """Confirm that devices on the EtherCAT system have been registered \
+            with the CATio client."""
+
+        async def wrapper(self, *args, **kwargs):
+            if not self._ecdevices:
+                logging.error("Problem with CATio client, no EtherCAT device found.")
+                raise RuntimeError
+            return await function(self, *args, **kwargs)
+
+        return wrapper
+
+    def read_device_id_from_name(self, device_name: str) -> int | None:
+        """"""
+        assert re.compile(r"(^([A-Z]*[a-z]*)+)(\d+)$").match(device_name) is not None, (
+            "Device name format is invalid, device id cannot be found."
+        )
+        # return int(re.sub(r"(^([A-Z]*[a-z]*)+)", "", device_name))
+        matches = re.search(r"\d+$", device_name)
+        if matches:
+            return int(matches.group(0))
+
+        return None
+
+    #################################################################
+    ### API FUNCTIONS -----------------------------------------------
+    #################################################################
+
+    async def query(self, message: str, *args, **kwargs):
+        """
+        Call the API method associated with a given message.
+
+        :param message: a string which will translate to a specific 'get_' method
+        :param args: possible positional arguments required by the called method
+        :param kwargs: possible keyword arguments required by the called method
+
+        :returns: the associated function call response, \
+             or None if the API method doesn't exist
+        # :raises ValueError: if the requested API method doesn't exist
+        """
+        get = f"get_{message.lower()}"
+        # print(f"GET: {get}")
+        if hasattr(self, get) and callable(func := getattr(self, get)):
+            # assignment := means 'set the value of variable and evaluate the result of expression in a single line'
+            if asyncio.iscoroutinefunction(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
+        return None
+
+    def get_system_tree(
+        self,
+        *args,
+        **kwargs,
+    ) -> IOTreeNode:
+        """
+        Get a tree representation of the whole EtherCAT I/O system.
+
+        :returns: a dictionary comprising server, device(s) and slave terminal(s)
+        :returns: an IOTreeNode object representing the root server and all its child nodes
+        """
+        return self._generate_system_tree()
+
+    def get_server_params(self, *args, **kwargs) -> Sequence[SubsystemParameter]:
+        """
+        Get the available parameters for the unique EtherCAT system's I/O server.
+
+        :param args[0]: identifier name for the I/O server controller
+
+        :returns: a list of sub-system parameters
+        """
+        assert args and isinstance(args[0], str), (
+            "Missing information about the server controller identifier."
+        )
+        if args[0] not in self.fastcs_io_map:
+            self.fastcs_io_map[args[0]] = self.ioserver
+        else:
+            raise KeyError("I/O server already registered as a FastCS component.")
+
+        return self.ioserver.get_params()
+
+    def get_device_params(self, *args, **kwargs) -> Sequence[SubsystemParameter]:
+        """
+        Get the available parameters for a given device.
+
+        :param args[0]: identifier name for the IODevice controller \
+            (short EtherCAT name, e.g 'Device5')
+
+        :returns: a list of sub-system parameters
+        """
+        assert args and isinstance(args[0], str), (
+            "Missing information about device EtherCAT name."
+        )
+        assert re.compile(r"(^([A-Z]*[a-z]*)+)(\d+)$").match(args[0]) is not None, (
+            "Incompatible EtherCAT device name format in args."
+        )
+
+        # Get the generic IODevice parameters from the registered devices.
+        id = self.read_device_id_from_name(args[0])
+        if id is not None:
+            try:
+                if args[0] not in self.fastcs_io_map:
+                    self.fastcs_io_map[args[0]] = self._ecdevices[id]
+                else:
+                    raise KeyError(
+                        f"EtherCAT device #{id} already registered as a FastCS component."
+                    )
+                return self._ecdevices[id].get_params()
+            except KeyError as err:
+                raise ValueError(f"{args[0]}: device parameters not found.") from err
+
+        raise KeyError(f"Id could not be found from EtherCAT device name '{args[0]}'.")
+
+    def get_terminal_params(self, *args, **kwargs) -> Sequence[SubsystemParameter]:
+        """
+        Get the available parameters for a given slave terminal.
+
+        :param args[0]: identifier name for the IOTerminal controller \
+            (short EtherCAT name, e.g. 'Term145')
+        :param kwargs["parent_id"]: id of the terminal's parent EtherCAT device
+
+        :returns: a list of sub-system parameters
+        """
+        assert args and isinstance(args[0], str), (
+            "Missing information about terminal EtherCAT name."
+        )
+        assert re.compile(r"(^([A-Z]*[a-z]*)+)(\d+)$").match(args[0]) is not None, (
+            "Incompatible EtherCAT device name format in args."
+        )
+        parameters: list[SubsystemParameter] = []
+
+        # Get the IOSlave parameters from the registered device slaves.
+        dev_id = kwargs.get("parent_id", None)
+        if dev_id is not None and isinstance(dev_id, int):
+            slaves = self._ecdevices[dev_id].slaves
+            for slave in slaves:
+                if re.sub(" ", "", slave.name).startswith(args[0]):
+                    if args[0] not in self.fastcs_io_map:
+                        self.fastcs_io_map[args[0]] = slave
+                    else:
+                        raise KeyError(
+                            f"EtherCAT terminal '{args[0]}' already registered "
+                            + "as a FastCS component."
+                        )
+                    # Get the generic IOSlave parameters common to all device slaves.
+                    parameters.extend(slave.get_params())
+
+                    # Get the specific parameters associated with each terminal type.
+                    model = (re.findall(r"\((.*?)\)", slave.name))[0]
+                    # model = (re.search(r"^(\w+-*\d*)", (args[0].split("("))[1])).group(0)
+                    slave_model = model
+                    if "-" in model:
+                        slave_model = slave_model.replace("-", "_")
+                    assert slave_model in SUPPORTED_TERMINALS.keys(), (
+                        f"{model} isn't supported by CATio yet"
+                    )
+                    parameters.extend(
+                        SUPPORTED_TERMINALS[slave_model].get_params(slave.name)
+                    )
+                    break
+            if not parameters:
+                raise ValueError(
+                    f"{args[0]}: parameters not found; "
+                    + f"terminal probably not registered with device #{dev_id}"
+                )
+        else:
+            raise ValueError(
+                f"{args[0]}: missing information about terminal parent device id."
+            )
+
+        return parameters
+
+    def get_terminal_models(self) -> None:
+        logging.info(
+            "List of terminal models currently supported by the CATio driver:\n "
+            + f"{list(SUPPORTED_TERMINALS.keys())}"
+        )
+
+    @_check_system
+    async def get_device_framecounters_attr(
+        self,
+        *args,
+        **kwargs,
+    ) -> npt.NDArray[np.uint32]:
+        """"""
+        dev_name = kwargs.get("attr_group", None)
+        if dev_name is not None and isinstance(dev_name, str):
+            dev_id = self.read_device_id_from_name(dev_name)
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )
+
+        if dev_id is not None:
+            logging.debug(f"Reading frame counters for EtherCAT device {dev_id}")
+            await self.get_device_frames(dev_id)
+            return np.array(
+                [
+                    self._ecdevices[dev_id].frame_counters.time,
+                    self._ecdevices[dev_id].frame_counters.cyclic_sent,
+                    self._ecdevices[dev_id].frame_counters.cyclic_lost,
+                    self._ecdevices[dev_id].frame_counters.acyclic_sent,
+                    self._ecdevices[dev_id].frame_counters.acyclic_lost,
+                ],
+            )
+
+        raise ValueError(
+            f"Device id cannot be determined from attribute's group name {dev_name}."
+        )
+
+    @_check_system
+    async def get_device_slavecount_attr(self, *args, **kwargs) -> int:
+        """"""
+        dev_name = kwargs.get("attr_group", None)
+        if dev_name is not None and isinstance(dev_name, str):
+            dev_id = self.read_device_id_from_name(dev_name)
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )
+        if dev_id is not None:
+            logging.debug(
+                f"Reading the number of slaves registered with EtherCAT device {dev_id}"
+            )
+            count = await self._get_slave_count([self._ecdevices[dev_id].netid])
+
+            expected_cnt = self._ecdevices[dev_id].slave_count
+            current_count = count[0]
+
+            if current_count != expected_cnt:
+                logging.critical(
+                    f"Number of configured slaves on {self._ecdevices[dev_id].name} "
+                    + f"has changed from {expected_cnt} to {current_count}"
+                )
+
+            return current_count
+
+        raise ValueError(
+            f"Device id cannot be determined from attribute's group name {dev_name}."
+        )
+
+    @_check_system
+    async def get_device_slavesstates_attr(
+        self, *args, **kwargs
+    ) -> npt.NDArray[np.uint8]:
+        """"""
+        dev_name = kwargs.get("attr_group", None)
+        if dev_name is not None and isinstance(dev_name, str):
+            dev_id = self.read_device_id_from_name(dev_name)
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )
+        if dev_id is not None:
+            logging.debug(
+                "Reading states values for all slaves registered with "
+                + f"EtherCAT device {dev_id}"
+            )
+            states = await self.get_device_slaves_states(dev_id)
+            self.update_device_slaves_states(dev_id, states)
+
+            assert len(states) == len(self._ecdevices[dev_id].slaves), (
+                f"{dev_name}: mismatch between the number of slave states readings "
+                + "and the number of registered slaves."
+            )
+            return np.array(states, dtype=np.uint8).flatten()
+
+        raise ValueError(
+            f"Device id cannot be determined from attribute's group name {dev_name}."
+        )
+
+    @_check_system
+    async def get_device_slavescrccounters_attr(
+        self, *args, **kwargs
+    ) -> npt.NDArray[np.uint32]:
+        """"""
+        dev_name = kwargs.get("attr_group", None)
+        if dev_name is not None and isinstance(dev_name, str):
+            dev_id = self.read_device_id_from_name(dev_name)
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )
+        if dev_id is not None:
+            logging.debug(
+                "Reading crc error counters for all slaves registered with "
+                + f"EtherCAT device {dev_id}"
+            )
+            crcs = await self.get_device_slaves_crcs(dev_id)
+            self.update_device_slaves_crcs(dev_id, crcs)
+
+            assert len(crcs) == len(self._ecdevices[dev_id].slaves), (
+                f"{dev_name}: mismatch between the number of slave crc readings "
+                + "and the number of registered slaves."
+            )
+            return np.array(crcs, dtype=np.uint32)  # .astype(Int)
+
+        raise ValueError(
+            f"Device id cannot be determined from attribute's group name {dev_name}."
+        )
+
+    @_check_system
+    async def get_terminal_crcs_attr(self, *args, **kwargs) -> npt.NDArray[np.uint32]:
+        """"""
+        terminal_name = kwargs.get("attr_group", None)
+        if terminal_name is not None and isinstance(terminal_name, str):
+            terminal = self.fastcs_io_map.get(terminal_name, None)
+            if terminal is not None:
+                assert isinstance(terminal, IOSlave)
+                crcs = await self.get_slave_crc_error_counters(
+                    terminal.parent_device, terminal.address
+                )
+                return np.array(
+                    [crcs.portA_crc, crcs.portB_crc, crcs.portC_crc, crcs.portD_crc]
+                )
+            else:
+                raise KeyError(
+                    f"Terminal {terminal_name} is not defined as a FastCS component."
+                )
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )
+
+    @_check_system
+    async def get_terminal_crcerrorsum_attr(self, *args, **kwargs) -> int:
+        """"""
+        terminal_name = kwargs.get("attr_group", None)
+        if terminal_name is not None and isinstance(terminal_name, str):
+            terminal = self.fastcs_io_map.get(terminal_name, None)
+            if terminal is not None:
+                assert isinstance(terminal, IOSlave)
+                return int(terminal.crc_error_sum)
+            else:
+                raise KeyError(
+                    f"Terminal {terminal_name} is not defined as a FastCS component."
+                )
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )
+
+    @_check_system
+    async def get_terminal_states_attr(self, *args, **kwargs) -> npt.NDArray[np.uint8]:
+        """"""
+        terminal_name = kwargs.get("attr_group", None)
+        if terminal_name is not None and isinstance(terminal_name, str):
+            terminal = self.fastcs_io_map.get(terminal_name, None)
+            if terminal is not None:
+                assert isinstance(terminal, IOSlave)
+                return np.array(
+                    [terminal.states.eCAT_state, terminal.states.link_status]
+                )
+            else:
+                raise KeyError(
+                    f"Terminal {terminal_name} is not defined as a FastCS component."
+                )
+        else:
+            raise ValueError(
+                f"{kwargs}: missing information about attribute group name."
+            )

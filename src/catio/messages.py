@@ -212,6 +212,9 @@ class IOIdentity(Message):
     serial_number: UINT32
     """The serial number"""
 
+    def __str__(self):
+        return f"code:{self.product_code}, s/n:{self.serial_number}"
+
 
 class DeviceFrames(Message):
     """
@@ -229,6 +232,22 @@ class DeviceFrames(Message):
     acyclic_lost: UINT32
     """Number of lost acyclic frames"""
 
+    def __array__(self):
+        return np.array(
+            [
+                self.time,
+                self.cyclic_sent,
+                self.cyclic_lost,
+                self.acyclic_sent,
+                self.acyclic_lost,
+            ],
+            dtype=np.uint32,
+        )
+
+    @property
+    def __array_struct__(self):
+        return self.__array__().__array_struct__
+
 
 class SlaveCRC(Message):
     """
@@ -245,6 +264,21 @@ class SlaveCRC(Message):
     portD_crc: UINT32
     """CRC error counter of communication port D"""
 
+    def __array__(self):
+        return np.array(
+            [
+                self.portA_crc,
+                self.portB_crc,
+                self.portC_crc,
+                self.portD_crc,
+            ],
+            dtype=np.uint32,
+        )
+
+    @property
+    def __array_struct__(self):
+        return self.__array__().__array_struct__
+
 
 class SlaveState(Message):
     """
@@ -255,6 +289,19 @@ class SlaveState(Message):
     """The EtherCAT state"""
     link_status: UINT8
     """The link status for communication"""
+
+    def __array__(self):
+        return np.array(
+            [
+                self.eCAT_state,
+                self.link_status,
+            ],
+            dtype=np.uint8,
+        )
+
+    @property
+    def __array_struct__(self):
+        return self.__array__().__array_struct__
 
 
 class AdsSymbolTableInfo(Message):
@@ -1086,12 +1133,14 @@ class AdsCombinedNotificationStream(Message):
 
     def get_combined_notifications_dtype(
         self,
+        device_name: str,
         symbols: dict[SupportsInt, Any],
     ) -> np.dtype:
         """
         Get the datatype structure used to interpret the bytes array from a \
             notification which comprises multiple streams
 
+        :param device_name: the name of the device providing the notification
         :param symbols: a container object mapping the notification handle and related \
             symbol for all configured notifications
 
@@ -1105,13 +1154,19 @@ class AdsCombinedNotificationStream(Message):
         for i in range(1, self.size + 1):
             stream_size = 4 + int.from_bytes(data[:4], byteorder="little", signed=False)
             notification = AdsNotificationStream.from_bytes(data[:stream_size])
-            dtypes += [(f"_length{i}", np.uint32), (f"_stamps{i}", np.uint32)]
+            dtypes += [
+                (f"_{device_name}.length{i}", np.uint32),
+                (f"_{device_name}.stamps{i}", np.uint32),
+            ]
             assert notification.stamps == 1, (
                 f"Error: notification stream {i} comprises {notification.stamps} \
                     distinct timestamps."
             )
             stamp_header = AdsStampHeader.from_bytes(notification.data)
-            dtypes += [(f"_timestamp{i}", np.uint64), (f"_samples{i}", np.uint32)]
+            dtypes += [
+                (f"_{device_name}.timestamp{i}", np.uint64),
+                (f"_{device_name}.samples{i}", np.uint32),
+            ]
             notif_data = stamp_header.data
 
             for _ in range(int(stamp_header.samples)):
@@ -1120,9 +1175,9 @@ class AdsCombinedNotificationStream(Message):
                 symbol = symbols[sample.handle]
                 assert symbol.nbytes == sample.size
                 dtypes += [
-                    (f"_{symbol.name} handle", np.uint32),
-                    (f"_{symbol.name} size", np.uint32),
-                    (f"_{symbol.name} value", symbol.datatype),
+                    (f"_{symbol.name.replace(' ', '')}.handle", np.uint32),
+                    (f"_{symbol.name.replace(' ', '')}.size", np.uint32),
+                    (f"_{symbol.name.replace(' ', '')}.value", symbol.datatype),
                 ]
                 notif_data = notif_data[8 + sample.size :]
 
@@ -1152,24 +1207,33 @@ class AdsNotificationStream(Message):
     data: bytes
     """Array with AdsStampHeader elements"""
 
-    def get_notification_dtype(self, symbols: dict[SupportsInt, Any]) -> np.dtype:
+    def get_notification_dtype(
+        self, device_name: str, symbols: dict[SupportsInt, Any]
+    ) -> np.dtype:
         """
         Get the datatype structure used to interpret the bytes array from a single \
             notification packet (note that the notification packet is assumed to \
                 comprise a single stamp header).
 
+        :param device_name: the name of the device providing the notification
         :param symbols: a container object mapping the notification handle and related \
             symbol for all configured notifications
 
         :returns: a numpy array of datatypes characteristic of the active device \
             notification structure
         """
-        dtypes = [("_length", np.uint32), ("_stamps", np.uint32)]
+        dtypes = [
+            (f"_{device_name}.length", np.uint32),
+            (f"_{device_name}.stamps", np.uint32),
+        ]
         assert self.stamps == 1, (
             f"Error: notification comprises {self.stamps} distinct timestamps."
         )
         stamp_header = AdsStampHeader.from_bytes(self.data)
-        dtypes += [("_timestamp", np.uint64), ("_samples", np.uint32)]
+        dtypes += [
+            (f"_{device_name}.timestamp", np.uint64),
+            (f"_{device_name}.samples", np.uint32),
+        ]
         data = stamp_header.data
         for _ in range(int(stamp_header.samples)):
             assert data, data
@@ -1177,9 +1241,9 @@ class AdsNotificationStream(Message):
             symbol = symbols[sample.handle]
             assert symbol.nbytes == sample.size
             dtypes += [
-                (f"_{symbol.name} handle", np.uint32),
-                (f"_{symbol.name} size", np.uint32),
-                (f"_{symbol.name} value", symbol.datatype),
+                (f"_{symbol.name.replace(' ', '')}.handle", np.uint32),
+                (f"_{symbol.name.replace(' ', '')}.size", np.uint32),
+                (f"_{symbol.name.replace(' ', '')}.value", symbol.datatype),
             ]
             data = data[8 + sample.size :]
         assert data == b"", (

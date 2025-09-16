@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import inspect
+import logging
 import socket
+from collections.abc import Callable
 
 import numpy as np
+import numpy.typing as npt
 
 from ._constants import TWINCAT_STRING_ENCODING
 
@@ -45,7 +49,36 @@ def add_comment(new_str: str, old_str: str) -> str:
     return new_str if not old_str else "\n".join([old_str, new_str])
 
 
-def average_notifications(array: np.ndarray) -> np.ndarray:
+def process_notifications(
+    func: Callable,
+    notifications: npt.NDArray,
+) -> npt.NDArray:
+    """
+    Manipulate the received notification array by applying a given function.
+    This method may be used to test the load on the client resources.
+
+    :param func: the processing function to apply to the notification data
+    :param notifications: a numpy array comprising multiple ADS notifications
+
+    :returns: the post-processed notification array
+    """
+    args = inspect.getfullargspec(func).args
+    assert len(args) == 1, (
+        f"The processing function {func.__name__} takes more than 1 argument."
+    )
+    input = inspect.signature(func).parameters[args[0]]
+    assert input.annotation == "np.ndarray", (
+        f"The processing function {func.__name__} requires a numpy array as argument."
+    )
+    data = func(notifications)
+    logging.debug(
+        f"Applied '{func.__name__}' function "
+        + f"to notification data comprising {len(data[0])} fields"
+    )
+    return data
+
+
+def average(array: np.ndarray) -> np.ndarray:
     """
     Average data from all fields in a numpy structured array.
 
@@ -54,6 +87,57 @@ def average_notifications(array: np.ndarray) -> np.ndarray:
     :returns: a 1D numpy array with averaged values
     """
     mean_array = np.empty(1, dtype=array.dtype)
+    assert array.dtype.fields is not None
     for field in array.dtype.fields:
         mean_array[field] = np.mean(array[field])
     return mean_array
+    # print(avg[['_timestamp1', '_samples1', '_timestamp2', '_samples2']])
+
+
+def get_notification_changes(
+    new_array: np.ndarray, old_array: np.ndarray
+) -> np.ndarray:
+    """
+    Compare two notification arrays and return the differences.
+    Each array is expected to be a numpy structured arra.
+    Both arrays must have the same shape and dtype.
+
+    :param new_array: the new structured array with updated values
+    :param old_array: the old structured array to compare against
+
+    :returns: a numpy array containing the differences between the two arrays
+    """
+    assert new_array.shape == old_array.shape
+    assert new_array.dtype == old_array.dtype
+    assert new_array[0].size == old_array[0].size
+
+    mask = [a != b for a, b in zip(new_array[0], old_array[0], strict=True)]
+
+    diff = []
+    assert new_array.dtype.names
+    for val, name in zip(mask, new_array.dtype.names, strict=True):
+        if val:
+            diff.append(name)
+    return new_array[diff]
+
+
+def filetime_to_dt(filetime: int) -> np.datetime64:
+    """
+    Convert a Windows FILETIME timestamp to a numpy datetime64 object.
+    FILETIME is in 100-nanosecond intervals since January 1, 1601 (UTC).
+    Numpy datetime64 is in nanoseconds since January 1, 1970 (UTC).
+
+    :param filetime: the FILETIME timestamp as a 64-bit integer
+
+    :returns: the corresponding numpy datetime64 object
+    """
+    # Difference between epochs in 100-nanosecond intervals
+    EPOCH_DIFF = 116444736000000000
+    # Number of 100-nanosecond intervals in a second
+    HUNDRED_NANOSECONDS = 10_000_000
+
+    # Convert FILETIME to seconds since Unix epoch
+    unix_time = (filetime - EPOCH_DIFF) / HUNDRED_NANOSECONDS
+
+    # Convert to numpy datetime64 inc. seconds to nanoseconds conversion
+    return np.datetime64(int(unix_time * 1e9), "ns")

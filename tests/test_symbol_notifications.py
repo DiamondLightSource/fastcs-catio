@@ -2,7 +2,7 @@ import asyncio
 import random
 
 from catio.client import AsyncioADSClient
-from catio.utils import average_notifications
+from catio.utils import average, process_notifications
 
 # Connection to CX2020 device
 TARGET_IP = "172.23.240.142"
@@ -36,12 +36,12 @@ async def main():
         await asyncio.sleep(0.3)
 
         print("...start notifications...")
-        client.start_notification_monitor()
+        client.start_notification_monitor(0.5)
 
         cnt = 50
         while cnt:
             notifs = await client.get_notifications(timeout=5)
-            client.process_notifications(average_notifications, notifs)
+            process_notifications(average, notifs)
             cnt -= 1
             print("COUNT: ", cnt)
 
