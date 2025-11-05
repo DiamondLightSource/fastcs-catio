@@ -17,7 +17,7 @@ from fastcs.transport.epics.ca.options import (
 from softioc.imports import callbackSetQueueSize
 
 from . import __version__
-from .catio_controller import CATioController
+from .catio_controller import CATioServerController
 
 __all__ = ["main"]
 
@@ -101,7 +101,15 @@ def ioc(
             help="Period in seconds with which to poll the EtherCAT server.",
             rich_help_panel="Secondary Arguments",
         ),
-    ] = 0.5,
+    ] = 1.0,
+    notification_period: Annotated[
+        float,
+        typer.Option(
+            help="Period in seconds at which notifications from the EtherCAT devices \
+                are updated (it must be larger than the EtherCAT cycle time!).",
+            rich_help_panel="Secondary Arguments",
+        ),
+    ] = 0.2,
     screens_dir: Annotated[
         Path,
         typer.Option(
@@ -150,7 +158,9 @@ def ioc(
         else tcp_server
     )
     # Get the Beckhoff TwinCAT server connection settings
-    controller = CATioController(ip, target_netid, target_port, poll_period)
+    controller = CATioServerController(
+        ip, target_netid, target_port, poll_period, notification_period
+    )
     launcher = FastCS(controller, [options])
     launcher.create_docs()
     launcher.create_gui()

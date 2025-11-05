@@ -10,13 +10,11 @@ import logging
 import re
 import time
 from collections.abc import Awaitable, Callable, Sequence
+from copy import deepcopy
 from typing import Any, SupportsInt, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
-
-from catio.catio_adapters import SubsystemParameter
-from catio.catio_terminals import SUPPORTED_TERMINALS
 
 from ._constants import (
     AdsState,
@@ -209,8 +207,8 @@ class AsyncioADSClient:
             SupportsInt, Sequence[AdsSymbol]
         ] = {}  # key is device id, value is list of AdsSymbol objects
         self.fastcs_io_map: dict[
-            str, IOServer | IODevice | IOSlave
-        ] = {}  # key is FastCs object group name, value is CATio object
+            int, IOServer | IODevice | IOSlave
+        ] = {}  # key: FastCS controller object unique identifier, value: CATio object
 
     #################################################################
     ### CLIENT CONNECTION -------------------------------------------
@@ -348,6 +346,8 @@ class AsyncioADSClient:
             raise ConnectionAbortedError(
                 "Asynchronous monitoring of ADS messages has completed."
             ) from err
+        except Exception as err:
+            raise Exception("Client ADS messaging process failed.") from err
 
     async def _handle_notification(self, header: AmsHeader, body: bytes) -> None:
         """
@@ -413,7 +413,7 @@ class AsyncioADSClient:
             except ConnectionAbortedError as err:
                 logging.warning(err)
                 break
-            except ConnectionError as err:
+            except Exception as err:
                 logging.error(err)
                 break
 
@@ -1115,18 +1115,22 @@ class AsyncioADSClient:
         """
         server_node = IOTreeNode(self.ioserver)
         for device in self._ecdevices.values():
-            device_node = IOTreeNode(device, server_node.path)
+            parent_path = deepcopy(server_node.path)
+            device_node = IOTreeNode(device, parent_path)
             server_node.add_child(device_node)
             coupler_node = None
             for slave in device.slaves:
                 if slave.type == "EK1100":
-                    coupler_node = IOTreeNode(slave, device_node.path)
+                    parent_path = deepcopy(device_node.path)
+                    coupler_node = IOTreeNode(slave, parent_path)
                     device_node.add_child(coupler_node)
                 else:
                     if coupler_node is not None:
-                        coupler_node.add_child(IOTreeNode(slave, coupler_node.path))
+                        parent_path = deepcopy(coupler_node.path)
+                        coupler_node.add_child(IOTreeNode(slave, parent_path))
                     else:
-                        device_node.add_child(IOTreeNode(slave, device_node.path))
+                        parent_path = deepcopy(device_node.path)
+                        device_node.add_child(IOTreeNode(slave, parent_path))
         logging.debug(f"EtherCAT system tree has {server_node.tree_height()} levels.")
         # server_node.print_tree()
         return server_node
@@ -1139,7 +1143,7 @@ class AsyncioADSClient:
         identify the registered EtherCAT devices and associated slaves,
         and print out to the console the EtherCAT device chains.
         """
-        self.ioserver = await self._read_io_info()
+        self.ioserver: IOServer = await self._read_io_info()
         logging.info(
             f"ADS device info: \tname={self.ioserver.name}, "
             + f"version={self.ioserver.version}, build={self.ioserver.build}"
@@ -2386,6 +2390,7 @@ class AsyncioADSClient:
         template_data = b""
         streams_dtype = np.dtype([])
         first_flush = True
+
         while True:
             try:
                 await asyncio.sleep(interval_sec)
@@ -2672,255 +2677,225 @@ class AsyncioADSClient:
         """
         Get a tree representation of the whole EtherCAT I/O system.
 
-        :returns: a dictionary comprising server, device(s) and slave terminal(s)
         :returns: an IOTreeNode object representing the root server and all its child nodes
         """
         return self._generate_system_tree()
 
-    def get_server_params(self, *args, **kwargs) -> Sequence[SubsystemParameter]:
+    def get_io_from_map(
+        self, identifier: int, io_group: str, io_name: str = ""
+    ) -> IOServer | IODevice | IOSlave:
         """
-        Get the available parameters for the unique EtherCAT system's I/O server.
+        Get the I/O object (server, device or terminal) associated with the given id.
+        If the id is not registered yet, it will be added to the internal map.
 
-        :param args[0]: identifier name for the I/O server controller
+        :param identifier: the unique id associated with the I/O object
+        :param io_group: the type of I/O object, one of "IOServer", "IODevice", "IOTerminal
+        :param io_name: the name of the I/O object, e.g. "Device5", "Term145"
 
-        :returns: a list of sub-system parameters
+        :returns: the I/O object associated with the given id
+        :raises NameError: if the given id cannot be associated with any I/O object
         """
-        assert args and isinstance(args[0], str), (
-            "Missing information about the server controller identifier."
-        )
-        if args[0] not in self.fastcs_io_map:
-            self.fastcs_io_map[args[0]] = self.ioserver
-        else:
-            raise KeyError("I/O server already registered as a FastCS component.")
-
-        return self.ioserver.get_params()
-
-    def get_device_params(self, *args, **kwargs) -> Sequence[SubsystemParameter]:
-        """
-        Get the available parameters for a given device.
-
-        :param args[0]: identifier name for the IODevice controller \
-            (short EtherCAT name, e.g 'Device5')
-
-        :returns: a list of sub-system parameters
-        """
-        assert args and isinstance(args[0], str), (
-            "Missing information about device EtherCAT name."
-        )
-        assert re.compile(r"(^([A-Z]*[a-z]*)+)(\d+)$").match(args[0]) is not None, (
-            "Incompatible EtherCAT device name format in args."
-        )
-
-        # Get the generic IODevice parameters from the registered devices.
-        id = self.read_device_id_from_name(args[0])
-        if id is not None:
-            try:
-                if args[0] not in self.fastcs_io_map:
-                    self.fastcs_io_map[args[0]] = self._ecdevices[id]
-                else:
-                    raise KeyError(
-                        f"EtherCAT device #{id} already registered as a FastCS component."
-                    )
-                return self._ecdevices[id].get_params()
-            except KeyError as err:
-                raise ValueError(f"{args[0]}: device parameters not found.") from err
-
-        raise KeyError(f"Id could not be found from EtherCAT device name '{args[0]}'.")
-
-    def get_terminal_params(self, *args, **kwargs) -> Sequence[SubsystemParameter]:
-        """
-        Get the available parameters for a given slave terminal.
-
-        :param args[0]: identifier name for the IOTerminal controller \
-            (short EtherCAT name, e.g. 'Term145')
-        :param kwargs["parent_id"]: id of the terminal's parent EtherCAT device
-
-        :returns: a list of sub-system parameters
-        """
-        assert args and isinstance(args[0], str), (
-            "Missing information about terminal EtherCAT name."
-        )
-        assert re.compile(r"(^([A-Z]*[a-z]*)+)(\d+)$").match(args[0]) is not None, (
-            "Incompatible EtherCAT device name format in args."
-        )
-        parameters: list[SubsystemParameter] = []
-
-        # Get the IOSlave parameters from the registered device slaves.
-        dev_id = kwargs.get("parent_id", None)
-        if dev_id is not None and isinstance(dev_id, int):
-            slaves = self._ecdevices[dev_id].slaves
-            for slave in slaves:
-                if re.sub(" ", "", slave.name).startswith(args[0]):
-                    if args[0] not in self.fastcs_io_map:
-                        self.fastcs_io_map[args[0]] = slave
+        if identifier not in self.fastcs_io_map:
+            match io_group:
+                case "IOServer":
+                    self.fastcs_io_map[identifier] = self.ioserver
+                    return self.ioserver
+                case "IODevice":
+                    matches = re.search(r"(\d+)$", io_name)
+                    if matches:
+                        dev_id = int(matches.group(0))
                     else:
-                        raise KeyError(
-                            f"EtherCAT terminal '{args[0]}' already registered "
-                            + "as a FastCS component."
-                        )
-                    # Get the generic IOSlave parameters common to all device slaves.
-                    parameters.extend(slave.get_params())
-
-                    # Get the specific parameters associated with each terminal type.
-                    model = (re.findall(r"\((.*?)\)", slave.name))[0]
-                    # model = (re.search(r"^(\w+-*\d*)", (args[0].split("("))[1])).group(0)
-                    slave_model = model
-                    if "-" in model:
-                        slave_model = slave_model.replace("-", "_")
-                    assert slave_model in SUPPORTED_TERMINALS.keys(), (
-                        f"{model} isn't supported by CATio yet"
+                        dev_id = next(iter(self._ecdevices))
+                    self.fastcs_io_map[identifier] = self._ecdevices[dev_id]
+                    return self._ecdevices[dev_id]
+                case "IOTerminal":
+                    terminal: IOSlave | None = None
+                    for device in self._ecdevices.values():
+                        for slave in device.slaves:
+                            if slave.name == io_name:
+                                terminal = slave
+                                break
+                        if terminal is not None:
+                            break
+                    assert terminal is not None, (
+                        f"Terminal '{io_name}' isn't defined with any EtherCAT device."
                     )
-                    parameters.extend(
-                        SUPPORTED_TERMINALS[slave_model].get_params(slave.name)
+                    self.fastcs_io_map[identifier] = terminal
+                    return terminal
+                case _:
+                    raise NameError(
+                        f"No valid catio reference to object id '{identifier}: {io_group}'."
                     )
-                    break
-            if not parameters:
-                raise ValueError(
-                    f"{args[0]}: parameters not found; "
-                    + f"terminal probably not registered with device #{dev_id}"
-                )
-        else:
-            raise ValueError(
-                f"{args[0]}: missing information about terminal parent device id."
-            )
+        return self.fastcs_io_map[identifier]
 
-        return parameters
-
-    def get_terminal_models(self) -> None:
-        logging.info(
-            "List of terminal models currently supported by the CATio driver:\n "
-            + f"{list(SUPPORTED_TERMINALS.keys())}"
-        )
+    # def get_terminal_models(self) -> None:
+    #     """
+    #     Log the list of terminal models currently supported by the CATio driver.
+    #     """
+    #     logging.info(
+    #         "List of terminal models currently supported by the CATio driver:\n "
+    #         + f"{list(SUPPORTED_CONTROLLERS.keys())}"
+    #     )
 
     @_check_system
     async def get_device_framecounters_attr(
         self,
         *args,
         **kwargs,
+        # identifier: int = 0,  # Don't use kwargs or args, be clear about the param (see fromiomap above)!!!
     ) -> npt.NDArray[np.uint32]:
-        """"""
-        dev_name = kwargs.get("attr_group", None)
-        if dev_name is not None and isinstance(dev_name, str):
-            dev_id = self.read_device_id_from_name(dev_name)
-        else:
+        """
+        Get the frame counters for a given EtherCAT device.
+
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the device identifier as defined in the client's fastcs io map.
+
+        :returns: an array comprising the frame counters
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        # ctrl_id = identifier
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            device = self.fastcs_io_map.get(ctrl_id, None)
+            assert isinstance(device, IODevice)
+            if device is not None:
+                logging.debug(
+                    f"Reading frame counters for EtherCAT device '{device.name}'"
+                )
+                await self.get_device_frames(device.id)
+                return np.array(
+                    [
+                        device.frame_counters.time,
+                        device.frame_counters.cyclic_sent,
+                        device.frame_counters.cyclic_lost,
+                        device.frame_counters.acyclic_sent,
+                        device.frame_counters.acyclic_lost,
+                    ],
+                )
             raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
+                f"Device cannot be determined from attribute group parameter {ctrl_id}."
             )
-
-        if dev_id is not None:
-            logging.debug(f"Reading frame counters for EtherCAT device {dev_id}")
-            await self.get_device_frames(dev_id)
-            return np.array(
-                [
-                    self._ecdevices[dev_id].frame_counters.time,
-                    self._ecdevices[dev_id].frame_counters.cyclic_sent,
-                    self._ecdevices[dev_id].frame_counters.cyclic_lost,
-                    self._ecdevices[dev_id].frame_counters.acyclic_sent,
-                    self._ecdevices[dev_id].frame_counters.acyclic_lost,
-                ],
-            )
-
-        raise ValueError(
-            f"Device id cannot be determined from attribute's group name {dev_name}."
-        )
+        raise ValueError(f"{kwargs}: missing information about attribute group name.")
 
     @_check_system
     async def get_device_slavecount_attr(self, *args, **kwargs) -> int:
-        """"""
-        dev_name = kwargs.get("attr_group", None)
-        if dev_name is not None and isinstance(dev_name, str):
-            dev_id = self.read_device_id_from_name(dev_name)
-        else:
-            raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
-            )
-        if dev_id is not None:
-            logging.debug(
-                f"Reading the number of slaves registered with EtherCAT device {dev_id}"
-            )
-            count = await self._get_slave_count([self._ecdevices[dev_id].netid])
+        """
+        Get the total number of slaves registered with a given device.
 
-            expected_cnt = self._ecdevices[dev_id].slave_count
-            current_count = count[0]
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the device identifier as defined in the client's fastcs io map.
 
-            if current_count != expected_cnt:
-                logging.critical(
-                    f"Number of configured slaves on {self._ecdevices[dev_id].name} "
-                    + f"has changed from {expected_cnt} to {current_count}"
+        :returns: the total number of slaves registered with the device
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            device = self.fastcs_io_map.get(ctrl_id, None)
+            assert isinstance(device, IODevice)
+            if device is not None:
+                logging.debug(
+                    "Reading the total number of slaves registered with "
+                    + f"EtherCAT device '{device.name}'"
                 )
+                count = await self._get_slave_count([device.netid])
+                expected_count = device.slave_count
+                current_count = count[0]
 
-            return current_count
-
-        raise ValueError(
-            f"Device id cannot be determined from attribute's group name {dev_name}."
-        )
+                if current_count != expected_count:
+                    logging.critical(
+                        f"Number of configured slaves on {device.name} "
+                        + f"has changed from {expected_count} to {current_count}"
+                    )
+                return current_count
+            raise ValueError(
+                f"Device cannot be determined from attribute group parameter {ctrl_id}."
+            )
+        raise ValueError(f"{kwargs}: missing information about attribute group name.")
 
     @_check_system
     async def get_device_slavesstates_attr(
         self, *args, **kwargs
     ) -> npt.NDArray[np.uint8]:
-        """"""
-        dev_name = kwargs.get("attr_group", None)
-        if dev_name is not None and isinstance(dev_name, str):
-            dev_id = self.read_device_id_from_name(dev_name)
-        else:
+        """
+        Get the states for all slaves registered with a given device.
+
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the device identifier as defined in the client's fastcs io map.
+
+        :returns: an array comprising the states for all slaves
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            device = self.fastcs_io_map.get(ctrl_id, None)
+            assert isinstance(device, IODevice)
+            if device is not None:
+                logging.debug(
+                    "Reading states values for all slaves registered with "
+                    + f"EtherCAT device '{device.name}'"
+                )
+                states = await self.get_device_slaves_states(int(device.id))
+                self.update_device_slaves_states(int(device.id), states)
+                assert len(states) == len(device.slaves), (
+                    f"{device.name}: mismatch between the number of slave states "
+                    + "readings and the number of registered slaves."
+                )
+                return np.array(states, dtype=np.uint8).flatten()
             raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
+                f"Device cannot be determined from attribute group parameter {ctrl_id}."
             )
-        if dev_id is not None:
-            logging.debug(
-                "Reading states values for all slaves registered with "
-                + f"EtherCAT device {dev_id}"
-            )
-            states = await self.get_device_slaves_states(dev_id)
-            self.update_device_slaves_states(dev_id, states)
-
-            assert len(states) == len(self._ecdevices[dev_id].slaves), (
-                f"{dev_name}: mismatch between the number of slave states readings "
-                + "and the number of registered slaves."
-            )
-            return np.array(states, dtype=np.uint8).flatten()
-
-        raise ValueError(
-            f"Device id cannot be determined from attribute's group name {dev_name}."
-        )
+        raise ValueError(f"{kwargs}: missing information about attribute group name.")
 
     @_check_system
     async def get_device_slavescrccounters_attr(
         self, *args, **kwargs
     ) -> npt.NDArray[np.uint32]:
-        """"""
-        dev_name = kwargs.get("attr_group", None)
-        if dev_name is not None and isinstance(dev_name, str):
-            dev_id = self.read_device_id_from_name(dev_name)
-        else:
+        """
+        Get the CRC error counters for all slaves registered with a given device.
+
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the device identifier as defined in the client's fastcs io map.
+
+        :returns: an array comprising the CRC error counters for all slaves
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            device = self.fastcs_io_map.get(ctrl_id, None)
+            assert isinstance(device, IODevice)
+            if device is not None:
+                logging.debug(
+                    "Reading crc error counters for all slaves registered with "
+                    + f"EtherCAT device '{device.name}'"
+                )
+                crcs = await self.get_device_slaves_crcs(int(device.id))
+                self.update_device_slaves_crcs(int(device.id), crcs)
+                assert len(crcs) == len(device.slaves), (
+                    f"{device.name}: mismatch between the number of slave crc readings "
+                    + "and the number of registered slaves."
+                )
+                return np.array(crcs, dtype=np.uint32)
             raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
+                f"Device cannot be determined from attribute group parameter {ctrl_id}."
             )
-        if dev_id is not None:
-            logging.debug(
-                "Reading crc error counters for all slaves registered with "
-                + f"EtherCAT device {dev_id}"
-            )
-            crcs = await self.get_device_slaves_crcs(dev_id)
-            self.update_device_slaves_crcs(dev_id, crcs)
-
-            assert len(crcs) == len(self._ecdevices[dev_id].slaves), (
-                f"{dev_name}: mismatch between the number of slave crc readings "
-                + "and the number of registered slaves."
-            )
-            return np.array(crcs, dtype=np.uint32)  # .astype(Int)
-
-        raise ValueError(
-            f"Device id cannot be determined from attribute's group name {dev_name}."
-        )
+        raise ValueError(f"{kwargs}: missing information about attribute group name.")
 
     @_check_system
-    async def get_terminal_crcs_attr(self, *args, **kwargs) -> npt.NDArray[np.uint32]:
-        """"""
-        terminal_name = kwargs.get("attr_group", None)
-        if terminal_name is not None and isinstance(terminal_name, str):
-            terminal = self.fastcs_io_map.get(terminal_name, None)
+    async def get_terminal_crcerrorcounters_attr(
+        self, *args, **kwargs
+    ) -> npt.NDArray[np.uint32]:
+        """
+        Get the CRC error counters across all ports for a given slave terminal.
+
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the terminal identifier as defined in the client's fastcs io map.
+
+        :returns: an array comprising the terminal CRC error counters across all ports
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            terminal = self.fastcs_io_map.get(ctrl_id, None)
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 crcs = await self.get_slave_crc_error_counters(
@@ -2931,7 +2906,7 @@ class AsyncioADSClient:
                 )
             else:
                 raise KeyError(
-                    f"Terminal {terminal_name} is not defined as a FastCS component."
+                    f"Controller id#{ctrl_id} is not defined as a FastCS component."
                 )
         else:
             raise ValueError(
@@ -2940,16 +2915,24 @@ class AsyncioADSClient:
 
     @_check_system
     async def get_terminal_crcerrorsum_attr(self, *args, **kwargs) -> int:
-        """"""
-        terminal_name = kwargs.get("attr_group", None)
-        if terminal_name is not None and isinstance(terminal_name, str):
-            terminal = self.fastcs_io_map.get(terminal_name, None)
+        """
+        Get the sum of CRC errors across all ports for a given slave terminal.
+
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the terminal identifier as defined in the client's fastcs io map.
+
+        :returns: the sum of CRC errors across all ports for the terminal
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            terminal = self.fastcs_io_map.get(ctrl_id, None)
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 return int(terminal.crc_error_sum)
             else:
                 raise KeyError(
-                    f"Terminal {terminal_name} is not defined as a FastCS component."
+                    f"Controller id#{ctrl_id} is not defined as a FastCS component."
                 )
         else:
             raise ValueError(
@@ -2958,10 +2941,18 @@ class AsyncioADSClient:
 
     @_check_system
     async def get_terminal_states_attr(self, *args, **kwargs) -> npt.NDArray[np.uint8]:
-        """"""
-        terminal_name = kwargs.get("attr_group", None)
-        if terminal_name is not None and isinstance(terminal_name, str):
-            terminal = self.fastcs_io_map.get(terminal_name, None)
+        """
+        Get the EtherCAT state and link status of a given slave terminal.
+
+        :params args: unused
+        :params kwargs: 'attr_group' keyword argument is expected to contain \
+            the terminal identifier as defined in the client's fastcs io map.
+
+        :returns: an array comprising the EtherCAT state and link status of the terminal
+        """
+        ctrl_id = kwargs.get("attr_group", None)
+        if ctrl_id is not None and isinstance(ctrl_id, int):
+            terminal = self.fastcs_io_map.get(ctrl_id, None)
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 return np.array(
@@ -2969,7 +2960,7 @@ class AsyncioADSClient:
                 )
             else:
                 raise KeyError(
-                    f"Terminal {terminal_name} is not defined as a FastCS component."
+                    f"Controller id#{ctrl_id} is not defined as a FastCS component."
                 )
         else:
             raise ValueError(

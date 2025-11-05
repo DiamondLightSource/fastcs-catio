@@ -1,5 +1,3 @@
-import re
-import time
 from collections import namedtuple
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
@@ -8,9 +6,6 @@ from typing import Any, Self, SupportsInt
 
 import numpy as np
 import numpy.typing as npt
-from fastcs.datatypes import Int, String, Waveform
-
-from catio.catio_adapters import SubsystemParameter
 
 from ._constants import (
     AdsDataType,
@@ -18,7 +13,6 @@ from ._constants import (
     SymbolFlag,
 )
 from ._types import AmsNetId
-from .catio_adapters import CATioHandler
 from .messages import DeviceFrames, IOIdentity, SlaveCRC, SlaveState
 
 ChainLocation = namedtuple("ChainLocation", ["node", "position"])
@@ -26,6 +20,9 @@ ChainLocation = namedtuple("ChainLocation", ["node", "position"])
 STD_UPDATE_POLL_PERIOD: float = 2.0
 FAST_UPDATE_POLL_PERIOD: float = 0.2
 NOTIF_UPDATE_POLL_PERIOD: float = 1.0
+
+OVERSAMPLING_FACTOR = 100
+ELM_OVERSAMPLING_FACTOR = 50
 
 
 # ===================================================================
@@ -154,220 +151,10 @@ class IOSlave:
         if self.category == "coupler":
             return f"RIO{self.loc_in_chain.node}"
         elif self.category == "slave":
-            # This name will need updated by the actual Terminal Class (ai,ao,di,do...)
-            return f"ADC{self.loc_in_chain.position}"
+            # This name could be updated by the actual Terminal Class (ai,ao,di,do...)?
+            return f"MOD{self.loc_in_chain.position}"
         else:
             raise NameError(f"I/O terminal category '{self.category}' isn't valid.")
-
-    def get_params(self) -> list[SubsystemParameter]:
-        """
-        Get the parameters characteristic of an IOSlave object.
-
-        :returns: the IOSlave object attributes as a list of sub-system parameters
-        """
-        params = []
-        for key, value in vars(self).items():
-            param_name = re.sub("[^0-9a-zA-Z]+", "", key)
-
-            match key:
-                case "parent_device":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            value,
-                            "r",
-                            "I/O terminal master device",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "type":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            value,
-                            "r",
-                            "I/O terminal type",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "name":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            value,
-                            "r",
-                            "I/O terminal name",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "address":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            value,
-                            "r",
-                            "I/O terminal EtherCAT address",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "identity":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            str(value),
-                            "r",
-                            "I/O terminal identity",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "states":
-                    params.extend(
-                        [
-                            SubsystemParameter(
-                                self.name,
-                                param_name,
-                                Waveform(array_dtype=np.uint8, shape=(2,)),
-                                np.array(value, dtype=np.uint8),
-                                "r",
-                                "I/O terminal EtherCAT states",
-                                handler=CATioHandler.PeriodicPoll,
-                                update_period=STD_UPDATE_POLL_PERIOD,
-                                callbacks=[
-                                    "state_machine",
-                                    "link_status",
-                                ],
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "state_machine",
-                                Int(),
-                                value.eCAT_state,
-                                "r",
-                                "I/O terminal state machine",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "link_status",
-                                Int(),
-                                value.link_status,
-                                "r",
-                                "I/O terminal communication state",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                        ]
-                    )
-                case "crcs":
-                    params.extend(
-                        [
-                            SubsystemParameter(
-                                self.name,
-                                param_name,
-                                Waveform(array_dtype=np.uint32, shape=(4,)),
-                                np.array(value, dtype=np.uint32),
-                                "r",
-                                "I/O terminal crc error counters",
-                                handler=CATioHandler.PeriodicPoll,
-                                update_period=STD_UPDATE_POLL_PERIOD,
-                                callbacks=[
-                                    "crc_error_port_a",
-                                    "crc_error_port_b",
-                                    "crc_error_port_c",
-                                    "crc_error_port_d",
-                                ],
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "crc_error_port_a",
-                                Int(),
-                                value.portA_crc,
-                                "r",
-                                "I/O terminal crc error counter on port A",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "crc_error_port_b",
-                                Int(),
-                                value.portB_crc,
-                                "r",
-                                "I/O terminal crc error counter on port B",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "crc_error_port_c",
-                                Int(),
-                                value.portC_crc,
-                                "r",
-                                "I/O terminal crc error counter on port C",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "crc_error_port_d",
-                                Int(),
-                                value.portD_crc,
-                                "r",
-                                "I/O terminal crc error counter on port D",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                        ]
-                    )
-                case "crc_error_sum":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            value,
-                            "r",
-                            "I/O terminal crc error sum counter",
-                            handler=CATioHandler.PeriodicPoll,
-                            update_period=STD_UPDATE_POLL_PERIOD,
-                        )
-                    )
-                case "loc_in_chain":
-                    params.extend(
-                        [
-                            SubsystemParameter(
-                                self.name,
-                                "node",
-                                Int(),
-                                int(value.node),
-                                "r",
-                                "I/O terminal associated node",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "position",
-                                Int(),
-                                int(value.position),
-                                "r",
-                                "I/O terminal associated position",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                        ]
-                    )
-                case "category":
-                    continue
-                case _:
-                    raise ValueError(
-                        f"Missing definition for IOSlave parameter '{key}'"
-                    )
-
-        return params
 
 
 @dataclass
@@ -417,224 +204,6 @@ class IODevice:
         else:
             return f"EBUS{self.id}"
 
-    def get_params(self) -> list[SubsystemParameter]:
-        """
-        Get the parameters characteristic of an IODevice object.
-
-        :returns: the IODevice object attributes as a list of sub-system parameters
-        """
-        params = []
-        for key, value in vars(self).items():
-            param_name = re.sub("[^0-9a-zA-Z]+", "", key)
-
-            match key:
-                case "id":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            value,
-                            "r",
-                            "I/O device identity number",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "type":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            int(value),
-                            "r",
-                            "I/O device type",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "name":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            value,
-                            "r",
-                            "I/O device name",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "netid":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            str(value),
-                            "r",
-                            "I/O device ams netid",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "identity":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            str(value),
-                            "r",
-                            "I/O device identity",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "frame_counters":
-                    params.extend(
-                        [
-                            SubsystemParameter(
-                                self.name,
-                                param_name,
-                                Waveform(array_dtype=np.uint32, shape=(5,)),
-                                np.array(value, dtype=np.uint32),
-                                "r",
-                                "I/O device frame counters",
-                                handler=CATioHandler.PeriodicPoll,
-                                update_period=STD_UPDATE_POLL_PERIOD,
-                                # List the attribute dependencies to update,
-                                # sub-attr must be marked as r|rw and start-only
-                                callbacks=[
-                                    "system_time",
-                                    "sent_cyclic_frames",
-                                    "lost_cyclic_frames",
-                                    "sent_acyclic_frames",
-                                    "lost_acyclic_frames",
-                                ],
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "system_time",
-                                Int(),
-                                value.time,
-                                "r",
-                                "I/O device, EtherCAT frame timestamp",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "sent_cyclic_frames",
-                                Int(),
-                                value.cyclic_sent,
-                                "r",
-                                "I/O device, sent cyclic frames counter",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "lost_cyclic_frames",
-                                Int(),
-                                value.cyclic_lost,
-                                "r",
-                                "I/O device, lost cyclic frames counter",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "sent_acyclic_frames",
-                                Int(),
-                                value.acyclic_sent,
-                                "r",
-                                "I/O device, sent acyclic frames counter",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                            SubsystemParameter(
-                                self.name,
-                                "lost_acyclic_frames",
-                                Int(),
-                                value.acyclic_lost,
-                                "r",
-                                "I/O device, lost acyclic frames counter",
-                                handler=CATioHandler.OnceAtStart,
-                            ),
-                        ]
-                    )
-                case "slave_count":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            value,
-                            "r",
-                            "I/O device registered slave count",
-                            handler=CATioHandler.PeriodicPoll,
-                            update_period=STD_UPDATE_POLL_PERIOD,
-                        )
-                    )
-                case "slaves_states":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Waveform(
-                                array_dtype=np.uint8, shape=(2 * int(self.slave_count),)
-                            ),
-                            np.array(value, dtype=np.uint8).flatten(),
-                            "r",
-                            "I/O device, states of slave terminals",
-                            handler=CATioHandler.PeriodicPoll,
-                            update_period=STD_UPDATE_POLL_PERIOD,
-                        )
-                    )
-                case "slaves_crc_counters":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Waveform(
-                                array_dtype=np.uint32, shape=(int(self.slave_count),)
-                            ),
-                            np.array(value, dtype=np.uint32),
-                            "r",
-                            "I/O device, slave crc error sum counters",
-                            handler=CATioHandler.PeriodicPoll,
-                            update_period=STD_UPDATE_POLL_PERIOD,
-                        )
-                    )
-                case "node_count":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            value,
-                            "r",
-                            "I/O device registered node count ",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "slaves" | "category":
-                    continue
-                case _:
-                    raise ValueError(
-                        f"Missing definition for IODevice parameter '{key}'"
-                    )
-
-        # Add potential notification timestamp parameter.
-        params.append(
-            SubsystemParameter(
-                self.name,
-                "timestamp",
-                String(),
-                time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                "r",
-                "I/O device last notification timestamp",
-                handler=CATioHandler.FromNotification,
-                update_period=NOTIF_UPDATE_POLL_PERIOD,
-            )
-        )
-
-        return params
-
 
 @dataclass
 class IOServer:
@@ -650,72 +219,6 @@ class IOServer:
     """The number of EtherCAT devices registered with the server"""
     category: IONodeType = IONodeType.Server
     """The component category the object belongs to in the EtherCAT system"""
-
-    def get_params(self) -> Sequence[SubsystemParameter]:
-        """
-        Get the parameters characteristic of an IOServer object.
-
-        :returns: the IOServer object attributes as a list of sub-system parameters
-        """
-        params = []
-        for key, value in vars(self).items():
-            param_name = re.sub("[^0-9a-zA-Z]+", "", key)
-            match key:
-                case "name":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            value,
-                            "r",
-                            "I/O server name",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "version":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            value,
-                            "r",
-                            "I/O server version number",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "build":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            String(),
-                            str(value),
-                            "r",
-                            "I/O server build number",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "num_devices":
-                    params.append(
-                        SubsystemParameter(
-                            self.name,
-                            param_name,
-                            Int(),
-                            value,
-                            "r",
-                            "I/O server registered device count",
-                            handler=CATioHandler.OnceAtStart,
-                        )
-                    )
-                case "category":
-                    continue
-                case _:
-                    raise ValueError(
-                        f"Missing definition for IOServer parameter '{key}'"
-                    )
-        return params
 
 
 class IOTreeNode:
@@ -738,20 +241,38 @@ class IOTreeNode:
 
     @property
     def child_count(self) -> int:
+        """The number of child nodes connected to this node."""
         return len(self.children)
 
     @property
     def tree_path(self) -> str:
+        """A string representation of the path to this node in the tree."""
         assert self.path is not None
         return " <-- ".join(self.path) if len(self.path) > 1 else self.path[0]
 
     def add_child(self, child: Self) -> None:
+        """
+        Add a child node to the current node.
+
+        :params child: the child node to add to the current node
+        """
         self.children.append(child)
 
     def has_children(self) -> bool:
+        """
+        Check if the node has any child nodes.
+
+        :returns: true if the node has one or more child nodes
+        """
         return bool(self.children)
 
     def tree_height(self) -> int:
+        """
+        Compute the height of the tree starting at this node.
+        The height of a tree is the number of nodes along the longest path from
+        the root node down to the farthest leaf node.
+
+        :returns: the height of the tree starting at this node"""
         if not self.children:
             return 1
         return 1 + max(child.tree_height() for child in self.children)
@@ -776,6 +297,8 @@ class IOTreeNode:
         """
         Depth-first pre-order traversal function to print the EtherCAT object name \
             across the depth of the tree starting at this node.
+
+        params depth: the current depth in the tree (used for indentation)
         """
         tabs = "\t" * depth
         print(f"{tabs}node: {self.data.name}")
@@ -785,6 +308,8 @@ class IOTreeNode:
     def node_generator(self) -> Generator["IOTreeNode", Any, Any]:
         """
         Iterate recursively over all node elements in the tree starting at this node.
+
+        :returns: a generator yielding all nodes in the tree
         """
         yield self
         for child in self.children:

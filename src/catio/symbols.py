@@ -1,14 +1,19 @@
 import logging
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Sequence
 
 import numpy as np
 
 from ._constants import AdsDataType
-from .devices import AdsSymbol, AdsSymbolNode
+from .devices import (
+    ELM_OVERSAMPLING_FACTOR,
+    OVERSAMPLING_FACTOR,
+    AdsSymbol,
+    AdsSymbolNode,
+)
 from .utils import add_comment
 
 
@@ -45,7 +50,7 @@ class AdsSymbolTypePattern:
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal status"""
     AI24_MF_TIMESTAMP = re.compile(r"^PAI Timestamp Channel 1_(\d*_)?TYPE")
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal timing"""
-    AI24_MF_SAMPLE = re.compile(r"^PAI Samples 1 Channel 1_(\d*_)?TYPE")
+    AI24_MF_SAMPLE = re.compile(r"^PAI Samples (\d+) Channel 1_(\d*_)?TYPE")
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal sample"""
     AI24_MF_SYNCHRON = re.compile(
         r"^PAI Synchronous Oversampling Channel 1_(\d*_)?TYPE"
@@ -509,7 +514,7 @@ def symbol_lookup(node: AdsSymbolNode):
                             parent_id=node.parent_id,
                             name=node.name,
                             dtype=np.int16,
-                            size=100,
+                            size=OVERSAMPLING_FACTOR,
                             group=node.index_group,
                             offset=node.index_offset,
                             comment=add_comment(
@@ -558,7 +563,7 @@ def symbol_lookup(node: AdsSymbolNode):
                             parent_id=node.parent_id,
                             name=".".join([node.name, "Samples"]),
                             dtype=np.int32,
-                            size=1,
+                            size=ELM_OVERSAMPLING_FACTOR,
                             group=node.index_group,
                             offset=node.index_offset,
                             comment=add_comment(

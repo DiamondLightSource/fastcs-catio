@@ -1,6 +1,9 @@
 /*
-Note that some changes in the venv repositories had to be made 
+Note that some changes to some of the venv repositories are temporarily required 
 to get some additional functionalities
+Using local clone of packages with editable install
+python -m pip install -e ./FastCS/
+python -m pip install -e ./pythonSoftIOC/
 */
 
 ############ Additions in FastCS/src/fastcs

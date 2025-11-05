@@ -111,7 +111,9 @@ def get_notification_changes(
     assert new_array.dtype == old_array.dtype
     assert new_array[0].size == old_array[0].size
 
-    mask = [a != b for a, b in zip(new_array[0], old_array[0], strict=True)]
+    mask = []
+    for a, b in zip(new_array[0], old_array[0], strict=True):
+        mask.append(not np.array_equal(a, b) if isinstance(a, np.ndarray) else a != b)
 
     diff = []
     assert new_array.dtype.names
