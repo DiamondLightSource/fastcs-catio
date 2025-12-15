@@ -1,15 +1,16 @@
 """Interface for ``python -m catio``."""
 
 import logging
+import os
 import socket
 from enum import Enum
 from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
-from fastcs.launch import FastCS
-from fastcs.transport.epics.ca.options import (
-    EpicsCAOptions,
+from fastcs.launch import FastCS, launch
+from fastcs.transport.epics.ca.transport import EpicsCATransport
+from fastcs.transport.epics.options import (
     EpicsDocsOptions,
     EpicsGUIOptions,
     EpicsIOCOptions,
@@ -17,14 +18,17 @@ from fastcs.transport.epics.ca.options import (
 from softioc.imports import callbackSetQueueSize
 
 from . import __version__
-from .catio_controller import CATioServerController
+from .catio_controller import (
+    CATioServerController,
+)
 
 __all__ = ["main"]
 
+CALLBACK_SIZE: int = 50000
 
 app = typer.Typer(no_args_is_help=True)
 
-callbackSetQueueSize(50000)
+callbackSetQueueSize(CALLBACK_SIZE)
 
 
 class LogLevel(str, Enum):
@@ -56,11 +60,6 @@ def main(
 
 
 @app.command()
-def hello():
-    print("SAY HELLO")
-
-
-@app.command()
 def ioc(
     pv_prefix: Annotated[
         str,
@@ -74,19 +73,19 @@ def ioc(
         typer.Argument(
             help="Beckhoff TwinCAT server host to connect to (name or IP address).",
         ),
-    ] = "172.23.240.142",
+    ] = "127.0.0.1",
     target_netid: Annotated[
         str,
         typer.Argument(
             help="Ams netid of the target server.",
         ),
-    ] = "5.59.238.150.1.1",
+    ] = "127.0.0.1.1.1",
     target_port: Annotated[
         int,
         typer.Argument(
             help="Ams port of the the target device.",
         ),
-    ] = 27909,
+    ] = 27905,
     log_level: Annotated[
         LogLevel,
         typer.Option(
@@ -140,15 +139,16 @@ def ioc(
     logger.debug("Logging is configured for the package.")
 
     # Define EPICS GUI screens path
-    ui_path = screens_dir if screens_dir.is_dir() else Path.cwd()
+    default_path = Path(os.path.join(Path.cwd(), "screens"))
+    ui_path = screens_dir if screens_dir.is_dir() else default_path
 
     # Define EPICS ChannelAccess/PVA transport parameters
-    options = EpicsCAOptions(
+    epics_transport = EpicsCATransport(
+        ca_ioc=EpicsIOCOptions(pv_prefix=pv_prefix),
         docs=EpicsDocsOptions(),
         gui=EpicsGUIOptions(
             output_path=ui_path / "catio.bob", title=f"CATio - {pv_prefix}"
         ),
-        ca_ioc=EpicsIOCOptions(pv_prefix=pv_prefix),
     )
 
     # Get the Beckhoff TwinCAT server IP address in case the server name was provided
@@ -157,18 +157,27 @@ def ioc(
         if not (tcp_server.count(".") == 3)
         else tcp_server
     )
-    # Get the Beckhoff TwinCAT server connection settings
+
+    # Instantiate the CATio controller
     controller = CATioServerController(
         ip, target_netid, target_port, poll_period, notification_period
     )
-    launcher = FastCS(controller, [options])
-    launcher.create_docs()
-    launcher.create_gui()
-    launcher.run()
 
-    # For dvpt purpose, force the connection to terminate cleanly (after Ctrl-D).
-    launcher.end()
+    # Launch the CATio IOC with FastCS
+    launcher = FastCS(controller, transports=[epics_transport])
+    launcher.run()
 
 
 if __name__ == "__main__":
     app()
+
+# # TO DO: make the yaml config option work if it's preferred
+# # if using a yaml file config: python -m catio run ./src/catio/catio_controller.yaml
+# if __name__ == "__main__":
+#     transport = EpicsCATransport(ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01"))
+#     connection = CATioConnectionSettings(target_ip=ip, target_port=target_port)
+#     timings = CATioScanTimings()
+#     controller_settings = CATioControllerSettings(
+#         tcp_settings=connection, scan_timings=timings
+#     )
+#     launch(CATioServerController, version=__version__)

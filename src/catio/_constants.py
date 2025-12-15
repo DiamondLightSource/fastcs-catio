@@ -257,6 +257,8 @@ class DeviceType(np.uint16, Enum):
     https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_iofunctions/59217419.html&id=
     """
 
+    IODEVICETYPE_INVALID = 0
+    """Device type not available (e.g. Invalid Interface Error response)"""
     IODEVICETYPE_ETHERCAT = 94
     """EtherCAT in direct mode"""
 

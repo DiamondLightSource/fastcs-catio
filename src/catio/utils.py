@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import re
 import socket
 from collections.abc import Callable
 
@@ -14,9 +15,8 @@ from ._constants import TWINCAT_STRING_ENCODING
 def get_local_netid_str() -> str:
     """
     Create the ams netid string value of the Ads client (localhost).
-    :return
-        rtype: str
-        the string representing the local client netid
+
+    :returns: the string representing the local client netid
     """
     return socket.gethostbyname(socket.gethostname()) + ".1.1"
 
@@ -91,7 +91,6 @@ def average(array: np.ndarray) -> np.ndarray:
     for field in array.dtype.fields:
         mean_array[field] = np.mean(array[field])
     return mean_array
-    # print(avg[['_timestamp1', '_samples1', '_timestamp2', '_samples2']])
 
 
 def get_notification_changes(
@@ -143,3 +142,36 @@ def filetime_to_dt(filetime: int) -> np.datetime64:
 
     # Convert to numpy datetime64 inc. seconds to nanoseconds conversion
     return np.datetime64(int(unix_time * 1e9), "ns")
+
+
+def trim_eCAT_name(name: str) -> str:
+    """
+    Shorten and remove spaces from the original EtherCAT name.
+
+    :param name: the original EtherCAT device/terminal name
+
+    :returns: a trimmed name without spaces
+    """
+    matches = re.search(r"^(\w+\s+)\d+", name)
+    return matches.group(0).replace(" ", "") if matches else name
+
+
+def check_ndarray(
+    obj: npt.NDArray,
+    expected_dtype: npt.DTypeLike,
+    expected_shape: tuple[int,] | tuple[int, int],
+) -> bool:
+    """
+    Check if an object is a numpy ndarray and verifies its dtype and shape.
+
+    :param obj:
+    :param expected_dtype:
+    :param expected_shape:
+
+    :returns: true if the object is a numpy array with the expected dtype and shape
+    """
+    return (
+        isinstance(obj, np.ndarray)
+        and obj.dtype == expected_dtype
+        and obj.shape == expected_shape
+    )

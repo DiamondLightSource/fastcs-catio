@@ -25,13 +25,17 @@ from ._types import (
     AdsMessageDataType,
 )
 
+# ===================================================================
+# ===== THE MESSAGING FRAMEWORK
+# ===================================================================
+
 
 def _get_field_values(
     cls, fields: Sequence[str], kwargs: dict[str, Any]
 ) -> Iterator[Any]:
     """
-    :params cls: the Message object type to extract values from
-    :params fields: the names of the various fields which characterize this Message \
+    :param cls: the Message object type to extract values from
+    :param fields: the names of the various fields which characterize this Message \
         object
     :param kwargs: map of available fields and their associated values which define \
         this Message object
@@ -57,7 +61,7 @@ def _get_dtype_arg(annotation: Any) -> Any:
     """
     Get the numpy data type from the given annotation.
 
-    :params annotation: the type annotation to extract the numpy data type from
+    :param annotation: the type annotation to extract the numpy data type from
 
     :returns: the numpy data type
 
@@ -353,7 +357,7 @@ class AdsSymbolTableEntry(Message):
 class AdsReadDeviceInfoRequest(MessageRequest):
     """
     ADS Read device Info packet
-    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/115876875.html&id=4960931295000833536
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/115875851.html&id=8158832529229503828
     """
 
     pass  # No additional data required
@@ -363,7 +367,7 @@ class AdsReadDeviceInfoResponse(MessageResponse):
     """
     ADS Read Device Info data structure received in response to an \
         ADS Read Device Info request.
-    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/115876875.html&id=4960931295000833536
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/115875851.html&id=8158832529229503828
     """
 
     result: ErrorCode
@@ -881,7 +885,7 @@ class AdsReadWriteRequest(MessageRequest):
         """
         An ADS request to get a unique handle associated with a given name.
 
-        :params name: the ads symbol variable name
+        :param name: the ads symbol variable name
 
         :returns: an AdsReadWriteRequest message
         """
@@ -925,7 +929,7 @@ class AdsReadWriteRequest(MessageRequest):
         This function appears to be valid for ADS symbol variables, but not applicable \
             to CoE parameters (returns invalid index group error).
 
-        :params reads: a list of AdsReadRequest sub-commands, \
+        :param reads: a list of AdsReadRequest sub-commands, \
             each one of them associated with one of the variables to read
 
         :returns: an AdsReadWriteRequest message
@@ -962,7 +966,7 @@ class AdsReadWriteRequest(MessageRequest):
         !Note that this service appears not to be supported by the CX2020 server \
             (error 0x0701 ADSERR_DEVICE_SRVNOTSUPP)!
 
-        :params writes: a list of AdsWriteRequest sub-commands, each one of them \
+        :param writes: a list of AdsWriteRequest sub-commands, each one of them \
             associated with one of the variables to write
 
         :returns: an AdsReadWriteRequest message
@@ -1000,7 +1004,7 @@ class AdsReadWriteRequest(MessageRequest):
         !Note that this service appears not to be supported by the CX2020 server \
             (error 0x0701 ADSERR_DEVICE_SRVNOTSUPP)!
 
-        :params readwrites: a list of AdsReadWriteRequest sub-commands, \
+        :param readwrites: a list of AdsReadWriteRequest sub-commands, \
             each one of them associated with one of the variables to read then write
 
         :returns: an AdsReadWriteRequest message
@@ -1253,6 +1257,10 @@ class AdsNotificationStream(Message):
 
 
 class AdsStampHeader(Message):
+    """
+    ADS Stamp Header data structure.
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/115883019.html&id=3360461216738457777"""
+
     timestamp: UINT64
     """UTC time stamp corresponding to the notification packet \
         (100ns intervals since 01.01.1601)"""
@@ -1263,6 +1271,11 @@ class AdsStampHeader(Message):
 
 
 class AdsNotificationSample(Message):
+    """
+    ADS Notification Sample data structure.
+    https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/115883019.html&id=3360461216738457777
+    """
+
     handle: UINT32
     """Notification handle"""
     size: UINT32

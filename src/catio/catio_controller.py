@@ -1,155 +1,511 @@
 import inspect
-import logging
 import re
 import string
 import time
 from abc import abstractmethod
 from collections.abc import Generator, Iterator
 from itertools import chain, count
+from types import FrameType
 from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-from fastcs.attributes import Attribute, AttrMode, AttrR
-from fastcs.controller import Controller, SubController
+from fastcs.attributes import ONCE, Attribute, AttrR
+from fastcs.controller import Controller
 from fastcs.datatypes import Int, String, Waveform
+from fastcs.logging import bind_logger
+from fastcs.tracer import Tracer
 from fastcs.wrappers import scan
 from numpy.lib import recfunctions as rfn
 
 from catio._constants import DeviceType
-from catio.devices import ELM_OVERSAMPLING_FACTOR, OVERSAMPLING_FACTOR
+from catio.catio_attributeIO import (
+    CATioControllerAttributeIO,
+    CATioControllerAttributeIORef,
+)
+from catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
 from catio.utils import (
     average,
+    check_ndarray,
     filetime_to_dt,
     get_notification_changes,
     process_notifications,
+    trim_eCAT_name,
 )
 
-from .catio_adapters import (
-    CATioHandler,
-    Subsystem,
-)
 from .catio_connection import (
     CATioConnection,
-    CATioConnectionSettings,
     CATioFastCSRequest,
+    CATioServerConnectionSettings,
 )
-from .devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
 
 NOTIFICATION_UPDATE_PERIOD: float = 0.2
 STANDARD_POLL_UPDATE_PERIOD: float = 1.0
 
 
-class CATioSubController(SubController):
+tracer = Tracer(name=__name__)
+logger = bind_logger(logger_name=__name__)
+
+
+class CATioController(Controller, Tracer):
     """
-    Will be replace by CATioController in FASTCS2
-    A sub-controller for an ADS-based EtherCAT system.
-    Such sub-controller will be used to define distinct components in the \
-        EtherCAT system, e.g. devices and slave terminals.
+    A controller for an ADS-based EtherCAT system.
+    Such base controller is used to define distinct components in the EtherCAT system, \
+        e.g. server, devices and slave terminals.
     """
 
-    _subctrl_obj: Iterator[int] = count(start=1, step=1)
-    _subsystem: Subsystem
+    _ctrl_obj: Iterator[int] = count(start=0, step=1)
+    """Class counter associating each controller to a unique identifier"""
+    _tcp_connection: CATioConnection = CATioConnection()
+    """TCP connection to the CATio server, only one per client"""
 
     def __init__(
         self,
-        connection: CATioConnection,
-        *,
         name: str = "UNKNOWN",
         eCAT_name: str = "",
         description: str | None = None,
-        io_function: str = "",
-        comments: str = "",
+        group: str = "",
+        # comments: str = ""    # TO DO: can comments attribute be written to hardware?
     ):
-        super().__init__(description)
-        self.identifier: int = next(CATioSubController._subctrl_obj)
+        # tracer.log_event("CATio controller creation", topic=self, name=name)
+
+        self._identifier: int = next(CATioController._ctrl_obj)
+        """Unique identifier for the controller instance."""
+        self._io: IOServer | IODevice | IOSlave | None = None
+        """The I/O object referenced by the CATio controller."""
         self.name: str = name
-        self.connection: CATioConnection = connection
-        self.eCAT_name: str = eCAT_name
-        self.attr_group_name: str = trimmed(eCAT_name)
+        """Name of the I/O controller."""
+        self.eCAT_name = eCAT_name
+        """Name of the I/O controller in the EtherCAT system."""
+        self.group = group
+        """Group name associated with the controller."""
+        self.attr_group_name = trim_eCAT_name(eCAT_name)
+        """Controller attributes' group name derived from the eCAT name."""
+        if getattr(self, "io_function", None) is None:
+            self.io_function = ""
+            """Function description of the I/O controller."""
+        # self.comments: str = comments
         self.ads_name_map: dict[
             str, str
         ] = {}  # key is FastCS attribute name, value is complex ads symbol name
-        self.io_function: str = io_function
-        self.comments: str = comments
+        """Map of FastCS attribute names to ADS symbol names."""
+
+        logger.debug(
+            f"CATio controller '{self.eCAT_name}' instantiated with PV suffix "
+            + f"{self.name} and registered with id {self._identifier}"
+        )
+
+        super().__init__(
+            description=description,
+            ios=[
+                CATioControllerAttributeIO(
+                    self.connection,
+                    self.group,
+                    self._identifier,
+                ),
+            ],
+        )
+
+    @property
+    def connection(self) -> CATioConnection:
+        """The TCP connection to the CATio server."""
+        return self._tcp_connection
+
+    @property
+    def io(self) -> IOServer | IODevice | IOSlave | None:
+        """The I/O object referenced by the CATio controller."""
+        return self._io
+
+    async def _get_io_from_map(self) -> IOServer | IODevice | IOSlave:
+        """
+        Get the I/O object associated with the controller from the CATio client \
+            fast_cs_io_map.
+
+        :returns: the I/O object associated with the controller.
+        """
+        return await self.connection.send_query(
+            CATioFastCSRequest(
+                "IO_FROM_MAP", self._identifier, self.group, self.eCAT_name
+            )
+        )
+
+    async def create_tcp_connection(
+        self, tcp_settings: CATioServerConnectionSettings
+    ) -> None:
+        """Create the TCP connection to the CATio server if not already defined. \
+            Otherwise, reuse the existing connection.
+        Then connect to the Beckhoff TwinCAT server and initialise the CATio client.
+        Hardware present in the EtherCAT I/O system will be identified and introspected.
+        Subscribable parameters will be gathered for possible notification monitoring.
+
+        :param tcp_settings: the TCP connection settings to use.
+        """
+        if not self.connection.is_defined():
+            await self.connection.connect(tcp_settings)
+            logger.info("Client connection to TwinCAT server was successful.")
+
+            await self.connection.initialise()
+            logger.info("Client introspection of the I/O server was successful.")
 
     async def initialise(self) -> None:
-        logging.debug(
-            f"Initialising sub-controller {self.name} with FastCS attributes."
+        """
+        Initialise the CATio controller by creating its FastCS attributes.
+        Each attribute is registered as a class instance attribute for easy access.
+        """
+        # await super().initialise()
+
+        # Get the I/O object associated with the controller
+        self._io = await self._get_io_from_map()
+        assert self._io is not None, (
+            "The I/O object associated with the controller must be defined."
         )
+        # Get the current configuration of the controller
+        await self.read_configuration()
+
+        # Create the controller attributes
+        self.attributes.update(await self.get_io_attributes())
+        await self.register_as_class_attributes()
+        logger.info(
+            f"Initialisation of FastCS attributes for CATio controller {self.name} "
+            + "was successful."
+        )
+
+    async def read_configuration(self) -> None:
+        """
+        Get the current configuration of the controller from the CATio client.
+        This includes updating any relevant internal state variables.
+        """
+        # Currently no specific configuration is needed at the base controller level
+        # e.g. the server won't have any specific configuration
+        pass
+
+    async def get_generic_attributes(self) -> dict[str, Attribute]:
+        """
+        Base method to create generic controller attributes applicable to all.
+
+        :returns: a dictionary of generic controller attributes.
+        """
+        attr_dict: dict[str, Attribute] = {}
+
+        attr_dict["Function"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("io_function", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=self.io_function,
+            description="I/O controller function",
+        )
+        logger.debug(f"Generic attributes for controller {self.name} created.")
+
+        return attr_dict
+
+    @abstractmethod
+    async def get_io_attributes(self) -> dict[str, Attribute]:
+        """Base method to create subcontroller-specific attributes."""
+        ...
+
+    async def register_as_class_attributes(self) -> None:
+        """Register all controller attributes as class instance attributes."""
+        if self.attributes:
+            for attr_name, value in self.attributes.items():
+                # setattr(self, "_" + attr_name, value)
+                # print(f"attr={self.attributes}")
+                # _{NAME} GET ADDED TO SELF.ATTRIBUTES BECAUSE OF PYTHON NAME MANGLING
+                # (see section 6.2.1 in https://docs.python.org/3/reference/expressions.html#private-name-mangling)
+                setattr(self, attr_name, value)
+
+        logger.debug(
+            f"{len(self.attributes)} fastCS attributes have been registered "
+            + f"with the {self.name} controller."
+        )
+
+    async def get_root_node(self) -> IOTreeNode:
+        """
+        Get the root node of the EtherCAT system tree.
+        It should be an I/O server and the parent of all other nodes.
+        Each node can be a device or a terminal and can have children nodes.
+
+        :returns: the root node of the EtherCAT system tree.
+        """
+        root_node: IOTreeNode = await self.connection.send_query(
+            CATioFastCSRequest("SYSTEM_TREE")
+        )
+        assert isinstance(root_node.data, IOServer), (
+            "The root of the EtherCAT system tree must be an I/O server."
+        )
+        return root_node
+
+    async def add_subcontrollers(self, subcontrollers: list["CATioController"]) -> None:
+        """
+        Register the given subcontrollers with this controller.
+
+        :param subcontrollers: a list of subcontrollers to register.
+        """
+        if subcontrollers:
+            for subctrl in subcontrollers:
+                logger.debug(
+                    f"Registering sub-controller {subctrl.name} with controller "
+                    + f"{self.name}."
+                )
+                self.add_sub_controller(subctrl.name, subctrl)
 
     def attribute_dict_generator(
         self,
     ) -> Generator[dict[str, Attribute], Any, Any]:
         """
-        Recursively extract all attribute references from the subcontroller \
+        Recursively extract all attribute references from the controller \
             and its subcontrollers.
 
-        :yields: a dictionary with the subcontroller full attribute name as key \
+        :yields: a dictionary with the (sub)controller's full attribute name as key \
             and the attribute object as value.
         """
         attr_dict = {}
+        # Extract the current controller's attributes and prefix them with the eCAT name
         for key, attr in self.attributes.items():
-            if isinstance(self, CATioSubController):
+            if isinstance(self, CATioController):
                 ads_name = self.ads_name_map.get(key, None)
                 key = ads_name if ads_name is not None else key
-
             attr_dict[".".join([f"_{self.eCAT_name.replace(' ', '')}", key])] = attr
+        logger.debug(
+            f"Extracted {len(attr_dict)} attributes for controller {self.name}."
+        )
         yield attr_dict
-        if self.get_sub_controllers():
-            for subctrl in self.get_sub_controllers().values():
-                assert isinstance(subctrl, CATioSubController)
+
+        # Recursively extract the current controller's subcontrollers' attributes
+        if self.sub_controllers:
+            for subctrl in self.sub_controllers.values():
+                assert isinstance(subctrl, CATioController)
                 yield from subctrl.attribute_dict_generator()
 
-    def make_class_attributes(self) -> None:
-        """Set all subcontroller parameters as class attributes."""
-        for attr_name in self.attributes.keys():
-            setattr(self, "_" + attr_name, self.attributes[attr_name])
+    async def connect(self) -> None:
+        """Establish the FastCS connection to the controller and its subcontrollers."""
+        # await super().connect()
+        if self.sub_controllers:
+            for name, subctlr in self.sub_controllers.items():
+                await subctlr.connect()
+                logger.debug(f"Connection to subcontroller {name} completed.")
 
-    @property
-    def subsystem(self) -> str:
-        return self._subsystem
-
-    @abstractmethod
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Base method to create subcontroller-specific attributes."""
-        ...
-
-
-    async def print_names(self) -> None:
-        for name, subctrl in self.get_sub_controllers().items():
-            print(f"SUBCONTROLLER: {name}")
-            assert isinstance(subctrl, CATioSubController)
-            await subctrl.print_names()
-
-
-class CATioController(Controller):
-    """
-    A root controller for an ADS-based EtherCAT system using a Beckhoff TwinCAT server.
-    The TwinCAT server is restricted to a single client connection from the same host.
-    """
-
-    _tcp_connection: CATioConnection
-    _ctrl_obj: Iterator[int] = count(start=0, step=1)
-
-    def __init__(self, description: str):
-        super().__init__(description)
-        self.identifier: int = next(CATioController._ctrl_obj)
-        self.name: str = ""
-
-    async def _establish_tcp_connection(self, settings: CATioConnectionSettings):
+    async def query_api(self, function_name: str) -> Any:
         """
-        Create a catio connection with the Beckhoff TwinCAT server.
-        """
-        self._tcp_connection = await CATioConnection.connect(settings)
+        Interrogate the CATio client API for an attribute-related query.
 
-    @property
-    def connection(self) -> CATioConnection:
-        return self._tcp_connection
+        :param function_name: the root name of the CATio API function to query.
+
+        :returns: the response received from the CATio client.
+        """
+        query = f"{self.group.upper()}_{function_name.upper()}_ATTR"
+        try:
+            response = await self.connection.send_query(
+                CATioFastCSRequest(command=query, controller_id=self._identifier)
+            )
+            if response is None:
+                logger.debug(
+                    f"No corresponding API method was found for command '{query}'"
+                )
+            return response
+        except (KeyError, ValueError) as err:
+            logger.error(
+                f"Error querying CATio client API with command '{query}': {err}"
+            )
+            return None
+
+    async def update_nparray_subattributes(
+        self, attr_names: list[str], caller: FrameType, dtype: npt.DTypeLike
+    ) -> None:
+        """
+        Update the sub-attributes of a numpy array attribute by querying \
+            the associated CATio client API function.
+
+        :param attr_names: a list of attribute names to update.
+        :param caller: the frame of the calling function.
+        :param dtype: the expected numpy data type of the attribute values.
+        """
+        # Get the associated attributes
+        attr_dict = {k: self.attributes[k] for k in attr_names if k in self.attributes}
+
+        # Get the current attribute value
+        results = []
+        for attr in list(attr_dict.values()):
+            assert isinstance(attr, AttrR)
+            results.append(attr.get())
+        value = np.array(results, dtype=dtype)
+
+        # Get the name of the associated CATio API function and call it
+        fn_name = caller.f_code.co_name
+        response = await self.query_api(fn_name.replace("_", ""))
+
+        if response is not None:
+            # Check that the received response has the expected type and format
+            assert check_ndarray(response, dtype, value.shape), (
+                f"{fn_name.upper()}: unexpected response type {type(response)}"
+            )
+
+            # Determine if the attribute value has changed, and update accordingly
+            if not np.array_equal(response, value):
+                for name, new_value in zip(
+                    attr_names, np.nditer(response), strict=True
+                ):
+                    attr = self.attributes[name]
+                    assert isinstance(attr, AttrR)
+                    await attr.update(new_value)
+
+                logger.debug(
+                    f"{fn_name} attributes for device {self.name} have been updated."
+                )
+
+
+class CATioServerController(CATioController):
+    """A root controller for an ADS-based EtherCAT I/O server."""
+
+    def __init__(
+        self,
+        target_ip: str,
+        target_netid: str,
+        target_port: int,
+        poll_period: float,
+        notification_period: float,
+    ) -> None:
+        self._tcp_settings = CATioServerConnectionSettings(
+            target_ip, target_netid.to_string(), target_port
+        )
+        """TCP connection settings for the CATio server."""
+        self.io_function = "Beckhoff Embedded PC for I/O systems connection and control"
+        """Function description of the I/O server controller."""
+        self.attribute_map: dict[
+            str, Attribute
+        ] = {}  # key is attribute name, value is attribute object
+        """Map of all attributes available to the CATio server controller."""
+        self.notification_enabled = False
+        """Flag indicating if notification monitoring is enabled."""
+        self.notification_stream: npt.NDArray | None = None
+        """Cached notification stream from the CATio client."""
+
+        # Update the global period variables
+        global STANDARD_POLL_UPDATE_PERIOD, NOTIFICATION_UPDATE_PERIOD
+        STANDARD_POLL_UPDATE_PERIOD = poll_period
+        NOTIFICATION_UPDATE_PERIOD = notification_period
+        logger.info(
+            f"CATio standard polling period set to {STANDARD_POLL_UPDATE_PERIOD} "
+            + "seconds and CATio notification update period set to "
+            + f"{NOTIFICATION_UPDATE_PERIOD} seconds."
+        )
+
+        # Initialise the base controller
+        super().__init__(
+            name="ROOT",
+            eCAT_name="IOServer",
+            description="Root controller for an ADS-based EtherCAT I/O server",
+            group="server",
+        )
+
+    async def initialise(self) -> None:
+        """
+        Initialise the CATio server controller.
+        This includes creating an ADS client for TCP communication \
+            and registering all subcontrollers configured in the EtherCAT I/O system.
+
+        This method is automatically called by the fastCS backend 'serve()' method.
+        """
+        logger.info(">-------- Initialising EtherCAT connection and CATio controllers.")
+
+        await self.create_tcp_connection(self._tcp_settings)
+        logger.info(
+            "An ADS client for TCP communication with the remote "
+            + f"at {self._tcp_settings.ip} has been established."
+        )
+
+        await self.register_subcontrollers()
+        logger.info(
+            "FastCS controllers have been created for the I/O server, EThercAT devices "
+            + "and slave terminals."
+        )
+
+        await self.get_complete_attribute_map()
+        logger.info(
+            f"A map of all attributes linked to controller {self.name} was created."
+        )
+
+    async def connect(self) -> None:
+        """
+        Establish the FastCS connection to the CATio server controller.
+        This includes connecting all subcontrollers as well.
+
+        This method is automatically called by the fastCS backend 'serve()' method.
+        """
+        await super().connect()
+        logger.info(">-------- CATio Controller instances are now up and running.")
+
+    async def disconnect(self) -> None:
+        """
+        Stop the device notification monitoring and unsubscribe from all notifications.
+        Also close the ADS connection and remove the communication route to the remote.
+        """
+        logger.info(">-------- Stopping and deleting notifications.")
+        self.connection.enable_notification_monitoring(False)
+        self.notification_enabled = False
+        self.notification_stream = None
+        logger.info(">-------- Closing the ADS client communication.")
+        await self.connection.close()
+
+    async def get_io_attributes(self) -> dict[str, Attribute]:
+        """Create and get all server controller attributes."""
+        logger.debug("No specific attributes are defined for a CATio server controller")
+        return await self.get_server_generic_attributes()
+
+    async def get_server_generic_attributes(self) -> dict[str, Attribute]:
+        """
+        Create and get all generic server attributes.
+
+        :returns: a dictionary of generic server controller attributes.
+        """
+        assert isinstance(self.io, IOServer), (
+            f"Wrong I/O type associated with controller {self.name}"
+        )
+
+        # Get the generic attributes related to a CATioServerController
+        attr_dict = await super().get_generic_attributes()
+
+        attr_dict["Name"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=self.io.name,
+            description="I/O server name",
+        )
+        attr_dict["Version"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("version", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=self.io.version,
+            description="I/O server version number",
+        )
+        attr_dict["Build"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("build", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=str(self.io.build),
+            description="I/O server build number",
+        )
+        attr_dict["DevCount"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("num_devices", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.num_devices),
+            description="I/O server registered device count",
+        )
+        logger.debug(
+            f"Created {len(attr_dict)} generic attributes for the controller {self.name}."
+        )
+
+        return attr_dict
+
+    async def register_subcontrollers(self) -> None:
+        """Register all subcontrollers available in the EtherCAT system tree."""
+        server_node: IOTreeNode = await self.get_root_node()
+        await self.get_subcontrollers_from_node(server_node)
 
     async def get_subcontrollers_from_node(
         self, node: IOTreeNode
-    ) -> None | CATioSubController | Controller:
+    ) -> None | CATioController:
         """
         Recursively register all subcontrollers available from a system node \
             with their parent controller.
@@ -160,63 +516,24 @@ class CATioController(Controller):
 
         :returns: the (sub)controller object created for the current node.
         """
-        subcontrollers: list[CATioSubController] = []
+        subcontrollers: list[CATioController] = []
         if node.has_children():
             for child in node.children:
-                ctrl = await self.get_subcontrollers_from_node(child)
-                assert ctrl is not None
-                assert isinstance(ctrl, CATioSubController)
-                subcontrollers.append(ctrl)
+                ctlr = await self.get_subcontrollers_from_node(child)
+                assert (ctlr is not None) and (isinstance(ctlr, CATioController))
+                subcontrollers.append(ctlr)
 
-            logging.debug(
+            logger.debug(
                 f"{len(subcontrollers)} subcontrollers were found for {node.data.name}."
             )
 
         return await self._get_subcontroller_object(node, subcontrollers)
 
-    async def initialise(self) -> None:
-        """
-        Automatically called by fastCS backend '__init__()' method.
-        Initialise the CATio controller.
-        """
-        logging.debug(f"Initialising CATio controller {self.name}...")
-        await super().initialise()
-
-    async def attribute_initialise(self) -> None:
-        """
-        Automatically called by fastCS backend '__init__()' method.
-        Initialise the FastCS attributes and their associated handlers for the \
-            CATio controller and all subcontrollers in the EtherCAT system.
-        """
-        logging.info(
-            f"Initialising attributes for CATio controller {self.name} and "
-            + "all its subcontrollers..."
-        )
-        await super().attribute_initialise()
-
-    async def connect(self) -> None:
-        """
-        Automatically called by fastCS backend 'serve()' method.
-        Method run asynchronously at the same time as the call to start the IOC.
-        Call the connect() method for any Master Device subcontroller.
-        """
-        logging.debug(
-            "CATio connection already established during controller initialisation."
-        )
-        await super().connect()
-        logging.debug(
-            "Checking for any Master device subcontroller to setup symbol notification."
-        )
-        for subctrl in self.get_sub_controllers().values():
-            if isinstance(subctrl, EtherCATMasterController):
-                await subctrl.connect()
-        logging.info("CATio Controller instance is now up and running.")
-
     async def _get_subcontroller_object(
         self,
         node: IOTreeNode,
-        subcontrollers: list[CATioSubController],
-    ) -> None | CATioSubController | Controller:
+        subcontrollers: list[CATioController],
+    ) -> None | CATioController:
         """
         Create the associated CATio controller/subcontroller object for the given node \
             in the EtherCAT tree.
@@ -226,13 +543,14 @@ class CATioController(Controller):
 
         :returns: the subcontroller object created for the current node.
         """
+        # Lazy import to prevent circular import reference
+        from catio.catio_hardware import SUPPORTED_CONTROLLERS
+
         match node.data.category:
             case IONodeType.Server:
                 assert isinstance(node.data, IOServer)
-                logging.debug(
-                    "Implementing I/O server controller as the root CATioController."
-                )
-                ctrl = self
+                ctlr = self
+                await super().initialise()
 
             case IONodeType.Device:
                 assert isinstance(node.data, IODevice)
@@ -241,1620 +559,75 @@ class CATioController(Controller):
                     if node.data.type == DeviceType.IODEVICETYPE_ETHERCAT
                     else node.data.name
                 )
-                logging.debug(
-                    f"Implementing I/O device '{key}' as a CATioSubController."
-                )
-                ctrl = SUPPORTED_CONTROLLERS[key](
-                    connection=self.connection,
+                logger.debug(f"Implementing I/O device '{key}' as CATioSubController.")
+                ctlr = SUPPORTED_CONTROLLERS[key](
                     name=node.data.get_type_name(),
                     eCAT_name=node.data.name,
                     description=f"Controller for EtherCAT device #{node.data.id}",
                 )
-                logging.debug(
-                    f"Initialising device controller {ctrl.name} with FastCS attributes."
-                )
-                await ctrl.initialise()
+                await ctlr.initialise()
 
             case IONodeType.Coupler | IONodeType.Slave:
                 assert isinstance(node.data, IOSlave)
-                logging.debug(
-                    f"Implementing I/O terminal '{node.data.name}' as a CATioSubController."
+                logger.debug(
+                    f"Implementing I/O terminal '{node.data.name}' as CATioSubController."
                 )
-                ctrl = SUPPORTED_CONTROLLERS[node.data.type](
-                    connection=self.connection,
+                ctlr = SUPPORTED_CONTROLLERS[node.data.type](
                     name=node.data.get_type_name(),
                     eCAT_name=node.data.name,
                     description=f"Controller for {node.data.category.value} terminal "
                     + f"'{node.data.name}'",
                 )
-                logging.debug(
-                    f"Initialising terminal controller {ctrl.name} with FastCS attributes."
-                )
-                await ctrl.initialise()
+                await ctlr.initialise()
 
-        if subcontrollers:
-            for subctrl in subcontrollers:
-                logging.debug(
-                    f"Registering sub-controller {subctrl.name} with controller "
-                    + f"{ctrl.name}."
-                )
-                ctrl.register_sub_controller(subctrl.name, subctrl)
+        # Register any subcontrollers with the current controller
+        await ctlr.add_subcontrollers(subcontrollers)
 
-        return ctrl
-
-
-class CATioDeviceController(CATioSubController):
-    """A sub-controller for an EtherCAT I/O device."""
-
-    _subsystem = "device"
-
-    def __init__(self, connection, name, eCAT_name="", description=None):
-        super().__init__(
-            connection, name=name, eCAT_name=eCAT_name, description=description
-        )
-        self.notification_ready: bool = False
-
-    async def initialise(self) -> None:
-        """Initialise the device controller by creating its attributes."""
-        await super().initialise()
-        await self.get_device_attributes()
-        self.attributes.update(self.get_attributes())
-        self.make_class_attributes()
-
-    async def connect(self) -> None:
-        """
-        Setup the symbol notifications for the device and mark it as ready.
-        """
-        await self.setup_symbol_notifications()
-        self.notification_ready = True
-
-    async def get_device_attributes(self) -> None:
-        """Get and create all generic device attributes."""
-        _group = "IODevice"
-
-        # Update the CATio client fast_cs_io_map
-        io: IODevice = await self.connection.send_query(
-            CATioFastCSRequest("IO_FROM_MAP", self.identifier, _group, self.eCAT_name)
-        )
-
-        # super().get_attributes()
-
-        self.attributes["Id"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="id"),
-            initial_value=int(io.id),
-            description="I/O device identity number",
-        )
-
-        self.attributes["Type"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="type"),
-            initial_value=int(io.type),
-            description="I/O device type",
-        )
-
-        self.attributes["Name"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="name"),
-            initial_value=io.name,
-            description="I/O device name",
-        )
-
-        self.attributes["Netid"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="netid"),
-            initial_value=str(io.netid),
-            description="I/O device ams netid",
-        )
-
-        self.attributes["Identity"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="identity"),
-            initial_value=str(io.identity),
-            description="I/O device identity",
-        )
-
-        self.attributes["SystemTime"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.frame_counters.time),
-            description="I/O device, EtherCAT frame timestamp",
-        )
-
-        self.attributes["SentCyclicFrames"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.frame_counters.cyclic_sent),
-            description="I/O device, sent cyclic frames counter",
-        )
-
-        self.attributes["LostCyclicFrames"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.frame_counters.cyclic_lost),
-            description="I/O device, lost cyclic frames counter",
-        )
-
-        self.attributes["SentAcyclicFrames"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.frame_counters.acyclic_sent),
-            description="I/O device, sent acyclic frames counter",
-        )
-
-        self.attributes["LostAcyclicFrames"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.frame_counters.acyclic_lost),
-            description="I/O device, lost acyclic frames counter",
-        )
-
-        self.attributes["SlaveCount"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.PeriodicPoll.value.create(
-                attribute_name="slave_count", update_period=STANDARD_POLL_UPDATE_PERIOD
-            ),
-            initial_value=int(io.slave_count),
-            description="I/O device registered slave count",
-        )
-
-        self.attributes["SlavesStates"] = AttrR(
-            datatype=Waveform(array_dtype=np.uint8, shape=(2 * int(io.slave_count),)),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.PeriodicPoll.value.create(
-                attribute_name="slaves_states",
-                update_period=STANDARD_POLL_UPDATE_PERIOD,
-            ),
-            initial_value=np.array(io.slaves_states, dtype=np.uint8).flatten(),
-            description="I/O device, states of slave terminals",
-        )
-
-        self.attributes["SlavesCrcCounters"] = AttrR(
-            datatype=Waveform(array_dtype=np.uint32, shape=(int(io.slave_count),)),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.PeriodicPoll.value.create(
-                attribute_name="slaves_crc_counters",
-                update_period=STANDARD_POLL_UPDATE_PERIOD,
-            ),
-            initial_value=np.array(io.slaves_crc_counters, dtype=np.uint32),
-            description="I/O device, slave crc error sum counters",
-        )
-
-        self.attributes["NodeCount"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="node_count"),
-            initial_value=int(io.node_count),
-            description="I/O device registered node count",
-        )
-
-        self.attributes["timestamp"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-            description="I/O device last notification timestamp",
-        )
-
-        logging.debug(
-            f"{len(self.attributes)} fastCS attributes have been registered "
-            + f"with the device controller {self.eCAT_name}."
-        )
-
-    def get_device_eCAT_id(self) -> int:
-        """
-        Extract the id value from the EtherCAT device name (e.g. from ETH5 or EBUS12).
-        """
-        matches = re.search(r"(\d+)$", self.name)
-        if matches:
-            return int(matches.group(0))
-        raise NameError(
-            f"CATioDeviceController id couldn't be extracted from its name {self.name}."
-        )
-
-    async def setup_symbol_notifications(self) -> None:
-        """
-        Setup subscriptions to all ads symbol variables available to the controller.
-        Although running in the background, notifications of change won't be active \
-            until monitoring is enabled.
-        """
-        logging.info(
-            f"EtherCAT Device {self.name}: subscribing to symbol notifications."
-        )
-        await self.connection.add_notifications(self.get_device_eCAT_id())
-
-    @scan(STANDARD_POLL_UPDATE_PERIOD)
-    async def frame_counters(self) -> None:
-        """Periodically poll the EtherCAT frame counters from the device."""
-        attr_names = [
-            "SystemTime",
-            "SentCyclicFrames",
-            "LostCyclicFrames",
-            "SentAcyclicFrames",
-            "LostAcyclicFrames",
-        ]
-        attr_dict = {k: self.attributes[k] for k in attr_names if k in self.attributes}
-        results: list[np.uint32] = []
-        for attr in list(attr_dict.values()):
-            assert isinstance(attr, AttrR)
-            results.append(attr.get())
-        old_value = np.array(results)
-
-        frame = inspect.currentframe()
-        assert frame is not None, "Function name couldn't be retrieved."
-        function_name = frame.f_code.co_name.replace("_", "")
-
-        response = await self.connection.send_query(
-            CATioFastCSRequest(
-                f"{self._subsystem.upper()}_{function_name.upper()}_ATTR",
-                attr_group=self.identifier,
-            )
-        )
-
-        if response is not None:
-            assert isinstance(response, np.ndarray), (
-                f"{function_name.upper()}: Response was {type(response)}, {response}"
-            )
-            assert response.dtype == np.uint32
-            assert response.shape == (5,)
-
-            if not np.array_equal(response, old_value):
-                for name, value in zip(attr_names, np.nditer(response), strict=True):
-                    attr = self.attributes[name]
-                    assert isinstance(attr, AttrR)
-                    await attr.set(value)
-
-                logging.debug(
-                    f"Frame counters attributes for device {self.name} have been updated."
-                )
-
-
-class CATioTerminalController(CATioSubController):
-    """A sub-controller for an EtherCAT I/O terminal."""
-
-    _subsystem = "terminal"
-
-    async def initialise(self) -> None:
-        """Initialise the terminal controller by creating its attributes."""
-        await super().initialise()
-        await self.get_terminal_attributes()
-        self.attributes.update(self.get_attributes())
-        self.make_class_attributes()
-
-    async def get_terminal_attributes(self) -> None:
-        """Get and create all generic terminal attributes."""
-        _group = "IOTerminal"
-
-        # Update the CATio client fast_cs_io_map
-        io: IOSlave = await self.connection.send_query(
-            CATioFastCSRequest("IO_FROM_MAP", self.identifier, _group, self.eCAT_name)
-        )
-
-        # super().get_attributes()
-
-        self.attributes["Function"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="io_function"),
-            initial_value=self.io_function,
-            description="I/O terminal function",
-        )
-
-        self.attributes["ParentDevId"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(
-                attribute_name="parent_device"
-            ),
-            initial_value=str(io.parent_device),
-            description="I/O terminal master device id",
-        )
-
-        self.attributes["Type"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="type"),
-            initial_value=io.type,
-            description="I/O terminal type",
-        )
-
-        self.attributes["Name"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="name"),
-            initial_value=io.name,
-            description="I/O terminal name",
-        )
-
-        self.attributes["Address"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="address"),
-            initial_value=int(io.address),
-            description="I/O terminal EtherCAT address",
-        )
-
-        self.attributes["Identity"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="identity"),
-            initial_value=str(io.identity),
-            description="I/O terminal identity",
-        )
-
-        self.attributes["StateMachine"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.states.eCAT_state),
-            description="I/O terminal state machine",
-        )
-
-        self.attributes["LinkStatus"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.states.link_status),
-            description="I/O terminal communication state",
-        )
-
-        self.attributes["CrcErrorPortA"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.crcs.portA_crc),
-            description="I/O terminal crc error counter on port A",
-        )
-
-        self.attributes["CrcErrorPortB"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.crcs.portB_crc),
-            description="I/O terminal crc error counter on port B",
-        )
-
-        self.attributes["CrcErrorPortC"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.crcs.portC_crc),
-            description="I/O terminal crc error counter on port C",
-        )
-
-        self.attributes["CrcErrorPortD"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=int(io.crcs.portD_crc),
-            description="I/O terminal crc error counter on port D",
-        )
-
-        self.attributes["CrcErrorSum"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.PeriodicPoll.value.create(
-                attribute_name="crc_error_sum",
-                update_period=STANDARD_POLL_UPDATE_PERIOD,
-            ),
-            initial_value=int(io.crcs.portD_crc),
-            description="I/O terminal crc error sum counter",
-        )
-
-        self.attributes["Node"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="node"),
-            initial_value=int(io.loc_in_chain.node),
-            description="I/O terminal associated node",
-        )
-
-        self.attributes["Position"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="position"),
-            initial_value=int(io.loc_in_chain.position),
-            description="I/O terminal associated position",
-        )
-
-        logging.debug(
-            f"{len(self.attributes)} fastCS attributes have been registered "
-            + f"with the terminal controller {self.eCAT_name}."
-        )
-
-    @scan(STANDARD_POLL_UPDATE_PERIOD)
-    async def states(self) -> None:
-        """Periodically poll the EtherCAT terminal states from the io."""
-        attr_names = [
-            "StateMachine",
-            "LinkStatus",
-        ]
-        attr_dict = {k: self.attributes[k] for k in attr_names if k in self.attributes}
-        results: list[np.uint8] = []
-        for attr in list(attr_dict.values()):
-            assert isinstance(attr, AttrR)
-            results.append(attr.get())
-        old_value = np.array(results)
-
-        frame = inspect.currentframe()
-        assert frame is not None, "Function name couldn't be retrieved."
-        function_name = frame.f_code.co_name.replace("_", "")
-
-        response = await self.connection.send_query(
-            CATioFastCSRequest(
-                f"{self._subsystem.upper()}_{function_name.upper()}_ATTR",
-                attr_group=self.identifier,
-            )
-        )
-
-        if response is not None:
-            assert isinstance(response, np.ndarray)
-            assert response.dtype == np.uint8
-            assert response.shape == (2,)
-
-            if not np.array_equal(response, old_value):
-                for name, value in zip(attr_names, np.nditer(response), strict=True):
-                    attr = self.attributes[name]
-                    assert isinstance(attr, AttrR)
-                    await attr.set(value)
-
-                logging.debug(
-                    f"States attributes for terminal {self.name} have been updated."
-                )
-
-    @scan(STANDARD_POLL_UPDATE_PERIOD)
-    async def crc_error_counters(self) -> None:
-        """
-        Periodically poll the EtherCAT terminal CRC error counters from the io.
-        """
-        attr_names = [
-            "CrcErrorPortA",
-            "CrcErrorPortB",
-            "CrcErrorPortC",
-            "CrcErrorPortD",
-        ]
-        attr_dict = {k: self.attributes[k] for k in attr_names if k in self.attributes}
-        results: list[np.uint32] = []
-        for attr in list(attr_dict.values()):
-            assert isinstance(attr, AttrR)
-            results.append(attr.get())
-        old_value = np.array(results)
-
-        frame = inspect.currentframe()
-        assert frame is not None, "Function name couldn't be retrieved."
-        function_name = frame.f_code.co_name.replace("_", "")
-
-        response = await self.connection.send_query(
-            CATioFastCSRequest(
-                f"{self._subsystem.upper()}_{function_name.upper()}_ATTR",
-                attr_group=self.identifier,
-            )
-        )
-
-        if response is not None:
-            assert isinstance(response, np.ndarray)
-            assert response.dtype == np.uint32
-            assert response.shape == (4,)
-
-            if not np.array_equal(response, old_value):
-                for name, value in zip(attr_names, np.nditer(response), strict=True):
-                    attr = self.attributes[name]
-                    assert isinstance(attr, AttrR)
-                    await attr.set(value)
-
-                logging.debug(
-                    f"CRC counters attributes for terminal {self.name} have been updated."
-                )
-
-
-def print_registered_ctrl(ctrl: CATioController | CATioSubController) -> None:
-    """Print the registered subcontrollers for a given controller."""
-    subcontrollers = ctrl.get_sub_controllers()
-    if subcontrollers:
-        print(f"Subcontrollers registered with {ctrl.name}: {subcontrollers.keys()}")
-        for subctrl in subcontrollers.values():
-            assert isinstance(subctrl, CATioSubController)
-            print_registered_ctrl(subctrl)
-
-
-def trimmed(name: str) -> str:
-    """Shorten and remove spaces from the original EtherCAT name."""
-    matches = re.search(r"^(\w+\s+)\d+", name)
-    return matches.group(0).replace(" ", "") if matches else name
-
-
-class EtherCATMasterController(CATioDeviceController):
-    """A sub-controller for an EtherCAT Master I/O device."""
-
-    io_function: str = "EtherCAT Master Device"
-    num_ads_streams: int = 1
-
-    # Depending on number of notification streams, we'll have more attr!!!
-    # e.g. 3 streams -> Frm0State, Frm1State, Frm2State
-    # For now, just implement Frm0*
-
-    # Also from TwinCAT, it should be:
-    # attr_dict["Inputs.Frm0State"] = AttrR(...)
-    # but '.' is not allowed in fastCS attribute name -> error
-    # name string should match pattern '^([A-Z][a-z0-9]*)*$'
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific master device attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["InputsSlaveCount"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Number of slaves reached in last cycle",
-        )
-        attr_dict["InputsDevState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="EtherCAT device input cycle frame status",
-        )
-        attr_dict["OutputsDevCtrl"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="EtherCAT device output control value",
-        )
-        for i in range(1, self.num_ads_streams + 1):
-            attr_dict[f"InFrm{i}State"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description="Cyclic Ethernet frame status",
-            )
-            attr_dict[f"InFrm{i}WcState"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description="Inputs accumulated working counter",
-            )
-            attr_dict[f"InFrm{i}InpToggle"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description="EtherCAT cyclic frame update indicator",
-            )
-            attr_dict[f"OutFrm{i}Ctrl"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description="EtherCAT output frame control value",
-            )
-            attr_dict[f"OutFrm{i}WcCtrl"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description="Outputs accumulated working counter",
-            )
-
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"InFrm{i}State"] = f"Inputs.Frm{i}State"
-            self.ads_name_map[f"InFrm{i}WcState"] = f"Inputs.Frm{i}WcState"
-            self.ads_name_map[f"InFrm{i}InpToggle"] = f"Inputs.Frm{i}InputToggle"
-            self.ads_name_map[f"OutFrm{i}Ctrl"] = f"Outputs.Frm{i}Ctrl"
-            self.ads_name_map[f"OutFrm{i}WcCtrl"] = f"Outputs.Frm{i}WcCtrl"
-
-        return attr_dict
-
-
-class EK1100Controller(CATioTerminalController):
-    """A sub-controller for an EK1100 EtherCAT Coupler terminal."""
-
-    io_function: str = "EtherCAT coupler at the head of a segment"
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific coupler terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-        return attr_dict
-
-
-class EK1101Controller(CATioTerminalController):
-    """A sub-controller for an EK1101 EtherCAT Coupler terminal."""
-
-    io_function: str = "EtherCAT coupler with three ID switches for variable topologies"
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific coupler terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["ID"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=1,
-            description="Unique ID for the group of components",
-        )
-
-        return attr_dict
-
-
-class EK1110Controller(CATioTerminalController):
-    """A sub-controller for an EK1110 EtherCAT Extension terminal."""
-
-    io_function: str = "EtherCAT extension coupler for line topology"
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific coupler terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-        return attr_dict
-
-
-class EL1004Controller(CATioTerminalController):
-    """A sub-controller for an EL1004 EtherCAT digital input terminal."""
-
-    io_function: str = "4-channel digital input, 24V DC, 3ms filter"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL1004 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital input value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL1014Controller(CATioTerminalController):
-    """A sub-controller for an EL1014 EtherCAT wcounter input terminal."""
-
-    io_function: str = "4-channel digital input, 24V DC, 10us filter"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL1014 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital input value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL1124Controller(CATioTerminalController):
-    """A sub-controller for an EL1124 EtherCAT digital output terminal."""
-
-    io_function: str = "4-channel digital input, 5V DC, 0.05us filter"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL1124 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital input value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL1084Controller(CATioTerminalController):
-    """A sub-controller for an EL1084 EtherCAT digital input terminal."""
-
-    io_function: str = "4-channel digital input, 24V DC, 3ms filter, GND switching"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL1084 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital input value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL1502Controller(CATioTerminalController):
-    """A sub-controller for an EL1502 EtherCAT digital input terminal."""
-
-    io_function: str = "2-channel digital input, counter, 24V DC, 100kHz"
-    num_channels = 2
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL1502 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-        attr_dict["CNTInputStatus"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Input channel counter status",
-        )
-        attr_dict["CNTInputValue"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Input channel counter value",
-        )
-        attr_dict["CNTOutputStatus"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Output channel counter status",
-        )
-        attr_dict["CNTOutputValue"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Output channel counter set value",
-        )
-        # Map the FastCS attribute names to the symbol names used by ADS
-        self.ads_name_map["CNTInputStatus"] = "CNTInputs.Countervalue"
-        self.ads_name_map["CNTInputValue"] = "CNTOutputs.Setcountervalue"
-        self.ads_name_map["CNTOutputStatus"] = "CNTInputs.Countervalue"
-        self.ads_name_map["CNTOutputValue"] = "CNTOutputs.Setcountervalue"
-
-        return attr_dict
-
-
-class EL2024Controller(CATioTerminalController):
-    """A sub-controller for an EL2024 EtherCAT digital output terminal."""
-
-    io_function: str = "4-channel digital output, 24V DC, 2A"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL2024 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DOCh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital output value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL2024_0010Controller(CATioTerminalController):
-    """A sub-controller for an EL2024-0010 EtherCAT digital output terminal."""
-
-    io_function: str = "4-channel digital output, 12V DC, 2A"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL2024-0010 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DOCh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital output value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL2124Controller(CATioTerminalController):
-    """A sub-controller for an EL2124 EtherCAT digital output terminal."""
-
-    io_function: str = "4-channel digital output, 5V DC, 20mA"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL2124 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DOCh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} digital output value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
-
-        return attr_dict
-
-
-class EL3104Controller(CATioTerminalController):
-    """A sub-controller for an EL3104 EtherCAT analog input terminal."""
-
-    io_function: str = "4-channel analog input, +/-10V, 16-bit, differential"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL3104 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated analog value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"AICh{i}Status"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} voltage status",
-            )
-            attr_dict[f"AICh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} analog input value",
-            )
-            # Map the FastCS attribute names to the symbol names used by ADS
-            self.ads_name_map[f"AICh{i}Status"] = f"AIStandardChannel{i}.Status"
-            self.ads_name_map[f"AICh{i}Value"] = f"AIStandardChannel{i}.Value"
-
-        return attr_dict
-
-
-class EL3602Controller(CATioTerminalController):
-    """A sub-controller for an EL3602 EtherCAT analog input terminal."""
-
-    io_function: str = "2-channel analog input, up to +/-10V, 24-bit, high-precision"
-    num_channels: int = 2
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL3602 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Availability of an updated analog value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"AICh{i}Status"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} voltage status",
-            )
-            attr_dict[f"AICh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} analog input value",
-            )
-            # Map the FastCS attribute names to the symbol names used by ADS
-            self.ads_name_map[f"AICh{i}Status"] = f"AIInputsChannel{i}"
-            self.ads_name_map[f"AICh{i}Value"] = f"AIInputsChannel{i}.Value"
-
-        return attr_dict
-
-
-class EL3702Controller(CATioTerminalController):
-    """A sub-controller for an EL3702 EtherCAT analog input terminal."""
-
-    io_function: str = "2-channel analog input, +/-10V, 16-bit, oversampling"
-
-    # TO DO: Can we get those values from ads read or catio config file ???
-    operating_channels: int = 2
-    oversampling_factor: int = OVERSAMPLING_FACTOR
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL3702 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        for i in range(1, self.operating_channels + 1):
-            attr_dict[f"AICh{i}CycleCount"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Record transfer counter for channel#{i}",
-            )
-            if self.oversampling_factor == 1:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
-                    datatype=Int(),
-                    access_mode=AttrMode.READ,
-                    group=self.attr_group_name,
-                    handler=None,
-                    initial_value=0,
-                    description=f"Analog sample value(s) for channel#{i}",
-                )
-            else:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
-                    datatype=Waveform(
-                        array_dtype=np.int16, shape=(self.oversampling_factor,)
-                    ),
-                    access_mode=AttrMode.READ,
-                    group=self.attr_group_name,
-                    handler=None,
-                    initial_value=np.zeros((self.oversampling_factor,), dtype=np.int16),
-                    description=f"Analog sample value(s) for channel#{i}",
-                )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"AICh{i}CycleCount"] = f"Ch{i}CycleCount"
-            self.ads_name_map[f"AICh{i}ValueOvsmpl"] = f"Ch{i}Sample0"
-
-        return attr_dict
-
-
-class EL4134Controller(CATioTerminalController):
-    """A sub-controller for an EL4134 EtherCAT analog output terminal."""
-
-    io_function: str = "4-channel analog output, +/-10V, 16-bit"
-    num_channels: int = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL4134 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"AOCh{i}Value"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} analog output value",
-            )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"AOCh{i}Value"] = f"AOOutputChannel{i}.Analogoutput"
-
-        return attr_dict
-
-
-class EL9410Controller(CATioTerminalController):
-    """A sub-controller for an EL9410 EtherCAT power supply terminal."""
-
-    io_function: str = "2A power supply for E-bus"
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL9410 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Counter for valid telegram received",
-        )
-        attr_dict["StatusUp"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Power contacts voltage diagnostic status",
-        )
-        attr_dict["StatusUs"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="E-bus supply voltage diagnostic status",
-        )
-
-        return attr_dict
-
-
-class EL9505Controller(CATioTerminalController):
-    """A sub-controller for an EL9505 EtherCAT power supply terminal."""
-
-    io_function: str = "5V DC output power supply"
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL9505 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Counter for valid telegram received",
-        )
-        attr_dict["StatusUo"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Output voltage status",
-        )
-
-        return attr_dict
-
-
-class EL9512Controller(CATioTerminalController):
-    """A sub-controller for an EL9512 EtherCAT power supply terminal."""
-
-    io_function: str = "12V DC output power supply"
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific EL9512 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Counter for valid telegram received",
-        )
-        attr_dict["StatusUo"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Output voltage status",
-        )
-
-        return attr_dict
-
-
-class ELM3704_0000Controller(CATioTerminalController):
-    """A sub-controller for an ELM3704-0000 EtherCAT analog input terminal."""
-
-    io_function: str = "4-channel analog input, multi-function, 24-bit, 10 ksps"
-    oversampling_factor: int = ELM_OVERSAMPLING_FACTOR  # complex setup, see TwinCAT
-    num_channels = 4
-
-    def get_attributes(self) -> dict[str, Attribute]:
-        """Get and create all specific ELM3704-0000 terminal attributes."""
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=self.attr_group_name,
-            handler=None,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"AICh{i}Status"] = AttrR(
-                datatype=Int(),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=0,
-                description=f"Channel#{i} Process Analog Input status",
-            )
-            attr_dict[f"AICh{i}LatchTime"] = AttrR(
-                datatype=Waveform(array_dtype=np.uint32, shape=(2,)),
-                access_mode=AttrMode.READ,
-                group=self.attr_group_name,
-                handler=None,
-                initial_value=np.zeros((2,), dtype=np.uint32),
-                description=f"Latch time for next channel#{i} samples",
-            )
-            if self.oversampling_factor == 1:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
-                    datatype=Int(),
-                    access_mode=AttrMode.READ,
-                    group=self.attr_group_name,
-                    handler=None,
-                    initial_value=0,
-                    description=f"ELM3704 terminal channel#{i} value",
-                )
-            else:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
-                    datatype=Waveform(
-                        array_dtype=np.int32, shape=(self.oversampling_factor,)
-                    ),
-                    access_mode=AttrMode.READ,
-                    group=self.attr_group_name,
-                    handler=None,
-                    initial_value=np.zeros((self.oversampling_factor,), dtype=np.int32),
-                    description=f"ELM3704 terminal channel#{i} value",
-                )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"AICh{i}Status"] = f"PAIStatusChannel{i}.Status"
-            self.ads_name_map[f"AICh{i}LatchTime"] = (
-                f"PAITimestampChannel{i}.StartTimeNextLatch"
-            )
-            self.ads_name_map[f"AICh{i}ValueOvsmpl"] = (
-                f"PAISamples{self.oversampling_factor}Channel{i}.Samples"
-            )
-
-        return attr_dict
-
-
-# Map of supported controllers available to the FastCS CATio system
-SUPPORTED_CONTROLLERS: dict[
-    str, type[CATioDeviceController | CATioTerminalController]
-] = {
-    "EK1100": EK1100Controller,
-    "EK1101": EK1101Controller,
-    "EK1110": EK1110Controller,
-    "EL1004": EL1004Controller,
-    "EL1014": EL1014Controller,
-    "EL1084": EL1084Controller,
-    "EL1124": EL1124Controller,
-    "EL1502": EL1502Controller,
-    "EL2024": EL2024Controller,
-    "EL2024-0010": EL2024_0010Controller,
-    "EL2124": EL2124Controller,
-    "EL3104": EL3104Controller,
-    "EL3602": EL3602Controller,
-    "EL3702": EL3702Controller,
-    "EL4134": EL4134Controller,
-    "EL9410": EL9410Controller,
-    "EL9505": EL9505Controller,
-    "EL9512": EL9512Controller,
-    "ELM3704-0000": ELM3704_0000Controller,
-    "ETHERCAT": EtherCATMasterController,
-}
-
-
-class CATioServerController(CATioController):
-    """A root controller for an ADS-based EtherCAT I/O server."""
-
-    _subsystem = "server"
-
-    def __init__(
-        self,
-        ip: str,
-        target_netid: str,
-        target_port: int,
-        poll_period: float,
-        notification_period: float,
-    ) -> None:
-        global STANDARD_POLL_UPDATE_PERIOD, NOTIFICATION_UPDATE_PERIOD
-        STANDARD_POLL_UPDATE_PERIOD = poll_period
-        NOTIFICATION_UPDATE_PERIOD = notification_period
-        logging.info(
-            f"CATio standard polling period set to {STANDARD_POLL_UPDATE_PERIOD} "
-            + "seconds and CATio notification update period set to "
-            + f"{NOTIFICATION_UPDATE_PERIOD} seconds."
-        )
-
-        super().__init__(
-            description="Root controller for an ADS-based EtherCAT I/O server"
-        )
-        self.name = "ROOT"
-        self._cnx_settings = CATioConnectionSettings(ip, target_netid, target_port)
-        self.attribute_map: dict[
-            str, Attribute
-        ] = {}  # key is attribute name, value is attribute object
-        self.notification_enabled = False
-        self.notification_stream: npt.NDArray | None = None
-        logging.info("CATio Controller instantiated but not connected yet.")
-
-    async def close(self):
-        """Stop the device notifications and close the ADS connection."""
-        logging.info(">------------ Stopping and deleting notifications.")
-        self.connection.enable_notification_monitoring(False)
-        self.notification_enabled = False
-        self.notification_stream = None
-        await self.connection.close()
-
-    async def get_server_attributes(self) -> None:
-        """
-        Get and create all generic attributes associated with an EtherCAT I/O server.
-        """
-        _group = "IOServer"
-
-        # Update the CATio client fast_cs_io_map
-        io: IOServer = await self.connection.send_query(
-            CATioFastCSRequest("IO_FROM_MAP", self.identifier, _group)
-        )
-
-        # NOT SURE WHY ATTRIBUTE NAME IN HANDLER CREATION IS REQUIRED!!!! CHECK!
-        self.attributes["Name"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=_group,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="name"),
-            initial_value=io.name,
-            description="I/O server name",
-        )
-
-        self.attributes["Version"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=_group,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="version"),
-            initial_value=io.version,
-            description="I/O server version number",
-        )
-
-        self.attributes["Build"] = AttrR(
-            datatype=String(),
-            access_mode=AttrMode.READ,
-            group=_group,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="build"),
-            initial_value=str(io.build),
-            description="I/O server build number",
-        )
-
-        self.attributes["DevCount"] = AttrR(
-            datatype=Int(),
-            access_mode=AttrMode.READ,
-            group=_group,
-            handler=CATioHandler.OnceAtStart.value.create(attribute_name="num_devices"),
-            initial_value=int(io.num_devices),
-            description="I/O server registered device count",
-        )
-
-        # Set all controller parameters as class attributes
-        for attr_name in self.attributes.keys():
-            setattr(self, "_" + attr_name, self.attributes[attr_name])
-
-        logging.debug(
-            f"{len(self.attributes)} fastCS attributes have been registered "
-            + "with the I/O server controller."
-        )
-
-    async def register_system_subcontrollers(self) -> None:
-        """Register all subcontrollers found in the EtherCAT system tree."""
-        root_node: IOTreeNode = await self.connection.send_query(
-            CATioFastCSRequest("SYSTEM_TREE")
-        )
-        assert isinstance(root_node.data, IOServer), (
-            "The root of the EtherCAT system tree must be an I/O server."
-        )
-        await self.get_subcontrollers_from_node(root_node)
+        return ctlr
 
     async def get_complete_attribute_map(self) -> None:
-        """Get a complete map of all attributes available to the CATio controller."""
-        atrribute_refs = {
+        """
+        Get a complete map of all attributes available to the CATio Server controller.
+        The map keys are the full attribute names as per the ADS symbol names.
+        """
+        attribute_refs = {
             ".".join(["_IOServer", key]): value
             for key, value in self.attributes.items()
         }
-        for subctrl in self.get_sub_controllers().values():
-            assert isinstance(subctrl, CATioSubController)
+        for subctrl in self.sub_controllers.values():
+            assert isinstance(subctrl, CATioController)
             gen_obj = subctrl.attribute_dict_generator()
             for value in gen_obj:
-                atrribute_refs.update(value)
-        self.attribute_map = atrribute_refs
-        logging.debug(
-            "Full map of available attributes to the CATio controller: "
+                attribute_refs.update(value)
+        self.attribute_map = attribute_refs
+        logger.debug(
+            "Full map of attributes available to the CATio server controller: "
             + f"{self.attribute_map.keys()}"
         )
 
-    async def print_names(self) -> None:
-        for name, subctrl in self.get_sub_controllers().items():
-            print(f"CONTROLLER: {name}")
-            assert isinstance(subctrl, CATioSubController)
-            await subctrl.print_names()
-
-    async def initialise(self) -> None:
-        """
-        Initiate a catio connection with the Beckhoff TwinCAT server.
-        Introspect the current EtherCAT chain and initialise the system controllers.
-        Create the FastCS attributes associated with each component found in the system.
-        """
-        await super().initialise()
-        logging.debug("Initialising EtherCAT connection and CATio controllers...")
-
-        await self._establish_tcp_connection(self._cnx_settings)
-        logging.info("Client connection to TwinCAT server was successful.")
-
-        await self.connection.initialise()
-        logging.info("Client introspection of the I/O server was successful.")
-
-        await self.get_server_attributes()
-        logging.debug("Update of FastCS attributes for the I/O server was successful.")
-
-        await self.register_system_subcontrollers()
-        logging.info(
-            "FastCS controllers have been created for the I/O server, EThercAT devices "
-            + "and slave terminals."
-        )
-        # await self.print_names()
-        await self.get_complete_attribute_map()
-        logging.info(
-            f"A map of all attributes linked to controller {self.name} was created."
-        )
-
-    def get_device_controller(self) -> EtherCATMasterController:
+    def get_device_controller(self) -> CATioController:
         """
         Get the EtherCAT master device controller from the registered subcontrollers.
 
         Note: it currently assumes a single device: the EtherCAT master !!!!!
         As is the logic for the client 'get_all_symbols()' anyway.
+        TO DO: extend to multiple devices if needed; other functions will be impacted!
+
+        :returns: the EtherCAT master device controller.
         """
         devices = []
-        for subctrl in self.get_sub_controllers().values():
-            if isinstance(subctrl, EtherCATMasterController):
+        for subctrl in self.sub_controllers.values():
+            if isinstance(subctrl, CATioDeviceController):
                 devices.append(subctrl)
         assert len(devices) == 1
         return devices[0]
 
     async def update_notification_timestamp(self, notifications: npt.NDArray) -> None:
-        """Update the timestamp attribute associated with the notification message."""
+        """
+        Update the timestamp attribute associated with the notification message.
+
+        :param notifications: the notification changes received from the CATio client.
+        """
         assert notifications.dtype.names
 
         # Extract the timestamps from the notification changes
@@ -1875,26 +648,28 @@ class CATioServerController(CATioController):
             filetime_to_dt(timestamps[0])
         )
         assert isinstance(timestamp_attr, AttrR)
-        await timestamp_attr.set(timestamp_value)
-        logging.info(
-            f"Updated notification attribute {timestamp_attr_name} "
-            + f"to value {timestamp_value}"
-        )
+        await timestamp_attr.update(timestamp_value)
+        # logger.debug(
+        #     f"Updated notification attribute {timestamp_attr_name} "
+        #     + f"to value {timestamp_value}"
+        # )
 
     @scan(NOTIFICATION_UPDATE_PERIOD)
     async def notifications(self):
         """
         Get and process the EtherCAT device notification stream.
 
-        This method periodically checks for new notification messages from the
-        CATio client and updates the relevant FastCS attributes if any changes are
-        detected."""
-
+        This method periodically checks for new notification messages from \
+            the CATio client and updates the relevant FastCS attributes \
+                if any changes are detected.
+        """
         if self.notification_stream is None:
-            # Wait for the notifications to be setup by the timestamp attribute handler.
+            # Get a reference to the EtherCAT Master Device which provides notifications
             dev_ctrl = self.get_device_controller()
-            assert dev_ctrl is not None
+            assert isinstance(dev_ctrl, CATioDeviceController)
+            # Wait until the device controller is ready to provide notifications
             if not dev_ctrl.notification_ready:
+                logger.debug("Notification setup not ready yet, monitoring off.")
                 return
             # Request the CATio client to start publishing notifications
             self.connection.enable_notification_monitoring(
@@ -1905,7 +680,6 @@ class CATioServerController(CATioController):
         if self.notification_enabled:
             # Get the stream of notifications accumulated over the last period
             notifs = await self.connection.get_notification_streams(timeout=5)
-
             # Average the accumulated notification stream values for each element.
             mean = process_notifications(average, notifs)
             # logging.debug(f"Mean of accumulated notifications: {mean.dtype}, {mean}")
@@ -1917,7 +691,10 @@ class CATioServerController(CATioController):
 
             # Get the changes between the current and previous notification streams
             diff = get_notification_changes(mean, self.notification_stream)
-            assert diff.dtype.names
+            assert diff.dtype.names, "Expected a numpy structured array with fields."
+            logger.debug(
+                f"Notification fields which show changes: {diff.dtype.names}, {diff}"
+            )
 
             # Update the previous notification stream value to the latest one received
             self.notification_stream = mean
@@ -1934,39 +711,432 @@ class CATioServerController(CATioController):
             filtered_diff = rfn.drop_fields(
                 diff, drop_names=non_value_names, usemask=False, asrecarray=True
             )
+            logger.debug(
+                f"Value field notifications which have changed: {filtered_diff}, "
+                + f"{filtered_diff.size}, {filtered_diff.shape}"
+            )
 
             assert filtered_diff.dtype.names
             for name in filtered_diff.dtype.names:
                 # Remove the '.value' from the notification name
                 attr_name = name.rsplit(".", 1)[0]
-                if attr_name in self.attribute_map.keys():
-                    notif_attribute = self.attribute_map[attr_name]
-                    # Extract the new value from the notification field
-                    if isinstance(filtered_diff[name], np.ndarray):
-                        # Handle the oversampling arrays
-                        if filtered_diff[name].ndim > 1:
-                            assert filtered_diff[name].shape[0] == 1, (
-                                "Bad array format received from the notification stream"
-                            )
-                            val = filtered_diff[name].flatten()
+                ############### Assertion not valid until all terminal attributes have been defined;
+                ############### use if statement instead
+                assert attr_name in self.attribute_map.keys(), (
+                    f"No reference to {attr_name} in the CATio attribute map; "
+                    + "implementation of terminal attributes may be missing."
+                )
+                ############### if attr_name in self.attribute_map.keys():
+                notif_attribute = self.attribute_map[attr_name]
 
-                        # Single discrete value
-                        else:
-                            if filtered_diff[name].shape[0] > 1:
-                                # 1D array with multiple values
-                                val = filtered_diff[name]
-                            else:
-                                # Discrete value expressed as 1D array
-                                val = filtered_diff[name][0]
-                        new_value = notif_attribute.datatype.validate(val)
-
-                    else:
-                        new_value = notif_attribute.datatype.validate(
-                            filtered_diff[name]
+                # Extract the new value from the notification field
+                if isinstance(filtered_diff[name], np.ndarray):
+                    # Handle the oversampling arrays (must be 1D numpy arrays)
+                    # e.g. shape of 'sample' with n values is: (1, n)
+                    if filtered_diff[name].ndim > 1:
+                        assert filtered_diff[name].shape[0] == 1, (
+                            "Bad array format received from the notification stream"
                         )
+                        val = filtered_diff[name].flatten()
+                    else:
+                        # Handle 1D arrays with multiple values
+                        # e.g. shape of X with n elements is: (n,)
+                        if filtered_diff[name].shape[0] > 1:
+                            val = filtered_diff[name]
+                        else:
+                            # Handle single discrete value expressed as 1D array
+                            # e.g. shape of 'cyclecount' with single value is: (1,)
+                            val = filtered_diff[name][0]
+                    new_value = notif_attribute.datatype.validate(val)
 
-                    assert isinstance(notif_attribute, AttrR)
-                    await notif_attribute.set(new_value)
-                    logging.info(
-                        f"Updated notification attribute {attr_name} to value {new_value}."
-                    )
+                else:
+                    # Handle single discrete value
+                    new_value = notif_attribute.datatype.validate(filtered_diff[name])
+
+                assert isinstance(notif_attribute, AttrR)
+                await notif_attribute.update(new_value)
+                logger.debug(
+                    f"Updated notification attribute {attr_name} to value {new_value}."
+                )
+
+
+class CATioDeviceController(CATioController):
+    """A controller for an EtherCAT I/O device."""
+
+    def __init__(
+        self,
+        name: str,
+        eCAT_name: str = "",
+        description: str | None = None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            eCAT_name=eCAT_name,
+            description=description,
+            group="device",
+        )
+        self.notification_ready: bool = False
+        """Flag indicating if the device is ready to provide notifications."""
+
+    async def get_io_attributes(self) -> dict[str, Attribute]:
+        """Create and get all device controller attributes."""
+        return await self.get_device_generic_attributes()
+
+    async def get_device_generic_attributes(self) -> dict[str, Attribute]:
+        """
+        Create and get all generic device attributes.
+
+        :returns: a dictionary of generic device controller attributes.
+        """
+        assert isinstance(self.io, IODevice), (
+            f"Wrong I/O type associated with controller {self.name}"
+        )
+
+        # Get the generic attributes related to a CATioDeviceController
+        attr_dict = await super().get_generic_attributes()
+
+        attr_dict["Id"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("id", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.id),
+            description="I/O device identity number",
+        )
+        attr_dict["Type"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("type", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.type),
+            description="I/O device type",
+        )
+        attr_dict["Name"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=self.io.name,
+            description="I/O device name",
+        )
+        attr_dict["Netid"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("netid", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=str(self.io.netid),
+            description="I/O device ams netid",
+        )
+        attr_dict["Identity"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("identity", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=str(self.io.identity),
+            description="I/O device identity",
+        )
+        attr_dict["SystemTime"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.frame_counters.time),
+            description="I/O device, EtherCAT frame timestamp",
+        )
+        attr_dict["SentCyclicFrames"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.frame_counters.cyclic_sent),
+            description="I/O device, sent cyclic frames counter",
+        )
+        attr_dict["LostCyclicFrames"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.frame_counters.cyclic_lost),
+            description="I/O device, lost cyclic frames counter",
+        )
+        attr_dict["SentAcyclicFrames"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.frame_counters.acyclic_sent),
+            description="I/O device, sent acyclic frames counter",
+        )
+        attr_dict["LostAcyclicFrames"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.frame_counters.acyclic_lost),
+            description="I/O device, lost acyclic frames counter",
+        )
+        attr_dict["SlaveCount"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef(
+                "slave_count", update_period=STANDARD_POLL_UPDATE_PERIOD
+            ),
+            group=self.attr_group_name,
+            initial_value=int(self.io.slave_count),
+            description="I/O device registered slave count",
+        )
+        attr_dict["SlavesStates"] = AttrR(
+            datatype=Waveform(
+                array_dtype=np.uint8, shape=(2 * int(self.io.slave_count),)
+            ),
+            io_ref=CATioControllerAttributeIORef(
+                "slaves_states", update_period=STANDARD_POLL_UPDATE_PERIOD
+            ),
+            group=self.attr_group_name,
+            initial_value=np.array(self.io.slaves_states, dtype=np.uint8).flatten(),
+            description="I/O device, states of slave terminals",
+        )
+        attr_dict["SlavesCrcCounters"] = AttrR(
+            datatype=Waveform(array_dtype=np.uint32, shape=(int(self.io.slave_count),)),
+            io_ref=CATioControllerAttributeIORef(
+                "slaves_crc_counters", update_period=STANDARD_POLL_UPDATE_PERIOD
+            ),
+            group=self.attr_group_name,
+            initial_value=np.array(
+                self.io.slaves_crc_counters, dtype=np.uint32
+            ).flatten(),
+            description="I/O device, slave crc error sum counters",
+        )
+        attr_dict["NodeCount"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("node_count", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.node_count),
+            description="I/O device registered node count",
+        )
+        attr_dict["timestamp"] = AttrR(
+            datatype=String(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            description="I/O device last notification timestamp",
+        )
+        logger.debug(
+            f"Created {len(attr_dict)} generic attributes "
+            + f"for the controller {self.name}."
+        )
+
+        return attr_dict
+
+    async def connect(self) -> None:
+        """Establish the FastCS connection to the device controller."""
+        await super().connect()
+
+    def get_device_eCAT_id(self) -> int:
+        """
+        Extract the id value from the EtherCAT device name (e.g. from ETH5 or EBUS12).
+        """
+        matches = re.search(r"(\d+)$", self.name)
+        if matches:
+            return int(matches.group(0))
+        raise NameError(
+            f"CATioDeviceController id couldn't be extracted from its name {self.name}."
+        )
+
+    async def setup_symbol_notifications(self) -> None:
+        """
+        Setup subscriptions to all ads symbol variables available to the controller.
+        Although running in the background, notifications of change won't be active \
+            until monitoring is enabled.
+        """
+        logger.info(
+            f"EtherCAT Device {self.name}: subscribing to symbol notifications."
+        )
+        await self.connection.add_notifications(self.get_device_eCAT_id())
+
+    @scan(ONCE)
+    async def subscribe(self) -> None:
+        """Subscribe to all ads symbol notifications available to the controller.
+        This is done once after post FastCS connection; \
+            if done earlier, the notification setup process will somehow fail."""
+        await self.setup_symbol_notifications()
+        self.notification_ready = True
+        logger.debug("Setup of notification subscriptions completed.")
+
+    @scan(STANDARD_POLL_UPDATE_PERIOD)
+    async def frame_counters(self) -> None:
+        """Periodically poll the EtherCAT frame counters from the device."""
+        attr_names = [
+            "SystemTime",
+            "SentCyclicFrames",
+            "LostCyclicFrames",
+            "SentAcyclicFrames",
+            "LostAcyclicFrames",
+        ]
+        frame = inspect.currentframe()
+        assert frame is not None, "Function name couldn't be retrieved."
+        await self.update_nparray_subattributes(attr_names, frame, np.uint32)
+
+
+class CATioTerminalController(CATioController):
+    """A controller for an EtherCAT I/O terminal."""
+
+    def __init__(
+        self,
+        name: str,
+        eCAT_name: str = "",
+        description: str | None = None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            eCAT_name=eCAT_name,
+            description=description,
+            group="terminal",
+        )
+
+    async def get_io_attributes(self) -> dict[str, Attribute]:
+        """Create and get all terminal controller attributes.
+
+        :returns: a dictionary of terminal controller attributes.
+        """
+        return await self.get_terminal_generic_attributes()
+
+    async def get_terminal_generic_attributes(self) -> dict[str, Attribute]:
+        """Create and get all generic terminal attributes.
+
+        :returns: a dictionary of generic terminal controller attributes.
+        """
+        assert isinstance(self.io, IOSlave), (
+            f"Wrong I/O type associated with controller {self.name}"
+        )
+
+        # Get the generic attributes related to a CATioDeviceController
+        attr_dict = await super().get_generic_attributes()
+
+        attr_dict["ParentDevId"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("parent_device", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=str(self.io.parent_device),
+            description="I/O terminal master device id",
+        )
+        attr_dict["Type"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("type", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=self.io.type,
+            description="I/O terminal type",
+        )
+        attr_dict["Name"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=self.io.name,
+            description="I/O terminal name",
+        )
+        attr_dict["Address"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("address", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.address),
+            description="I/O terminal EtherCAT address",
+        )
+        attr_dict["Identity"] = AttrR(
+            datatype=String(),
+            io_ref=CATioControllerAttributeIORef("identity", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=str(self.io.identity),
+            description="I/O terminal identity",
+        )
+        attr_dict["StateMachine"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.states.eCAT_state),
+            description="I/O terminal state machine",
+        )
+        attr_dict["LinkStatus"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.states.link_status),
+            description="I/O terminal communication state",
+        )
+        attr_dict["CrcErrorPortA"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.crcs.portA_crc),
+            description="I/O terminal crc error counter on port A",
+        )
+        attr_dict["CrcErrorPortB"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.crcs.portB_crc),
+            description="I/O terminal crc error counter on port B",
+        )
+        attr_dict["CrcErrorPortC"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.crcs.portC_crc),
+            description="I/O terminal crc error counter on port C",
+        )
+        attr_dict["CrcErrorPortD"] = AttrR(
+            datatype=Int(),
+            io_ref=None,
+            group=self.attr_group_name,
+            initial_value=int(self.io.crcs.portD_crc),
+            description="I/O terminal crc error counter on port D",
+        )
+        attr_dict["CrcErrorSum"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef(
+                "crc_error_sum", update_period=STANDARD_POLL_UPDATE_PERIOD
+            ),
+            group=self.attr_group_name,
+            initial_value=int(self.io.crc_error_sum),
+            description="I/O terminal crc error sum counter",
+        )
+        attr_dict["Node"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("node", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.loc_in_chain.node),
+            description="I/O terminal associated node",
+        )
+        attr_dict["Position"] = AttrR(
+            datatype=Int(),
+            io_ref=CATioControllerAttributeIORef("position", update_period=ONCE),
+            group=self.attr_group_name,
+            initial_value=int(self.io.loc_in_chain.position),
+            description="I/O terminal associated position",
+        )
+        logger.debug(
+            f"Created {len(attr_dict)} generic attributes "
+            + f"for the controller {self.name}."
+        )
+
+        return attr_dict
+
+    async def connect(self) -> None:
+        """Establish the FastCS connection to the terminal controller."""
+        await super().connect()
+
+    @scan(STANDARD_POLL_UPDATE_PERIOD)
+    async def states(self) -> None:
+        """
+        Periodically poll the EtherCAT terminal states from the io.
+        """
+        attr_names = [
+            "StateMachine",
+            "LinkStatus",
+        ]
+        frame = inspect.currentframe()
+        assert frame is not None, "Function name couldn't be retrieved."
+        await self.update_nparray_subattributes(attr_names, frame, np.uint8)
+
+    @scan(STANDARD_POLL_UPDATE_PERIOD)
+    async def crc_error_counters(self) -> None:
+        """
+        Periodically poll the EtherCAT terminal CRC error counters from the io.
+        """
+        attr_names = [
+            "CrcErrorPortA",
+            "CrcErrorPortB",
+            "CrcErrorPortC",
+            "CrcErrorPortD",
+        ]
+        frame = inspect.currentframe()
+        assert frame is not None, "Function name couldn't be retrieved."
+        await self.update_nparray_subattributes(attr_names, frame, np.uint32)

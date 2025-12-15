@@ -595,6 +595,23 @@ def symbol_lookup(node: AdsSymbolNode):
                         + f"'{node.type_name}' in terminal {node.name} is missing. "
                         + "Symbol node will be ignored."
                     )
+        case AdsDataType.ADS_TYPE_UINT8:
+            """This will include some parameters for standard terminals:
+            e.g. Status_Uo for EL9512, EL9505..."""
+            symbols.append(
+                AdsSymbol(
+                    parent_id=node.parent_id,
+                    name=node.name,
+                    dtype=np.uint8,
+                    size=1,
+                    group=node.index_group,
+                    offset=node.index_offset,
+                    comment=add_comment(
+                        "Value symbol for a 1 byte unsigned integer.",
+                        node.comment,
+                    ),
+                )
+            )
         case _:
             logging.warning(
                 f"Definition for the symbol node type '{node.ads_type}' in terminal "

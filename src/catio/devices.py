@@ -79,9 +79,7 @@ class AdsSymbol:
         return np.dtype(self.dtype)
 
     @property
-    def nbytes(
-        self,
-    ) -> int:
+    def nbytes(self) -> int:
         """
         Get the total number of bytes of the data associated to the symbol value.
 
@@ -188,7 +186,7 @@ class IODevice:
     category: IONodeType = IONodeType.Device
     """The component category the object belongs to in the EtherCAT system"""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"IODevice(id={self.id}, type={self.type}, name={self.name}, "
             + f"netid={self.netid}, slaveCount={self.slave_count}, "
@@ -232,12 +230,15 @@ class IOTreeNode:
     ):
         if path is None:
             self.path = [data.name]
+            """The path to this node in the tree."""
         else:
             path.append(data.name)
             self.path = path
 
         self.data = data
+        """The EtherCAT object associated to this node."""
         self.children: list[IOTreeNode] = []
+        """The child nodes connected to this node."""
 
     @property
     def child_count(self) -> int:
@@ -254,7 +255,7 @@ class IOTreeNode:
         """
         Add a child node to the current node.
 
-        :params child: the child node to add to the current node
+        :param child: the child node to add to the current node
         """
         self.children.append(child)
 
@@ -282,7 +283,7 @@ class IOTreeNode:
         Depth-first search algorithm to check if the node is itself or has a child node\
              whose associated EtherCAT object correspond to a specific name.
 
-        :params target: the name of the EtherCAT object to find in the tree
+        :param target: the name of the EtherCAT object to find in the tree
 
         :returns: true if this root node comprises the EtherCAT object name
         """

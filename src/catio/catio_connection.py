@@ -6,11 +6,60 @@ from dataclasses import dataclass, field
 from typing import Any, Self, SupportsInt
 
 import numpy.typing as npt
+from fastcs.tracer import Tracer
 
-from catio.catio_adapters import CATioFastCSRequest
 from catio.devices import AdsSymbol
 
 from .client import AsyncioADSClient
+
+
+class CATioFastCSRequest:
+    """
+    Request object sent to the catio client (string subclass).
+    Used to encapsulate all the information needed to perform a query.
+    """
+
+    def __init__(self, command: str, *args, **kwargs):
+        self.command = command
+        """The command to be executed by the CATio client."""
+        self.args = args
+        """Optional positional arguments for the command."""
+        self.kwargs = kwargs
+        """Optional keyword arguments for the command."""
+
+    def __repr__(self) -> str:
+        """Return a string representation of the CATio request."""
+        return repr(
+            self.command
+            + "("
+            + ", ".join(self.args)
+            + ", "
+            + ", ".join([f"{k}={v!r}" for k, v in self.kwargs.items()])
+            + ")"
+        )
+
+
+@dataclass
+class CATioFastCSResponse:
+    """
+    Response object received by the catio client.
+    Used to potentially manipulate the received information.
+    """
+
+    value: Any
+    """The response received from the CATio client."""
+
+    def toString(self) -> str:
+        """Attempt to return a string representation of the CATio response.
+
+        :returns: the CATio response to a query as a string
+
+        :raises ValueError: if the received response cannot be stringified
+        """
+        try:
+            return repr(self.value)
+        except Exception as err:
+            raise ValueError from err
 
 
 class DisconnectedError(Exception):
@@ -20,22 +69,22 @@ class DisconnectedError(Exception):
 
 
 @dataclass
-class CATioConnectionSettings:
+class CATioServerConnectionSettings:
     """
     Settings required to establish a TCP connection with a CATio server.
     Act as a wrapper for connection parameters.
     """
 
-    ip: str
+    ip: str = "127.0.0.1"
     """The IP address of the TwinCAT server to connect to."""
-    ams_netid: str
+    ams_netid: str = "127.0.0.1.1.1"
     """The Ams netid of the TwinCAT server to connect to."""
-    ams_port: int
+    ams_port: int = 25565
     """The Ams port of the TwinCAT server to connect to."""
 
     def __repr__(self) -> str:
-        return f"TCP connection to server netid {self.ams_netid} at address {self.ip} \
-            on port {self.ams_port}"
+        return f"TCP connection to remote server with netid {self.ams_netid}, \
+            at address {self.ip}, on port {self.ams_port}"
 
 
 @dataclass
@@ -48,7 +97,7 @@ class CATioStreamConnection:
     One instance of AsyncioADSClient will be created and managed internally.
     """
 
-    _connection_settings: CATioConnectionSettings
+    _connection_settings: CATioServerConnectionSettings
     """The connection settings used to connect to the CATio server."""
     _catio_client: AsyncioADSClient
     """The ADS client used to communicate with the CATio server."""
@@ -60,7 +109,7 @@ class CATioStreamConnection:
     """The list of currently subscribed notification symbols."""
 
     @property
-    def settings(self) -> CATioConnectionSettings:
+    def settings(self) -> CATioServerConnectionSettings:
         """The connection settings used to connect to the CATio server."""
         return self._connection_settings
 
@@ -80,7 +129,7 @@ class CATioStreamConnection:
         return self._subscribed_symbols
 
     @classmethod
-    async def connect(cls, settings: CATioConnectionSettings) -> Self:
+    async def connect(cls, settings: CATioServerConnectionSettings) -> Self:
         """
         Create a client which will connect to the TwinCAT server and \
             support ADS communication with the attached I/O devices.
@@ -96,26 +145,27 @@ class CATioStreamConnection:
         )
         return cls(settings, ads_client)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Initialise the asyncio lock for managing concurrent access to the client.
         """
         self._lock = asyncio.Lock()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         """
         Acquire the asyncio lock to ensure exclusive access to the client.
         """
         await self._lock.acquire()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Release the asyncio lock to allow other coroutines to access the client.
         """
         self._lock.release()
+        # pass
 
-    async def initialise(self):
+    async def initialise(self) -> None:
         """
         Update the ads client with the current I/O server configuration.
         This includes the detection of all configured hardware in the EtherCAT system
@@ -126,7 +176,21 @@ class CATioStreamConnection:
         await self.client.introspect_IO_server()
         self._notification_symbols = await self.client.get_all_symbols()
 
-    async def query(self, message: CATioFastCSRequest) -> Any:
+    async def command(self, command: str, *args, **kwargs) -> None:
+        """
+        Send a message command to the CATio client.
+        This message command will be translated as an API function call.
+
+        :param command: the command to send to the client
+        :param args: positional arguments for the command
+        :param kwargs: keyword arguments for the command
+        """
+        try:
+            await self.client.command(command, *args, **kwargs)
+        except ValueError as err:
+            logging.debug(f"API call failed with error: {err}")
+
+    async def query(self, message: CATioFastCSRequest) -> CATioFastCSResponse:
         """
         Send a message request to the catio client.
         This message request will be translated as an API function call.
@@ -134,8 +198,6 @@ class CATioStreamConnection:
         :param message: a CATio request message which will be routed via the client.
 
         :returns: the response to the query as received by the CATio client
-
-        :raises ValueError: if the API call fails
         """
         response = ""
         try:
@@ -143,11 +205,11 @@ class CATioStreamConnection:
                 message.command, *message.args, **message.kwargs
             )
         except ValueError as err:
-            logging.debug(f"API call exception:: {err}")
+            logging.debug(f"API call failed with error: {err}")
 
-        # # Only use the debug logging in last resort, as it can be very verbose!
+        # # Very verbose logging!
         # logging.debug(f"CATio client response to '{message}' query: {response}")
-        return response
+        return CATioFastCSResponse(response)
 
     async def add_notifications(self, device_id: int) -> None:
         """
@@ -168,7 +230,7 @@ class CATioStreamConnection:
         await self.client.add_notifications(
             subscription_symbols,  # max_delay_ms=1000, cycle_time_ms=1000
         )
-        logging.debug(
+        logging.info(
             f"Subscribed to {len(subscription_symbols)} symbols "
             + f"for device id {device_id}."
         )
@@ -222,7 +284,7 @@ class CATioStreamConnection:
         await self.client.close()
 
 
-class CATioConnection:
+class CATioConnection(Tracer):
     """
     For connecting to a Beckhoff TwinCAT server using a TCP connection.
     This class manages a CATioStreamConnection instance \
@@ -230,12 +292,13 @@ class CATioConnection:
     One instance of this class should be created per TCP connection.
     """
 
-    def __init__(self, connection: CATioStreamConnection):
+    def __init__(self, connection: CATioStreamConnection | None = None):
+        super().__init__()
         self.__connection: CATioStreamConnection | None = connection
         """The underlying CATio stream connection."""
 
     @property
-    def connection(self) -> CATioStreamConnection:
+    def _connection(self) -> CATioStreamConnection:
         """
         The underlying CATio stream connection.
 
@@ -247,8 +310,8 @@ class CATioConnection:
             )
         return self.__connection
 
-    @connection.setter
-    def connection(self, value: CATioStreamConnection | None):
+    @_connection.setter
+    def _connection(self, value: CATioStreamConnection | None) -> None:
         """
         Set the underlying CATio stream connection.
 
@@ -257,31 +320,51 @@ class CATioConnection:
         self.__connection = value
 
     @property
-    def settings(self) -> CATioConnectionSettings:
+    def settings(self) -> CATioServerConnectionSettings:
         """The connection settings used to connect to the CATio server."""
-        return self.connection.settings
+        return self._connection.settings
 
     @property
     def client(self) -> AsyncioADSClient:
         """The ADS client used to communicate with the CATio server."""
-        return self.connection.client
+        return self._connection.client
 
-    @classmethod
-    async def connect(cls, settings: CATioConnectionSettings) -> Self:
-        """Establish a TCP connection and enable stream communication."""
-        stream_connection = await CATioStreamConnection.connect(settings)
+    def is_defined(self) -> bool:
+        """
+        Check if a valid CATio connection has been defined.
+
+        :returns: True if a connection is established, False otherwise
+        """
+        return self.__connection is not None
+
+    async def connect(self, settings: CATioServerConnectionSettings) -> None:
+        """
+        Establish a TCP connection and enable stream communication.
+
+        :param settings: the connection settings to use for connecting to the server
+        """
+        self._connection = await CATioStreamConnection.connect(settings)
         logging.info(
             f"Opened stream communication with ADS server at {time.strftime('%X')}"
         )
-        return cls(stream_connection)
 
     async def initialise(self) -> None:
         """
         Initialise the client connection with the current server settings.
-        This includes the detection of all configured hardware in the EtherCAT system
-        and of all accessible ads symbol variables.
+        This includes the detection of all configured hardware in the EtherCAT system \
+            and of all accessible ads symbol variables.
         """
-        await self.connection.initialise()
+        await self._connection.initialise()
+
+    async def send_command(self, message: CATioFastCSRequest) -> None:
+        """
+        Send a message command to the CATio client.
+        This message command will be translated as an API function call to the client.
+
+        :param message: a CATio request message which will be routed via the client
+        """
+        async with self._connection as connection:
+            await connection.command(message.command, *message.args, **message.kwargs)
 
     async def send_query(self, message: CATioFastCSRequest) -> Any:
         """
@@ -292,17 +375,23 @@ class CATioConnection:
 
         :returns: the response to the query as received by the CATio client
         """
-        async with self.connection as connection:
-            return await connection.query(message)
+        async with self._connection as connection:
+            response = await connection.query(message)
+            self.log_event(
+                "Received query response",
+                query=message.command,
+                response=response.toString(),
+            )
+            return response.value
 
-    async def close(self):
+    async def close(self) -> None:
         """
         Stop the communication stream and \
             close the TCP connection with the TwinCAT server.
         """
-        async with self.connection as connection:
+        async with self._connection as connection:
             await connection.close()
-            self.connection = None
+            self._connection = None
         logging.info(
             f"Closed stream communication with ADS server at {time.strftime('%X')}"
         )
@@ -314,7 +403,7 @@ class CATioConnection:
 
         :param device_id: the id of the device whose notifications must be setup
         """
-        await self.connection.add_notifications(device_id)
+        await self._connection.add_notifications(device_id)
 
     async def get_notification_streams(self, timeout: int = 60) -> npt.NDArray:
         """
@@ -325,20 +414,22 @@ class CATioConnection:
 
         :returns: a numpy array containing the latest notifications
         """
-        return await self.connection.get_notifications(timeout)
+        return await self._connection.get_notifications(timeout)
 
     def enable_notification_monitoring(
         self, enabled: bool, flush_period: float = 0.5
     ) -> None:
         """
         Enable or disable the periodic monitoring of notifications.
-        This will start/stop a background task which periodically checks for new
-        notifications and processes them.
+        This will start/stop a background task which periodically checks for \
+            new notifications and processes them.
 
         :param enabled: True to enable notification monitoring, False to disable it
         :param flush_period: the period (in seconds) at which notifications are flushed
         """
         if enabled:
-            self.connection.monitor_notifications(True, flush_period)
+            self._connection.monitor_notifications(True, flush_period)
+            logging.debug("Notification monitoring enabled.")
         else:
-            self.connection.monitor_notifications(False)
+            self._connection.monitor_notifications(False)
+            logging.debug("Notification monitoring disabled.")

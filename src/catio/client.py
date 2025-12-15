@@ -78,11 +78,11 @@ from .utils import (
 )
 
 # https://infosys.beckhoff.com/content/1033/ipc_security_win7/11019143435.html
-ADS_TCP_PORT = 48898
+ADS_TCP_PORT: int = 48898
 # https://infosys.beckhoff.com/english.php?content=../content/1033/tcsystemmanager/1089026187.html&id=754756950722060432
-ADS_MASTER_PORT = 65535
+ADS_MASTER_PORT: int = 65535
 # https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_system/31084171.html&id=
-IO_SERVER_PORT = 300
+IO_SERVER_PORT: int = 300
 
 
 MessageT = TypeVar("MessageT", bound=Message)
@@ -127,48 +127,17 @@ class ResponseEvent:
         return self.__value
 
 
+#################################################################
+### ADS CLIENT ------------------------------------------------
+#################################################################
+
+
 class AsyncioADSClient:
     """
     Define an ADS client which connects to a given ADS server.
     Communication services comprise explicit ADS requests to the server \
         and continuous monitoring of ADS responses.
     ADS communication protocol follows a clear message packet format.
-
-    Instance attributes:
-        __local_ams_net_id: \
-            container object comprising the localhost netid bytes
-        __local_ams_port: \
-            int object defining the local port used for the ADS communication transport
-        __target_ams_net_id: container object comprising the ADS server netid bytes
-        __target_ams_port: int object defining the ADS server port \
-            which ADS communication is routed to/from
-        __target_coe_net_id: \
-            container object comprising the EtherCAT Master Device netid bytes
-        __reader: reader object used to read data asynchronously from the IO stream
-        __writer: writer object used to write data asynchronously to the IO stream
-        __current_invoke_id: \
-            id assigned to a message request and used to map the received responses
-        __response_events: \
-            dictionary which associates a received response to a unique request id
-        __variable_handles: \
-            dictionary which associates a distinct handle value to a symbol name
-        __device_notification_handles: \
-            container object which associate a distinct handle value to \
-                a notification variable
-        __notif_templates: array of bytes corresponding to the first received \
-            notification and used as a datastructure template for the following \
-                notifications
-        __buffer: array of bytes where device notifications are appended
-        __buffer_cache: array of bytes used to save the partial notification data \
-            which is received when multiple notification streams are required
-        __notification_queue: asyncio queue where arrays of notifications are posted \
-            onto and consumed from
-        __receive_task: asynchronous task which continuously monitors the reception of \
-            new ADS messages
-        _ecdevices: dictionary comprising all EtherCAT devices registered on \
-            the IO server
-        _ecsymbols: dictionary comprising all ADS symbols configured on \
-            the EtherCAT devices
     """
 
     def __init__(
@@ -178,37 +147,58 @@ class AsyncioADSClient:
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
     ):
-        self.__local_ams_net_id = AmsNetId.from_string(get_local_netid_str())
-        self.__local_ams_port = 8000
-        self.__target_ams_net_id = AmsNetId.from_string(target_ams_net_id)
-        self.__target_ams_port = target_ams_port
-        self.__reader = reader
-        self.__writer = writer
-        self.__current_invoke_id = np.uint32(0)
+        self.__local_ams_net_id: AmsNetId = AmsNetId.from_string(get_local_netid_str())
+        """Container object comprising the localhost netid bytes"""
+        self.__local_ams_port: int = 8000
+        """The local port used for the ADS communication transport"""
+        self.__target_ams_net_id: AmsNetId = AmsNetId.from_string(target_ams_net_id)
+        """Container object comprising the ADS server netid bytes"""
+        self.__target_ams_port: int = target_ams_port
+        """The ADS server port which ADS communication is routed to/from"""
+        self.__reader: asyncio.StreamReader = reader
+        """Reader object used to read data asynchronously from the IO stream"""
+        self.__writer: asyncio.StreamWriter = writer
+        """Writer object used to write data asynchronously to the IO stream"""
+        self.__current_invoke_id: int = 0
+        """Id assigned to a message request and used to map the received responses"""
         self.__response_events: dict[SupportsInt, ResponseEvent] = {}
+        """Dictionary which associates a received response to a unique request id"""
         self.__variable_handles: dict[
             str, int
         ] = {}  # key is variable name, value is notification handle
+        """Dictionary which associates a distinct handle value to a symbol name"""
         self.__device_notification_handles: dict[
             SupportsInt, AdsSymbol
         ] = {}  # key is device id, value is dictionary of 'notification_handle: symbol'
+        """Dictionar which associates a handle value to a notification variable"""
         self.__notif_templates: dict[
             int, bytes
         ] = {}  # key is notification stream index, value is notification data
+        """Dictionary which associates each notification stream to an array of bytes \
+            corresponding to the first received notification \
+                and used as a datastructure template for the following notifications"""
         self.__buffer: bytearray | None = None
-        self.__bfr_cache = bytearray()
-        self.__notification_queue = asyncio.Queue()
-        self.__receive_task = asyncio.create_task(self._recv_forever())
+        """Array of bytes where device notifications are appended"""
+        self.__bfr_cache: bytearray = bytearray()
+        """Array of bytes used to save the partial notification data which is received \
+        when multiple notification streams are required"""
+        self.__notification_queue: asyncio.Queue = asyncio.Queue()
+        """Asyncio queue where notification arrays are posted onto and consumed from"""
+        self.__receive_task: asyncio.Task = asyncio.create_task(self._recv_forever())
+        """Asynchronous task which monitors the reception of new ADS messages"""
 
         self._ecdevices: dict[
             SupportsInt, IODevice
         ] = {}  # key is device id, value is IODevice object
+        """Dictionary comprising all EtherCAT devices registered on the IO server"""
         self._ecsymbols: dict[
             SupportsInt, Sequence[AdsSymbol]
         ] = {}  # key is device id, value is list of AdsSymbol objects
+        """Dictionary comprising all ADS symbols configured on the EtherCAT devices"""
         self.fastcs_io_map: dict[
             int, IOServer | IODevice | IOSlave
         ] = {}  # key: FastCS controller object unique identifier, value: CATio object
+        """Dictionary comprising all CATio objects mapped by their FastCS unique id"""
 
     #################################################################
     ### CLIENT CONNECTION -------------------------------------------
@@ -281,15 +271,15 @@ class AsyncioADSClient:
         self.__current_invoke_id += 1
         payload = message.to_bytes()
         ams_header = AmsHeader(
-            target_net_id=ams_netid.to_bytes6(),
+            target_net_id=ams_netid.to_bytes(),
             target_port=ams_port,
-            source_net_id=self.__local_ams_net_id.to_bytes6(),
+            source_net_id=self.__local_ams_net_id.to_bytes(),
             source_port=self.__local_ams_port,
             command_id=command,
             state_flags=StateFlag.AMSCMDSF_ADSCMD,
             length=len(payload),
             error_code=ErrorCode.ERR_NOERROR,
-            invoke_id=self.__current_invoke_id,
+            invoke_id=np.uint32(self.__current_invoke_id),
         )
         header_raw = ams_header.to_bytes()
         total_length = len(header_raw) + len(payload)
@@ -403,13 +393,16 @@ class AsyncioADSClient:
                 if header.command_id == CommandId.ADSSRVID_DEVICENOTE:
                     await self._handle_notification(header, body)
                 else:
-                    # assert CommandId(header.command_id) in RESPONSE_CLASS, (
-                    #     f"ADS Command with id {header.command_id} is not implemented."
-                    # )
+                    assert CommandId(header.command_id) in RESPONSE_CLASS, (
+                        f"ADS Command with id {header.command_id} is not implemented."
+                    )
                     cls = RESPONSE_CLASS[CommandId(header.command_id)]
                     response = cls.from_bytes(body)
                     self.__response_events[header.invoke_id].set(response)
 
+            except AssertionError as err:
+                logging.error(err)
+                break
             except ConnectionAbortedError as err:
                 logging.warning(err)
                 break
@@ -470,9 +463,7 @@ class AsyncioADSClient:
     ### I/O INTROSPECTION -------------------------------------------
     #################################################################
 
-    async def _get_device_count(
-        self,
-    ) -> int:
+    async def _get_device_count(self) -> int:
         """
         Get the number of EtherCAT devices available on the I/O server.
 
@@ -484,17 +475,22 @@ class AsyncioADSClient:
 
         return int.from_bytes(bytes=response.data, byteorder="little", signed=False)
 
-    async def _read_io_info(
-        self,
-    ) -> IOServer:
+    async def _read_io_info(self) -> AdsReadDeviceInfoResponse:
         """
         Read the name and the version number of the TwinCAT ADS IO.
 
+        :returns: an instance of AdsReadDeviceInfoResponse
+        """
+        return await self._ads_command(AdsReadDeviceInfoRequest(), port=IO_SERVER_PORT)
+
+    async def _get_io_server(self) -> IOServer:
+        """
+        Get the I/O server information.
+        This includes name, version, build and number of devices.
+
         :returns: an instance of an IOServer object
         """
-        info_response = await self._ads_command(
-            AdsReadDeviceInfoRequest(), port=IO_SERVER_PORT
-        )
+        info_response = await self._read_io_info()
 
         return IOServer(
             name=bytes_to_string(info_response.device_name.tobytes()),
@@ -548,16 +544,25 @@ class AsyncioADSClient:
         """
         types: Sequence[DeviceType] = []
         for id in dev_ids:
-            response = await self._ads_command(
-                AdsReadRequest.read_device_type(id), port=IO_SERVER_PORT
-            )
-            types.append(
-                DeviceType(
-                    int.from_bytes(
-                        bytes=response.data, byteorder="little", signed=False
+            try:
+                response = await self._ads_command(
+                    AdsReadRequest.read_device_type(id), port=IO_SERVER_PORT
+                )
+                types.append(
+                    DeviceType(
+                        int.from_bytes(
+                            bytes=response.data, byteorder="little", signed=False
+                        )
                     )
                 )
-            )
+            except AssertionError as err:
+                # Type request for 'Onboard I/O Device' device returns an error
+                # e.g. the CX7000 will return ErrorCode.ADSERR_DEVICE_INVALIDINTERFACE
+                logging.warning(
+                    f"Device {id} will be ignored as not an EtherCAT Master ({err})"
+                )
+                types.append(DeviceType(0))
+                continue
 
         return types
 
@@ -945,9 +950,42 @@ class AsyncioADSClient:
 
         return dev_slaves
 
-    async def _get_ethercat_devices(
-        self,
-    ) -> dict[SupportsInt, IODevice]:
+    async def get_EtherCAT_Master_device(self):
+        """
+        Introspect the IO server for the registered Master device.
+        Any device which cannot follow the same introspection protocol \
+            as the Master device is filtered out (e.g. the CX7000 Onboard I/O device).
+
+        :returns: a tuple comprising a list of device ids and a list of device types
+        """
+        dev_ids = await self._get_device_ids(self.ioserver.num_devices)
+        dev_types = await self._get_device_types(dev_ids)
+
+        # Filter the non-Master devices:
+        ids: Sequence[int] = [
+            dev_ids[i]
+            for i, tp in enumerate(dev_types)
+            if tp != DeviceType.IODEVICETYPE_INVALID
+        ]
+        if len(ids) != len(dev_ids):
+            logging.warning(
+                "EtherCAT devices introspection was hacked. "
+                + "Incompatible I/O devices have been omitted."
+            )
+            logging.debug(f"Initial list of device ids: {dev_ids}")
+            logging.debug(f"Initial list of device types: {dev_types}")
+            dev_ids = ids
+            types: Sequence[DeviceType] = [
+                type for type in dev_types if type != DeviceType.IODEVICETYPE_INVALID
+            ]
+            dev_types = types
+            assert len(dev_ids) == len(dev_types), (
+                "Device count mismatch for id and type parameters"
+            )
+
+        return dev_ids, dev_types
+
+    async def _get_ethercat_devices(self) -> dict[SupportsInt, IODevice]:
         """
         Get information about the EtherCAT devices registered with the IO server.
 
@@ -955,10 +993,8 @@ class AsyncioADSClient:
         """
         devices: dict[SupportsInt, IODevice] = {}
         try:
-            dev_ids = await self._get_device_ids(self.ioserver.num_devices)
+            dev_ids, dev_types = await self.get_EtherCAT_Master_device()
             logging.debug(f"List of device ids: {dev_ids}")
-
-            dev_types = await self._get_device_types(dev_ids)
             logging.debug(f"List of device types: {dev_types}")
 
             dev_names = await self._get_device_names(dev_ids)
@@ -1051,10 +1087,7 @@ class AsyncioADSClient:
 
         return devices
 
-    def _print_device_chain(
-        self,
-        device_id: SupportsInt,
-    ) -> None:
+    def _print_device_chain(self, device_id: SupportsInt) -> None:
         """
         Provide a console visualization of the EtherCAT chain for a given device.
 
@@ -1076,9 +1109,7 @@ class AsyncioADSClient:
                     + f"{slave.loc_in_chain.position}\t-> {slave.type}\t{slave.name}"
                 )
 
-    async def _get_EtherCAT_chains(
-        self,
-    ) -> None:
+    async def _get_EtherCAT_chains(self) -> None:
         """
         Evaluate the position of the configured slaves in each EtherCAT device chain.
         Display the resulting chains on the console.
@@ -1112,6 +1143,8 @@ class AsyncioADSClient:
         Each device node may comprise either coupler terminals as child nodes or
         slave terminals as leaf nodes.
         Coupler nodes may comprise slave terminals as leaf nodes.
+
+        :returns: the root node of the EtherCAT system tree
         """
         server_node = IOTreeNode(self.ioserver)
         for device in self._ecdevices.values():
@@ -1132,18 +1165,19 @@ class AsyncioADSClient:
                         parent_path = deepcopy(device_node.path)
                         device_node.add_child(IOTreeNode(slave, parent_path))
         logging.debug(f"EtherCAT system tree has {server_node.tree_height()} levels.")
-        # server_node.print_tree()
+
         return server_node
 
-    async def introspect_IO_server(
-        self,
-    ) -> None:
+    async def introspect_IO_server(self) -> None:
         """
         Gather information about the EtherCAT I/O server (inc. name, version and build),
         identify the registered EtherCAT devices and associated slaves,
         and print out to the console the EtherCAT device chains.
+
+        The EtherCAT Master Device is assumed to be the first device \
+            in the list of devices registered with the I/O server.
         """
-        self.ioserver: IOServer = await self._read_io_info()
+        self.ioserver: IOServer = await self._get_io_server()
         logging.info(
             f"ADS device info: \tname={self.ioserver.name}, "
             + f"version={self.ioserver.version}, build={self.ioserver.build}"
@@ -1167,6 +1201,16 @@ class AsyncioADSClient:
     ### I/O MONITORS: STATES, COUNTERS, FRAMES ----------------------
     #################################################################
 
+    async def _get_ioserver_states(self) -> tuple[np.uint16, np.uint16]:
+        """
+        Read the ADS status of the I/O server.
+
+        :returns: a tuple comprising both the ads link status and the ads device status
+        """
+        return await self._get_states(
+            netid=self.__target_ams_net_id, port=IO_SERVER_PORT
+        )
+
     async def _get_states(
         self, netid: AmsNetId, port: int
     ) -> tuple[np.uint16, np.uint16]:
@@ -1184,9 +1228,7 @@ class AsyncioADSClient:
 
         return response.ads_state, response.device_state
 
-    async def check_ads_states(
-        self,
-    ) -> None:
+    async def check_ads_states(self) -> None:
         """
         Check that the ADS communication status with the IO server and devices is valid.
 
@@ -1197,9 +1239,7 @@ class AsyncioADSClient:
                 "EtherCAT devices have not been defined with the ADS client yet."
             )
         try:
-            io_adsstate, io_devstate = await self._get_states(
-                netid=self.__target_ams_net_id, port=IO_SERVER_PORT
-            )
+            io_adsstate, io_devstate = await self._get_ioserver_states()
             logging.debug(f"IO states: ads={io_adsstate}, dev={io_devstate}")
             assert io_adsstate == AdsState.ADSSTATE_RUN, "IO device is not in run mode"
 
@@ -1345,7 +1385,7 @@ class AsyncioADSClient:
             )[0]
             assert bad_eCAT.size
             for idx in bad_eCAT:
-                slave: IOSlave = slaves[idx]
+                slave: IOSlave = slaves[int(idx)]
                 logging.critical(
                     f"Slave terminal '{slave.name}' isn't in operational state."
                 )
@@ -1357,7 +1397,7 @@ class AsyncioADSClient:
             )[0]
             assert bad_link.size
             for idx in bad_link:
-                slave: IOSlave = slaves[idx]
+                slave: IOSlave = slaves[int(idx)]
                 logging.critical(
                     f"EtherCAT link for slave terminal '{slave.name}' isn't "
                     + "in a good state."
@@ -1411,7 +1451,7 @@ class AsyncioADSClient:
                     )[0]
                     assert bad_eCAT.size
                     for idx in bad_eCAT:
-                        slave: IOSlave = (device.slaves)[idx]
+                        slave: IOSlave = (device.slaves)[int(idx)]
                         logging.critical(
                             f"Slave terminal '{slave.name}' isn't in operational state."
                         )
@@ -1424,7 +1464,7 @@ class AsyncioADSClient:
                     )[0]
                     assert bad_link.size
                     for idx in bad_link:
-                        slave: IOSlave = (device.slaves)[idx]
+                        slave: IOSlave = (device.slaves)[int(idx)]
                         logging.critical(
                             f"EtherCAT link for slave terminal '{slave.name}' isn't "
                             + "in a good state."
@@ -1541,9 +1581,7 @@ class AsyncioADSClient:
             ):
                 slave.crc_error_sum = crc
 
-    async def poll_crc_counters(
-        self,
-    ) -> None:
+    async def poll_crc_counters(self) -> None:
         """
         Read the current error sum counter values of the slaves' CRC for each device.
         """
@@ -1558,12 +1596,6 @@ class AsyncioADSClient:
             device_id = int(device.id)
             slaves_crc = await self.get_device_slaves_crcs(device_id)
             self.update_device_slaves_crcs(device_id, slaves_crc)
-
-            # if not np.array_equal(device.slaves_crc_counters, slaves_crc):
-            #     device.slaves_crc_counters = slaves_crc
-            #     logging.warning(
-            #         f"{device.name}: slave CRC counters have changed and been updated."
-            #     )
 
     async def get_device_frames(self, device_id: SupportsInt) -> None:
         """
@@ -1599,9 +1631,7 @@ class AsyncioADSClient:
             logging.critical(f"Problem reading a device frame counter value -> {err}")
             raise
 
-    async def poll_frame_counters(
-        self,
-    ) -> None:
+    async def poll_frame_counters(self) -> None:
         """
         Get the current frame counter values of all registered EtherCAT devices.
         """
@@ -1661,9 +1691,7 @@ class AsyncioADSClient:
             logging.critical(f"Problem resetting a device frame counter value -> {err}")
             raise
 
-    async def reset_frame_counters(
-        self,
-    ) -> None:
+    async def reset_frame_counters(self) -> None:
         """
         Reset the frame counters of all EtherCAT devices registered with the I/O server.
         """
@@ -1732,7 +1760,7 @@ class AsyncioADSClient:
 
         :param device_id: the id of the EtherCAT device to get the symbols from
         """
-        # ideally, a device would be defined with its ads port info and netid
+        # TO DO: ideally, a device would be defined with its ads port info and netid
         # ads_port = self._ecdevices[device_id].port
 
         # Get the length of the symbol table
@@ -1770,9 +1798,7 @@ class AsyncioADSClient:
             + f"a total of {len(symbols)} available symbols."
         )
 
-    async def get_all_symbols(
-        self,
-    ) -> dict[SupportsInt, Sequence[AdsSymbol]]:
+    async def get_all_symbols(self) -> dict[SupportsInt, Sequence[AdsSymbol]]:
         """
         Get all ADS symbols available on the EtherCAT I/O server.
 
@@ -2167,7 +2193,7 @@ class AsyncioADSClient:
         symbol: AdsSymbol,
         max_delay_ms: int = 0,
         cycle_time_ms: int = 0,
-    ) -> None:
+    ) -> np.uint32:
         """
         Subscribe to notifications from the server for a given device symbol variable.
 
@@ -2180,6 +2206,8 @@ class AsyncioADSClient:
         :param cycle_time_ms: periodic time slice in milliseconds at which the ads \
             server checks if the value changes.
             If 0, then the server will check the value with every task cycle
+
+        :returns: the notification handle assigned to the symbol variable
         """
         assert symbol in self._ecsymbols[symbol.parent_id], (
             f"Symbol '{symbol.name}' not found in the symbol list \
@@ -2222,11 +2250,13 @@ class AsyncioADSClient:
         # otherwise dictionary must be separated further by device id
         self.__device_notification_handles[response.handle] = symbol
         logging.debug(
-            f"Notification subscription for Device{symbol.parent_id}:{symbol.name} "
-            + f"completed with handle {symbol.handle}."
+            f"Notification subscription for Device{symbol.parent_id} symbol "
+            + f"'{symbol.name}' completed with handle {symbol.handle}."
         )
 
         self.__notif_templates = {}
+
+        return response.handle
 
     async def add_notifications(
         self,
@@ -2300,8 +2330,8 @@ class AsyncioADSClient:
 
         del self.__device_notification_handles[symbol.handle]
         logging.debug(
-            f"Deleted notification handle {symbol.handle} for symbol {symbol.name} "
-            + f"on device {self._ecdevices[symbol.parent_id].name}"
+            f"Deleted notification handle {symbol.handle} for symbol '{symbol.name}' "
+            + f"on device '{self._ecdevices[symbol.parent_id].name}'"
         )
         symbol.handle = None
         self.__notif_templates = {}
@@ -2353,10 +2383,7 @@ class AsyncioADSClient:
                 + "symbol notifications."
             )
 
-    def start_notification_monitor(
-        self,
-        flush_period: float,
-    ) -> None:
+    def start_notification_monitor(self, flush_period: float) -> None:
         """
         Trigger the appending of received ADS notifications into the buffer and \
             enable periodic flushing.
@@ -2371,9 +2398,7 @@ class AsyncioADSClient:
             self._periodic_flush(flush_period)
         )
 
-    def stop_notification_monitor(
-        self,
-    ) -> None:
+    def stop_notification_monitor(self) -> None:
         """
         Disable periodic flushing which will also stop the appending of received \
             ADS notifications into the buffer.
@@ -2399,8 +2424,8 @@ class AsyncioADSClient:
                     # which the received notification buffer will be translated against.
                     if first_flush:
                         assert self.__notif_templates, (
-                            "Flushing period is too short, \
-                                notification data has not been initialised yet."
+                            "Flushing period is too short, "
+                            + "notification data has not been initialised yet."
                         )
                         dev_id = next(iter(self._ecdevices.keys()))
 
@@ -2443,7 +2468,8 @@ class AsyncioADSClient:
                         # print("TEMPLATE SIZES:")
                         # print([(k, len(v)) for k, v in self.__notif_templates.items()])
                         assert len(buffer) % len(template_data) == 0, (
-                            "Request to flush an incomplete notification buffer."
+                            "Request to flush an incomplete notification buffer "
+                            + "(size mismatch)."
                         )
                         self.__notification_queue.put_nowait(
                             await self._get_notifications_from_buffer(
@@ -2452,6 +2478,10 @@ class AsyncioADSClient:
                         )
                         logging.debug("Notification stream added to the queue.")
 
+            except AssertionError as err:
+                logging.error(f"Notification flushing error: {err}")
+                self.__buffer = None
+                break
             except asyncio.CancelledError:
                 # Add the last notification buffer to the queue despite the flushing
                 # period not having completed.
@@ -2647,7 +2677,29 @@ class AsyncioADSClient:
     ### API FUNCTIONS -----------------------------------------------
     #################################################################
 
-    async def query(self, message: str, *args, **kwargs):
+    async def command(self, command: str, *args, **kwargs) -> Any:
+        """
+        Call the API method associated with a given command.
+
+        :param command: a string which will translate to a specific 'set_' method
+        :param args: possible positional arguments required by the called method
+        :param kwargs: possible keyword arguments required by the called method
+
+        :returns: the associated function call response
+
+        :raises ValueError: if the requested API method doesn't exist
+        """
+        set = f"set_{command.lower()}"
+        if hasattr(self, set) and callable(func := getattr(self, set)):
+            # assignment := means 'set the value of variable \
+            # and evaluate the result of expression in a single line'
+            if asyncio.iscoroutinefunction(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
+        raise ValueError(f"No API method found for command '{command}'.")
+
+    async def query(self, message: str, *args, **kwargs) -> Any:
         """
         Call the API method associated with a given message.
 
@@ -2655,25 +2707,19 @@ class AsyncioADSClient:
         :param args: possible positional arguments required by the called method
         :param kwargs: possible keyword arguments required by the called method
 
-        :returns: the associated function call response, \
-             or None if the API method doesn't exist
-        # :raises ValueError: if the requested API method doesn't exist
+        :returns: the associated function call response
+
+        :raises ValueError: if the requested API method doesn't exist
         """
         get = f"get_{message.lower()}"
-        # print(f"GET: {get}")
         if hasattr(self, get) and callable(func := getattr(self, get)):
-            # assignment := means 'set the value of variable and evaluate the result of expression in a single line'
             if asyncio.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
-        return None
+        raise ValueError(f"No API method found for query message '{message}'.")
 
-    def get_system_tree(
-        self,
-        *args,
-        **kwargs,
-    ) -> IOTreeNode:
+    def get_system_tree(self, *args, **kwargs) -> IOTreeNode:
         """
         Get a tree representation of the whole EtherCAT I/O system.
 
@@ -2689,7 +2735,7 @@ class AsyncioADSClient:
         If the id is not registered yet, it will be added to the internal map.
 
         :param identifier: the unique id associated with the I/O object
-        :param io_group: the type of I/O object, one of "IOServer", "IODevice", "IOTerminal
+        :param io_group: the type of I/O object, one of "server", "device", "terminal
         :param io_name: the name of the I/O object, e.g. "Device5", "Term145"
 
         :returns: the I/O object associated with the given id
@@ -2697,10 +2743,10 @@ class AsyncioADSClient:
         """
         if identifier not in self.fastcs_io_map:
             match io_group:
-                case "IOServer":
+                case "server":
                     self.fastcs_io_map[identifier] = self.ioserver
                     return self.ioserver
-                case "IODevice":
+                case "device":
                     matches = re.search(r"(\d+)$", io_name)
                     if matches:
                         dev_id = int(matches.group(0))
@@ -2708,7 +2754,7 @@ class AsyncioADSClient:
                         dev_id = next(iter(self._ecdevices))
                     self.fastcs_io_map[identifier] = self._ecdevices[dev_id]
                     return self._ecdevices[dev_id]
-                case "IOTerminal":
+                case "terminal":
                     terminal: IOSlave | None = None
                     for device in self._ecdevices.values():
                         for slave in device.slaves:
@@ -2728,35 +2774,23 @@ class AsyncioADSClient:
                     )
         return self.fastcs_io_map[identifier]
 
-    # def get_terminal_models(self) -> None:
-    #     """
-    #     Log the list of terminal models currently supported by the CATio driver.
-    #     """
-    #     logging.info(
-    #         "List of terminal models currently supported by the CATio driver:\n "
-    #         + f"{list(SUPPORTED_CONTROLLERS.keys())}"
-    #     )
-
     @_check_system
     async def get_device_framecounters_attr(
-        self,
-        *args,
-        **kwargs,
-        # identifier: int = 0,  # Don't use kwargs or args, be clear about the param (see fromiomap above)!!!
+        self, controller_id: int | None = None
     ) -> npt.NDArray[np.uint32]:
         """
         Get the frame counters for a given EtherCAT device.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the device identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS device controller
 
         :returns: an array comprising the frame counters
+
+        :raises KeyError: if no EtherCAT device is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        # ctrl_id = identifier
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            device = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
                 logging.debug(
@@ -2772,25 +2806,26 @@ class AsyncioADSClient:
                         device.frame_counters.acyclic_lost,
                     ],
                 )
-            raise ValueError(
-                f"Device cannot be determined from attribute group parameter {ctrl_id}."
+            raise KeyError(
+                f"No EtherCAT device registered against controller id {controller_id}."
             )
-        raise ValueError(f"{kwargs}: missing information about attribute group name.")
+        raise ValueError("Missing information about controller identification.")
 
     @_check_system
-    async def get_device_slavecount_attr(self, *args, **kwargs) -> int:
+    async def get_device_slavecount_attr(self, controller_id: int | None = None) -> int:
         """
         Get the total number of slaves registered with a given device.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the device identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS device controller
 
         :returns: the total number of slaves registered with the device
+
+        :raises KeyError: if no EtherCAT device is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            device = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
                 logging.debug(
@@ -2807,27 +2842,28 @@ class AsyncioADSClient:
                         + f"has changed from {expected_count} to {current_count}"
                     )
                 return current_count
-            raise ValueError(
-                f"Device cannot be determined from attribute group parameter {ctrl_id}."
+            raise KeyError(
+                f"No EtherCAT device registered against controller id {controller_id}."
             )
-        raise ValueError(f"{kwargs}: missing information about attribute group name.")
+        raise ValueError("Missing information about controller identification.")
 
     @_check_system
     async def get_device_slavesstates_attr(
-        self, *args, **kwargs
+        self, controller_id: int | None = None
     ) -> npt.NDArray[np.uint8]:
         """
         Get the states for all slaves registered with a given device.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the device identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS device controller
 
         :returns: an array comprising the states for all slaves
+
+        :raises KeyError: if no EtherCAT device is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            device = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
                 logging.debug(
@@ -2841,27 +2877,28 @@ class AsyncioADSClient:
                     + "readings and the number of registered slaves."
                 )
                 return np.array(states, dtype=np.uint8).flatten()
-            raise ValueError(
-                f"Device cannot be determined from attribute group parameter {ctrl_id}."
+            raise KeyError(
+                f"No EtherCAT device registered against controller id {controller_id}."
             )
-        raise ValueError(f"{kwargs}: missing information about attribute group name.")
+        raise ValueError("Missing information about controller identification.")
 
     @_check_system
     async def get_device_slavescrccounters_attr(
-        self, *args, **kwargs
+        self, controller_id: int | None = None
     ) -> npt.NDArray[np.uint32]:
         """
         Get the CRC error counters for all slaves registered with a given device.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the device identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS device controller
 
         :returns: an array comprising the CRC error counters for all slaves
+
+        :raises KeyError: if no EtherCAT device is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            device = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
                 logging.debug(
@@ -2875,27 +2912,28 @@ class AsyncioADSClient:
                     + "and the number of registered slaves."
                 )
                 return np.array(crcs, dtype=np.uint32)
-            raise ValueError(
-                f"Device cannot be determined from attribute group parameter {ctrl_id}."
+            raise KeyError(
+                f"No EtherCAT device registered against controller id {controller_id}."
             )
-        raise ValueError(f"{kwargs}: missing information about attribute group name.")
+        raise ValueError("Missing information about controller identification.")
 
     @_check_system
     async def get_terminal_crcerrorcounters_attr(
-        self, *args, **kwargs
+        self, controller_id: int | None = None
     ) -> npt.NDArray[np.uint32]:
         """
         Get the CRC error counters across all ports for a given slave terminal.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the terminal identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: an array comprising the terminal CRC error counters across all ports
+
+        :raises KeyError: if no EtherCAT terminal is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            terminal = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            terminal = self.fastcs_io_map.get(controller_id, None)
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 crcs = await self.get_slave_crc_error_counters(
@@ -2906,53 +2944,49 @@ class AsyncioADSClient:
                 )
             else:
                 raise KeyError(
-                    f"Controller id#{ctrl_id} is not defined as a FastCS component."
+                    "No EtherCAT terminal registered against "
+                    + f"controller id {controller_id}."
                 )
         else:
-            raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
-            )
+            raise ValueError("Missing information about controller identification.")
 
     @_check_system
-    async def get_terminal_crcerrorsum_attr(self, *args, **kwargs) -> int:
+    async def get_terminal_crcerrorsum_attr(
+        self, controller_id: int | None = None
+    ) -> int:
         """
         Get the sum of CRC errors across all ports for a given slave terminal.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the terminal identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: the sum of CRC errors across all ports for the terminal
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            terminal = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            terminal = self.fastcs_io_map.get(controller_id, None)
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 return int(terminal.crc_error_sum)
             else:
                 raise KeyError(
-                    f"Controller id#{ctrl_id} is not defined as a FastCS component."
+                    "No EtherCAT terminal registered against "
+                    + f"controller id {controller_id}."
                 )
         else:
-            raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
-            )
+            raise ValueError("Missing information about controller identification.")
 
     @_check_system
-    async def get_terminal_states_attr(self, *args, **kwargs) -> npt.NDArray[np.uint8]:
+    async def get_terminal_states_attr(
+        self, controller_id: int | None = None
+    ) -> npt.NDArray[np.uint8]:
         """
         Get the EtherCAT state and link status of a given slave terminal.
 
-        :params args: unused
-        :params kwargs: 'attr_group' keyword argument is expected to contain \
-            the terminal identifier as defined in the client's fastcs io map.
+        :params controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: an array comprising the EtherCAT state and link status of the terminal
         """
-        ctrl_id = kwargs.get("attr_group", None)
-        if ctrl_id is not None and isinstance(ctrl_id, int):
-            terminal = self.fastcs_io_map.get(ctrl_id, None)
+        if controller_id is not None:
+            terminal = self.fastcs_io_map.get(controller_id, None)
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 return np.array(
@@ -2960,9 +2994,8 @@ class AsyncioADSClient:
                 )
             else:
                 raise KeyError(
-                    f"Controller id#{ctrl_id} is not defined as a FastCS component."
+                    "No EtherCAT terminal registered against "
+                    + f"controller id {controller_id}."
                 )
         else:
-            raise ValueError(
-                f"{kwargs}: missing information about attribute group name."
-            )
+            raise ValueError("Missing information about controller identification.")

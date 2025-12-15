@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Debug Unit Test",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${file}",
@@ -20,6 +20,20 @@
                 // https://github.com/microsoft/vscode-python/issues/693
                 "PYTEST_ADDOPTS": "--no-cov"
             },
-        }
+        },
+        {
+            "name": "CATio IOC",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "catio",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "ioc",
+                "CATIO",
+                "--log-level",
+                "debug"
+            ]
+        },
     ]
 }
