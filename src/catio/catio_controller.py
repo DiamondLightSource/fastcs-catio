@@ -23,6 +23,7 @@ from catio.catio_attributeIO import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
 )
+from catio.client import RemoteRoute, get_remote_address
 from catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
 from catio.utils import (
     average,
@@ -359,11 +360,23 @@ class CATioServerController(CATioController):
     def __init__(
         self,
         target_ip: str,
-        target_netid: str,
+        route: RemoteRoute,
         target_port: int,
         poll_period: float,
         notification_period: float,
     ) -> None:
+        # Get remote target netid via udp connection
+        target_netid = get_remote_address(target_ip)
+        logger.info(f"{target_ip} remote has Ams netid: {target_netid}.")
+
+        # Add a communication route to the remote via udp connection
+        if not route.add():
+            raise ConnectionRefusedError("Remote route addition failed.")
+        self._route = route
+        """Route object managing the communication route to the remote."""
+        logger.info(f"Route to remote {target_ip} added successfully.")
+
+        # Define the other instance variables
         self._tcp_settings = CATioServerConnectionSettings(
             target_ip, target_netid.to_string(), target_port
         )
@@ -445,6 +458,8 @@ class CATioServerController(CATioController):
         self.notification_stream = None
         logger.info(">-------- Closing the ADS client communication.")
         await self.connection.close()
+        # logger.info(">-------- Removing the existing route to the remote.")
+        # self._route.delete()
 
     async def get_io_attributes(self) -> dict[str, Attribute]:
         """Create and get all server controller attributes."""

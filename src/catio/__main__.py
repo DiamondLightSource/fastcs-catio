@@ -17,6 +17,8 @@ from fastcs.transport.epics.options import (
 )
 from softioc.imports import callbackSetQueueSize
 
+from catio.client import RemoteRoute
+
 from . import __version__
 from .catio_controller import (
     CATioServerController,
@@ -74,12 +76,6 @@ def ioc(
             help="Beckhoff TwinCAT server host to connect to (name or IP address).",
         ),
     ] = "127.0.0.1",
-    target_netid: Annotated[
-        str,
-        typer.Argument(
-            help="Ams netid of the target server.",
-        ),
-    ] = "127.0.0.1.1.1",
     target_port: Annotated[
         int,
         typer.Argument(
@@ -158,9 +154,12 @@ def ioc(
         else tcp_server
     )
 
+    # Specify the parameters for the remote route to the Beckhoff TwinCAT server
+    route = RemoteRoute(ip)
+
     # Instantiate the CATio controller
     controller = CATioServerController(
-        ip, target_netid, target_port, poll_period, notification_period
+        ip, route, target_port, poll_period, notification_period
     )
 
     # Launch the CATio IOC with FastCS
@@ -175,9 +174,10 @@ if __name__ == "__main__":
 # # if using a yaml file config: python -m catio run ./src/catio/catio_controller.yaml
 # if __name__ == "__main__":
 #     transport = EpicsCATransport(ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01"))
+#     route = CATioRemoteRoute(remote=ip, route_name="test_route", password="DIAMOND")
 #     connection = CATioConnectionSettings(target_ip=ip, target_port=target_port)
 #     timings = CATioScanTimings()
 #     controller_settings = CATioControllerSettings(
-#         tcp_settings=connection, scan_timings=timings
+#         remote_route=route, tcp_settings=connection, scan_timings=timings
 #     )
 #     launch(CATioServerController, version=__version__)

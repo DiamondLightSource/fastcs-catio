@@ -12,13 +12,31 @@ import numpy.typing as npt
 from ._constants import TWINCAT_STRING_ENCODING
 
 
+def get_localhost_name() -> str:
+    """
+    Get the hostname of the local machine.
+
+    :returns: the local machine hostname
+    """
+    return socket.gethostname()
+
+
+def get_localhost_ip() -> str:
+    """
+    Get the IP address of the local machine.
+
+    :returns: the local machine IP address
+    """
+    return socket.gethostbyname(get_localhost_name())
+
+
 def get_local_netid_str() -> str:
     """
     Create the ams netid string value of the Ads client (localhost).
 
     :returns: the string representing the local client netid
     """
-    return socket.gethostbyname(socket.gethostname()) + ".1.1"
+    return get_localhost_ip() + ".1.1"
 
 
 def bytes_to_string(raw_data: bytes, strip: bool = True) -> str:

@@ -38,6 +38,29 @@ class CommandId(np.uint16, Enum):
     Additionally, data can be read from the ADS device."""
 
 
+class SystemServiceCommandId(np.uint32, Enum):
+    """
+    Specification of the ADS system services
+    """
+
+    ADSSVCID_READSERVICEINFO = 0x1
+    ADSSVCID_ADDROUTE = 0x6
+    ADSSVCID_DELROUTE = 0xB001
+    ADSSCVID_RESPONSE = 0x80000000
+
+
+class UDPTag(np.uint16, Enum):
+    """
+    UDP Tags for ADS Router configuration
+    """
+
+    PASSWORD = 2
+    HOSTNAME = 5
+    HOSTNETID = 7
+    ROUTENAME = 12
+    USERNAME = 13
+
+
 class StateFlag(np.uint16, Enum):
     """
     State Flags

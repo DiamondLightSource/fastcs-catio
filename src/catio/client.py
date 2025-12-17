@@ -8,15 +8,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import socket
 import time
 from collections.abc import Awaitable, Callable, Sequence
+from contextlib import closing
 from copy import deepcopy
-from typing import Any, SupportsInt, TypeVar, overload
+from typing import Any, SupportsInt, TypeVar, dataclass_transform, overload
 
 import numpy as np
 import numpy.typing as npt
 
 from ._constants import (
+    TWINCAT_STRING_ENCODING,
     AdsState,
     CoEIndex,
     CommandId,
@@ -27,9 +30,11 @@ from ._constants import (
     SlaveLinkState,
     SlaveStateMachine,
     StateFlag,
+    SystemServiceCommandId,
     TransmissionMode,
+    UDPTag,
 )
-from ._types import AmsNetId
+from ._types import AmsAddress, AmsNetId
 from .devices import (
     AdsSymbol,
     AdsSymbolNode,
@@ -63,6 +68,8 @@ from .messages import (
     AdsReadWriteResponse,
     AdsSymbolTableEntry,
     AdsSymbolTableInfo,
+    AdsUDPMessage,
+    AdsUDPResponseStream,
     AdsWriteRequest,
     AdsWriteResponse,
     AmsHeader,
@@ -70,11 +77,14 @@ from .messages import (
     MessageRequest,
     MessageResponse,
     SlaveCRC,
+    UDPInfo,
 )
 from .symbols import symbol_lookup
 from .utils import (
     bytes_to_string,
     get_local_netid_str,
+    get_localhost_ip,
+    get_localhost_name,
 )
 
 # https://infosys.beckhoff.com/content/1033/ipc_security_win7/11019143435.html
@@ -83,6 +93,11 @@ ADS_TCP_PORT: int = 48898
 ADS_MASTER_PORT: int = 65535
 # https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_system/31084171.html&id=
 IO_SERVER_PORT: int = 300
+# https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/index.html&id=2683277694279723185
+# https://infosys.beckhoff.com/english.php?content=../content/1033/ipc_security_win7/11019143435.html&id=
+SYSTEM_SERVICE_PORT: int = 10000
+
+REMOTE_UDP_PORT: int = 48899
 
 
 MessageT = TypeVar("MessageT", bound=Message)
@@ -125,6 +140,263 @@ class ResponseEvent:
             f"Expected {cls}, got {self.__value}"
         )
         return self.__value
+
+
+#################################################################
+### REMOTE ROUTE ------------------------------------------------
+#################################################################
+
+
+def get_remote_address(remote_ip: str) -> AmsNetId:
+    """
+    Get the AmsNetId of a remote TwinCAT server via UDP communication.
+
+    :param remote_ip: IP address of the remote TwinCAT server
+    :returns: the AmsNetId of the remote TwinCAT server
+    """
+    UDPMessage.invoke_id += 1
+    request = AdsUDPMessage.get_remote_info(UDPMessage.invoke_id)
+    return UDPMessage(remote_ip).get_netid(request)
+
+
+@dataclass_transform(kw_only_default=True)
+class UDPMessage:
+    """
+    Define a UDP communication message object to a remote Beckhoff TwinCAT server.
+    """
+
+    invoke_id: int = 0
+    """Static variable used to assign a unique id to each UDP message"""
+    UDP_COOKIE: bytes = b"\x71\x14\x66\x03"
+    """Static variable defining the UDP cookie value used in the UDP message header"""
+
+    def __init__(self, remote_ip: str):
+        self.target = remote_ip
+        """IP address of the remote Beckhoff TwinCAT server"""
+
+    def _send_recv(self, message: AdsUDPMessage) -> bytes:
+        """
+        Send a UDP message to the remote target and receive the response.
+
+        :param message: the UDP message to send
+        :returns: the data block contained in the UDP response message
+        """
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
+            # Listen on any available port for the response from the CX
+            sock.bind(("", 0))
+
+            # Account for slow communications and enable TimeoutError to be raised
+            sock.settimeout(5)
+
+            # Send the data to the Beckhoff CX server target
+            sock.sendto(message.to_bytes(), (self.target, REMOTE_UDP_PORT))
+
+            # Receive the data from the Beckhoff CX server target
+            data, addr = sock.recvfrom(1024)
+            assert addr[0] == self.target, (
+                "Unintended recipient for the UDP response message."
+            )
+
+            # Validate the UDP response message and extract the relevant data block
+            response = AdsUDPMessage.from_bytes(data)
+            assert response.udp_cookie == message.udp_cookie, (
+                "Received invalid UDP cookie"
+            )
+            assert response.invoke_id == message.invoke_id, (
+                "Unexpected UDP response identifier"
+            )
+            assert response.service_id == (
+                message.service_id | SystemServiceCommandId.ADSSCVID_RESPONSE
+            ), "Invalid command Id in UDP response"
+
+            return response.data
+
+    def get_netid(self, message: AdsUDPMessage) -> AmsNetId:
+        """
+        Get the AmsNetId of the remote Beckhoff TwinCAT server.
+
+        :param message: the UDP message to send
+        :returns: the AmsNetId of the remote Beckhoff TwinCAT server
+
+        :raises TimeoutError: following a lack of UDP communication
+        """
+        try:
+            response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
+            assert response.port == SYSTEM_SERVICE_PORT, (
+                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}), "
+                + f"got port {response.port} instead."
+            )
+            return AmsNetId.from_bytes(response.netid.tobytes())
+
+        except TimeoutError:
+            logging.error("UDP communication with Beckhoff CX target timed out.")
+            raise
+
+    def add_route(self, message: AdsUDPMessage) -> bool:
+        """
+        Add a remote route to the Beckhoff TwinCAT server.
+
+        :param message: the UDP message to send
+        :returns: True if the route was added successfully, False otherwise
+
+        :raises TimeoutError: following a lack of UDP communication
+        """
+        try:
+            response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
+            assert response.port == SYSTEM_SERVICE_PORT, (
+                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}), "
+                + f"got port {response.port} instead."
+            )
+            # TO DO: CAN WE CHECK RESPONSE FOR INVALID PASSWORD?
+            for _ in range(response.count):
+                info = UDPInfo.from_bytes(response.data)
+                if info.tag_id != 1:
+                    logging.warning(f"Ignoring tag {info.tag_id}")
+                    continue
+                if info.length != 4:
+                    logging.error("Invalid tag length")
+                    return False
+                error_code = int.from_bytes(info.data, byteorder="little", signed=False)
+                return error_code == ErrorCode.ERR_NOERROR
+            return False
+
+        except TimeoutError:
+            logging.error("UDP communication with Beckhoff CX target timed out.")
+            raise
+
+    def delete_route(self, message: AdsUDPMessage):
+        """
+        Delete a remote route from the Beckhoff TwinCAT server.
+
+        :param message: the UDP message to send
+        :returns: True if the route was deleted successfully, False otherwise
+
+        :raises TimeoutError: following a lack of UDP communication
+        """
+        try:
+            response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
+            assert response.port == SYSTEM_SERVICE_PORT, (
+                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}"
+                + f"), but got port {response.port} instead."
+            )
+            error_code = response.count
+            return error_code == ErrorCode.ERR_NOERROR
+
+        except TimeoutError:
+            logging.error("UDP communication with Beckhoff CX target timed out.")
+            raise
+
+
+class RemoteRoute:
+    """
+    Define a remote route to a Beckhoff TwinCAT server via UDP communication.
+    """
+
+    def __init__(
+        self,
+        remote: str,
+        route_name: str = "",
+        user_name: str = "Administrator",
+        password: str = "1",
+    ):
+        self.remote = remote
+        """IP address of the remote Beckhoff TwinCAT server"""
+        self.routename = route_name or get_localhost_name()
+        """Name assigned to the remote route"""
+        self.hostnetid = AmsNetId.from_string(get_local_netid_str())
+        """AmsNetId of the local host machine"""
+        self.username = user_name
+        """User name for authentication with the remote TwinCAT server"""
+        self.password = password
+        """Password for authentication with the remote TwinCAT server"""
+        self.hostname = get_localhost_ip()
+        """IP address of the local host machine (client)"""
+
+    def _get_route_info_as_bytes(self) -> bytes:
+        """
+        Build the route information as an array of bytes.
+
+        :returns: the route information as an array of bytes
+        """
+        lst: list[UDPInfo] = []
+        # Remote ip not part of the route definition packet to send, so skip it
+        params = deepcopy(vars(self))
+        params.pop("remote")
+        for name, value in params.items():
+            udp_tag: UDPTag | None = getattr(UDPTag, name.upper(), None)
+            if udp_tag:
+                id = udp_tag.value
+            else:
+                raise KeyError(
+                    f"{__class__}: argument name mismatch with expected UDP tag"
+                )
+
+            if isinstance(value, str):
+                length = len(value) + 1
+                data = value.encode(encoding=TWINCAT_STRING_ENCODING) + b"\x00"
+            elif isinstance(value, AmsNetId):
+                length = 6
+                data = value.to_bytes()
+            else:
+                raise TypeError(
+                    "Unexpected input parameter type in ADS route creation."
+                )
+
+            lst.append(UDPInfo(tag_id=id, length=length, data=data))
+
+        count = len(lst).to_bytes(length=4, byteorder="little")
+        address = AmsAddress(self.hostnetid, 0)
+        param_bytes = b"".join([param.to_bytes() for param in lst])
+        byte_array = address.to_bytes() + count + param_bytes
+
+        return byte_array
+
+    def add(self) -> bool:
+        """
+        Add a remote route to the Beckhoff TwinCAT server.
+
+        :returns: True if the route was added successfully, False otherwise
+        """
+        UDPMessage.invoke_id += 1
+        request = AdsUDPMessage.add_remote_route(
+            UDPMessage.invoke_id, self._get_route_info_as_bytes()
+        )
+
+        status = UDPMessage(self.remote).add_route(request)
+        if status:
+            logging.debug(
+                f"Successfully added host {self.hostname} to remote {self.remote}"
+            )
+        else:
+            logging.error(
+                f"Failed to add host machine {self.hostname} to remote {self.remote}"
+            )
+
+        return status
+
+    def delete(self) -> bool:
+        """
+        Delete a remote route from the Beckhoff TwinCAT server.
+
+        :returns: True if the route was deleted successfully, False otherwise
+        """
+        UDPMessage.invoke_id += 1
+        request = AdsUDPMessage.del_remote_route(
+            UDPMessage.invoke_id,
+            self._get_route_info_as_bytes(),
+        )
+
+        status = UDPMessage(self.remote).delete_route(request)
+        if status:
+            logging.debug(
+                f"Successfully deleted route {self.routename} from remote {self.remote}"
+            )
+        else:
+            logging.error(
+                f"Failed to delete route {self.routename} from remote {self.remote}"
+            )
+
+        return status
 
 
 #################################################################
@@ -345,8 +617,8 @@ class AsyncioADSClient:
         Depending on the number of subscribed symbol variables,
         the notification message may comprise more than one frame.
 
-        :params header: the notificatin message header
-        :params body: the notification message data
+        :param header: the notificatin message header
+        :param body: the notification message data
         """
         if self.__buffer is not None:
             # Check which notification frame is being handled.
@@ -2388,7 +2660,7 @@ class AsyncioADSClient:
         Trigger the appending of received ADS notifications into the buffer and \
             enable periodic flushing.
 
-        :params flush_period: period in seconds when the notification data is flushed \
+        :param flush_period: period in seconds when the notification data is flushed \
             to a queue
         """
         self.__num_notif_streams = 0
@@ -2781,7 +3053,7 @@ class AsyncioADSClient:
         """
         Get the frame counters for a given EtherCAT device.
 
-        :params controller_id: the unique identifier of the fastCS device controller
+        :param controller_id: the unique identifier of the fastCS device controller
 
         :returns: an array comprising the frame counters
 
@@ -2816,7 +3088,7 @@ class AsyncioADSClient:
         """
         Get the total number of slaves registered with a given device.
 
-        :params controller_id: the unique identifier of the fastCS device controller
+        :param controller_id: the unique identifier of the fastCS device controller
 
         :returns: the total number of slaves registered with the device
 
@@ -2854,7 +3126,7 @@ class AsyncioADSClient:
         """
         Get the states for all slaves registered with a given device.
 
-        :params controller_id: the unique identifier of the fastCS device controller
+        :param controller_id: the unique identifier of the fastCS device controller
 
         :returns: an array comprising the states for all slaves
 
@@ -2889,7 +3161,7 @@ class AsyncioADSClient:
         """
         Get the CRC error counters for all slaves registered with a given device.
 
-        :params controller_id: the unique identifier of the fastCS device controller
+        :param controller_id: the unique identifier of the fastCS device controller
 
         :returns: an array comprising the CRC error counters for all slaves
 
@@ -2924,7 +3196,7 @@ class AsyncioADSClient:
         """
         Get the CRC error counters across all ports for a given slave terminal.
 
-        :params controller_id: the unique identifier of the fastCS terminal controller
+        :param controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: an array comprising the terminal CRC error counters across all ports
 
@@ -2957,7 +3229,7 @@ class AsyncioADSClient:
         """
         Get the sum of CRC errors across all ports for a given slave terminal.
 
-        :params controller_id: the unique identifier of the fastCS terminal controller
+        :param controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: the sum of CRC errors across all ports for the terminal
         """
@@ -2981,7 +3253,7 @@ class AsyncioADSClient:
         """
         Get the EtherCAT state and link status of a given slave terminal.
 
-        :params controller_id: the unique identifier of the fastCS terminal controller
+        :param controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: an array comprising the EtherCAT state and link status of the terminal
         """

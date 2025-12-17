@@ -12,6 +12,7 @@ from ._constants import (
     IndexGroup,
     StateFlag,
     SymbolFlag,
+    SystemServiceCommandId,
     TransmissionMode,
 )
 from ._types import (
@@ -23,6 +24,7 @@ from ._types import (
     UINT32,
     UINT64,
     AdsMessageDataType,
+    AmsNetId,
 )
 
 # ===================================================================
@@ -168,6 +170,107 @@ class MessageResponse(Message):
     """Message interface for an ADS response from the server."""
 
     ...
+
+
+# ===================================================================
+# ===== UDP COMMUNICATIONS
+# ===================================================================
+
+
+class UDPInfo(Message):
+    """Define the UDP info data structure used in ADS UDP communications."""
+
+    tag_id: UINT16
+    """The tag identifier"""
+    length: UINT16
+    """The length of the data in bytes"""
+    data: bytes
+    """The UDP info data"""
+
+
+class AdsUDPMessage(Message):
+    """Define the ADS UDP message structure."""
+
+    udp_cookie: UINT32
+    """Magic cookie identifying an ADS UDP message"""
+    invoke_id: UINT32
+    """Id used to map a received response to a udp command"""
+    service_id: UINT32
+    """Id used to map a command/response to a udp service"""
+    data: bytes
+    """The UDP message data"""
+
+    @classmethod
+    def get_remote_info(cls, identifier: int) -> Self:
+        """
+        A UDP message to get information about the remote system.
+
+        :param identifier: the identifier to use for this UDP message
+        :returns: an AdsUDPMessage instance
+        """
+        blank_response = AdsUDPResponseStream(
+            netid=AmsNetId.from_string("0.0.0.0.0.0").to_bytes(),
+            port=0,
+            count=0,
+            data=b"",
+        )  # not required to be valid, just a response template
+
+        return cls(
+            udp_cookie=0x71146603,  # b"\x71\x14\x66\x03",
+            invoke_id=identifier,
+            service_id=SystemServiceCommandId.ADSSVCID_READSERVICEINFO,
+            data=blank_response.to_bytes(),
+        )
+
+    @classmethod
+    def add_remote_route(cls, identifier: int, route_info: bytes) -> Self:
+        """
+        A UDP message to add a remote route to the system.
+
+        :param identifier: the identifier to use for this UDP message
+        :param route_info: the route information data in bytes
+        :returns: an AdsUDPMessage instance
+        """
+        return cls(
+            udp_cookie=0x71146603,  # b"\x71\x14\x66\x03",
+            invoke_id=identifier,
+            service_id=SystemServiceCommandId.ADSSVCID_ADDROUTE,
+            data=route_info,
+        )
+
+    @classmethod
+    def del_remote_route(cls, identifier: int, route_info: bytes) -> Self:
+        """
+        A UDP message to delete a remote route from the system.
+
+        :param identifier: the identifier to use for this UDP message
+        :param route_info: the route information data in bytes
+        :returns: an AdsUDPMessage instance
+        """
+        return cls(
+            udp_cookie=0x71146603,  # b"\x71\x14\x66\x03",
+            invoke_id=identifier,
+            service_id=SystemServiceCommandId.ADSSVCID_DELROUTE,
+            data=route_info,
+        )
+
+
+class AdsUDPResponseStream(Message):
+    """Define the ADS UDP response stream structure."""
+
+    netid: BYTES6
+    """The Ams NetID of the remote target"""
+    port: UINT16
+    """The Ams Port of the remote target"""
+    count: UINT32
+    """The number of UDP messages in the stream"""
+    data: bytes
+    """The UDP response stream data"""
+
+
+# ===================================================================
+# ===== TCP COMMUNICATIONS
+# ===================================================================
 
 
 class AmsHeader(Message):

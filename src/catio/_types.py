@@ -135,6 +135,84 @@ class AmsNetId:
         return ".".join(map(str, self.root + self.mask))
 
 
+@dataclass
+class AmsAddress:
+    """
+    AmsAddress class representing the full AMS address of a TwinCAT device on the network.
+
+    The AMS address consists of the AmsNetId and the port number on which the device \
+        listens for ADS messages.
+    The AmsAddress can be converted to and from a byte stream or from a string in the \
+        standard notation (netid:port).
+    """
+
+    netId: AmsNetId
+    """AmsNetId of the TwinCAT device"""
+    port: int
+    """Port number of the TwinCAT device"""
+
+    @classmethod
+    def from_bytes(cls, address: bytes) -> Self:
+        """
+        Convert an AmsAddress byte stream into an AmsAddress object.
+
+        :param address: the address value expressed as 8 bytes
+
+        :returns: the AmsAddress including both netid and port
+
+        :raises ValueError: if the input address is not exactly 8 bytes long
+        """
+        assert len(address) == 8, ValueError(
+            "AMS Address must be exactly 8 bytes long."
+        )
+        netid = AmsNetId.from_bytes(address[:6])
+        port = int.from_bytes(address[6:], byteorder="little", signed=False)
+        return cls(netid, port)
+
+    def to_bytes(self):
+        """
+        Convert the AmsAddress object into a byte stream.
+
+        :returns: the AmsAddress expressed as a byte stream
+        """
+        return self.netId.to_bytes() + self.port.to_bytes(
+            length=2, byteorder="little", signed=False
+        )
+
+    @classmethod
+    def from_string(cls, address: str):
+        """
+        Parse an AmsAddress object from a standard string notation (192.168.0.1.1.1:851)
+
+        :param address: the address value expressed as a string of format netid:port
+
+        :returns: the AmsAddress including both netid and port
+
+        :raises ValueError: if the input address doesn't match the expected format
+        """
+        try:
+            netid_str, port_str = address.split(":")
+            netid = AmsNetId.from_string(netid_str)
+            assert port_str.isdigit(), (
+                f"String '{port_str}' contains non-digit characters or is empty."
+            )
+            port = int(port_str)
+            return cls(netid, port)
+        except Exception as e:
+            raise ValueError(f"Invalid AmsAddress string '{address}'") from e
+
+    def to_string(self) -> str:
+        """
+        Convert the AmsAddress object into the standard string notation.
+
+        :returns: the AmsAddress expressed as a string of format netid:port
+        """
+        return f"{self.netId.to_string()}:{self.port}"
+
+    def __str__(self):
+        return f"{self.netId.to_string()}:{self.port}"
+
+
 Length = TypeVar("Length", bound=int)
 Dtype = TypeVar("Dtype", bound=np.generic)
 Coercible = TypeVar("Coercible")

@@ -4,6 +4,10 @@ controller:
   tcp_settings:
     target_ip: "172.23.240.142"
     target_port: 27909
+  route:
+    name: "test_route"
+    username: "Administrator"
+    password: "1"
   scan_timings:
     poll_period: 1.0
     notification_period: 0.2

@@ -19,8 +19,8 @@ dependencies = [
     "pvi",
     "typer",
     "fastcs@git+https://github.com/DiamondLightSource/FastCS",
-    "softioc@git+https://github.com/DiamondLightSource/pythonSoftIOC.git",
-] # Add project dependencies here, e.g. ["click", "numpy"]
+    "softioc@git+https://github.com/DiamondLightSource/pythonSoftIOC",
+]
 dynamic = ["version"]
 license.file = "LICENSE"
 readme = "README.rst"

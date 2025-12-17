@@ -125,6 +125,37 @@
       "title": "GraphQLServerOptions",
       "type": "object"
     },
+    "CATioRemoteRoute": {
+      "properties": {
+        "remote": {
+          "title": "Ip",
+          "type": "string"
+        },
+        "route_name": {
+          "default": "test_route",
+          "title": "Name",
+          "type": "string",
+          "description": "Remote route name parameter"
+        },
+        "user_name": {
+          "default": "Administrator",
+          "title": "Username",
+          "type": "string",
+          "description": "Beckhoff server connection username credential"
+        },
+        "password": {
+          "default": "1",
+          "title": "Password",
+          "type": "string",
+          "description": "Beckhoff server connection username credential"
+        }
+      },
+      "required": [
+        "remote"
+      ],
+      "title": "CATioRemoteRoute",
+      "type": "object"
+    },
     "CATioConnectionSettings": {
       "properties": {
         "target_ip": {
