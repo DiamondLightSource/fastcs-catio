@@ -71,7 +71,7 @@ async def main():
     client = await make_client()
 
     try:
-        await client.introspect_IO_server()
+        await client.introspect_io_server()
 
         async with asyncio.TaskGroup() as tg:
             task0 = tg.create_task(

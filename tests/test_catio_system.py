@@ -16,7 +16,6 @@ python -m pytest tests/test_catio_system.py -v
 """
 
 import asyncio
-from typing import SupportsInt
 
 import numpy as np
 import pytest
@@ -362,7 +361,6 @@ class TestNotifications:
                 cycle_time_ms=100,
             )
             # Verify a valid handle is returned
-            assert isinstance(handle, SupportsInt)
             assert handle > 0
 
             # Clean up the test subscription
@@ -421,7 +419,8 @@ class TestConcurrency:
     async def test_multiple_clients_cannot_connect_from_same_host(
         self, system_test_server: MockADSServer
     ):
-        """Test that multiple clients on the same host machine cannot connect to the same server."""
+        """Test that multiple clients on the same host machine cannot connect
+        to the same server."""
         clients = []
 
         try:
@@ -444,12 +443,14 @@ class TestConcurrency:
             for client in clients:
                 await client.close()
 
-    # TO DO: HOW CAN WE TEST THAT MULTIPLE CLIENTS IS FEASIBLE IF FROM DIFFERENT HOST MACHINES
+    # TO DO: HOW CAN WE TEST THAT MULTIPLE CLIENTS IS FEASIBLE IF FROM
+    # DIFFERENT HOST MACHINES
     @pytest.mark.asyncio
     async def test_multiple_clients_can_connect_from_different_host(
         self, system_test_server: MockADSServer
     ):
-        """Test that multiple clients on different machines can connect to the same server."""
+        """Test that multiple clients on different machines can connect to the
+        same server."""
         # Define multiple clients
         # All clients should be able to read the server states
         # Disconnect all clients

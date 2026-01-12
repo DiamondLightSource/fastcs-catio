@@ -1,8 +1,15 @@
 from collections.abc import Iterator, Sequence
-from typing import Any, ClassVar, Self, SupportsInt, get_origin
+from typing import (
+    Any,
+    ClassVar,
+    Self,
+    SupportsInt,
+    dataclass_transform,
+    get_origin,
+    get_type_hints,
+)
 
 import numpy as np
-from typing_extensions import dataclass_transform, get_type_hints
 
 from ._constants import (
     TWINCAT_STRING_ENCODING,
@@ -100,7 +107,8 @@ class Message:
         if buffer:
             if kwargs:
                 raise TypeError(
-                    "Can't have a Message class instantiated with both buffer and kwargs."
+                    "Can't have a Message class instantiated with both buffer "
+                    "and kwargs."
                 )
             self._value = np.frombuffer(buffer, self.dtype, count=1)
             self.data = buffer[self._value.nbytes :]
@@ -362,13 +370,13 @@ class SlaveCRC(Message):
     Ports B, C and D may not be used, thus potentially absent from an ADS response.
     """
 
-    portA_crc: UINT32
+    port_a_crc: UINT32
     """CRC error counter of communication port A"""
-    portB_crc: UINT32
+    port_b_crc: UINT32
     """CRC error counter of communication port B"""
-    portC_crc: UINT32
+    port_c_crc: UINT32
     """CRC error counter of communication port C"""
-    portD_crc: UINT32
+    port_d_crc: UINT32
     """CRC error counter of communication port D"""
 
     def __array__(self):
@@ -935,7 +943,8 @@ class AdsWriteRequest(MessageRequest):
     @classmethod
     def write_coe_value(cls, index: str, subindex: str, data: bytes) -> Self:
         """
-        An ADS request to write a given value to a CAN-over-EtherCAT parameter (sdo/pdo).
+        An ADS request to write a given value to a CAN-over-EtherCAT parameter
+        (sdo/pdo).
 
         :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY0000)
         :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x000000YY)

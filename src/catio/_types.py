@@ -1,6 +1,8 @@
 # ADS Data Types
 # https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529388939.html&id=3451082169760117126
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import (
     Generic,
@@ -216,12 +218,11 @@ class AmsAddress:
 
 Length = TypeVar("Length", bound=int)
 Dtype = TypeVar("Dtype", bound=np.generic)
-Coercible = TypeVar("Coercible")
-ARRAY = AdsMessageDataType[np.ndarray[tuple[Length], np.dtype[Dtype]], Coercible]
+ARRAY: TypeAlias = np.ndarray[tuple[Length], np.dtype[Dtype]]
 
-BYTES6: TypeAlias = ARRAY[Literal[6], np.bytes_, bytes]
-BYTES12: TypeAlias = ARRAY[Literal[12], np.bytes_, bytes]
-BYTES16: TypeAlias = ARRAY[Literal[16], np.bytes_, bytes]
+BYTES6: TypeAlias = AdsMessageDataType[ARRAY[Literal[6], np.bytes_], bytes]
+BYTES12: TypeAlias = AdsMessageDataType[ARRAY[Literal[12], np.bytes_], bytes]
+BYTES16: TypeAlias = AdsMessageDataType[ARRAY[Literal[16], np.bytes_], bytes]
 
 INT16: TypeAlias = AdsMessageDataType[np.int16, SupportsInt]
 INT32: TypeAlias = AdsMessageDataType[np.int32, SupportsInt]

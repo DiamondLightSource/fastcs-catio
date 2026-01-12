@@ -901,7 +901,7 @@ class TestIOSlave:
             vendor_id=101, product_code=200, revision_number=3, serial_number=45678
         )
         states = SlaveState(ecat_state=0, link_status=1)
-        crcs = SlaveCRC(portA_crc=1, portB_crc=1, portC_crc=0, portD_crc=0)
+        crcs = SlaveCRC(port_a_crc=1, port_b_crc=1, port_c_crc=0, port_d_crc=0)
         loc = ChainLocation(node=3, position=7)
         slave = IOSlave(
             parent_device=1,
@@ -942,7 +942,7 @@ class TestIODevice:
         )
         loc2 = ChainLocation(node=1, position=2)
         states = SlaveState(ecat_state=0, link_status=1)
-        crcs = SlaveCRC(portA_crc=1, portB_crc=1, portC_crc=0, portD_crc=0)
+        crcs = SlaveCRC(port_a_crc=1, port_b_crc=1, port_c_crc=0, port_d_crc=0)
 
         s1 = IOSlave(
             parent_device=1,

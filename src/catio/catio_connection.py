@@ -173,7 +173,7 @@ class CATioStreamConnection:
 
         If the server configuration changes, this method should be called again.
         """
-        await self.client.introspect_IO_server()
+        await self.client.introspect_io_server()
         self._notification_symbols = await self.client.get_all_symbols()
 
     async def command(self, command: str, *args, **kwargs) -> None:

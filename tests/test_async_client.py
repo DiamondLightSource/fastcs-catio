@@ -20,7 +20,7 @@ async def main():
     client = await make_client()
 
     try:
-        await client.introspect_IO_server()
+        await client.introspect_io_server()
         await client.check_ads_states()
 
     finally:

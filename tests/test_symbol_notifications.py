@@ -22,7 +22,7 @@ async def main():
     notif_symbols = []
 
     try:
-        await client.introspect_IO_server()
+        await client.introspect_io_server()
         symbols = await client.get_all_symbols()
 
         master_dev = next(iter(symbols))

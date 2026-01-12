@@ -21,7 +21,7 @@ async def main():
     client = await make_client()
 
     try:
-        await client.introspect_IO_server()
+        await client.introspect_io_server()
         symbols = await client.get_all_symbols()
         master_dev = next(iter(symbols))
 
@@ -67,12 +67,14 @@ async def main():
             # n = len(write_symbols)
             # print(
             #     "SUM Write -- "
-            #     + f"{await client.sumwrite_ads_symbols(list(zip(write_symbols, [1] * n)))}"
+            #     + f"{await client.sumwrite_ads_symbols(
+            #         list(zip(write_symbols, [1] * n)))}"
             # )
             # await asyncio.sleep(1)
             # print(
             #     "SUM Write -- "
-            #     + f"{await client.sumwrite_ads_symbols(list(zip(write_symbols, [0] * n)))}"
+            #     + f"{await client.sumwrite_ads_symbols(
+            #         list(zip(write_symbols, [0] * n)))}"
             # )
 
             # # ReadWrite calls will also return 'ErrorCode.ADSERR_DEVICE_SRVNOTSUPP'.
