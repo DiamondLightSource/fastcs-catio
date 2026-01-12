@@ -151,18 +151,18 @@ def filetime_to_dt(filetime: int) -> np.datetime64:
     :returns: the corresponding numpy datetime64 object
     """
     # Difference between epochs in 100-nanosecond intervals
-    EPOCH_DIFF = 116444736000000000
+    epoch_diff = 116444736000000000
     # Number of 100-nanosecond intervals in a second
-    HUNDRED_NANOSECONDS = 10_000_000
+    hundred_nanoseconds = 10_000_000
 
     # Convert FILETIME to seconds since Unix epoch
-    unix_time = (filetime - EPOCH_DIFF) / HUNDRED_NANOSECONDS
+    unix_time = (filetime - epoch_diff) / hundred_nanoseconds
 
     # Convert to numpy datetime64 inc. seconds to nanoseconds conversion
     return np.datetime64(int(unix_time * 1e9), "ns")
 
 
-def trim_eCAT_name(name: str) -> str:
+def trim_ecat_name(name: str) -> str:
     """
     Shorten and remove spaces from the original EtherCAT name.
 

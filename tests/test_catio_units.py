@@ -47,7 +47,7 @@ from catio.utils import (
     get_localhost_name,
     get_notification_changes,
     process_notifications,
-    trim_eCAT_name,
+    trim_ecat_name,
 )
 
 # ===================================================================
@@ -328,38 +328,38 @@ class TestGetNotificationChanges:
 
 
 class TestTrimEcatName:
-    """Test suite for trim_eCAT_name utility function."""
+    """Test suite for trim_ecat_name utility function."""
 
     def test_trim_basic_name(self):
-        """Test trimming basic eCAT names."""
-        result = trim_eCAT_name("CX5140_Master")
+        """Test trimming basic ecat names."""
+        result = trim_ecat_name("CX5140_Master")
         assert result is not None
         assert isinstance(result, str)
         assert len(result) > 0
 
     def test_trim_name_with_underscores(self):
         """Test trimming name with underscores."""
-        result = trim_eCAT_name("Device_Name_With_Underscores")
+        result = trim_ecat_name("Device_Name_With_Underscores")
         assert result == "DeviceNameWithUnderscores"
 
     def test_trim_name_with_spaces(self):
         """Test trimming name with spaces."""
-        result = trim_eCAT_name("  Device Name With Spaces  ")
+        result = trim_ecat_name("  Device Name With Spaces  ")
         assert result == "DeviceNameWithSpaces"
 
     def test_trim_name_with_special_chars(self):
         """Test trimming name with special characters."""
-        result = trim_eCAT_name("Device@#Name$%^&*()")
+        result = trim_ecat_name("Device@#Name$%^&*()")
         assert result == "DeviceName"
 
     def test_trim_empty_name(self):
         """Test trimming empty name."""
-        result = trim_eCAT_name("")
+        result = trim_ecat_name("")
         assert result == ""
 
     def test_trim_single_word(self):
         """Test trimming single word."""
-        result = trim_eCAT_name("Device")
+        result = trim_ecat_name("Device")
         assert len(result) > 0
 
 
@@ -559,9 +559,9 @@ class TestAmsAddress:
         addr = AmsAddress.from_string("192.168.1.1.1.1:851")
         assert isinstance(addr, AmsAddress)
         assert hasattr(addr, "netId")
-        assert isinstance(addr.netId, AmsNetId)
-        assert addr.netId.root == (192, 168, 1, 1)
-        assert addr.netId.mask == (1, 1)
+        assert isinstance(addr.net_id, AmsNetId)
+        assert addr.net_id.root == (192, 168, 1, 1)
+        assert addr.net_id.mask == (1, 1)
         assert hasattr(addr, "port")
         assert addr.port == 851
 
@@ -578,9 +578,9 @@ class TestAmsAddress:
         addr = AmsAddress.from_bytes(raw_bytes)
         assert isinstance(addr, AmsAddress)
         assert hasattr(addr, "netId")
-        assert isinstance(addr.netId, AmsNetId)
-        assert addr.netId.root == (192, 168, 1, 1)
-        assert addr.netId.mask == (1, 1)
+        assert isinstance(addr.net_id, AmsNetId)
+        assert addr.net_id.root == (192, 168, 1, 1)
+        assert addr.net_id.mask == (1, 1)
         assert hasattr(addr, "port")
         assert addr.port == 851
 
@@ -598,8 +598,8 @@ class TestAmsAddress:
         addr = AmsAddress.from_string(original)
         addr_bytes = addr.to_bytes()
         restored = AmsAddress.from_bytes(addr_bytes)
-        assert restored.netId.root == addr.netId.root
-        assert restored.netId.mask == addr.netId.mask
+        assert restored.net_id.root == addr.net_id.root
+        assert restored.net_id.mask == addr.net_id.mask
         assert restored.port == addr.port
 
     def test_address_attributes_signature(self):
@@ -607,7 +607,7 @@ class TestAmsAddress:
         addr = AmsAddress.from_string("192.168.1.100.2.1:800")
 
         assert hasattr(addr, "netId")
-        assert isinstance(addr.netId, AmsNetId)
+        assert isinstance(addr.net_id, AmsNetId)
 
         assert hasattr(addr, "port")
         assert isinstance(addr.port, int)
@@ -900,8 +900,8 @@ class TestIOSlave:
         id = IOIdentity(
             vendor_id=101, product_code=200, revision_number=3, serial_number=45678
         )
-        states = SlaveState(eCAT_state=0, link_status=1)
-        crcs = SlaveCRC(portA_crc=1, portB_crc=1, portC_crc=0, portD_crc=0)
+        states = SlaveState(ecat_state=0, link_status=1)
+        crcs = SlaveCRC(port_a_crc=1, port_b_crc=1, port_c_crc=0, port_d_crc=0)
         loc = ChainLocation(node=3, position=7)
         slave = IOSlave(
             parent_device=1,
@@ -941,8 +941,8 @@ class TestIODevice:
             vendor_id=101, product_code=400, revision_number=1, serial_number=98765
         )
         loc2 = ChainLocation(node=1, position=2)
-        states = SlaveState(eCAT_state=0, link_status=1)
-        crcs = SlaveCRC(portA_crc=1, portB_crc=1, portC_crc=0, portD_crc=0)
+        states = SlaveState(ecat_state=0, link_status=1)
+        crcs = SlaveCRC(port_a_crc=1, port_b_crc=1, port_c_crc=0, port_d_crc=0)
 
         s1 = IOSlave(
             parent_device=1,
@@ -1212,7 +1212,7 @@ class TestCATioFastCSResponse:
         """Test converting response to string."""
         # Create a response and convert to string
         response = CATioFastCSResponse(value=100)
-        str_repr = response.toString()
+        str_repr = response.to_string()
 
         # Verify string representation
         assert isinstance(str_repr, str)
@@ -1228,5 +1228,5 @@ class TestCATioFastCSResponse:
         assert isinstance(response, CATioFastCSResponse)
         assert response.value == val
         # Verify string representation
-        str_repr = response.toString()
+        str_repr = response.to_string()
         assert "status" in str_repr or "ok" in str_repr

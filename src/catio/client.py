@@ -223,8 +223,9 @@ class UDPMessage:
         try:
             response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
             assert response.port == SYSTEM_SERVICE_PORT, (
-                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}), "
-                + f"got port {response.port} instead."
+                f"Expected UDP response from system service port "
+                f"({SYSTEM_SERVICE_PORT}), "
+                f"got port {response.port} instead."
             )
             return AmsNetId.from_bytes(response.netid.tobytes())
 
@@ -244,8 +245,9 @@ class UDPMessage:
         try:
             response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
             assert response.port == SYSTEM_SERVICE_PORT, (
-                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}), "
-                + f"got port {response.port} instead."
+                f"Expected UDP response from system service port "
+                f"({SYSTEM_SERVICE_PORT}), "
+                f"got port {response.port} instead."
             )
             # TO DO: CAN WE CHECK RESPONSE FOR INVALID PASSWORD?
             for _ in range(response.count):
@@ -580,9 +582,9 @@ class AsyncioADSClient:
         :raises ConnectionError: when the ADS client has disconnected form the server
         :raises ConnectionAbortedError: when the ADS client connection has completed
         """
-        COMMUNICATION_TIMEOUT_SEC = 120
+        communication_timeout_sec = 120
         try:
-            async with asyncio.timeout(COMMUNICATION_TIMEOUT_SEC):
+            async with asyncio.timeout(communication_timeout_sec):
                 msg_bytes = await self.__reader.readexactly(6)
                 assert msg_bytes[:2] == b"\x00\x00", (
                     f"Received an invalid TCP header: {msg_bytes.hex()}"
@@ -592,13 +594,13 @@ class AsyncioADSClient:
                 )
                 packet = await self.__reader.readexactly(length)
                 # logging.debug(f"Received packet is: {packet.hex(' ')}")
-                AMS_HEADER_LENGTH = 32
-                header = AmsHeader.from_bytes(packet[:AMS_HEADER_LENGTH])
-                body = packet[AMS_HEADER_LENGTH:]
+                ams_header_length = 32
+                header = AmsHeader.from_bytes(packet[:ams_header_length])
+                body = packet[ams_header_length:]
                 return header, body
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             err.add_note(
-                f"Empty packet after {COMMUNICATION_TIMEOUT_SEC} seconds, "
+                f"Empty packet after {communication_timeout_sec} seconds, "
                 + "system likely disconnected."
             )
             raise
@@ -1177,14 +1179,14 @@ class AsyncioADSClient:
         assert len(dev_ids) == len(dev_slave_addresses), (
             "Registered device counts don't match."
         )
-        dev_slave_parentIds: Sequence[Sequence[int]] = []
+        dev_slave_parent_ids: Sequence[Sequence[int]] = []
         for i in range(len(dev_ids)):
             num_slaves = len(dev_slave_addresses[i])
-            dev_slave_parentIds.append([dev_ids[i] for _ in range(num_slaves)])
+            dev_slave_parent_ids.append([dev_ids[i] for _ in range(num_slaves)])
 
         dev_slaves: Sequence[Sequence[IOSlave]] = []
         for (
-            dev_slave_parentId,
+            dev_slave_parent_id,
             dev_slave_type,
             dev_slave_name,
             dev_slave_addr,
@@ -1193,7 +1195,7 @@ class AsyncioADSClient:
             dev_slave_crc,
         ) in list(
             zip(
-                dev_slave_parentIds,
+                dev_slave_parent_ids,
                 dev_slave_types,
                 dev_slave_names,
                 dev_slave_addresses,
@@ -1207,7 +1209,7 @@ class AsyncioADSClient:
                 IOSlave(*tpl)
                 for tpl in list(
                     zip(
-                        dev_slave_parentId,
+                        dev_slave_parent_id,
                         dev_slave_type,
                         dev_slave_name,
                         dev_slave_addr,
@@ -1222,7 +1224,7 @@ class AsyncioADSClient:
 
         return dev_slaves
 
-    async def get_EtherCAT_Master_device(self):
+    async def get_ethercat_master_device(self):
         """
         Introspect the IO server for the registered Master device.
         Any device which cannot follow the same introspection protocol \
@@ -1265,7 +1267,7 @@ class AsyncioADSClient:
         """
         devices: dict[SupportsInt, IODevice] = {}
         try:
-            dev_ids, dev_types = await self.get_EtherCAT_Master_device()
+            dev_ids, dev_types = await self.get_ethercat_master_device()
             logging.debug(f"List of device ids: {dev_ids}")
             logging.debug(f"List of device types: {dev_types}")
 
@@ -1381,7 +1383,7 @@ class AsyncioADSClient:
                     + f"{slave.loc_in_chain.position}\t-> {slave.type}\t{slave.name}"
                 )
 
-    async def _get_EtherCAT_chains(self) -> None:
+    async def _get_ethercat_chains(self) -> None:
         """
         Evaluate the position of the configured slaves in each EtherCAT device chain.
         Display the resulting chains on the console.
@@ -1440,7 +1442,7 @@ class AsyncioADSClient:
 
         return server_node
 
-    async def introspect_IO_server(self) -> None:
+    async def introspect_io_server(self) -> None:
         """
         Gather information about the EtherCAT I/O server (inc. name, version and build),
         identify the registered EtherCAT devices and associated slaves,
@@ -1467,7 +1469,7 @@ class AsyncioADSClient:
             f"Device id {self.master_device_id} registered as EtherCAT Master device."
         )
 
-        await self._get_EtherCAT_chains()
+        await self._get_ethercat_chains()
 
     #################################################################
     ### I/O MONITORS: STATES, COUNTERS, FRAMES ----------------------
@@ -1567,7 +1569,7 @@ class AsyncioADSClient:
                 port=ADS_MASTER_PORT,
             )
             state = SlaveState.from_bytes(response.data)
-            assert state.eCAT_state == SlaveStateMachine.SLAVE_STATE_OP, (
+            assert state.ecat_state == SlaveStateMachine.SLAVE_STATE_OP, (
                 "A slave terminal is not in operational state"
             )
 
@@ -1631,7 +1633,7 @@ class AsyncioADSClient:
                     strict=True,
                 )
             ):
-                slave.states.eCAT_state = states.eCAT_state
+                slave.states.ecat_state = states.ecat_state
                 slave.states.link_status = states.link_status
 
             self.check_slaves_states_validity(device.slaves, device.slaves_states)
@@ -1650,13 +1652,13 @@ class AsyncioADSClient:
 
         status = True
         states = np.array(slave_states, dtype=SlaveState)
-        if not np.all(states["eCAT_state"] == SlaveStateMachine.SLAVE_STATE_OP):
+        if not np.all(states["ecat_state"] == SlaveStateMachine.SLAVE_STATE_OP):
             status = False
-            bad_eCAT = np.nonzero(
-                states["eCAT_state"] != SlaveStateMachine.SLAVE_STATE_OP
+            bad_ecat = np.nonzero(
+                states["ecat_state"] != SlaveStateMachine.SLAVE_STATE_OP
             )[0]
-            assert bad_eCAT.size
-            for idx in bad_eCAT:
+            assert bad_ecat.size
+            for idx in bad_ecat:
                 slave: IOSlave = slaves[int(idx)]
                 logging.critical(
                     f"Slave terminal '{slave.name}' isn't in operational state."
@@ -1712,22 +1714,22 @@ class AsyncioADSClient:
                 )
                 states = np.frombuffer(
                     slave_response.data,
-                    dtype=[("eCAT_state", np.uint8), ("link_status", np.uint8)],
+                    dtype=[("ecat_state", np.uint8), ("link_status", np.uint8)],
                     count=int(device.slave_count),
                 )
 
                 # If any slave terminal is not operating as expected, update its status.
-                if not np.all(states["eCAT_state"] == SlaveStateMachine.SLAVE_STATE_OP):
-                    bad_eCAT = np.nonzero(
-                        states["eCAT_state"] != SlaveStateMachine.SLAVE_STATE_OP
+                if not np.all(states["ecat_state"] == SlaveStateMachine.SLAVE_STATE_OP):
+                    bad_ecat = np.nonzero(
+                        states["ecat_state"] != SlaveStateMachine.SLAVE_STATE_OP
                     )[0]
-                    assert bad_eCAT.size
-                    for idx in bad_eCAT:
+                    assert bad_ecat.size
+                    for idx in bad_ecat:
                         slave: IOSlave = (device.slaves)[int(idx)]
                         logging.critical(
                             f"Slave terminal '{slave.name}' isn't in operational state."
                         )
-                        slave.states.eCAT_state = states["eCAT_state"][idx]
+                        slave.states.ecat_state = states["ecat_state"][idx]
                 if not np.all(
                     states["link_status"] == SlaveLinkState.SLAVE_LINK_STATE_OK
                 ):
@@ -2334,7 +2336,8 @@ class AsyncioADSClient:
         self, sum_data: bytes, read_lengths: Sequence[np.uint32]
     ) -> Sequence[AdsReadWriteResponse]:
         """
-        Parse a general ADS SumReadWrite response into individual AdsReadWriteResponse objects.
+        Parse a general ADS SumReadWrite response into individual
+        AdsReadWriteResponse objects.
 
         :param sum_data: the data byte stream from the ADS SumReadWrite response
 
@@ -2381,8 +2384,9 @@ class AsyncioADSClient:
             logging.debug(f"SUM readwrite symbol: {symbol.name}, {value}")
             if isinstance(value, Sequence) and not (len(value) == symbol.size):
                 logging.error(
-                    f"Symbol ReadWrite Value Error: value for '{symbol.name}' expects a"
-                    + f" collection of {symbol.size} elements, got {len(value)} instead."
+                    f"Symbol ReadWrite Value Error: value for '{symbol.name}' "
+                    + f"expects a collection of {symbol.size} elements, "
+                    + f"got {len(value)} instead."
                 )
                 processed_readwrites -= 1
                 processed_targets = filter(lambda target: target[0] != symbol, targets)
@@ -2738,7 +2742,8 @@ class AsyncioADSClient:
                         buffer = self.__buffer
                         self.__buffer = bytearray()
                         # print("TEMPLATE SIZES:")
-                        # print([(k, len(v)) for k, v in self.__notif_templates.items()])
+                        # print([(k, len(v)) for k, v in self.__notif_templates.items()
+                        #  ])
                         assert len(buffer) % len(template_data) == 0, (
                             "Request to flush an incomplete notification buffer "
                             + "(size mismatch)."
@@ -2995,7 +3000,8 @@ class AsyncioADSClient:
         """
         Get a tree representation of the whole EtherCAT I/O system.
 
-        :returns: an IOTreeNode object representing the root server and all its child nodes
+        :returns: an IOTreeNode object representing the root server and all
+            its child nodes
         """
         return self._generate_system_tree()
 
@@ -3042,9 +3048,11 @@ class AsyncioADSClient:
                     return terminal
                 case _:
                     raise NameError(
-                        f"No valid catio reference to object id '{identifier}: {io_group}'."
+                        f"No valid catio reference to object id "
+                        f"'{identifier}: {io_group}'."
                     )
-        return self.fastcs_io_map[identifier]
+        else:
+            raise KeyError(f"{identifier} is already registered in the I/O map.")
 
     @_check_system
     async def get_device_framecounters_attr(
@@ -3262,7 +3270,7 @@ class AsyncioADSClient:
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 return np.array(
-                    [terminal.states.eCAT_state, terminal.states.link_status]
+                    [terminal.states.ecat_state, terminal.states.link_status]
                 )
             else:
                 raise KeyError(

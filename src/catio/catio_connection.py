@@ -49,7 +49,7 @@ class CATioFastCSResponse:
     value: Any
     """The response received from the CATio client."""
 
-    def toString(self) -> str:
+    def to_string(self) -> str:
         """Attempt to return a string representation of the CATio response.
 
         :returns: the CATio response to a query as a string
@@ -173,7 +173,7 @@ class CATioStreamConnection:
 
         If the server configuration changes, this method should be called again.
         """
-        await self.client.introspect_IO_server()
+        await self.client.introspect_io_server()
         self._notification_symbols = await self.client.get_all_symbols()
 
     async def command(self, command: str, *args, **kwargs) -> None:
@@ -380,7 +380,7 @@ class CATioConnection(Tracer):
             self.log_event(
                 "Received query response",
                 query=message.command,
-                response=response.toString(),
+                response=response.to_string(),
             )
             return response.value
 

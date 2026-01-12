@@ -193,7 +193,7 @@ class SlaveLinkState(np.uint8, Enum):
 
 # TwinCAT 2 Reserved Index Groups
 # https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclibsystem/11827998603.html&id=
-class IndexGroup(np.uint32, Flag, boundary=EJECT):
+class IndexGroup(np.uint32, Flag, boundary=EJECT):  # type: ignore[misc]
     """
     Specification of the ADS system services
     https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/117463563.html&id=

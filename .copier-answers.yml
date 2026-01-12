@@ -1,0 +1,21 @@
+# Changes here will be overwritten by Copier
+_commit: 5.0.1
+_src_path: https://github.com/DiamondLightSource/python-copier-template.git
+author_email: gregory.gay@diamond.ac.uk
+author_name: Greg Gay
+component_lifecycle: experimental
+component_owner: group:default/beamline-controls
+component_type: application
+description: Control system integration of EtherCAT I/O devices running under TwinCAT
+    using pyads and FastCS
+distribution_name: catio
+docker: true
+docker_debug: false
+docs_type: sphinx
+git_platform: github.com
+github_org: DiamondLightSource
+package_name: catio
+pypi: true
+repo_name: catio
+strict_typing: false
+type_checker: pyright

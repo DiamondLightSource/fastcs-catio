@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
-from fastcs.launch import FastCS, launch
-from fastcs.transport.epics.ca.transport import EpicsCATransport
-from fastcs.transport.epics.options import (
+from fastcs.launch import FastCS
+from fastcs.transports.epics.ca.transport import EpicsCATransport
+from fastcs.transports.epics.options import (
     EpicsDocsOptions,
     EpicsGUIOptions,
     EpicsIOCOptions,
@@ -140,7 +140,7 @@ def ioc(
 
     # Define EPICS ChannelAccess/PVA transport parameters
     epics_transport = EpicsCATransport(
-        ca_ioc=EpicsIOCOptions(pv_prefix=pv_prefix),
+        epicsca=EpicsIOCOptions(pv_prefix=pv_prefix),
         docs=EpicsDocsOptions(),
         gui=EpicsGUIOptions(
             output_path=ui_path / "catio.bob", title=f"CATio - {pv_prefix}"
@@ -173,7 +173,9 @@ if __name__ == "__main__":
 # # TO DO: make the yaml config option work if it's preferred
 # # if using a yaml file config: python -m catio run ./src/catio/catio_controller.yaml
 # if __name__ == "__main__":
-#     transport = EpicsCATransport(ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01"))
+#     transport = EpicsCATransport(
+#        ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01")
+# )
 #     route = CATioRemoteRoute(remote=ip, route_name="test_route", password="DIAMOND")
 #     connection = CATioConnectionSettings(target_ip=ip, target_port=target_port)
 #     timings = CATioScanTimings()

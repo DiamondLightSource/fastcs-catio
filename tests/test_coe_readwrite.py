@@ -20,7 +20,7 @@ async def main():
     client = await make_client()
 
     try:
-        await client.introspect_IO_server()
+        await client.introspect_io_server()
 
         # Get a slave terminal of a given type
         slave_type = "EL3104"

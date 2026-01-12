@@ -9,7 +9,7 @@
 
 
 import numpy as np
-from fastcs.attributes import Attribute, AttrR
+from fastcs.attributes import AttrR
 from fastcs.datatypes import Int, Waveform
 from fastcs.logging import bind_logger
 from fastcs.tracer import Tracer
@@ -42,72 +42,95 @@ class EtherCATMasterController(CATioDeviceController):
     # name string should match pattern '^([A-Z][a-z0-9]*)*$'
     # so we map it as aliases in self.ads_name_map below
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all Master Device attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio device controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of device
-        attr_dict["InputsSlaveCount"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Number of slaves reached in last cycle",
+        self.add_attribute(
+            "InputsSlaveCount",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Number of slaves reached in last cycle",
+            ),
         )
-        attr_dict["InputsDevState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="EtherCAT device input cycle frame status",
+        self.add_attribute(
+            "InputsDevState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="EtherCAT device input cycle frame status",
+            ),
         )
-        attr_dict["OutputsDevCtrl"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="EtherCAT device output control value",
+        self.add_attribute(
+            "OutputsDevCtrl",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="EtherCAT device output control value",
+            ),
         )
         for i in range(0, self.num_ads_streams):
-            attr_dict[f"InFrm{i}State"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description="Cyclic Ethernet input frame status",
+            self.add_attribute(
+                f"InFrm{i}State",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description="Cyclic Ethernet input frame status",
+                ),
             )
-            attr_dict[f"InFrm{i}WcState"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description="Inputs accumulated working counter",
+            self.add_attribute(
+                f"InFrm{i}WcState",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description="Inputs accumulated working counter",
+                ),
             )
-            attr_dict[f"InFrm{i}InpToggle"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description="EtherCAT cyclic frame update indicator",
+            self.add_attribute(
+                f"InFrm{i}InpToggle",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description="EtherCAT cyclic frame update indicator",
+                ),
             )
-            attr_dict[f"OutFrm{i}Ctrl"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description="EtherCAT output frame control value",
+            self.add_attribute(
+                f"OutFrm{i}Ctrl",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description="EtherCAT output frame control value",
+                ),
             )
-            attr_dict[f"OutFrm{i}WcCtrl"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description="Outputs accumulated working counter",
+            self.add_attribute(
+                f"OutFrm{i}WcCtrl",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description="Outputs accumulated working counter",
+                ),
             )
 
             # Map the FastCS attribute name to the symbol name used by ADS
@@ -117,7 +140,8 @@ class EtherCATMasterController(CATioDeviceController):
             self.ads_name_map[f"OutFrm{i}Ctrl"] = f"Outputs.Frm{i}Ctrl"
             self.ads_name_map[f"OutFrm{i}WcCtrl"] = f"Outputs.Frm{i}WcCtrl"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EK1100Controller(CATioTerminalController):
@@ -126,19 +150,15 @@ class EK1100Controller(CATioTerminalController):
     io_function: str = "EtherCAT coupler at the head of a segment"
     """Function description of the I/O controller."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all coupler terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
         # n/a
-
-        return attr_dict
 
 
 class EK1101Controller(CATioTerminalController):
@@ -147,25 +167,28 @@ class EK1101Controller(CATioTerminalController):
     io_function: str = "EtherCAT coupler with three ID switches for variable topologies"
     """Function description of the I/O controller."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all coupler terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["ID"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=1,
-            description="Unique ID for the group of components",
+        self.add_attribute(
+            "ID",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=1,
+                description="Unique ID for the group of components",
+            ),
         )
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EK1110Controller(CATioTerminalController):
@@ -174,19 +197,19 @@ class EK1110Controller(CATioTerminalController):
     io_function: str = "EtherCAT extension coupler for line topology"
     """Function description of the I/O controller."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all coupler terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
         # n/a
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1004Controller(CATioTerminalController):
@@ -197,43 +220,52 @@ class EL1004Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL1004 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital input value",
+                description="Slave working counter state value",
+            ),
+        )
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated digital value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DICh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital input value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1014Controller(CATioTerminalController):
@@ -244,43 +276,52 @@ class EL1014Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL1014 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital input value",
+                description="Slave working counter state value",
+            ),
+        )
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated digital value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DICh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital input value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1124Controller(CATioTerminalController):
@@ -291,43 +332,52 @@ class EL1124Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL1124 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital input value",
+                description="Slave working counter state value",
+            ),
+        )
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated digital value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DICh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital input value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1084Controller(CATioTerminalController):
@@ -338,43 +388,52 @@ class EL1084Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL1084 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated digital value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DICh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital input value",
+                description="Slave working counter state value",
+            ),
+        )
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated digital value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DICh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital input value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1502Controller(CATioTerminalController):
@@ -385,57 +444,74 @@ class EL1502Controller(CATioTerminalController):
     num_channels = 2
     """Number of digital input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL1502 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Slave working counter state value",
+            ),
         )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated digital value",
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated digital value",
+            ),
         )
-        attr_dict["CNTInputStatus"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Input channel counter status",
+        self.add_attribute(
+            "CNTInputStatus",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Input channel counter status",
+            ),
         )
-        attr_dict["CNTInputValue"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Input channel counter value",
+        self.add_attribute(
+            "CNTInputValue",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Input channel counter value",
+            ),
         )
-        attr_dict["CNTOutputStatus"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Output channel counter status",
+        self.add_attribute(
+            "CNTOutputStatus",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Output channel counter status",
+            ),
         )
-        attr_dict["CNTOutputValue"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Output channel counter set value",
+        self.add_attribute(
+            "CNTOutputValue",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Output channel counter set value",
+            ),
         )
         # Map the FastCS attribute names to the symbol names used by ADS
         self.ads_name_map["CNTInputStatus"] = "CNTInputs.Countervalue"
@@ -443,7 +519,8 @@ class EL1502Controller(CATioTerminalController):
         self.ads_name_map["CNTOutputStatus"] = "CNTInputs.Countervalue"
         self.ads_name_map["CNTOutputValue"] = "CNTOutputs.Setcountervalue"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL2024Controller(CATioTerminalController):
@@ -454,39 +531,45 @@ class EL2024Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital output channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL2024 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DOCh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital output value",
+                description="Slave working counter state value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DOCh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital output value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
-class EL2024_0010Controller(CATioTerminalController):
+class EL2024v0010Controller(CATioTerminalController):
     """A sub-controller for an EL2024-0010 EtherCAT digital output terminal."""
 
     io_function: str = "4-channel digital output, 12V DC, 2A"
@@ -494,36 +577,42 @@ class EL2024_0010Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital output channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL2024-0010 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DOCh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital output value",
+                description="Slave working counter state value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DOCh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital output value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL2124Controller(CATioTerminalController):
@@ -534,36 +623,42 @@ class EL2124Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of digital output channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL2124 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"DOCh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} digital output value",
+                description="Slave working counter state value",
+            ),
+        )
+
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"DOCh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} digital output value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL3104Controller(CATioTerminalController):
@@ -580,51 +675,63 @@ class EL3104Controller(CATioTerminalController):
         # do so for all terminals
         print(f"CONFIGURATION FOR {self.name} NOT IMPLEMENTED YET")
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL3104 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Slave working counter state value",
+            ),
         )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated analog value",
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated analog value",
+            ),
         )
 
         for i in range(1, self.num_channels + 1):
-            attr_dict[f"AICh{i}Status"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description=f"Channel#{i} voltage status",
+            self.add_attribute(
+                f"AICh{i}Status",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} voltage status",
+                ),
             )
-            attr_dict[f"AICh{i}Value"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description=f"Channel#{i} analog input value",
+            self.add_attribute(
+                f"AICh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} analog input value",
+                ),
             )
             # Map the FastCS attribute names to the symbol names used by ADS
             self.ads_name_map[f"AICh{i}Status"] = f"AIStandardChannel{i}.Status"
             self.ads_name_map[f"AICh{i}Value"] = f"AIStandardChannel{i}.Value"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL3602Controller(CATioTerminalController):
@@ -635,51 +742,63 @@ class EL3602Controller(CATioTerminalController):
     num_channels: int = 2
     """Number of analog input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL3602 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Slave working counter state value",
+            ),
         )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Availability of an updated analog value",
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Availability of an updated analog value",
+            ),
         )
 
         for i in range(1, self.num_channels + 1):
-            attr_dict[f"AICh{i}Status"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description=f"Channel#{i} voltage status",
+            self.add_attribute(
+                f"AICh{i}Status",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} voltage status",
+                ),
             )
-            attr_dict[f"AICh{i}Value"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description=f"Channel#{i} analog input value",
+            self.add_attribute(
+                f"AICh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} analog input value",
+                ),
             )
             # Map the FastCS attribute names to the symbol names used by ADS
             self.ads_name_map[f"AICh{i}Status"] = f"AIInputsChannel{i}"
             self.ads_name_map[f"AICh{i}Value"] = f"AIInputsChannel{i}.Value"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL3702Controller(CATioTerminalController):
@@ -694,47 +813,58 @@ class EL3702Controller(CATioTerminalController):
     oversampling_factor: int = OVERSAMPLING_FACTOR
     """Oversampling factor applied to the analog input channels"""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL3702 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
         for i in range(1, self.operating_channels + 1):
-            attr_dict[f"AICh{i}CycleCount"] = AttrR(
-                datatype=Int(),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=0,
-                description=f"Record transfer counter for channel#{i}",
-            )
-            if self.oversampling_factor == 1:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
+            self.add_attribute(
+                f"AICh{i}CycleCount",
+                AttrR(
                     datatype=Int(),
                     io_ref=None,
                     group=self.attr_group_name,
                     initial_value=0,
-                    description=f"Analog sample value(s) for channel#{i}",
+                    description=f"Record transfer counter for channel#{i}",
+                ),
+            )
+            if self.oversampling_factor == 1:
+                self.add_attribute(
+                    f"AICh{i}ValueOvsmpl",
+                    AttrR(
+                        datatype=Int(),
+                        io_ref=None,
+                        group=self.attr_group_name,
+                        initial_value=0,
+                        description=f"Analog sample value(s) for channel#{i}",
+                    ),
                 )
             else:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
-                    datatype=Waveform(
-                        array_dtype=np.int16, shape=(self.oversampling_factor,)
+                self.add_attribute(
+                    f"AICh{i}ValueOvsmpl",
+                    AttrR(
+                        datatype=Waveform(
+                            array_dtype=np.int16, shape=(self.oversampling_factor,)
+                        ),
+                        io_ref=None,
+                        group=self.attr_group_name,
+                        initial_value=np.zeros(
+                            (self.oversampling_factor,), dtype=np.int16
+                        ),
+                        description=f"Analog sample value(s) for channel#{i}",
                     ),
-                    io_ref=None,
-                    group=self.attr_group_name,
-                    initial_value=np.zeros((self.oversampling_factor,), dtype=np.int16),
-                    description=f"Analog sample value(s) for channel#{i}",
                 )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"AICh{i}CycleCount"] = f"Ch{i}CycleCount"
             self.ads_name_map[f"AICh{i}ValueOvsmpl"] = f"Ch{i}Sample0"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL4134Controller(CATioTerminalController):
@@ -745,35 +875,41 @@ class EL4134Controller(CATioTerminalController):
     num_channels: int = 4
     """Number of analog output channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL4134 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"AOCh{i}Value"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} analog output value",
+                description="Slave working counter state value",
+            ),
+        )
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"AOCh{i}Value",
+                AttrR(
+                    datatype=Int(),
+                    io_ref=None,
+                    group=self.attr_group_name,
+                    initial_value=0,
+                    description=f"Channel#{i} analog output value",
+                ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"AOCh{i}Value"] = f"AOOutputChannel{i}.Analogoutput"
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL9410Controller(CATioTerminalController):
@@ -782,46 +918,58 @@ class EL9410Controller(CATioTerminalController):
     io_function: str = "2A power supply for E-bus"
     """Function description of the I/O controller."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL9410 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Slave working counter state value",
+            ),
         )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Counter for valid telegram received",
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Counter for valid telegram received",
+            ),
         )
-        attr_dict["StatusUp"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Power contacts voltage diagnostic status",
+        self.add_attribute(
+            "StatusUp",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Power contacts voltage diagnostic status",
+            ),
         )
-        attr_dict["StatusUs"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="E-bus supply voltage diagnostic status",
+        self.add_attribute(
+            "StatusUs",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="E-bus supply voltage diagnostic status",
+            ),
         )
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL9505Controller(CATioTerminalController):
@@ -830,39 +978,48 @@ class EL9505Controller(CATioTerminalController):
     io_function: str = "5V DC output power supply"
     """Function description of the I/O controller."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL9505 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Slave working counter state value",
+            ),
         )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Counter for valid telegram received",
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Counter for valid telegram received",
+            ),
         )
-        attr_dict["StatusUo"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Output voltage status",
+        self.add_attribute(
+            "StatusUo",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Output voltage status",
+            ),
         )
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL9512Controller(CATioTerminalController):
@@ -871,42 +1028,51 @@ class EL9512Controller(CATioTerminalController):
     io_function: str = "12V DC output power supply"
     """Function description of the I/O controller."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all EL9512 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Slave working counter state value",
+            ),
         )
-        attr_dict["InputToggle"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Counter for valid telegram received",
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Counter for valid telegram received",
+            ),
         )
-        attr_dict["StatusUo"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Output voltage status",
+        self.add_attribute(
+            "StatusUo",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=0,
+                description="Output voltage status",
+            ),
         )
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
-class ELM3704_0000Controller(CATioTerminalController):
+class ELM3704v0000Controller(CATioTerminalController):
     """A sub-controller for an ELM3704-0000 EtherCAT analog input terminal."""
 
     io_function: str = "4-channel analog input, multi-function, 24-bit, 10 ksps"
@@ -916,56 +1082,72 @@ class ELM3704_0000Controller(CATioTerminalController):
     num_channels = 4
     """Number of analog input channels."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """
         Get and create all ELM3704-0000 terminal attributes.
-
-        returns: a dictionary of attribute names to Attribute objects.
         """
         # Get the generic CATio terminal controller attributes
-        attr_dict: dict[str, Attribute] = await super().get_io_attributes()
+        initial_attr_count = len(self.attributes)
+        await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
 
-        attr_dict["WcState"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=0,
-            description="Slave working counter state value",
-        )
-        for i in range(1, self.num_channels + 1):
-            attr_dict[f"AICh{i}Status"] = AttrR(
+        self.add_attribute(
+            "WcState",
+            AttrR(
                 datatype=Int(),
                 io_ref=None,
                 group=self.attr_group_name,
                 initial_value=0,
-                description=f"Channel#{i} Process Analog Input status",
-            )
-            attr_dict[f"AICh{i}LatchTime"] = AttrR(
-                datatype=Waveform(array_dtype=np.uint32, shape=(2,)),
-                io_ref=None,
-                group=self.attr_group_name,
-                initial_value=np.zeros((2,), dtype=np.uint32),
-                description=f"Latch time for next channel#{i} samples",
-            )
-            if self.oversampling_factor == 1:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
+                description="Slave working counter state value",
+            ),
+        )
+        for i in range(1, self.num_channels + 1):
+            self.add_attribute(
+                f"AICh{i}Status",
+                AttrR(
                     datatype=Int(),
                     io_ref=None,
                     group=self.attr_group_name,
                     initial_value=0,
-                    description=f"ELM3704 terminal channel#{i} value",
-                )
-            else:
-                attr_dict[f"AICh{i}ValueOvsmpl"] = AttrR(
-                    datatype=Waveform(
-                        array_dtype=np.int32, shape=(self.oversampling_factor,)
-                    ),
+                    description=f"Channel#{i} Process Analog Input status",
+                ),
+            )
+            self.add_attribute(
+                f"AICh{i}LatchTime",
+                AttrR(
+                    datatype=Waveform(array_dtype=np.uint32, shape=(2,)),
                     io_ref=None,
                     group=self.attr_group_name,
-                    initial_value=np.zeros((self.oversampling_factor,), dtype=np.int32),
-                    description=f"ELM3704 terminal channel#{i} value",
+                    initial_value=np.zeros((2,), dtype=np.uint32),
+                    description=f"Latch time for next channel#{i} samples",
+                ),
+            )
+            if self.oversampling_factor == 1:
+                self.add_attribute(
+                    f"AICh{i}ValueOvsmpl",
+                    AttrR(
+                        datatype=Int(),
+                        io_ref=None,
+                        group=self.attr_group_name,
+                        initial_value=0,
+                        description=f"ELM3704 terminal channel#{i} value",
+                    ),
+                )
+            else:
+                self.add_attribute(
+                    f"AICh{i}ValueOvsmpl",
+                    AttrR(
+                        datatype=Waveform(
+                            array_dtype=np.int32, shape=(self.oversampling_factor,)
+                        ),
+                        io_ref=None,
+                        group=self.attr_group_name,
+                        initial_value=np.zeros(
+                            (self.oversampling_factor,), dtype=np.int32
+                        ),
+                        description=f"ELM3704 terminal channel#{i} value",
+                    ),
                 )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"AICh{i}Status"] = f"PAIStatusChannel{i}.Status"
@@ -976,7 +1158,8 @@ class ELM3704_0000Controller(CATioTerminalController):
                 f"PAISamples{self.oversampling_factor}Channel{i}.Samples"
             )
 
-        return attr_dict
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 # Map of supported controllers available to the FastCS CATio system
@@ -992,7 +1175,7 @@ SUPPORTED_CONTROLLERS: dict[
     "EL1124": EL1124Controller,
     "EL1502": EL1502Controller,
     "EL2024": EL2024Controller,
-    "EL2024-0010": EL2024_0010Controller,
+    "EL2024-0010": EL2024v0010Controller,
     "EL2124": EL2124Controller,
     "EL3104": EL3104Controller,
     "EL3602": EL3602Controller,
@@ -1001,7 +1184,7 @@ SUPPORTED_CONTROLLERS: dict[
     "EL9410": EL9410Controller,
     "EL9505": EL9505Controller,
     "EL9512": EL9512Controller,
-    "ELM3704-0000": ELM3704_0000Controller,
+    "ELM3704-0000": ELM3704v0000Controller,
     "ETHERCAT": EtherCATMasterController,
 }
 

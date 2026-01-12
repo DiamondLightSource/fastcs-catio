@@ -567,7 +567,8 @@ class TestOperationThroughput:
 class TestScalability:
     """Test scalability with increasing load."""
 
-    # # TO DO: if multiple clients can be mocked, test throughput with concurrent connections
+    # # TO DO: if multiple clients can be mocked, test throughput
+    # # with concurrent connections
     # @pytest.mark.asyncio
     # async def test_scalability_concurrent_clients(
     #     self, perf_test_server: MockADSServer
@@ -616,7 +617,8 @@ class TestScalability:
     #     for num_clients, throughput in scalability_results.items():
     #         print(
     #             f"Symbol read: {throughput:.1f} ops/sec "
-    #             + f"when {num_clients} clients are concurrently connected to the server"
+    #             + f"when {num_clients} clients are concurrently connected "
+    #             + f"to the server"
     #         )
 
     @pytest.mark.asyncio
@@ -1145,7 +1147,8 @@ class TestBottleneckIdentification:
                 "Performance test results for different symbol offset distribution "
                 + f"based on {num_operations} read samples:\n"
                 + f"{same_throughput:.1f} ops/sec throughput for same offset symbol\n"
-                + f"{varying_throughput:.1f} ops/sec throughput for varying offset symbols"
+                + f"{varying_throughput:.1f} ops/sec throughput for varying offset "
+                + "symbols"
             )
 
         finally:

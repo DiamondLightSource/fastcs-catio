@@ -5,23 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Unit Test",
-            "type": "debugpy",
-            "request": "launch",
-            "justMyCode": false,
-            "program": "${file}",
-            "purpose": [
-                "debug-test"
-            ],
-            "console": "integratedTerminal",
-            "env": {
-                // The default config in pyproject.toml's "[tool.pytest.ini_options]" adds coverage.
-                // Cannot have coverage and debugging at the same time.
-                // https://github.com/microsoft/vscode-python/issues/693
-                "PYTEST_ADDOPTS": "--no-cov"
-            },
-        },
-        {
             "name": "CATio IOC",
             "type": "debugpy",
             "request": "launch",
@@ -31,9 +14,10 @@
             "args": [
                 "ioc",
                 "CATIO",
+                "172.23.242.42",
                 "--log-level",
                 "debug"
             ]
-        },
+        }
     ]
 }
