@@ -165,7 +165,7 @@ class CATioController(Controller, Tracer):
         await self.read_configuration()
 
         # Create the controller attributes
-        self.attributes.update(await self.get_io_attributes())
+        await self.get_io_attributes()
         await self.register_as_class_attributes()
         logger.info(
             f"Initialisation of FastCS attributes for CATio controller {self.name} "
@@ -181,27 +181,24 @@ class CATioController(Controller, Tracer):
         # e.g. the server won't have any specific configuration
         pass
 
-    async def get_generic_attributes(self) -> dict[str, Attribute]:
+    async def get_generic_attributes(self) -> None:
         """
         Base method to create generic controller attributes applicable to all.
-
-        :returns: a dictionary of generic controller attributes.
         """
-        attr_dict: dict[str, Attribute] = {}
-
-        attr_dict["Function"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("io_function", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=self.io_function,
-            description="I/O controller function",
+        self.add_attribute(
+            "Function",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("io_function", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=self.io_function,
+                description="I/O controller function",
+            ),
         )
         logger.debug(f"Generic attributes for controller {self.name} created.")
 
-        return attr_dict
-
     @abstractmethod
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """Base method to create subcontroller-specific attributes."""
         ...
 
@@ -283,6 +280,7 @@ class CATioController(Controller, Tracer):
         # await super().connect()
         if self.sub_controllers:
             for name, subctlr in self.sub_controllers.items():
+                assert isinstance(subctlr, CATioController)
                 await subctlr.connect()
                 logger.debug(f"Connection to subcontroller {name} completed.")
 
@@ -462,58 +460,64 @@ class CATioServerController(CATioController):
         # logger.info(">-------- Removing the existing route to the remote.")
         # self._route.delete()
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """Create and get all server controller attributes."""
         logger.debug("No specific attributes are defined for a CATio server controller")
-        return await self.get_server_generic_attributes()
+        await self.get_server_generic_attributes()
 
-    async def get_server_generic_attributes(self) -> dict[str, Attribute]:
+    async def get_server_generic_attributes(self) -> None:
         """
         Create and get all generic server attributes.
-
-        :returns: a dictionary of generic server controller attributes.
         """
         assert isinstance(self.io, IOServer), (
             f"Wrong I/O type associated with controller {self.name}"
         )
 
         # Get the generic attributes related to a CATioServerController
-        attr_dict = await super().get_generic_attributes()
+        await super().get_generic_attributes()
 
-        attr_dict["Name"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=self.io.name,
-            description="I/O server name",
-        )
-        attr_dict["Version"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("version", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=self.io.version,
-            description="I/O server version number",
-        )
-        attr_dict["Build"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("build", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=str(self.io.build),
-            description="I/O server build number",
-        )
-        attr_dict["DevCount"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("num_devices", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.num_devices),
-            description="I/O server registered device count",
-        )
-        logger.debug(
-            f"Created {len(attr_dict)} generic attributes for the controller "
-            f"{self.name}."
+        self.add_attribute(
+            "Name",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=self.io.name,
+                description="I/O server name",
+            ),
         )
 
-        return attr_dict
+        self.add_attribute(
+            "Version",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("version", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=self.io.version,
+                description="I/O server version number",
+            ),
+        )
+        self.add_attribute(
+            "Build",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("build", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=str(self.io.build),
+                description="I/O server build number",
+            ),
+        )
+        self.add_attribute(
+            "DevCount",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("num_devices", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.num_devices),
+                description="I/O server registered device count",
+            ),
+        )
+        logger.debug(f"Generic attributes for the controller {self.name} created.")
 
     async def register_subcontrollers(self) -> None:
         """Register all subcontrollers available in the EtherCAT system tree."""
@@ -798,144 +802,184 @@ class CATioDeviceController(CATioController):
         self.notification_ready: bool = False
         """Flag indicating if the device is ready to provide notifications."""
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
+    async def get_io_attributes(self) -> None:
         """Create and get all device controller attributes."""
-        return await self.get_device_generic_attributes()
+        await self.get_device_generic_attributes()
 
-    async def get_device_generic_attributes(self) -> dict[str, Attribute]:
+    async def get_device_generic_attributes(self) -> None:
         """
         Create and get all generic device attributes.
-
-        :returns: a dictionary of generic device controller attributes.
         """
         assert isinstance(self.io, IODevice), (
             f"Wrong I/O type associated with controller {self.name}"
         )
 
         # Get the generic attributes related to a CATioDeviceController
-        attr_dict = await super().get_generic_attributes()
+        await super().get_generic_attributes()
 
-        attr_dict["Id"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("id", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.id),
-            description="I/O device identity number",
-        )
-        attr_dict["Type"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("type", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.type),
-            description="I/O device type",
-        )
-        attr_dict["Name"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=self.io.name,
-            description="I/O device name",
-        )
-        attr_dict["Netid"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("netid", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=str(self.io.netid),
-            description="I/O device ams netid",
-        )
-        attr_dict["Identity"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("identity", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=str(self.io.identity),
-            description="I/O device identity",
-        )
-        attr_dict["SystemTime"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.frame_counters.time),
-            description="I/O device, EtherCAT frame timestamp",
-        )
-        attr_dict["SentCyclicFrames"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.frame_counters.cyclic_sent),
-            description="I/O device, sent cyclic frames counter",
-        )
-        attr_dict["LostCyclicFrames"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.frame_counters.cyclic_lost),
-            description="I/O device, lost cyclic frames counter",
-        )
-        attr_dict["SentAcyclicFrames"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.frame_counters.acyclic_sent),
-            description="I/O device, sent acyclic frames counter",
-        )
-        attr_dict["LostAcyclicFrames"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.frame_counters.acyclic_lost),
-            description="I/O device, lost acyclic frames counter",
-        )
-        attr_dict["SlaveCount"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef(
-                "slave_count", update_period=STANDARD_POLL_UPDATE_PERIOD
+        self.add_attribute(
+            "Id",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("id", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.id),
+                description="I/O device identity number",
             ),
-            group=self.attr_group_name,
-            initial_value=int(self.io.slave_count),
-            description="I/O device registered slave count",
         )
-        attr_dict["SlavesStates"] = AttrR(
-            datatype=Waveform(
-                array_dtype=np.uint8, shape=(2 * int(self.io.slave_count),)
+        self.add_attribute(
+            "Type",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("type", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.type),
+                description="I/O device type",
             ),
-            io_ref=CATioControllerAttributeIORef(
-                "slaves_states", update_period=STANDARD_POLL_UPDATE_PERIOD
+        )
+        self.add_attribute(
+            "Name",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=self.io.name,
+                description="I/O device name",
             ),
-            group=self.attr_group_name,
-            initial_value=np.array(self.io.slaves_states, dtype=np.uint8).flatten(),
-            description="I/O device, states of slave terminals",
         )
-        attr_dict["SlavesCrcCounters"] = AttrR(
-            datatype=Waveform(array_dtype=np.uint32, shape=(int(self.io.slave_count),)),
-            io_ref=CATioControllerAttributeIORef(
-                "slaves_crc_counters", update_period=STANDARD_POLL_UPDATE_PERIOD
+        self.add_attribute(
+            "Netid",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("netid", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=str(self.io.netid),
+                description="I/O device ams netid",
             ),
-            group=self.attr_group_name,
-            initial_value=np.array(
-                self.io.slaves_crc_counters, dtype=np.uint32
-            ).flatten(),
-            description="I/O device, slave crc error sum counters",
         )
-        attr_dict["NodeCount"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("node_count", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.node_count),
-            description="I/O device registered node count",
+        self.add_attribute(
+            "Identity",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("identity", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=str(self.io.identity),
+                description="I/O device identity",
+            ),
         )
-        attr_dict["timestamp"] = AttrR(
-            datatype=String(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-            description="I/O device last notification timestamp",
+        self.add_attribute(
+            "SystemTime",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.frame_counters.time),
+                description="I/O device, EtherCAT frame timestamp",
+            ),
         )
-        logger.debug(
-            f"Created {len(attr_dict)} generic attributes "
-            + f"for the controller {self.name}."
+        self.add_attribute(
+            "SentCyclicFrames",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.frame_counters.cyclic_sent),
+                description="I/O device, sent cyclic frames counter",
+            ),
         )
-
-        return attr_dict
+        self.add_attribute(
+            "LostCyclicFrames",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.frame_counters.cyclic_lost),
+                description="I/O device, lost cyclic frames counter",
+            ),
+        )
+        self.add_attribute(
+            "SentAcyclicFrames",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.frame_counters.acyclic_sent),
+                description="I/O device, sent acyclic frames counter",
+            ),
+        )
+        self.add_attribute(
+            "LostAcyclicFrames",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.frame_counters.acyclic_lost),
+                description="I/O device, lost acyclic frames counter",
+            ),
+        )
+        self.add_attribute(
+            "SlaveCount",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef(
+                    "slave_count", update_period=STANDARD_POLL_UPDATE_PERIOD
+                ),
+                group=self.attr_group_name,
+                initial_value=int(self.io.slave_count),
+                description="I/O device registered slave count",
+            ),
+        )
+        self.add_attribute(
+            "SlavesStates",
+            AttrR(
+                datatype=Waveform(
+                    array_dtype=np.uint8, shape=(2 * int(self.io.slave_count),)
+                ),
+                io_ref=CATioControllerAttributeIORef(
+                    "slaves_states", update_period=STANDARD_POLL_UPDATE_PERIOD
+                ),
+                group=self.attr_group_name,
+                initial_value=np.array(self.io.slaves_states, dtype=np.uint8).flatten(),
+                description="I/O device, states of slave terminals",
+            ),
+        )
+        self.add_attribute(
+            "SlavesCrcCounters",
+            AttrR(
+                datatype=Waveform(
+                    array_dtype=np.uint32, shape=(int(self.io.slave_count),)
+                ),
+                io_ref=CATioControllerAttributeIORef(
+                    "slaves_crc_counters", update_period=STANDARD_POLL_UPDATE_PERIOD
+                ),
+                group=self.attr_group_name,
+                initial_value=np.array(
+                    self.io.slaves_crc_counters, dtype=np.uint32
+                ).flatten(),
+                description="I/O device, slave crc error sum counters",
+            ),
+        )
+        self.add_attribute(
+            "NodeCount",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("node_count", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.node_count),
+                description="I/O device registered node count",
+            ),
+        )
+        self.add_attribute(
+            "timestamp",
+            AttrR(
+                datatype=String(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                description="I/O device last notification timestamp",
+            ),
+        )
+        logger.debug("Created generic attributes " + f"for the controller {self.name}.")
 
     async def connect(self) -> None:
         """Establish the FastCS connection to the device controller."""
@@ -1003,131 +1047,164 @@ class CATioTerminalController(CATioController):
             group="terminal",
         )
 
-    async def get_io_attributes(self) -> dict[str, Attribute]:
-        """Create and get all terminal controller attributes.
+    async def get_io_attributes(self) -> None:
+        """Create and get all terminal controller attributes."""
+        await self.get_terminal_generic_attributes()
 
-        :returns: a dictionary of terminal controller attributes.
-        """
-        return await self.get_terminal_generic_attributes()
-
-    async def get_terminal_generic_attributes(self) -> dict[str, Attribute]:
-        """Create and get all generic terminal attributes.
-
-        :returns: a dictionary of generic terminal controller attributes.
-        """
+    async def get_terminal_generic_attributes(self) -> None:
+        """Create and get all generic terminal attributes."""
         assert isinstance(self.io, IOSlave), (
             f"Wrong I/O type associated with controller {self.name}"
         )
 
         # Get the generic attributes related to a CATioDeviceController
-        attr_dict = await super().get_generic_attributes()
+        await super().get_generic_attributes()
 
-        attr_dict["ParentDevId"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("parent_device", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=str(self.io.parent_device),
-            description="I/O terminal master device id",
-        )
-        attr_dict["Type"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("type", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=self.io.type,
-            description="I/O terminal type",
-        )
-        attr_dict["Name"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=self.io.name,
-            description="I/O terminal name",
-        )
-        attr_dict["Address"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("address", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.address),
-            description="I/O terminal EtherCAT address",
-        )
-        attr_dict["Identity"] = AttrR(
-            datatype=String(),
-            io_ref=CATioControllerAttributeIORef("identity", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=str(self.io.identity),
-            description="I/O terminal identity",
-        )
-        attr_dict["StateMachine"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.states.ecat_state),
-            description="I/O terminal state machine",
-        )
-        attr_dict["LinkStatus"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.states.link_status),
-            description="I/O terminal communication state",
-        )
-        attr_dict["CrcErrorPortA"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.crcs.port_a_crc),
-            description="I/O terminal crc error counter on port A",
-        )
-        attr_dict["CrcErrorPortB"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.crcs.port_b_crc),
-            description="I/O terminal crc error counter on port B",
-        )
-        attr_dict["CrcErrorPortC"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.crcs.port_c_crc),
-            description="I/O terminal crc error counter on port C",
-        )
-        attr_dict["CrcErrorPortD"] = AttrR(
-            datatype=Int(),
-            io_ref=None,
-            group=self.attr_group_name,
-            initial_value=int(self.io.crcs.port_d_crc),
-            description="I/O terminal crc error counter on port D",
-        )
-        attr_dict["CrcErrorSum"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef(
-                "crc_error_sum", update_period=STANDARD_POLL_UPDATE_PERIOD
+        self.add_attribute(
+            "ParentDevId",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef(
+                    "parent_device", update_period=ONCE
+                ),
+                group=self.attr_group_name,
+                initial_value=str(self.io.parent_device),
+                description="I/O terminal master device id",
             ),
-            group=self.attr_group_name,
-            initial_value=int(self.io.crc_error_sum),
-            description="I/O terminal crc error sum counter",
         )
-        attr_dict["Node"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("node", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.loc_in_chain.node),
-            description="I/O terminal associated node",
+        self.add_attribute(
+            "Type",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("type", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=self.io.type,
+                description="I/O terminal type",
+            ),
         )
-        attr_dict["Position"] = AttrR(
-            datatype=Int(),
-            io_ref=CATioControllerAttributeIORef("position", update_period=ONCE),
-            group=self.attr_group_name,
-            initial_value=int(self.io.loc_in_chain.position),
-            description="I/O terminal associated position",
+        self.add_attribute(
+            "Name",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("name", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=self.io.name,
+                description="I/O terminal name",
+            ),
         )
-        logger.debug(
-            f"Created {len(attr_dict)} generic attributes "
-            + f"for the controller {self.name}."
+        self.add_attribute(
+            "Address",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("address", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.address),
+                description="I/O terminal EtherCAT address",
+            ),
         )
-
-        return attr_dict
+        self.add_attribute(
+            "Identity",
+            AttrR(
+                datatype=String(),
+                io_ref=CATioControllerAttributeIORef("identity", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=str(self.io.identity),
+                description="I/O terminal identity",
+            ),
+        )
+        self.add_attribute(
+            "StateMachine",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.states.ecat_state),
+                description="I/O terminal state machine",
+            ),
+        )
+        self.add_attribute(
+            "LinkStatus",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.states.link_status),
+                description="I/O terminal communication state",
+            ),
+        )
+        self.add_attribute(
+            "CrcErrorPortA",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.crcs.port_a_crc),
+                description="I/O terminal crc error counter on port A",
+            ),
+        )
+        self.add_attribute(
+            "CrcErrorPortB",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.crcs.port_b_crc),
+                description="I/O terminal crc error counter on port B",
+            ),
+        )
+        self.add_attribute(
+            "CrcErrorPortC",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.crcs.port_c_crc),
+                description="I/O terminal crc error counter on port C",
+            ),
+        )
+        self.add_attribute(
+            "CrcErrorPortD",
+            AttrR(
+                datatype=Int(),
+                io_ref=None,
+                group=self.attr_group_name,
+                initial_value=int(self.io.crcs.port_d_crc),
+                description="I/O terminal crc error counter on port D",
+            ),
+        )
+        self.add_attribute(
+            "CrcErrorSum",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef(
+                    "crc_error_sum", update_period=STANDARD_POLL_UPDATE_PERIOD
+                ),
+                group=self.attr_group_name,
+                initial_value=int(self.io.crc_error_sum),
+                description="I/O terminal crc error sum counter",
+            ),
+        )
+        self.add_attribute(
+            "Node",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("node", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.loc_in_chain.node),
+                description="I/O terminal associated node",
+            ),
+        )
+        self.add_attribute(
+            "Position",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerAttributeIORef("position", update_period=ONCE),
+                group=self.attr_group_name,
+                initial_value=int(self.io.loc_in_chain.position),
+                description="I/O terminal associated position",
+            ),
+        )
+        logger.debug("Created generic attributes " + f"for the controller {self.name}.")
 
     async def connect(self) -> None:
         """Establish the FastCS connection to the terminal controller."""
