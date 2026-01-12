@@ -1,5 +1,4 @@
 import asyncio
-import random
 
 from catio.client import AsyncioADSClient
 from catio.utils import average, process_notifications

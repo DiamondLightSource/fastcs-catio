@@ -596,7 +596,7 @@ class AsyncioADSClient:
                 header = AmsHeader.from_bytes(packet[:AMS_HEADER_LENGTH])
                 body = packet[AMS_HEADER_LENGTH:]
                 return header, body
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             err.add_note(
                 f"Empty packet after {COMMUNICATION_TIMEOUT_SEC} seconds, "
                 + "system likely disconnected."

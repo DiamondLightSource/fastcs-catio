@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
-from fastcs.launch import FastCS, launch
+from fastcs.launch import FastCS
 from fastcs.transport.epics.ca.transport import EpicsCATransport
 from fastcs.transport.epics.options import (
     EpicsDocsOptions,

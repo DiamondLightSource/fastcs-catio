@@ -1,8 +1,8 @@
 from collections.abc import Iterator, Sequence
-from typing import ClassVar, SupportsInt, get_origin
+from typing import Any, ClassVar, Self, SupportsInt, get_origin
 
 import numpy as np
-from typing_extensions import Any, Self, dataclass_transform, get_type_hints
+from typing_extensions import dataclass_transform, get_type_hints
 
 from ._constants import (
     TWINCAT_STRING_ENCODING,
