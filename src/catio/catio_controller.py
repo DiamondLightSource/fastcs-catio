@@ -166,7 +166,6 @@ class CATioController(Controller, Tracer):
 
         # Create the controller attributes
         await self.get_io_attributes()
-        await self.register_as_class_attributes()
         logger.info(
             f"Initialisation of FastCS attributes for CATio controller {self.name} "
             + "was successful."
@@ -201,21 +200,6 @@ class CATioController(Controller, Tracer):
     async def get_io_attributes(self) -> None:
         """Base method to create subcontroller-specific attributes."""
         ...
-
-    async def register_as_class_attributes(self) -> None:
-        """Register all controller attributes as class instance attributes."""
-        if self.attributes:
-            for attr_name, value in self.attributes.items():
-                # setattr(self, "_" + attr_name, value)
-                # print(f"attr={self.attributes}")
-                # _{NAME} GET ADDED TO SELF.ATTRIBUTES BECAUSE OF PYTHON NAME MANGLING
-                # (see section 6.2.1 in https://docs.python.org/3/reference/expressions.html#private-name-mangling)
-                setattr(self, attr_name, value)
-
-        logger.debug(
-            f"{len(self.attributes)} fastCS attributes have been registered "
-            + f"with the {self.name} controller."
-        )
 
     async def get_root_node(self) -> IOTreeNode:
         """
@@ -815,6 +799,7 @@ class CATioDeviceController(CATioController):
         )
 
         # Get the generic attributes related to a CATioDeviceController
+        initial_attr_count = len(self.attributes)
         await super().get_generic_attributes()
 
         self.add_attribute(
@@ -979,7 +964,11 @@ class CATioDeviceController(CATioController):
                 description="I/O device last notification timestamp",
             ),
         )
-        logger.debug("Created generic attributes " + f"for the controller {self.name}.")
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(
+            f"Created {attr_count} generic attributes "
+            + f"for the controller {self.name}."
+        )
 
     async def connect(self) -> None:
         """Establish the FastCS connection to the device controller."""
@@ -1058,6 +1047,7 @@ class CATioTerminalController(CATioController):
         )
 
         # Get the generic attributes related to a CATioDeviceController
+        initial_attr_count = len(self.attributes)
         await super().get_generic_attributes()
 
         self.add_attribute(
@@ -1204,7 +1194,11 @@ class CATioTerminalController(CATioController):
                 description="I/O terminal associated position",
             ),
         )
-        logger.debug("Created generic attributes " + f"for the controller {self.name}.")
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(
+            f"Created {attr_count} generic attributes "
+            + f"for the controller {self.name}."
+        )
 
     async def connect(self) -> None:
         """Establish the FastCS connection to the terminal controller."""
