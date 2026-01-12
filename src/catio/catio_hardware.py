@@ -47,6 +47,7 @@ class EtherCATMasterController(CATioDeviceController):
         Get and create all Master Device attributes.
         """
         # Get the generic CATio device controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of device
@@ -139,6 +140,9 @@ class EtherCATMasterController(CATioDeviceController):
             self.ads_name_map[f"OutFrm{i}Ctrl"] = f"Outputs.Frm{i}Ctrl"
             self.ads_name_map[f"OutFrm{i}WcCtrl"] = f"Outputs.Frm{i}WcCtrl"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EK1100Controller(CATioTerminalController):
     """A sub-controller for an EK1100 EtherCAT Coupler terminal."""
@@ -168,6 +172,7 @@ class EK1101Controller(CATioTerminalController):
         Get and create all coupler terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -182,6 +187,9 @@ class EK1101Controller(CATioTerminalController):
             ),
         )
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EK1110Controller(CATioTerminalController):
     """A sub-controller for an EK1110 EtherCAT Extension terminal."""
@@ -194,10 +202,14 @@ class EK1110Controller(CATioTerminalController):
         Get and create all coupler terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
         # n/a
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1004Controller(CATioTerminalController):
@@ -213,6 +225,7 @@ class EL1004Controller(CATioTerminalController):
         Get and create all EL1004 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -250,6 +263,9 @@ class EL1004Controller(CATioTerminalController):
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1014Controller(CATioTerminalController):
@@ -265,6 +281,7 @@ class EL1014Controller(CATioTerminalController):
         Get and create all EL1014 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -302,6 +319,9 @@ class EL1014Controller(CATioTerminalController):
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1124Controller(CATioTerminalController):
@@ -317,6 +337,7 @@ class EL1124Controller(CATioTerminalController):
         Get and create all EL1124 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -354,6 +375,9 @@ class EL1124Controller(CATioTerminalController):
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1084Controller(CATioTerminalController):
@@ -369,6 +393,7 @@ class EL1084Controller(CATioTerminalController):
         Get and create all EL1084 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -407,6 +432,9 @@ class EL1084Controller(CATioTerminalController):
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL1502Controller(CATioTerminalController):
     """A sub-controller for an EL1502 EtherCAT digital input terminal."""
@@ -421,6 +449,7 @@ class EL1502Controller(CATioTerminalController):
         Get and create all EL1502 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -490,6 +519,9 @@ class EL1502Controller(CATioTerminalController):
         self.ads_name_map["CNTOutputStatus"] = "CNTInputs.Countervalue"
         self.ads_name_map["CNTOutputValue"] = "CNTOutputs.Setcountervalue"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL2024Controller(CATioTerminalController):
     """A sub-controller for an EL2024 EtherCAT digital output terminal."""
@@ -504,6 +536,7 @@ class EL2024Controller(CATioTerminalController):
         Get and create all EL2024 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -531,6 +564,9 @@ class EL2024Controller(CATioTerminalController):
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL2024v0010Controller(CATioTerminalController):
@@ -546,6 +582,7 @@ class EL2024v0010Controller(CATioTerminalController):
         Get and create all EL2024-0010 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -573,6 +610,9 @@ class EL2024v0010Controller(CATioTerminalController):
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL2124Controller(CATioTerminalController):
@@ -588,6 +628,7 @@ class EL2124Controller(CATioTerminalController):
         Get and create all EL2124 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -615,6 +656,9 @@ class EL2124Controller(CATioTerminalController):
             )
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL3104Controller(CATioTerminalController):
@@ -636,6 +680,7 @@ class EL3104Controller(CATioTerminalController):
         Get and create all EL3104 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -685,6 +730,9 @@ class EL3104Controller(CATioTerminalController):
             self.ads_name_map[f"AICh{i}Status"] = f"AIStandardChannel{i}.Status"
             self.ads_name_map[f"AICh{i}Value"] = f"AIStandardChannel{i}.Value"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL3602Controller(CATioTerminalController):
     """A sub-controller for an EL3602 EtherCAT analog input terminal."""
@@ -699,6 +747,7 @@ class EL3602Controller(CATioTerminalController):
         Get and create all EL3602 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -748,6 +797,9 @@ class EL3602Controller(CATioTerminalController):
             self.ads_name_map[f"AICh{i}Status"] = f"AIInputsChannel{i}"
             self.ads_name_map[f"AICh{i}Value"] = f"AIInputsChannel{i}.Value"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL3702Controller(CATioTerminalController):
     """A sub-controller for an EL3702 EtherCAT analog input terminal."""
@@ -766,6 +818,7 @@ class EL3702Controller(CATioTerminalController):
         Get and create all EL3702 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -810,6 +863,9 @@ class EL3702Controller(CATioTerminalController):
             self.ads_name_map[f"AICh{i}CycleCount"] = f"Ch{i}CycleCount"
             self.ads_name_map[f"AICh{i}ValueOvsmpl"] = f"Ch{i}Sample0"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL4134Controller(CATioTerminalController):
     """A sub-controller for an EL4134 EtherCAT analog output terminal."""
@@ -824,6 +880,7 @@ class EL4134Controller(CATioTerminalController):
         Get and create all EL4134 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -851,6 +908,9 @@ class EL4134Controller(CATioTerminalController):
             # Map the FastCS attribute name to the symbol name used by ADS
             self.ads_name_map[f"AOCh{i}Value"] = f"AOOutputChannel{i}.Analogoutput"
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL9410Controller(CATioTerminalController):
     """A sub-controller for an EL9410 EtherCAT power supply terminal."""
@@ -863,6 +923,7 @@ class EL9410Controller(CATioTerminalController):
         Get and create all EL9410 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -907,6 +968,9 @@ class EL9410Controller(CATioTerminalController):
             ),
         )
 
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
+
 
 class EL9505Controller(CATioTerminalController):
     """A sub-controller for an EL9505 EtherCAT power supply terminal."""
@@ -919,6 +983,7 @@ class EL9505Controller(CATioTerminalController):
         Get and create all EL9505 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -952,6 +1017,9 @@ class EL9505Controller(CATioTerminalController):
                 description="Output voltage status",
             ),
         )
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL9512Controller(CATioTerminalController):
@@ -965,6 +1033,7 @@ class EL9512Controller(CATioTerminalController):
         Get and create all EL9512 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -998,6 +1067,9 @@ class EL9512Controller(CATioTerminalController):
                 description="Output voltage status",
             ),
         )
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class ELM3704v0000Controller(CATioTerminalController):
@@ -1015,6 +1087,7 @@ class ELM3704v0000Controller(CATioTerminalController):
         Get and create all ELM3704-0000 terminal attributes.
         """
         # Get the generic CATio terminal controller attributes
+        initial_attr_count = len(self.attributes)
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
@@ -1084,6 +1157,9 @@ class ELM3704v0000Controller(CATioTerminalController):
             self.ads_name_map[f"AICh{i}ValueOvsmpl"] = (
                 f"PAISamples{self.oversampling_factor}Channel{i}.Samples"
             )
+
+        attr_count = len(self.attributes) - initial_attr_count
+        logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 # Map of supported controllers available to the FastCS CATio system
