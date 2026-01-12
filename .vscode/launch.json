@@ -5,17 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Unit Test",
-            "type": "debugpy",
-            "request": "launch",
-            "justMyCode": false,
-            "program": "${file}",
-            "purpose": [
-                "debug-test"
-            ],
-            "console": "integratedTerminal",
-        },
-        {
             "name": "CATio IOC",
             "type": "debugpy",
             "request": "launch",
@@ -25,10 +14,10 @@
             "args": [
                 "ioc",
                 "CATIO",
+                "172.23.242.42",
                 "--log-level",
                 "debug"
             ]
-        },
+        }
     ]
-]
 }
