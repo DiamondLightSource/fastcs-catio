@@ -9,8 +9,8 @@ from typing import Annotated, Optional
 
 import typer
 from fastcs.launch import FastCS
-from fastcs.transport.epics.ca.transport import EpicsCATransport
-from fastcs.transport.epics.options import (
+from fastcs.transports.epics.ca.transport import EpicsCATransport
+from fastcs.transports.epics.options import (
     EpicsDocsOptions,
     EpicsGUIOptions,
     EpicsIOCOptions,
@@ -140,7 +140,7 @@ def ioc(
 
     # Define EPICS ChannelAccess/PVA transport parameters
     epics_transport = EpicsCATransport(
-        ca_ioc=EpicsIOCOptions(pv_prefix=pv_prefix),
+        epicsca=EpicsIOCOptions(pv_prefix=pv_prefix),
         docs=EpicsDocsOptions(),
         gui=EpicsGUIOptions(
             output_path=ui_path / "catio.bob", title=f"CATio - {pv_prefix}"

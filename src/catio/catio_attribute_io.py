@@ -2,12 +2,11 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any, TypeVar
 
 import numpy as np
-from fastcs.attribute_io import AttributeIO
-from fastcs.attribute_io_ref import AttributeIORef
-from fastcs.attributes import ONCE, AttrR
+from fastcs.attributes import AttributeIO, AttributeIORef, AttrR
 from fastcs.datatypes import Waveform
 from fastcs.logging import bind_logger
 from fastcs.tracer import Tracer
+from fastcs.util import ONCE
 
 from catio.catio_connection import CATioConnection, CATioFastCSRequest
 

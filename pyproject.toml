@@ -17,7 +17,7 @@ dependencies = [
     "numpy",
     "pvi",
     "typer",
-    "fastcs@git+https://github.com/DiamondLightSource/FastCS",
+    "fastcs[all]==0.12.0a1",
     "softioc@git+https://github.com/DiamondLightSource/pythonSoftIOC",
 ]
 dynamic = ["version"]
@@ -43,7 +43,7 @@ dev = [
 ]
 
 [project.scripts]
-catio = "catio.__main__:main"
+catio = "catio.__main__:app"
 
 [project.urls]
 GitHub = "https://github.com/DiamondLightSource/catio"

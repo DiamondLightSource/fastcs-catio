@@ -10,12 +10,13 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-from fastcs.attributes import ONCE, Attribute, AttrR
-from fastcs.controller import Controller
+from fastcs.attributes import Attribute, AttrR
+from fastcs.controllers import Controller
 from fastcs.datatypes import Int, String, Waveform
 from fastcs.logging import bind_logger
+from fastcs.methods import scan
 from fastcs.tracer import Tracer
-from fastcs.wrappers import scan
+from fastcs.util import ONCE
 from numpy.lib import recfunctions as rfn
 
 from catio._constants import DeviceType
@@ -1074,28 +1075,28 @@ class CATioTerminalController(CATioController):
             datatype=Int(),
             io_ref=None,
             group=self.attr_group_name,
-            initial_value=int(self.io.crcs.portA_crc),
+            initial_value=int(self.io.crcs.port_a_crc),
             description="I/O terminal crc error counter on port A",
         )
         attr_dict["CrcErrorPortB"] = AttrR(
             datatype=Int(),
             io_ref=None,
             group=self.attr_group_name,
-            initial_value=int(self.io.crcs.portB_crc),
+            initial_value=int(self.io.crcs.port_b_crc),
             description="I/O terminal crc error counter on port B",
         )
         attr_dict["CrcErrorPortC"] = AttrR(
             datatype=Int(),
             io_ref=None,
             group=self.attr_group_name,
-            initial_value=int(self.io.crcs.portC_crc),
+            initial_value=int(self.io.crcs.port_c_crc),
             description="I/O terminal crc error counter on port C",
         )
         attr_dict["CrcErrorPortD"] = AttrR(
             datatype=Int(),
             io_ref=None,
             group=self.attr_group_name,
-            initial_value=int(self.io.crcs.portD_crc),
+            initial_value=int(self.io.crcs.port_d_crc),
             description="I/O terminal crc error counter on port D",
         )
         attr_dict["CrcErrorSum"] = AttrR(
