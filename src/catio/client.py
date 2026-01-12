@@ -223,8 +223,9 @@ class UDPMessage:
         try:
             response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
             assert response.port == SYSTEM_SERVICE_PORT, (
-                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}), "
-                + f"got port {response.port} instead."
+                f"Expected UDP response from system service port "
+                f"({SYSTEM_SERVICE_PORT}), "
+                f"got port {response.port} instead."
             )
             return AmsNetId.from_bytes(response.netid.tobytes())
 
@@ -244,8 +245,9 @@ class UDPMessage:
         try:
             response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
             assert response.port == SYSTEM_SERVICE_PORT, (
-                f"Expected UDP response from system service port ({SYSTEM_SERVICE_PORT}), "
-                + f"got port {response.port} instead."
+                f"Expected UDP response from system service port "
+                f"({SYSTEM_SERVICE_PORT}), "
+                f"got port {response.port} instead."
             )
             # TO DO: CAN WE CHECK RESPONSE FOR INVALID PASSWORD?
             for _ in range(response.count):
@@ -580,9 +582,9 @@ class AsyncioADSClient:
         :raises ConnectionError: when the ADS client has disconnected form the server
         :raises ConnectionAbortedError: when the ADS client connection has completed
         """
-        COMMUNICATION_TIMEOUT_SEC = 120
+        communication_timeout_sec = 120
         try:
-            async with asyncio.timeout(COMMUNICATION_TIMEOUT_SEC):
+            async with asyncio.timeout(communication_timeout_sec):
                 msg_bytes = await self.__reader.readexactly(6)
                 assert msg_bytes[:2] == b"\x00\x00", (
                     f"Received an invalid TCP header: {msg_bytes.hex()}"
@@ -1567,7 +1569,7 @@ class AsyncioADSClient:
                 port=ADS_MASTER_PORT,
             )
             state = SlaveState.from_bytes(response.data)
-            assert state.eCAT_state == SlaveStateMachine.SLAVE_STATE_OP, (
+            assert state.ecat_state == SlaveStateMachine.SLAVE_STATE_OP, (
                 "A slave terminal is not in operational state"
             )
 
@@ -1631,7 +1633,7 @@ class AsyncioADSClient:
                     strict=True,
                 )
             ):
-                slave.states.eCAT_state = states.eCAT_state
+                slave.states.ecat_state = states.ecat_state
                 slave.states.link_status = states.link_status
 
             self.check_slaves_states_validity(device.slaves, device.slaves_states)
@@ -1650,13 +1652,13 @@ class AsyncioADSClient:
 
         status = True
         states = np.array(slave_states, dtype=SlaveState)
-        if not np.all(states["eCAT_state"] == SlaveStateMachine.SLAVE_STATE_OP):
+        if not np.all(states["ecat_state"] == SlaveStateMachine.SLAVE_STATE_OP):
             status = False
-            bad_eCAT = np.nonzero(
-                states["eCAT_state"] != SlaveStateMachine.SLAVE_STATE_OP
+            bad_ecat = np.nonzero(
+                states["ecat_state"] != SlaveStateMachine.SLAVE_STATE_OP
             )[0]
-            assert bad_eCAT.size
-            for idx in bad_eCAT:
+            assert bad_ecat.size
+            for idx in bad_ecat:
                 slave: IOSlave = slaves[int(idx)]
                 logging.critical(
                     f"Slave terminal '{slave.name}' isn't in operational state."
@@ -1712,22 +1714,22 @@ class AsyncioADSClient:
                 )
                 states = np.frombuffer(
                     slave_response.data,
-                    dtype=[("eCAT_state", np.uint8), ("link_status", np.uint8)],
+                    dtype=[("ecat_state", np.uint8), ("link_status", np.uint8)],
                     count=int(device.slave_count),
                 )
 
                 # If any slave terminal is not operating as expected, update its status.
-                if not np.all(states["eCAT_state"] == SlaveStateMachine.SLAVE_STATE_OP):
-                    bad_eCAT = np.nonzero(
-                        states["eCAT_state"] != SlaveStateMachine.SLAVE_STATE_OP
+                if not np.all(states["ecat_state"] == SlaveStateMachine.SLAVE_STATE_OP):
+                    bad_ecat = np.nonzero(
+                        states["ecat_state"] != SlaveStateMachine.SLAVE_STATE_OP
                     )[0]
-                    assert bad_eCAT.size
-                    for idx in bad_eCAT:
+                    assert bad_ecat.size
+                    for idx in bad_ecat:
                         slave: IOSlave = (device.slaves)[int(idx)]
                         logging.critical(
                             f"Slave terminal '{slave.name}' isn't in operational state."
                         )
-                        slave.states.eCAT_state = states["eCAT_state"][idx]
+                        slave.states.ecat_state = states["ecat_state"][idx]
                 if not np.all(
                     states["link_status"] == SlaveLinkState.SLAVE_LINK_STATE_OK
                 ):
@@ -3262,7 +3264,7 @@ class AsyncioADSClient:
             if terminal is not None:
                 assert isinstance(terminal, IOSlave)
                 return np.array(
-                    [terminal.states.eCAT_state, terminal.states.link_status]
+                    [terminal.states.ecat_state, terminal.states.link_status]
                 )
             else:
                 raise KeyError(

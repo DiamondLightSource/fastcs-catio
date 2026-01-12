@@ -486,7 +486,7 @@ class EL2024Controller(CATioTerminalController):
         return attr_dict
 
 
-class EL2024_0010Controller(CATioTerminalController):
+class EL2024v0010Controller(CATioTerminalController):
     """A sub-controller for an EL2024-0010 EtherCAT digital output terminal."""
 
     io_function: str = "4-channel digital output, 12V DC, 2A"
@@ -906,7 +906,7 @@ class EL9512Controller(CATioTerminalController):
         return attr_dict
 
 
-class ELM3704_0000Controller(CATioTerminalController):
+class ELM3704v0000Controller(CATioTerminalController):
     """A sub-controller for an ELM3704-0000 EtherCAT analog input terminal."""
 
     io_function: str = "4-channel analog input, multi-function, 24-bit, 10 ksps"
@@ -992,7 +992,7 @@ SUPPORTED_CONTROLLERS: dict[
     "EL1124": EL1124Controller,
     "EL1502": EL1502Controller,
     "EL2024": EL2024Controller,
-    "EL2024-0010": EL2024_0010Controller,
+    "EL2024-0010": EL2024v0010Controller,
     "EL2124": EL2124Controller,
     "EL3104": EL3104Controller,
     "EL3602": EL3602Controller,
@@ -1001,7 +1001,7 @@ SUPPORTED_CONTROLLERS: dict[
     "EL9410": EL9410Controller,
     "EL9505": EL9505Controller,
     "EL9512": EL9512Controller,
-    "ELM3704-0000": ELM3704_0000Controller,
+    "ELM3704-0000": ELM3704v0000Controller,
     "ETHERCAT": EtherCATMasterController,
 }
 

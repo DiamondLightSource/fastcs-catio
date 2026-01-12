@@ -162,7 +162,7 @@ def filetime_to_dt(filetime: int) -> np.datetime64:
     return np.datetime64(int(unix_time * 1e9), "ns")
 
 
-def trim_eCAT_name(name: str) -> str:
+def trim_ecat_name(name: str) -> str:
     """
     Shorten and remove spaces from the original EtherCAT name.
 

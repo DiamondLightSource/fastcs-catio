@@ -19,7 +19,7 @@ from fastcs.wrappers import scan
 from numpy.lib import recfunctions as rfn
 
 from catio._constants import DeviceType
-from catio.catio_attributeIO import (
+from catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
 )
@@ -31,7 +31,7 @@ from catio.utils import (
     filetime_to_dt,
     get_notification_changes,
     process_notifications,
-    trim_eCAT_name,
+    trim_ecat_name,
 )
 
 from .catio_connection import (
@@ -63,7 +63,7 @@ class CATioController(Controller, Tracer):
     def __init__(
         self,
         name: str = "UNKNOWN",
-        eCAT_name: str = "",
+        ecat_name: str = "",
         description: str | None = None,
         group: str = "",
         # comments: str = ""    # TO DO: can comments attribute be written to hardware?
@@ -76,12 +76,12 @@ class CATioController(Controller, Tracer):
         """The I/O object referenced by the CATio controller."""
         self.name: str = name
         """Name of the I/O controller."""
-        self.eCAT_name = eCAT_name
+        self.ecat_name = ecat_name
         """Name of the I/O controller in the EtherCAT system."""
         self.group = group
         """Group name associated with the controller."""
-        self.attr_group_name = trim_eCAT_name(eCAT_name)
-        """Controller attributes' group name derived from the eCAT name."""
+        self.attr_group_name = trim_ecat_name(ecat_name)
+        """Controller attributes' group name derived from the ecat name."""
         if getattr(self, "io_function", None) is None:
             self.io_function = ""
             """Function description of the I/O controller."""
@@ -92,7 +92,7 @@ class CATioController(Controller, Tracer):
         """Map of FastCS attribute names to ADS symbol names."""
 
         logger.debug(
-            f"CATio controller '{self.eCAT_name}' instantiated with PV suffix "
+            f"CATio controller '{self.ecat_name}' instantiated with PV suffix "
             + f"{self.name} and registered with id {self._identifier}"
         )
 
@@ -126,7 +126,7 @@ class CATioController(Controller, Tracer):
         """
         return await self.connection.send_query(
             CATioFastCSRequest(
-                "IO_FROM_MAP", self._identifier, self.group, self.eCAT_name
+                "IO_FROM_MAP", self._identifier, self.group, self.ecat_name
             )
         )
 
@@ -260,12 +260,12 @@ class CATioController(Controller, Tracer):
             and the attribute object as value.
         """
         attr_dict = {}
-        # Extract the current controller's attributes and prefix them with the eCAT name
+        # Extract the current controller's attributes and prefix them with the ecat name
         for key, attr in self.attributes.items():
             if isinstance(self, CATioController):
                 ads_name = self.ads_name_map.get(key, None)
                 key = ads_name if ads_name is not None else key
-            attr_dict[".".join([f"_{self.eCAT_name.replace(' ', '')}", key])] = attr
+            attr_dict[".".join([f"_{self.ecat_name.replace(' ', '')}", key])] = attr
         logger.debug(
             f"Extracted {len(attr_dict)} attributes for controller {self.name}."
         )
@@ -405,7 +405,7 @@ class CATioServerController(CATioController):
         # Initialise the base controller
         super().__init__(
             name="ROOT",
-            eCAT_name="IOServer",
+            ecat_name="IOServer",
             description="Root controller for an ADS-based EtherCAT I/O server",
             group="server",
         )
@@ -508,7 +508,8 @@ class CATioServerController(CATioController):
             description="I/O server registered device count",
         )
         logger.debug(
-            f"Created {len(attr_dict)} generic attributes for the controller {self.name}."
+            f"Created {len(attr_dict)} generic attributes for the controller "
+            f"{self.name}."
         )
 
         return attr_dict
@@ -525,7 +526,8 @@ class CATioServerController(CATioController):
         Recursively register all subcontrollers available from a system node \
             with their parent controller.
         To do so, the EtherCAT system is traversed from top to bottom, left to right.
-        Once registered, each subcontroller is then initialised (attributes are created).
+        Once registered, each subcontroller is then initialised
+        (attributes are created).
 
         :param node: the tree node to extract available subcontrollers from.
 
@@ -577,7 +579,7 @@ class CATioServerController(CATioController):
                 logger.debug(f"Implementing I/O device '{key}' as CATioSubController.")
                 ctlr = SUPPORTED_CONTROLLERS[key](
                     name=node.data.get_type_name(),
-                    eCAT_name=node.data.name,
+                    ecat_name=node.data.name,
                     description=f"Controller for EtherCAT device #{node.data.id}",
                 )
                 await ctlr.initialise()
@@ -585,11 +587,12 @@ class CATioServerController(CATioController):
             case IONodeType.Coupler | IONodeType.Slave:
                 assert isinstance(node.data, IOSlave)
                 logger.debug(
-                    f"Implementing I/O terminal '{node.data.name}' as CATioSubController."
+                    f"Implementing I/O terminal '{node.data.name}' as "
+                    f"CATioSubController."
                 )
                 ctlr = SUPPORTED_CONTROLLERS[node.data.type](
                     name=node.data.get_type_name(),
-                    eCAT_name=node.data.name,
+                    ecat_name=node.data.name,
                     description=f"Controller for {node.data.category.value} terminal "
                     + f"'{node.data.name}'",
                 )
@@ -735,7 +738,8 @@ class CATioServerController(CATioController):
             for name in filtered_diff.dtype.names:
                 # Remove the '.value' from the notification name
                 attr_name = name.rsplit(".", 1)[0]
-                ############### Assertion not valid until all terminal attributes have been defined;
+                ############### Assertion not valid until all terminal attributes have
+                ############### been defined;
                 ############### use if statement instead
                 assert attr_name in self.attribute_map.keys(), (
                     f"No reference to {attr_name} in the CATio attribute map; "
@@ -781,12 +785,12 @@ class CATioDeviceController(CATioController):
     def __init__(
         self,
         name: str,
-        eCAT_name: str = "",
+        ecat_name: str = "",
         description: str | None = None,
     ) -> None:
         super().__init__(
             name=name,
-            eCAT_name=eCAT_name,
+            ecat_name=ecat_name,
             description=description,
             group="device",
         )
@@ -936,7 +940,7 @@ class CATioDeviceController(CATioController):
         """Establish the FastCS connection to the device controller."""
         await super().connect()
 
-    def get_device_eCAT_id(self) -> int:
+    def get_device_ecat_id(self) -> int:
         """
         Extract the id value from the EtherCAT device name (e.g. from ETH5 or EBUS12).
         """
@@ -956,7 +960,7 @@ class CATioDeviceController(CATioController):
         logger.info(
             f"EtherCAT Device {self.name}: subscribing to symbol notifications."
         )
-        await self.connection.add_notifications(self.get_device_eCAT_id())
+        await self.connection.add_notifications(self.get_device_ecat_id())
 
     @scan(ONCE)
     async def subscribe(self) -> None:
@@ -988,12 +992,12 @@ class CATioTerminalController(CATioController):
     def __init__(
         self,
         name: str,
-        eCAT_name: str = "",
+        ecat_name: str = "",
         description: str | None = None,
     ) -> None:
         super().__init__(
             name=name,
-            eCAT_name=eCAT_name,
+            ecat_name=ecat_name,
             description=description,
             group="terminal",
         )
@@ -1056,7 +1060,7 @@ class CATioTerminalController(CATioController):
             datatype=Int(),
             io_ref=None,
             group=self.attr_group_name,
-            initial_value=int(self.io.states.eCAT_state),
+            initial_value=int(self.io.states.ecat_state),
             description="I/O terminal state machine",
         )
         attr_dict["LinkStatus"] = AttrR(

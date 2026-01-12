@@ -138,7 +138,8 @@ class AmsNetId:
 @dataclass
 class AmsAddress:
     """
-    AmsAddress class representing the full AMS address of a TwinCAT device on the network.
+    AmsAddress class representing the full AMS address of a TwinCAT device on the
+    network.
 
     The AMS address consists of the AmsNetId and the port number on which the device \
         listens for ADS messages.
@@ -146,7 +147,7 @@ class AmsAddress:
         standard notation (netid:port).
     """
 
-    netId: AmsNetId
+    net_id: AmsNetId
     """AmsNetId of the TwinCAT device"""
     port: int
     """Port number of the TwinCAT device"""
@@ -175,7 +176,7 @@ class AmsAddress:
 
         :returns: the AmsAddress expressed as a byte stream
         """
-        return self.netId.to_bytes() + self.port.to_bytes(
+        return self.net_id.to_bytes() + self.port.to_bytes(
             length=2, byteorder="little", signed=False
         )
 
@@ -207,10 +208,10 @@ class AmsAddress:
 
         :returns: the AmsAddress expressed as a string of format netid:port
         """
-        return f"{self.netId.to_string()}:{self.port}"
+        return f"{self.net_id.to_string()}:{self.port}"
 
     def __str__(self):
-        return f"{self.netId.to_string()}:{self.port}"
+        return f"{self.net_id.to_string()}:{self.port}"
 
 
 Length = TypeVar("Length", bound=int)

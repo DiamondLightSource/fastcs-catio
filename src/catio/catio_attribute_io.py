@@ -49,7 +49,8 @@ class CATioControllerAttributeIO(AttributeIO[AnyT, CATioControllerAttributeIORef
         """Cached value of the controller attributes."""
 
     #     async def send(
-    #         self, attr: AttrW[NumberT, CATioControllerPollAttributeIORef], value: NumberT
+    #         self, attr: AttrW[NumberT, CATioControllerPollAttributeIORef],
+    #         value: NumberT
     #     ) -> None:
     #         command = f"{attr.io_ref.name}{self.suffix}={attr.dtype(value)}"
     #         await self._connection.send_command(CATioFastCSRequest(f"{command}\r\n"))

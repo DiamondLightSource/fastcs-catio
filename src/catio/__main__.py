@@ -173,7 +173,9 @@ if __name__ == "__main__":
 # # TO DO: make the yaml config option work if it's preferred
 # # if using a yaml file config: python -m catio run ./src/catio/catio_controller.yaml
 # if __name__ == "__main__":
-#     transport = EpicsCATransport(ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01"))
+#     transport = EpicsCATransport(
+#        ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01")
+# )
 #     route = CATioRemoteRoute(remote=ip, route_name="test_route", password="DIAMOND")
 #     connection = CATioConnectionSettings(target_ip=ip, target_port=target_port)
 #     timings = CATioScanTimings()

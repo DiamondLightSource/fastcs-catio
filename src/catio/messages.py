@@ -392,7 +392,7 @@ class SlaveState(Message):
     Define the EtherCAT state and link status of an EtherCAT slave.
     """
 
-    eCAT_state: UINT8
+    ecat_state: UINT8
     """The EtherCAT state"""
     link_status: UINT8
     """The link status for communication"""
@@ -400,7 +400,7 @@ class SlaveState(Message):
     def __array__(self):
         return np.array(
             [
-                self.eCAT_state,
+                self.ecat_state,
                 self.link_status,
             ],
             dtype=np.uint8,
