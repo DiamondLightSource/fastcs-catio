@@ -13,16 +13,16 @@ The ADS client ([client.py](../../src/catio/client.py)) implements the Beckhoff 
 The ADS protocol operates over the AMS (Automation Message Specification) transport layer:
 
 ```
-┌─────────────────────────────────────────┐
-│          ADS Commands                    │
-│  (Read, Write, Notification, etc.)       │
-├─────────────────────────────────────────┤
-│          AMS Header                      │
-│  (NetId, Port, CommandId, InvokeId)      │
-├─────────────────────────────────────────┤
-│       TCP/IP Transport                   │
-│  (Port 48898 for unencrypted ADS)       │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────────┐
+│            ADS Commands                   │
+│   (Read, Write, Notification, etc.)       │
+├───────────────────────────────────────────┤
+│            AMS Header                     │
+│   (NetId, Port, CommandId, InvokeId)      │
+├───────────────────────────────────────────┤
+│          TCP/IP Transport                 │
+│   (Port 48898 for unencrypted ADS)        │
+└───────────────────────────────────────────┘
 ```
 
 ### Key ADS Ports
@@ -79,7 +79,7 @@ Handles UDP communication for route discovery and management:
 ```python
 class UDPMessage:
     """UDP communication with Beckhoff TwinCAT server."""
-    
+
     invoke_id: int = 0
     UDP_COOKIE: bytes = b"\x71\x14\x66\x03"
 
@@ -136,7 +136,7 @@ async def _send_ams_message(
     """Send an AMS message to the ADS server."""
     self.__current_invoke_id += 1
     payload = message.to_bytes()
-    
+
     ams_header = AmsHeader(
         target_net_id=ams_netid.to_bytes(),
         target_port=ams_port,
@@ -148,14 +148,14 @@ async def _send_ams_message(
         error_code=ErrorCode.ERR_NOERROR,
         invoke_id=np.uint32(self.__current_invoke_id),
     )
-    
+
     header_raw = ams_header.to_bytes()
     total_length = len(header_raw) + len(payload)
     length_bytes = total_length.to_bytes(4, byteorder="little", signed=False)
-    
+
     self.__writer.write(b"\x00\x00" + length_bytes + header_raw + payload)
     await self.__writer.drain()
-    
+
     response_ev = ResponseEvent()
     self.__response_events[self.__current_invoke_id] = response_ev
     return response_ev
@@ -171,14 +171,14 @@ async def _recv_forever(self) -> None:
     while True:
         try:
             header, body = await self._recv_ams_message()
-            
+
             if header.command_id == CommandId.ADSSRVID_DEVICENOTE:
                 await self._handle_notification(header, body)
             else:
                 cls = RESPONSE_CLASS[CommandId(header.command_id)]
                 response = cls.from_bytes(body)
                 self.__response_events[header.invoke_id].set(response)
-                
+
         except ConnectionAbortedError:
             break
 ```
@@ -228,7 +228,7 @@ The client introspects the TwinCAT I/O server to discover hardware:
 async def _get_io_server(self) -> IOServer:
     """Get I/O server information."""
     info_response = await self._read_io_info()
-    
+
     return IOServer(
         name=bytes_to_string(info_response.device_name.tobytes()),
         version=f"{info_response.major_version}-{info_response.minor_version}",
@@ -249,11 +249,11 @@ async def _get_ethercat_devices(self) -> dict[SupportsInt, IODevice]:
     dev_frames = await self._get_device_frame_counters(dev_netids)
     dev_slave_counts = await self._get_slave_count(dev_netids)
     ...
-    
+
     for params in zip(dev_ids, dev_types, dev_names, ...):
         device = IODevice(*params)
         devices[device.id] = device
-    
+
     return devices
 ```
 
@@ -267,7 +267,7 @@ async def _get_slave_identities(
 ) -> Sequence[Sequence[IOIdentity]]:
     """Get CANopen identity of all slave terminals."""
     slave_identities: Sequence[Sequence[IOIdentity]] = []
-    
+
     for netid, addresses in zip(dev_netids, dev_slave_addresses):
         identities = []
         for address in addresses:
@@ -278,7 +278,7 @@ async def _get_slave_identities(
             )
             identities.append(IOIdentity.from_bytes(response.data))
         slave_identities.append(identities)
-    
+
     return slave_identities
 ```
 
@@ -292,11 +292,11 @@ ADS symbols provide named access to device parameters:
 async def get_all_symbols(self) -> dict[SupportsInt, Sequence[AdsSymbol]]:
     """Get all subscribable symbols for each device."""
     symbols: dict[SupportsInt, Sequence[AdsSymbol]] = {}
-    
+
     for device_id in self._ecdevices:
         device_symbols = await self._get_device_symbols(device_id)
         symbols[device_id] = device_symbols
-    
+
     return symbols
 ```
 
@@ -338,7 +338,7 @@ async def add_notifications(
             max_delay=max_delay_ms * 10000,  # Convert to 100ns units
             cycle_time=cycle_time_ms * 10000,
         )
-        
+
         response = await self._ads_command(request)
         symbol.handle = response.notification_handle
         self.__device_notification_handles[response.notification_handle] = symbol
@@ -351,12 +351,12 @@ async def _handle_notification(self, header: AmsHeader, body: bytes) -> None:
     """Process notification message data."""
     if self.__buffer is not None:
         id = int(header.invoke_id)
-        
+
         # Store template for multi-stream notifications
         if id not in self.__notif_templates:
             self.__notif_templates[id] = body
             self.__num_notif_streams += 1
-        
+
         # Accumulate notification data
         self.__buffer += body
 ```
@@ -447,11 +447,11 @@ All ADS messages inherit from a common base:
 @dataclass_transform(kw_only_default=True)
 class Message:
     """Generic ADS message type."""
-    
+
     def to_bytes(self) -> bytes:
         """Serialize message to bytes."""
         ...
-    
+
     @classmethod
     def from_bytes(cls, buffer: bytes) -> Self:
         """Deserialize message from bytes."""

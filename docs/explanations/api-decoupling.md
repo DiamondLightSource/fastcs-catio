@@ -9,28 +9,28 @@ This document analyzes the current API design that separates the FastCS EPICS IO
 The API bridge between FastCS and the ADS client consists of three main components:
 
 ```
-┌─────────────────────────────────────────┐
-│         CATioConnection                  │
-│  • Singleton pattern for connection      │
-│  • Manages CATioStreamConnection         │
-│  • Provides send_query/send_command      │
-└─────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────┐
-│       CATioStreamConnection              │
-│  • Async context manager                 │
-│  • Wraps AsyncioADSClient               │
-│  • Handles notifications                 │
-└─────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────┐
-│        AsyncioADSClient                  │
-│  • query() / command() dispatch          │
-│  • get_* / set_* API methods            │
-│  • Direct ADS protocol operations        │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────────┐
+│           CATioConnection                 │
+│  • Singleton pattern for connection       │
+│  • Manages CATioStreamConnection          │
+│  • Provides send_query/send_command       │
+└───────────────────────────────────────────┘
+                     │
+                     ▼
+┌───────────────────────────────────────────┐
+│         CATioStreamConnection             │
+│  • Async context manager                  │
+│  • Wraps AsyncioADSClient                 │
+│  • Handles notifications                  │
+└───────────────────────────────────────────┘
+                     │
+                     ▼
+┌───────────────────────────────────────────┐
+│           AsyncioADSClient                │
+│  • query() / command() dispatch           │
+│  • get_* / set_* API methods              │
+│  • Direct ADS protocol operations         │
+└───────────────────────────────────────────┘
 ```
 
 ### Current Request/Response Pattern
@@ -117,19 +117,19 @@ class AsyncioADSClient:
     # Protocol handling
     async def _send_ams_message(...)
     async def _recv_ams_message(...)
-    
+
     # I/O introspection
     async def _get_device_count(...)
     async def _get_ethercat_devices(...)
-    
+
     # Symbol management
     async def get_all_symbols(...)
     async def add_notifications(...)
-    
+
     # State monitoring
     async def poll_states(...)
     async def check_slave_states(...)
-    
+
     # API layer
     async def query(...)
     async def command(...)
@@ -218,21 +218,21 @@ from typing import Protocol
 
 class ICATioClient(Protocol):
     """Interface for CATio client operations."""
-    
+
     async def get_system_tree(self) -> IOTreeNode: ...
-    
+
     async def get_device_frame_counters(
         self, device_id: int
     ) -> DeviceFrameCounters: ...
-    
+
     async def get_device_slave_count(
         self, device_id: int
     ) -> int: ...
-    
+
     async def get_terminal_state(
         self, device_id: int, terminal_address: int
     ) -> TerminalState: ...
-    
+
     async def subscribe_to_symbol(
         self, symbol: AdsSymbol, callback: Callable[[Any], None]
     ) -> SubscriptionHandle: ...
@@ -331,12 +331,12 @@ class NotificationObserver(Protocol):
 class NotificationService:
     def __init__(self):
         self._observers: dict[str, list[NotificationObserver]] = {}
-    
+
     def add_observer(
         self, symbol_name: str, observer: NotificationObserver
     ) -> None:
         self._observers.setdefault(symbol_name, []).append(observer)
-    
+
     async def _process_notification(self, data: bytes) -> None:
         symbol_name, value = self._parse_notification(data)
         for observer in self._observers.get(symbol_name, []):
@@ -392,7 +392,7 @@ class CATioServerController(Controller):
     ):
         self._client = client
         self._config = config
-    
+
     async def initialise(self) -> None:
         tree = await self._client.get_system_tree()
         await self._build_controller_hierarchy(tree)

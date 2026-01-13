@@ -23,7 +23,7 @@ class CATioController(Controller, Tracer):
     A controller for an ADS-based EtherCAT system.
     """
     _tcp_connection: CATioConnection = CATioConnection()
-    
+
     def __init__(
         self,
         name: str = "UNKNOWN",
@@ -61,11 +61,11 @@ class CATioServerController(CATioController):
     ) -> None:
         # Get remote target netid via UDP
         target_netid = get_remote_address(target_ip)
-        
+
         # Add communication route
         if not route.add():
             raise ConnectionRefusedError("Remote route addition failed.")
-        
+
         # Define TCP connection settings
         self._tcp_settings = CATioServerConnectionSettings(
             target_ip, target_netid.to_string(), target_port
@@ -91,7 +91,7 @@ class CATioDeviceController(CATioController):
     async def get_io_attributes(self) -> None:
         """Create device-specific FastCS attributes."""
         await self.get_generic_attributes()
-        
+
         # Device-specific attributes
         self.add_attribute("SlaveCount", AttrR(datatype=Int(), ...))
         self.add_attribute("SlavesStates", AttrR(datatype=Waveform(Int()), ...))
@@ -117,7 +117,7 @@ class CATioTerminalController(CATioController):
     async def get_io_attributes(self) -> None:
         """Create terminal-specific FastCS attributes."""
         await self.get_generic_attributes()
-        
+
         self.add_attribute("EcatState", AttrR(datatype=Int(), ...))
         self.add_attribute("LinkStatus", AttrR(datatype=Int(), ...))
         self.add_attribute("CrcErrorSum", AttrR(datatype=Int(), ...))
@@ -140,7 +140,7 @@ class EtherCATMasterController(CATioDeviceController):
         self.add_attribute(f"InFrm{i}State", AttrR(...))
         self.add_attribute(f"InFrm{i}WcState", AttrR(...))
         self.add_attribute(f"OutFrm{i}Ctrl", AttrR(...))
-        
+
         # ADS name mapping for complex symbol names
         self.ads_name_map[f"InFrm{i}State"] = f"Inputs.Frm{i}State"
 ```
@@ -153,7 +153,7 @@ class EK1100Controller(CATioTerminalController):
 
 class EK1101Controller(CATioTerminalController):
     io_function: str = "EtherCAT coupler with three ID switches"
-    
+
     async def get_io_attributes(self) -> None:
         self.add_attribute("ID", AttrR(datatype=Int(), ...))
 ```
@@ -204,13 +204,13 @@ class CATioControllerAttributeIO(AttributeIO[AnyT, CATioControllerAttributeIORef
         if attr.io_ref.update_period is ONCE:
             await attr.update(self._value[attr.name])
             return
-        
+
         # Regular polling via API query
         query = f"{self.subsystem.upper()}_{attr_name.upper()}_ATTR"
         response = await self._connection.send_query(
             CATioFastCSRequest(command=query, controller_id=self.controller_id)
         )
-        
+
         if response is not None and response != self._value[attr.name]:
             await attr.update(response)
 ```
@@ -230,14 +230,14 @@ async def _get_subcontroller_object(
     match node.data.category:
         case IONodeType.Server:
             ctlr = self
-            
+
         case IONodeType.Device:
             key = "ETHERCAT" if node.data.type == DeviceType.IODEVICETYPE_ETHERCAT else node.data.name
             ctlr = SUPPORTED_CONTROLLERS[key](
                 name=node.data.get_type_name(),
                 ecat_name=node.data.name,
             )
-            
+
         case IONodeType.Coupler | IONodeType.Slave:
             ctlr = SUPPORTED_CONTROLLERS[node.data.type](
                 name=node.data.get_type_name(),
@@ -311,10 +311,10 @@ async def initialise(self) -> None:
     """Initialize the CATio controller system."""
     # Establish TCP connection
     await self.create_tcp_connection(self._tcp_settings)
-    
+
     # Discover and register hardware
     await self.register_subcontrollers()
-    
+
     # Build attribute map
     await self.get_complete_attribute_map()
 ```
