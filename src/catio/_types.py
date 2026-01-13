@@ -48,7 +48,7 @@ class AdsMessageDataType(Generic[G, S]):
             isn't a valid numpy data type
         """
         np_type = get_args(datatype)[0]
-        if issubclass(np_type, np.generic):
+        if isinstance(np_type, type) and issubclass(np_type, np.generic):
             # Keep numpy array scalar object types as they are
             return np_type
         if get_origin(np_type) == np.ndarray:
