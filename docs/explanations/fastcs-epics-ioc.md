@@ -53,7 +53,7 @@ All CATio controllers inherit from `CATioController`, which extends the FastCS `
 `CATioServerController` is the root of the hierarchy. It handles:
 
 - **Route establishment**: Uses UDP to register this client with the TwinCAT router
-- **TCP connection**: Opens the persistent ADS communication channel  
+- **TCP connection**: Opens the persistent ADS communication channel
 - **Hardware discovery**: Introspects the I/O server to find all devices and terminals
 - **Subcontroller creation**: Instantiates the appropriate controller classes for discovered hardware
 

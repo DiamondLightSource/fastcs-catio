@@ -76,9 +76,7 @@ Once routed, CATio opens a persistent TCP connection for ADS communication:
 
 ```{literalinclude} ../../src/catio/client.py
 :language: python
-:start-at: @classmethod
-:start-after: ### CLIENT CONNECTION
-:end-before: async def close
+:pyobject: AsyncioADSClient.connected_to
 ```
 
 The connection uses Python's `asyncio.open_connection()` for non-blocking I/O, returning stream reader/writer pairs for bidirectional communication.
@@ -146,8 +144,7 @@ ADS symbols provide named access to PLC variables, avoiding hard-coded index gro
 
 ```{literalinclude} ../../src/catio/devices.py
 :language: python
-:start-at: @dataclass
-:start-after: # ===== EtherCAT OBJECTS
+:pyobject: AdsSymbol
 :end-before: @property
 ```
 
