@@ -79,7 +79,7 @@ def _get_dtype_arg(annotation: Any) -> Any:
     if get_origin(annotation) is AdsMessageDataType:
         # If we have AdsMessageDataType[np_type, coercible_type], extract np_type
         return AdsMessageDataType.get_dtype(annotation)
-    elif issubclass(annotation, np.generic):
+    elif isinstance(annotation, type) and issubclass(annotation, np.generic):
         # If we have a subclass of a numpy generic that will do
         return annotation
 
