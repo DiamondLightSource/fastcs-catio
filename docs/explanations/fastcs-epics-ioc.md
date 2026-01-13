@@ -1,345 +1,202 @@
 # FastCS EPICS IOC Implementation
 
-This document provides a detailed explanation of the FastCS EPICS IOC layer in CATio, which exposes Process Variables (PVs) for controlling EtherCAT devices on an Ethercat Bus.
+This document explains how CATio uses the FastCS framework to expose EtherCAT devices as EPICS Process Variables (PVs), enabling control system integration.
 
-## Overview
+## What is FastCS?
 
-CATio uses [FastCS](https://github.com/DiamondLightSource/FastCS) as the framework for building an EPICS IOC. FastCS provides:
+[FastCS](https://github.com/DiamondLightSource/FastCS) is a Python framework for building EPICS Input/Output Controllers (IOCs). It provides a declarative approach where Python class attributes automatically become EPICS PVs. CATio leverages FastCS to create a hierarchical controller structure that mirrors the physical EtherCAT topology.
 
-- Automatic PV generation from Python class attributes
-- Asynchronous I/O handling
-- Structured controller hierarchies
-- Built-in support for polling and scanning
+Key benefits of using FastCS include:
 
-## Controller Hierarchy
+- **Automatic PV generation**: Define Python attributes, get EPICS PVs
+- **Asynchronous I/O**: Built on `asyncio` for non-blocking operations
+- **Hierarchical controllers**: Natural mapping to nested hardware structures
+- **Built-in scanning**: Periodic polling with configurable intervals
 
-### CATioController (Base Class)
+## The Controller Hierarchy
 
-The `CATioController` class ([catio_controller.py](../../src/catio/catio_controller.py)) serves as the base for all CATio controllers:
+CATio organizes its FastCS controllers in a tree structure that reflects the physical EtherCAT network:
 
-```python
-class CATioController(Controller, Tracer):
-    """
-    A controller for an ADS-based EtherCAT system.
-    """
-    _tcp_connection: CATioConnection = CATioConnection()
-
-    def __init__(
-        self,
-        name: str = "UNKNOWN",
-        ecat_name: str = "",
-        description: str | None = None,
-        group: str = "",
-    ):
-        self._identifier: int = next(CATioController._ctrl_obj)
-        self._io: IOServer | IODevice | IOSlave | None = None
-        self.name: str = name
-        self.ecat_name = ecat_name
-        ...
+```
+CATioServerController (root)
+    └── CATioDeviceController (EtherCAT Master)
+            ├── CATioTerminalController (EK1100 Coupler)
+            │       ├── CATioTerminalController (EL3064 Analog Input)
+            │       └── CATioTerminalController (EL2008 Digital Output)
+            └── CATioTerminalController (EK1101 Coupler)
+                    └── ...
 ```
 
-Key features:
+This hierarchy is significant because:
 
-- **Shared TCP Connection**: All controllers share a single `CATioConnection` instance (class variable)
-- **Unique Identifier**: Each controller gets a unique numeric ID for API dispatch
-- **I/O Reference**: Each controller references its corresponding hardware object (IOServer, IODevice, or IOSlave)
-- **Attribute Groups**: Controllers organize attributes by functional groups
+1. **Each level corresponds to physical hardware**: The server represents the Beckhoff PLC, devices represent EtherCAT Masters, and terminals represent individual I/O modules
+2. **Attributes are scoped appropriately**: Server-level attributes (like version info) are separate from terminal-level attributes (like input values)
+3. **The tree is auto-generated**: CATio introspects the hardware and builds controllers dynamically
 
-### CATioServerController
+### The Base Controller
 
-The root controller representing the TwinCAT I/O server:
+All CATio controllers inherit from `CATioController`, which extends the FastCS `Controller` class. The base class provides:
 
-```python
-class CATioServerController(CATioController):
-    def __init__(
-        self,
-        target_ip: str,
-        route: RemoteRoute,
-        target_port: int,
-        poll_period: float,
-        notification_period: float,
-    ) -> None:
-        # Get remote target netid via UDP
-        target_netid = get_remote_address(target_ip)
+- A shared TCP connection to the TwinCAT server (class-level singleton)
+- Unique identifiers for API dispatch
+- References to corresponding hardware objects (`IOServer`, `IODevice`, or `IOSlave`)
+- Attribute grouping for organized PV naming
 
-        # Add communication route
-        if not route.add():
-            raise ConnectionRefusedError("Remote route addition failed.")
-
-        # Define TCP connection settings
-        self._tcp_settings = CATioServerConnectionSettings(
-            target_ip, target_netid.to_string(), target_port
-        )
-        ...
+```{literalinclude} ../../src/catio/catio_controller.py
+:language: python
+:start-at: class CATioController
+:end-before: @property
 ```
 
-Responsibilities:
+### The Server Controller
 
-- **Connection Management**: Establishes UDP route and TCP connection to TwinCAT
-- **Device Discovery**: Introspects the I/O server to discover EtherCAT devices
-- **Controller Registration**: Creates and registers subcontrollers for devices and terminals
-- **Notification Management**: Controls the notification monitoring lifecycle
+`CATioServerController` is the root of the hierarchy. It handles:
 
-### CATioDeviceController
+- **Route establishment**: Uses UDP to register this client with the TwinCAT router
+- **TCP connection**: Opens the persistent ADS communication channel  
+- **Hardware discovery**: Introspects the I/O server to find all devices and terminals
+- **Subcontroller creation**: Instantiates the appropriate controller classes for discovered hardware
 
-Represents an EtherCAT Master device:
+During initialization, the server controller queries the TwinCAT system and builds the complete controller tree automatically. The key method is `register_subcontrollers()` which traverses the discovered hardware tree and creates corresponding FastCS controllers.
 
-```python
-class CATioDeviceController(CATioController):
-    io_function: str = "Generic I/O device on the EtherCAT system"
+### Device and Terminal Controllers
 
-    async def get_io_attributes(self) -> None:
-        """Create device-specific FastCS attributes."""
-        await self.get_generic_attributes()
+`CATioDeviceController` represents EtherCAT Master devices and exposes attributes like:
 
-        # Device-specific attributes
-        self.add_attribute("SlaveCount", AttrR(datatype=Int(), ...))
-        self.add_attribute("SlavesStates", AttrR(datatype=Waveform(Int()), ...))
-        self.add_attribute("SlavesCrcCounters", AttrR(datatype=Waveform(Int()), ...))
-        ...
-```
+| Attribute | Description |
+|-----------|-------------|
+| `SlaveCount` | Number of terminals connected to this master |
+| `SlavesStates` | Array of EtherCAT state machine values for all terminals |
+| `SlavesCrcCounters` | CRC error counters for network diagnostics |
+| `FrameCounters` | Statistics on cyclic and acyclic EtherCAT frames |
 
-Key attributes exposed:
+`CATioTerminalController` represents individual I/O modules (EK couplers, EL terminals) with attributes like:
 
-- `SlaveCount`: Number of slave terminals on the device
-- `SlavesStates`: Array of EtherCAT states for all slaves
-- `SlavesCrcCounters`: CRC error counters for diagnostics
-- `FrameCounters`: Cyclic/acyclic frame statistics
-
-### CATioTerminalController
-
-Represents individual EtherCAT slave terminals:
-
-```python
-class CATioTerminalController(CATioController):
-    io_function: str = "Generic terminal on an EtherCAT device"
-
-    async def get_io_attributes(self) -> None:
-        """Create terminal-specific FastCS attributes."""
-        await self.get_generic_attributes()
-
-        self.add_attribute("EcatState", AttrR(datatype=Int(), ...))
-        self.add_attribute("LinkStatus", AttrR(datatype=Int(), ...))
-        self.add_attribute("CrcErrorSum", AttrR(datatype=Int(), ...))
-        ...
-```
+| Attribute | Description |
+|-----------|-------------|
+| `EcatState` | The terminal's EtherCAT state machine value |
+| `LinkStatus` | Network link health indicator |
+| `CrcErrorSum` | Accumulated CRC errors for this terminal |
 
 ## Hardware-Specific Controllers
 
-The `catio_hardware.py` module defines controllers for specific Beckhoff terminal types:
+Not all terminals are alike. A digital input module exposes different data than an analog output module. CATio handles this through specialized controller classes defined in [catio_hardware.py](../../src/catio/catio_hardware.py).
 
-### EtherCATMasterController
+The `SUPPORTED_CONTROLLERS` dictionary maps Beckhoff terminal type codes to their controller classes. When CATio discovers a terminal, it looks up the type (e.g., "EL3064") in this dictionary and instantiates the appropriate controller.
 
-```python
-class EtherCATMasterController(CATioDeviceController):
-    io_function: str = "EtherCAT Master Device"
-    num_ads_streams: int = 1
+Each terminal type exposes its specific attributes:
 
-    async def get_io_attributes(self) -> None:
-        # Frame state attributes
-        self.add_attribute(f"InFrm{i}State", AttrR(...))
-        self.add_attribute(f"InFrm{i}WcState", AttrR(...))
-        self.add_attribute(f"OutFrm{i}Ctrl", AttrR(...))
+| Controller Family | Terminal Types | Key Attributes |
+|-------------------|----------------|----------------|
+| `EL10xxController` | EL1004, EL1008, etc. | Digital input values |
+| `EL20xxController` | EL2004, EL2008, etc. | Digital output values (read/write) |
+| `EL30xxController` | EL3064, EL3102, etc. | Analog input values, scaling info |
+| `EL40xxController` | EL4002, EL4132, etc. | Analog output values, range config |
+| `ELM3xxxController` | ELM3004, ELM3602, etc. | High-precision measurements, oversampling |
 
-        # ADS name mapping for complex symbol names
-        self.ads_name_map[f"InFrm{i}State"] = f"Inputs.Frm{i}State"
+## The Attribute I/O System
+
+FastCS attributes need to know how to read (and optionally write) their values. CATio implements this through `CATioControllerAttributeIO`, which bridges FastCS attributes to the ADS client API.
+
+### How Attribute Updates Work
+
+The update flow for a CATio attribute follows these steps:
+
+1. FastCS calls the `update()` method on an attribute's I/O handler at the configured polling interval
+2. The I/O handler constructs an API query string based on the attribute name and controller context
+3. The query is sent through `CATioConnection` to the `AsyncioADSClient`
+4. The client dispatches to the appropriate `get_*` method
+5. The response flows back and the attribute value is updated
+
+This indirection means attributes don't need to know ADS protocol details - they just specify their name and polling period.
+
+```{literalinclude} ../../src/catio/catio_attribute_io.py
+:language: python
+:start-at: class CATioControllerAttributeIO
+:end-before: class
 ```
 
-### Coupler Controllers (EK1100, EK1101, EK1110)
+### Polling vs Notifications
 
-```python
-class EK1100Controller(CATioTerminalController):
-    io_function: str = "EtherCAT coupler at the head of a segment"
+CATio supports two update mechanisms:
 
-class EK1101Controller(CATioTerminalController):
-    io_function: str = "EtherCAT coupler with three ID switches"
+**Polling** (default): The I/O handler periodically queries the ADS server. Simple and reliable, but adds latency and network traffic proportional to the number of attributes and polling rate.
 
-    async def get_io_attributes(self) -> None:
-        self.add_attribute("ID", AttrR(datatype=Int(), ...))
-```
+**Notifications**: The ADS server pushes value changes to the client. More efficient for high-frequency data, but requires subscription management and careful buffer handling.
 
-### I/O Terminal Controllers
+The choice depends on the attribute's requirements:
 
-Various controllers for different terminal types:
-
-- **EL10xxController**: Digital input terminals
-- **EL20xxController**: Digital output terminals
-- **EL30xxController**: Analog input terminals
-- **EL40xxController**: Analog output terminals
-- **EL50xxController**: Serial communication terminals
-- **ELM3xxxController**: High-precision measurement terminals
-
-## Attribute I/O System
-
-### CATioControllerAttributeIORef
-
-References an attribute's connection to the CATio API:
-
-```python
-@dataclass
-class CATioControllerAttributeIORef(AttributeIORef):
-    name: str           # API attribute name
-    update_period: float | None = 0.2  # Polling period
-```
-
-### CATioControllerAttributeIO
-
-Handles the actual I/O operations for attributes:
-
-```python
-class CATioControllerAttributeIO(AttributeIO[AnyT, CATioControllerAttributeIORef]):
-    def __init__(
-        self,
-        connection: CATioConnection,
-        subsystem: str,
-        controller_id: int,
-    ):
-        self._connection = connection
-        self.subsystem = subsystem
-        self.controller_id = controller_id
-
-    async def update(self, attr: AttrR[AnyT, CATioControllerAttributeIORef]) -> None:
-        """Poll the attribute value and update if changed."""
-        # Handle initial startup poll
-        if attr.io_ref.update_period is ONCE:
-            await attr.update(self._value[attr.name])
-            return
-
-        # Regular polling via API query
-        query = f"{self.subsystem.upper()}_{attr_name.upper()}_ATTR"
-        response = await self._connection.send_query(
-            CATioFastCSRequest(command=query, controller_id=self.controller_id)
-        )
-
-        if response is not None and response != self._value[attr.name]:
-            await attr.update(response)
-```
-
-## Controller Tree Generation
-
-The system automatically generates a controller hierarchy matching the physical EtherCAT topology:
-
-```python
-async def _get_subcontroller_object(
-    self,
-    node: IOTreeNode,
-    subcontrollers: list[CATioController],
-) -> CATioController | None:
-    from catio.catio_hardware import SUPPORTED_CONTROLLERS
-
-    match node.data.category:
-        case IONodeType.Server:
-            ctlr = self
-
-        case IONodeType.Device:
-            key = "ETHERCAT" if node.data.type == DeviceType.IODEVICETYPE_ETHERCAT else node.data.name
-            ctlr = SUPPORTED_CONTROLLERS[key](
-                name=node.data.get_type_name(),
-                ecat_name=node.data.name,
-            )
-
-        case IONodeType.Coupler | IONodeType.Slave:
-            ctlr = SUPPORTED_CONTROLLERS[node.data.type](
-                name=node.data.get_type_name(),
-                ecat_name=node.data.name,
-            )
-
-    await ctlr.add_subcontrollers(subcontrollers)
-    return ctlr
-```
-
-The `SUPPORTED_CONTROLLERS` dictionary maps terminal type strings to controller classes:
-
-```python
-SUPPORTED_CONTROLLERS: dict[str, type[CATioController]] = {
-    "ETHERCAT": EtherCATMasterController,
-    "EK1100": EK1100Controller,
-    "EK1101": EK1101Controller,
-    "EL1008": EL10xxController,
-    "EL2008": EL20xxController,
-    "EL3064": EL30xxController,
-    ...
-}
-```
+| Update Mode | Use Case | Typical Period |
+|-------------|----------|----------------|
+| `ONCE` | Static configuration (device name, version) | Read at startup only |
+| Standard polling | Slowly-changing diagnostics (CRC counters) | 1-2 seconds |
+| Fast polling | Process values needing moderate rates | 100-500 ms |
+| Notifications | High-frequency acquisition data | Sub-millisecond |
 
 ## PV Naming Convention
 
-CATio generates EPICS PV names following a hierarchical pattern:
+CATio generates EPICS PV names that reflect the hardware hierarchy:
 
 ```
 <PREFIX>:<Server>:<Device>:<Coupler>:<Terminal>:<Attribute>
 ```
 
 For example:
-```
-CATIO:IOServer:ETH1:RIO1:MOD5:Value
-CATIO:IOServer:ETH1:RIO1:MOD5:EcatState
-CATIO:IOServer:ETH1:SlaveCount
-```
 
-The naming is derived from:
+| PV Name | Description |
+|---------|-------------|
+| `CATIO:IOServer:Name` | I/O server name |
+| `CATIO:IOServer:ETH1:SlaveCount` | Number of slaves on EtherCAT Master 1 |
+| `CATIO:IOServer:ETH1:RIO1:MOD5:Value` | Value from module 5 on remote I/O node 1 |
+| `CATIO:IOServer:ETH1:RIO1:MOD5:EcatState` | EtherCAT state of that module |
 
-- **ecat_name**: The EtherCAT system name (e.g., "Device1", "Term145")
-- **get_type_name()**: Translates Beckhoff names to PV-friendly format
-- **attr_group_name**: Groups related attributes
+The naming components come from:
 
-## Notification-Based Updates
-
-For high-frequency updates, CATio supports ADS device notifications:
-
-```python
-async def setup_notifications(self) -> None:
-    """Configure notification monitoring for a device."""
-    await self.connection.add_notifications(device_id)
-    self.connection.enable_notification_monitoring(True, flush_period=0.5)
-
-@scan(NOTIFICATION_UPDATE_PERIOD)
-async def _process_notifications(self) -> None:
-    """Process received notification data."""
-    notifications = await self.connection.get_notification_streams()
-    changes = get_notification_changes(notifications, self.attribute_map)
-    for attr_name, new_value in changes.items():
-        await self.attributes[attr_name].update(new_value)
-```
+- **ecat_name**: The name configured in TwinCAT (e.g., "Device1", "Term 5 (EL3064)")
+- **get_type_name()**: A method that converts Beckhoff names to PV-friendly format (e.g., "ETH1", "RIO1", "MOD5")
 
 ## Lifecycle Management
 
-### Initialization
+CATio controllers follow a specific lifecycle managed by FastCS:
 
-```python
-async def initialise(self) -> None:
-    """Initialize the CATio controller system."""
-    # Establish TCP connection
-    await self.create_tcp_connection(self._tcp_settings)
+### Initialization Phase
 
-    # Discover and register hardware
-    await self.register_subcontrollers()
+1. **Route addition**: UDP message registers this client with the TwinCAT router
+2. **TCP connection**: Establishes persistent ADS communication channel
+3. **Introspection**: Queries server for devices, terminals, and symbols
+4. **Controller creation**: Builds the controller tree matching discovered hardware
+5. **Attribute registration**: Creates FastCS attributes for each controller
 
-    # Build attribute map
-    await self.get_complete_attribute_map()
+### Runtime Phase
+
+- Polling handlers execute at their configured intervals
+- Notification streams are processed and distributed to attributes
+- The controller tree remains stable (hot-plugging is not supported)
+
+### Shutdown Phase
+
+1. **Notification cleanup**: Unsubscribes from all ADS notifications
+2. **Connection closure**: Closes the TCP connection gracefully
+3. **Route removal**: Optionally removes the route from TwinCAT
+
+## Testing Considerations
+
+When writing tests for CATio controllers, you typically need to mock the ADS client layer. The `MockADSServer` class in the test suite simulates TwinCAT responses:
+
+```{literalinclude} ../../tests/mock_server.py
+:language: python
+:pyobject: MockADSServer
+:end-before: async def start
 ```
 
-### Connection
+This allows testing controller logic without real hardware by:
 
-```python
-async def connect(self) -> None:
-    """Establish FastCS connection."""
-    if self.sub_controllers:
-        for name, subctlr in self.sub_controllers.items():
-            await subctlr.connect()
-```
-
-### Disconnection
-
-```python
-async def disconnect(self) -> None:
-    """Clean shutdown of the CATio system."""
-    self.connection.enable_notification_monitoring(False)
-    await self.connection.close()
-```
+- Simulating ADS command responses
+- Providing mock symbol data
+- Testing notification handling
 
 ## See Also
 
 - [Architecture Overview](architecture-overview.md) - High-level system architecture
 - [ADS Client Implementation](ads-client.md) - Details of the ADS protocol layer
-- [API Decoupling Analysis](api-decoupling.md) - API design discussion
+- [API Decoupling Analysis](api-decoupling.md) - Discussion of the API design

@@ -1,16 +1,23 @@
 # ADS Client Implementation
 
-This document provides a detailed explanation of the ADS (Automation Device Specification) client layer in CATio, which communicates with TwinCAT ADS servers on Beckhoff PLCs.
+This document explains how CATio implements the Beckhoff ADS (Automation Device Specification) protocol to communicate with TwinCAT systems running on Beckhoff PLCs.
 
-## Overview
+## What is ADS?
 
-The ADS client ([client.py](../../src/catio/client.py)) implements the Beckhoff ADS protocol for communication with TwinCAT systems. The implementation follows the [ADS specification](https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/11291871243.html).
+ADS is Beckhoff's proprietary protocol for communication with TwinCAT automation systems. It provides a standardized way to:
 
-## ADS Protocol Fundamentals
+- Read and write PLC variables
+- Query device information and state
+- Subscribe to value change notifications
+- Access EtherCAT diagnostic data
 
-### AMS/ADS Architecture
+The protocol runs over TCP (port 48898) for reliable communication or UDP (port 48899) for route management. CATio implements a pure-Python ADS client using `asyncio` for non-blocking operations.
 
-The ADS protocol operates over the AMS (Automation Message Specification) transport layer:
+For the official specification, see the [Beckhoff ADS Documentation](https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/11291871243.html).
+
+## Protocol Architecture
+
+ADS messages are wrapped in AMS (Automation Message Specification) frames for transport:
 
 ```
 ┌───────────────────────────────────────────┐
@@ -25,477 +32,225 @@ The ADS protocol operates over the AMS (Automation Message Specification) transp
 └───────────────────────────────────────────┘
 ```
 
-### Key ADS Ports
+Key concepts:
 
-```python
-ADS_TCP_PORT: int = 48898      # Standard ADS TCP port
-ADS_MASTER_PORT: int = 65535   # EtherCAT Master device port
-IO_SERVER_PORT: int = 300      # I/O server device port
-SYSTEM_SERVICE_PORT: int = 10000  # System services
-REMOTE_UDP_PORT: int = 48899   # UDP for route management
+- **AMS NetId**: A 6-byte address identifying a TwinCAT system (often derived from IP, e.g., `192.168.1.100.1.1`)
+- **AMS Port**: Identifies the target service within TwinCAT (I/O server = 300, EtherCAT Master = 65535)
+- **Invoke ID**: Correlates requests with responses for async operation
+- **Index Group/Offset**: Addresses specific data within a service
+
+## Establishing Communication
+
+Before sending ADS commands, the client must establish a route with the TwinCAT router.
+
+### Route Discovery and Registration
+
+TwinCAT maintains a routing table of authorized clients. CATio uses UDP messages to:
+
+1. **Discover the target's AMS NetId**: Query the TwinCAT system for its network identity
+2. **Register this client**: Add an entry to the routing table with authentication credentials
+
+```{literalinclude} ../../src/catio/client.py
+:language: python
+:start-at: class RemoteRoute
+:end-before: def _get_route_info_as_bytes
 ```
 
-## Route Management
+The route registration includes:
 
-Before TCP communication, the client must establish a route to the TwinCAT server.
+| Parameter | Purpose |
+|-----------|---------|
+| `remote` | IP address of the TwinCAT system |
+| `routename` | Human-readable name for this client |
+| `hostnetid` | This client's AMS NetId |
+| `username` | TwinCAT authentication user |
+| `password` | TwinCAT authentication password |
 
-### RemoteRoute Class
+:::{note}
+Default TwinCAT credentials are typically `Administrator` / `1`. Production systems should use proper authentication.
+:::
 
-```python
-class RemoteRoute:
-    """Define a remote route to a Beckhoff TwinCAT server via UDP."""
+### TCP Connection
 
-    def __init__(
-        self,
-        remote: str,
-        route_name: str = "",
-        user_name: str = "Administrator",
-        password: str = "1",
-    ):
-        self.remote = remote
-        self.routename = route_name or get_localhost_name()
-        self.hostnetid = AmsNetId.from_string(get_local_netid_str())
-        self.username = user_name
-        self.password = password
-        self.hostname = get_localhost_ip()
+Once routed, CATio opens a persistent TCP connection for ADS communication:
 
-    def add(self) -> bool:
-        """Add this machine to the TwinCAT server's routing table."""
-        UDPMessage.invoke_id += 1
-        request = AdsUDPMessage.add_remote_route(
-            UDPMessage.invoke_id, self._get_route_info_as_bytes()
-        )
-        return UDPMessage(self.remote).add_route(request)
-
-    def delete(self) -> bool:
-        """Remove this machine from the routing table."""
-        ...
+```{literalinclude} ../../src/catio/client.py
+:language: python
+:start-at: @classmethod
+:start-after: ### CLIENT CONNECTION
+:end-before: async def close
 ```
 
-### UDPMessage Class
-
-Handles UDP communication for route discovery and management:
-
-```python
-class UDPMessage:
-    """UDP communication with Beckhoff TwinCAT server."""
-
-    invoke_id: int = 0
-    UDP_COOKIE: bytes = b"\x71\x14\x66\x03"
-
-    def get_netid(self, message: AdsUDPMessage) -> AmsNetId:
-        """Get the AmsNetId of the remote TwinCAT server."""
-        response = AdsUDPResponseStream.from_bytes(self._send_recv(message))
-        return AmsNetId.from_bytes(response.netid.tobytes())
-```
-
-## AsyncioADSClient
-
-The main ADS client class providing asynchronous communication:
-
-### Connection Management
-
-```python
-class AsyncioADSClient:
-    def __init__(
-        self,
-        target_ams_net_id: str,
-        target_ams_port: int,
-        reader: asyncio.StreamReader,
-        writer: asyncio.StreamWriter,
-    ):
-        self.__local_ams_net_id = AmsNetId.from_string(get_local_netid_str())
-        self.__local_ams_port = 8000
-        self.__target_ams_net_id = AmsNetId.from_string(target_ams_net_id)
-        self.__target_ams_port = target_ams_port
-        self.__reader = reader
-        self.__writer = writer
-        self.__current_invoke_id = 0
-        self.__response_events: dict[SupportsInt, ResponseEvent] = {}
-        ...
-
-    @classmethod
-    async def connected_to(
-        cls,
-        target_ip: str,
-        target_ams_net_id: str,
-        target_ams_port: int,
-        ads_port: int = ADS_TCP_PORT,
-    ) -> AsyncioADSClient:
-        """Create an asynchronous ADS client connection."""
-        reader, writer = await asyncio.open_connection(target_ip, ads_port)
-        return cls(target_ams_net_id, target_ams_port, reader, writer)
-```
-
-### AMS Message Handling
-
-```python
-async def _send_ams_message(
-    self, command: CommandId, message: Message, **kwargs
-) -> ResponseEvent:
-    """Send an AMS message to the ADS server."""
-    self.__current_invoke_id += 1
-    payload = message.to_bytes()
-
-    ams_header = AmsHeader(
-        target_net_id=ams_netid.to_bytes(),
-        target_port=ams_port,
-        source_net_id=self.__local_ams_net_id.to_bytes(),
-        source_port=self.__local_ams_port,
-        command_id=command,
-        state_flags=StateFlag.AMSCMDSF_ADSCMD,
-        length=len(payload),
-        error_code=ErrorCode.ERR_NOERROR,
-        invoke_id=np.uint32(self.__current_invoke_id),
-    )
-
-    header_raw = ams_header.to_bytes()
-    total_length = len(header_raw) + len(payload)
-    length_bytes = total_length.to_bytes(4, byteorder="little", signed=False)
-
-    self.__writer.write(b"\x00\x00" + length_bytes + header_raw + payload)
-    await self.__writer.drain()
-
-    response_ev = ResponseEvent()
-    self.__response_events[self.__current_invoke_id] = response_ev
-    return response_ev
-```
-
-### Response Handling
-
-A background task continuously monitors for incoming messages:
-
-```python
-async def _recv_forever(self) -> None:
-    """Receive ADS messages asynchronously until disconnection."""
-    while True:
-        try:
-            header, body = await self._recv_ams_message()
-
-            if header.command_id == CommandId.ADSSRVID_DEVICENOTE:
-                await self._handle_notification(header, body)
-            else:
-                cls = RESPONSE_CLASS[CommandId(header.command_id)]
-                response = cls.from_bytes(body)
-                self.__response_events[header.invoke_id].set(response)
-
-        except ConnectionAbortedError:
-            break
-```
+The connection uses Python's `asyncio.open_connection()` for non-blocking I/O, returning stream reader/writer pairs for bidirectional communication.
 
 ## ADS Commands
 
-### Command Types
+CATio implements the core ADS command set:
 
-```python
-class CommandId(np.uint16, Enum):
-    ADSSRVID_READDEVICEINFO = 0x1  # Read device name and version
-    ADSSRVID_READ = 0x2            # Read data
-    ADSSRVID_WRITE = 0x3           # Write data
-    ADSSRVID_READSTATE = 0x4       # Read ADS/device status
-    ADSSRVID_WRITECTRL = 0x5       # Change ADS/device status
-    ADSSRVID_ADDDEVICENOTE = 0x6   # Create notification
-    ADSSRVID_DELETEDEVICENOTE = 0x7  # Delete notification
-    ADSSRVID_DEVICENOTE = 0x8      # Notification data
-    ADSSRVID_READWRITE = 0x9       # Combined read/write
-```
+| Command ID | Name | Purpose |
+|------------|------|---------|
+| 0x01 | `READDEVICEINFO` | Get device name and version |
+| 0x02 | `READ` | Read data from index group/offset |
+| 0x03 | `WRITE` | Write data to index group/offset |
+| 0x04 | `READSTATE` | Get ADS and device state |
+| 0x06 | `ADDDEVICENOTE` | Subscribe to value notifications |
+| 0x07 | `DELETEDEVICENOTE` | Unsubscribe from notifications |
+| 0x08 | `DEVICENOTE` | Notification data (server-initiated) |
+| 0x09 | `READWRITE` | Combined read and write operation |
 
-### Generic Command Execution
+### Request/Response Pattern
 
-```python
-async def _ads_command(
-    self,
-    request: MessageRequest,
-    **kwargs: AmsNetId | int,
-) -> MessageResponse:
-    """Send an ADS Command request and return the response."""
-    response_event = await self._send_ams_message(
-        REQUEST_CLASS[type(request)], request, **kwargs
-    )
-    cls = MESSAGE_CLASS[type(request)]
-    response = await response_event.get(cls)
-    assert response.result == ErrorCode.ERR_NOERROR
-    return response
-```
+ADS communication is asynchronous: the client sends a request and later receives a response matched by invoke ID. CATio handles this with `ResponseEvent` objects:
+
+1. Send request with unique invoke ID
+2. Create `ResponseEvent` and store in pending map
+3. Background task receives response, looks up event by invoke ID
+4. Event is set, awakening the waiting coroutine
+
+This pattern allows multiple concurrent requests without blocking.
 
 ## I/O Server Introspection
 
-The client introspects the TwinCAT I/O server to discover hardware:
+When CATio connects, it introspects the TwinCAT I/O server to discover the hardware topology. This involves a series of ADS reads to gather:
 
 ### Server Information
 
-```python
-async def _get_io_server(self) -> IOServer:
-    """Get I/O server information."""
-    info_response = await self._read_io_info()
-
-    return IOServer(
-        name=bytes_to_string(info_response.device_name.tobytes()),
-        version=f"{info_response.major_version}-{info_response.minor_version}",
-        build=info_response.version_build,
-        num_devices=await self._get_device_count(),
-    )
-```
+- Device name, version, and build number
+- Number of registered EtherCAT devices
 
 ### Device Discovery
 
-```python
-async def _get_ethercat_devices(self) -> dict[SupportsInt, IODevice]:
-    """Get information about registered EtherCAT devices."""
-    dev_ids, dev_types = await self.get_ethercat_master_device()
-    dev_names = await self._get_device_names(dev_ids)
-    dev_netids = await self._get_device_netids(dev_ids)
-    dev_identities = await self._get_device_identities(dev_netids)
-    dev_frames = await self._get_device_frame_counters(dev_netids)
-    dev_slave_counts = await self._get_slave_count(dev_netids)
-    ...
+For each EtherCAT device:
+- Device ID, type, and name
+- AMS NetId (for direct communication)
+- CANopen identity (vendor, product, revision)
+- Frame counters for diagnostic statistics
+- Slave terminal count
 
-    for params in zip(dev_ids, dev_types, dev_names, ...):
-        device = IODevice(*params)
-        devices[device.id] = device
+### Terminal Discovery
 
-    return devices
-```
+For each slave terminal:
+- EtherCAT address
+- Terminal type and name (e.g., "EL3064")
+- CANopen identity
+- State machine and link status
+- CRC error counters per port
 
-### Slave Terminal Discovery
-
-```python
-async def _get_slave_identities(
-    self,
-    dev_netids: Sequence[AmsNetId],
-    dev_slave_addresses: Sequence[Sequence[np.uint16]],
-) -> Sequence[Sequence[IOIdentity]]:
-    """Get CANopen identity of all slave terminals."""
-    slave_identities: Sequence[Sequence[IOIdentity]] = []
-
-    for netid, addresses in zip(dev_netids, dev_slave_addresses):
-        identities = []
-        for address in addresses:
-            response = await self._ads_command(
-                AdsReadRequest.read_slave_identity(address),
-                netid=netid,
-                port=ADS_MASTER_PORT,
-            )
-            identities.append(IOIdentity.from_bytes(response.data))
-        slave_identities.append(identities)
-
-    return slave_identities
-```
+This information populates the `IOServer`, `IODevice`, and `IOSlave` data structures that the FastCS layer uses to create controllers.
 
 ## Symbol Management
 
-### Symbol Discovery
+ADS symbols provide named access to PLC variables, avoiding hard-coded index group/offset values. CATio discovers available symbols and maps them for convenient access.
 
-ADS symbols provide named access to device parameters:
+### The AdsSymbol Structure
 
-```python
-async def get_all_symbols(self) -> dict[SupportsInt, Sequence[AdsSymbol]]:
-    """Get all subscribable symbols for each device."""
-    symbols: dict[SupportsInt, Sequence[AdsSymbol]] = {}
-
-    for device_id in self._ecdevices:
-        device_symbols = await self._get_device_symbols(device_id)
-        symbols[device_id] = device_symbols
-
-    return symbols
+```{literalinclude} ../../src/catio/devices.py
+:language: python
+:start-at: @dataclass
+:start-after: # ===== EtherCAT OBJECTS
+:end-before: @property
 ```
 
-### Symbol Data Structure
+Symbols carry type information (`dtype`) allowing CATio to correctly interpret binary data. The `group` and `offset` fields are used in ADS read/write commands.
 
-```python
-@dataclass
-class AdsSymbol:
-    parent_id: SupportsInt    # Device the symbol belongs to
-    name: str                  # Symbol name
-    dtype: npt.DTypeLike      # Data type
-    size: int                  # Number of elements
-    group: SupportsInt        # ADS index group
-    offset: SupportsInt       # ADS index offset
-    comment: str              # Optional description
-    handle: SupportsInt | None = None  # Notification handle
-```
+### Symbol-Based Access vs Direct Access
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Symbol-based** | Self-documenting, type-safe | Requires symbol upload, slight overhead |
+| **Direct index** | Fastest possible access | Brittle if PLC changes, no type info |
+
+CATio uses symbol-based access for maintainability, falling back to direct indexing only for standard EtherCAT registers that have fixed addresses.
 
 ## Notification System
 
-For efficient updates, CATio uses ADS device notifications instead of polling:
+For high-frequency data, polling is inefficient. ADS notifications let the server push value changes to the client.
 
-### Adding Notifications
+### How Notifications Work
 
-```python
-async def add_notifications(
-    self,
-    symbols: Sequence[AdsSymbol],
-    max_delay_ms: int = 100,
-    cycle_time_ms: int = 100,
-) -> None:
-    """Register symbol notifications with the server."""
-    for symbol in symbols:
-        request = AdsAddDeviceNotificationRequest(
-            index_group=symbol.group,
-            index_offset=symbol.offset,
-            length=symbol.nbytes,
-            transmission_mode=TransmissionMode.ADSTRANS_SERVERCYCLE,
-            max_delay=max_delay_ms * 10000,  # Convert to 100ns units
-            cycle_time=cycle_time_ms * 10000,
-        )
+1. **Subscribe**: Client sends `ADDDEVICENOTE` with index group/offset, buffer size, and timing parameters
+2. **Receive handle**: Server returns a notification handle for this subscription
+3. **Receive updates**: Server sends `DEVICENOTE` messages when values change
+4. **Unsubscribe**: Client sends `DELETEDEVICENOTE` with the handle
 
-        response = await self._ads_command(request)
-        symbol.handle = response.notification_handle
-        self.__device_notification_handles[response.notification_handle] = symbol
-```
+### Notification Parameters
 
-### Processing Notifications
+| Parameter | Purpose |
+|-----------|---------|
+| `max_delay` | Maximum time (100ns units) before server sends accumulated changes |
+| `cycle_time` | Minimum interval between notifications |
+| `transmission_mode` | When to send (on change, cyclic, etc.) |
 
-```python
-async def _handle_notification(self, header: AmsHeader, body: bytes) -> None:
-    """Process notification message data."""
-    if self.__buffer is not None:
-        id = int(header.invoke_id)
+CATio typically uses `ADSTRANS_SERVERCYCLE` mode where the server sends data at regular intervals regardless of whether values changed.
 
-        # Store template for multi-stream notifications
-        if id not in self.__notif_templates:
-            self.__notif_templates[id] = body
-            self.__num_notif_streams += 1
+### Buffering and Processing
 
-        # Accumulate notification data
-        self.__buffer += body
-```
+Notifications can arrive faster than the application processes them. CATio uses a buffering strategy:
 
-### Notification Monitoring
+1. Background task accumulates notification data in a `bytearray`
+2. Periodically (configurable flush period), the buffer contents are queued
+3. The FastCS layer processes queued notifications and updates attributes
 
-```python
-def start_notification_monitor(self, flush_period: float = 0.5) -> None:
-    """Start background task for notification processing."""
-    self.__buffer = bytearray()
-    self.__notification_task = asyncio.create_task(
-        self._monitor_notifications(flush_period)
-    )
+This decouples network I/O from application processing, preventing backpressure.
 
-async def _monitor_notifications(self, flush_period: float) -> None:
-    """Periodically flush notification buffer to queue."""
-    while True:
-        await asyncio.sleep(flush_period)
-        if self.__buffer:
-            await self.__notification_queue.put(bytes(self.__buffer))
-            self.__buffer.clear()
-```
+## The API Layer
 
-## API Layer
+CATio's ADS client exposes a clean API for the FastCS layer, abstracting protocol details behind method calls.
 
-The client exposes a clean API for the FastCS layer:
+### Query and Command Dispatch
 
-### Query Method
+The client uses string-based dispatch to route API calls:
 
-```python
-async def query(self, message: str, *args, **kwargs) -> Any:
-    """Call API method for a query."""
-    get = f"get_{message.lower()}"
-    if hasattr(self, get) and callable(func := getattr(self, get)):
-        if asyncio.iscoroutinefunction(func):
-            return await func(*args, **kwargs)
-        return func(*args, **kwargs)
-    raise ValueError(f"No API method found for query '{message}'")
-```
+- `query("SYSTEM_TREE")` → calls `get_system_tree()`
+- `command("DEVICE_STATE", ...)` → calls `set_device_state(...)`
 
-### Command Method
+This pattern, while flexible, has tradeoffs discussed in [API Decoupling Analysis](api-decoupling.md).
 
-```python
-async def command(self, command: str, *args, **kwargs) -> Any:
-    """Call API method for a command."""
-    set = f"set_{command.lower()}"
-    if hasattr(self, set) and callable(func := getattr(self, set)):
-        if asyncio.iscoroutinefunction(func):
-            return await func(*args, **kwargs)
-        return func(*args, **kwargs)
-    raise ValueError(f"No API method found for command '{command}'")
-```
+### Key API Methods
 
-### Example API Methods
-
-```python
-def get_system_tree(self) -> IOTreeNode:
-    """Get tree representation of the EtherCAT system."""
-    return self._generate_system_tree()
-
-def get_io_from_map(
-    self, identifier: int, io_group: str, io_name: str = ""
-) -> IOServer | IODevice | IOSlave:
-    """Get I/O object by identifier."""
-    ...
-
-async def get_device_framecounters_attr(
-    self, controller_id: int | None = None
-) -> npt.NDArray[np.uint32]:
-    """Get frame counters for an EtherCAT device."""
-    device = self.fastcs_io_map.get(controller_id)
-    await self.get_device_frames(device.id)
-    return np.array([
-        device.frame_counters.time,
-        device.frame_counters.cyclic_sent,
-        device.frame_counters.cyclic_lost,
-        ...
-    ])
-```
-
-## Message Framework
-
-### Message Base Class
-
-All ADS messages inherit from a common base:
-
-```python
-@dataclass_transform(kw_only_default=True)
-class Message:
-    """Generic ADS message type."""
-
-    def to_bytes(self) -> bytes:
-        """Serialize message to bytes."""
-        ...
-
-    @classmethod
-    def from_bytes(cls, buffer: bytes) -> Self:
-        """Deserialize message from bytes."""
-        ...
-```
-
-### Request/Response Mapping
-
-```python
-REQUEST_CLASS: dict[type[MessageRequest], CommandId] = {
-    AdsReadDeviceInfoRequest: CommandId.ADSSRVID_READDEVICEINFO,
-    AdsReadRequest: CommandId.ADSSRVID_READ,
-    AdsWriteRequest: CommandId.ADSSRVID_WRITE,
-    AdsReadWriteRequest: CommandId.ADSSRVID_READWRITE,
-    ...
-}
-
-RESPONSE_CLASS: dict[CommandId, type[MessageResponse]] = {
-    CommandId.ADSSRVID_READDEVICEINFO: AdsReadDeviceInfoResponse,
-    CommandId.ADSSRVID_READ: AdsReadResponse,
-    ...
-}
-```
+| Method | Purpose |
+|--------|---------|
+| `get_system_tree()` | Returns hierarchical view of I/O system |
+| `get_io_from_map()` | Retrieves IOServer/IODevice/IOSlave by ID |
+| `get_device_framecounters_attr()` | Frame statistics for an EtherCAT device |
+| `get_device_slavesstates_attr()` | State array for all terminals on a device |
+| `get_terminal_states_attr()` | State of a specific terminal |
 
 ## Error Handling
 
-```python
-class ErrorCode(np.uint32, Enum):
-    ERR_NOERROR = 0x0
-    ADSERR_DEVICE_ERROR = 0x700
-    ADSERR_DEVICE_SRVNOTSUPP = 0x701
-    ADSERR_DEVICE_INVALIDGRP = 0x702
-    ADSERR_DEVICE_INVALIDOFFSET = 0x703
-    ADSERR_DEVICE_INVALIDACCESS = 0x704
-    ADSERR_DEVICE_INVALIDSIZE = 0x705
-    ADSERR_DEVICE_INVALIDDATA = 0x706
-    ADSERR_DEVICE_NOTREADY = 0x707
-    ADSERR_DEVICE_BUSY = 0x708
-    ...
+ADS operations can fail for various reasons. CATio defines error codes matching the TwinCAT specification:
+
+| Error Code | Meaning |
+|------------|---------|
+| `0x700` | General device error |
+| `0x701` | Service not supported |
+| `0x702` | Invalid index group |
+| `0x703` | Invalid index offset |
+| `0x706` | Invalid data |
+| `0x745` | No notification handle |
+
+The client raises exceptions with meaningful messages when operations fail, allowing proper error recovery in the FastCS layer.
+
+## Testing with MockADSServer
+
+CATio includes a mock ADS server for testing without hardware:
+
+```{literalinclude} ../../tests/mock_server.py
+:language: python
+:pyobject: MockADSServer
+:end-before: async def start
 ```
+
+The mock server:
+- Accepts TCP connections on the standard ADS port
+- Parses AMS headers and dispatches to command handlers
+- Returns configurable mock responses
+- Simulates notification subscriptions
+
+This enables comprehensive testing of the client logic independent of real TwinCAT systems.
 
 ## See Also
 
 - [Architecture Overview](architecture-overview.md) - High-level system architecture
 - [FastCS EPICS IOC Implementation](fastcs-epics-ioc.md) - Details of the EPICS layer
 - [API Decoupling Analysis](api-decoupling.md) - API design discussion
-- [Beckhoff ADS Documentation](https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/11291871243.html) - Official ADS specification
