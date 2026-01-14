@@ -42,7 +42,7 @@ All CATio controllers inherit from `CATioController`, which extends the FastCS `
 - References to corresponding hardware objects (`IOServer`, `IODevice`, or `IOSlave`)
 - Attribute grouping for organized PV naming
 
-```{literalinclude} ../../src/catio/catio_controller.py
+```{literalinclude} ../../src/fastcs_catio/catio_controller.py
 :language: python
 :start-at: class CATioController
 :end-before: @property
@@ -80,7 +80,7 @@ During initialization, the server controller queries the TwinCAT system and buil
 
 ## Hardware-Specific Controllers
 
-Not all terminals are alike. A digital input module exposes different data than an analog output module. CATio handles this through specialized controller classes defined in [catio_hardware.py](../../src/catio/catio_hardware.py).
+Not all terminals are alike. A digital input module exposes different data than an analog output module. CATio handles this through specialized controller classes defined in [catio_hardware.py](../../src/fastcs_catio/catio_hardware.py).
 
 The `SUPPORTED_CONTROLLERS` dictionary maps Beckhoff terminal type codes to their controller classes. When CATio discovers a terminal, it looks up the type (e.g., "EL3064") in this dictionary and instantiates the appropriate controller.
 
@@ -110,7 +110,7 @@ The update flow for a CATio attribute follows these steps:
 
 This indirection means attributes don't need to know ADS protocol details - they just specify their name and polling period.
 
-```{literalinclude} ../../src/catio/catio_attribute_io.py
+```{literalinclude} ../../src/fastcs_catio/catio_attribute_io.py
 :language: python
 :start-at: class CATioControllerAttributeIO
 :end-before: class

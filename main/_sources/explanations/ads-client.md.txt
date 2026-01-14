@@ -50,7 +50,7 @@ TwinCAT maintains a routing table of authorized clients. CATio uses UDP messages
 1. **Discover the target's AMS NetId**: Query the TwinCAT system for its network identity
 2. **Register this client**: Add an entry to the routing table with authentication credentials
 
-```{literalinclude} ../../src/catio/client.py
+```{literalinclude} ../../src/fastcs_catio/client.py
 :language: python
 :start-at: class RemoteRoute
 :end-before: def _get_route_info_as_bytes
@@ -74,7 +74,7 @@ Default TwinCAT credentials are typically `Administrator` / `1`. Production syst
 
 Once routed, CATio opens a persistent TCP connection for ADS communication:
 
-```{literalinclude} ../../src/catio/client.py
+```{literalinclude} ../../src/fastcs_catio/client.py
 :language: python
 :pyobject: AsyncioADSClient.connected_to
 ```
@@ -142,7 +142,7 @@ ADS symbols provide named access to PLC variables, avoiding hard-coded index gro
 
 ### The AdsSymbol Structure
 
-```{literalinclude} ../../src/catio/devices.py
+```{literalinclude} ../../src/fastcs_catio/devices.py
 :language: python
 :pyobject: AdsSymbol
 :end-before: @property
