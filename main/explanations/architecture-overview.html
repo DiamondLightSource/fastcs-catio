@@ -1,0 +1,806 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>CATio Architecture Overview &#8212; catio 0.1a2.dev17+gcbee277d8 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=a58717ca"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/architecture-overview';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FastCS EPICS IOC Implementation" href="fastcs-epics-ioc.html" />
+    <link rel="prev" title="Explanations" href="../explanations.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">CATio Architecture Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../explanations.html" class="nav-link">Explanations</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">CATio Architecture Overview</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="catio-architecture-overview">
+<h1>CATio Architecture Overview<a class="headerlink" href="#catio-architecture-overview" title="Link to this heading">#</a></h1>
+<p>CATio is a Python-based control system integration for EtherCAT I/O devices running under Beckhoff TwinCAT. The architecture is deliberately designed with a clean separation between two halves:</p>
+<ol class="arabic simple">
+<li><p><strong>FastCS EPICS IOC Layer</strong> - Exposes Process Variables (PVs) for controlling EtherCAT devices</p></li>
+<li><p><strong>ADS Client Layer</strong> - Communicates with TwinCAT ADS servers on Beckhoff PLCs</p></li>
+</ol>
+<section id="high-level-architecture-diagram">
+<h2>High-Level Architecture Diagram<a class="headerlink" href="#high-level-architecture-diagram" title="Link to this heading">#</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌──────────────────────────────────────────────────────────────────────────────┐
+│                          EPICS Clients / Control Systems                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Channel Access / PVAccess
+                                        ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          FastCS EPICS IOC Layer                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                       CATioServerController                            │  │
+│  │  ┌──────────────────────────────────────────────────────────────────┐  │  │
+│  │  │  CATioDeviceController (EtherCAT Master)                         │  │  │
+│  │  │  ┌────────────────────────────────────────────────────────────┐  │  │  │
+│  │  │  │  CATioTerminalController (EK1100, EL3xxx, etc.)            │  │  │  │
+│  │  │  └────────────────────────────────────────────────────────────┘  │  │  │
+│  │  └──────────────────────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  Components: catio_controller.py, catio_hardware.py, catio_attribute_io.py   │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ CATioConnection API
+                                        │ (CATioFastCSRequest/Response)
+                                        ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            CATio API Bridge                                  │
+│                                                                              │
+│  CATioConnection  ─────►  CATioStreamConnection  ─────►  AsyncioADSClient    │
+│                                                                              │
+│  Components: catio_connection.py                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ ADS Protocol (TCP/UDP)
+                                        ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            ADS Client Layer                                  │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  AsyncioADSClient                                                      │  │
+│  │  • Route management (UDP)                                              │  │
+│  │  • TCP connection handling                                             │  │
+│  │  • AMS message send/receive                                            │  │
+│  │  • I/O introspection                                                   │  │
+│  │  • Symbol management                                                   │  │
+│  │  • Notification subscriptions                                          │  │
+│  │  • API query/command dispatch                                          │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  Components: client.py, messages.py, devices.py, symbols.py                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ ADS/AMS Protocol
+                                        │ (TCP Port 48898, UDP Port 48899)
+                                        ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                       Beckhoff TwinCAT ADS Server                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  I/O Server (Port 300)                                                 │  │
+│  │  ┌──────────────────────────────────────────────────────────────────┐  │  │
+│  │  │  EtherCAT Master Device (Port 65535)                             │  │  │
+│  │  │  ┌────────────────────────────────────────────────────────────┐  │  │  │
+│  │  │  │  EtherCAT Slave Terminals (EK/EL modules)                  │  │  │  │
+│  │  │  └────────────────────────────────────────────────────────────┘  │  │  │
+│  │  └──────────────────────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="component-overview">
+<h2>Component Overview<a class="headerlink" href="#component-overview" title="Link to this heading">#</a></h2>
+<section id="fastcs-epics-ioc-layer">
+<h3>FastCS EPICS IOC Layer<a class="headerlink" href="#fastcs-epics-ioc-layer" title="Link to this heading">#</a></h3>
+<p>The top layer provides EPICS integration through the FastCS framework:</p>
+<ul class="simple">
+<li><p><strong>CATioServerController</strong>: Root controller representing the I/O server; manages TCP connections and device discovery</p></li>
+<li><p><strong>CATioDeviceController</strong>: Represents EtherCAT Master devices with their associated attributes</p></li>
+<li><p><strong>CATioTerminalController</strong>: Represents individual EtherCAT slave terminals (couplers, I/O modules)</p></li>
+<li><p><strong>CATioControllerAttributeIO</strong>: Handles attribute read/write operations through the API</p></li>
+</ul>
+</section>
+<section id="api-bridge-layer">
+<h3>API Bridge Layer<a class="headerlink" href="#api-bridge-layer" title="Link to this heading">#</a></h3>
+<p>The middle layer provides a clean interface between FastCS and the ADS client:</p>
+<ul class="simple">
+<li><p><strong>CATioConnection</strong>: Singleton managing the TCP connection lifecycle</p></li>
+<li><p><strong>CATioStreamConnection</strong>: Wraps the ADS client with async context management</p></li>
+<li><p><strong>CATioFastCSRequest/Response</strong>: Request/response objects for API communication</p></li>
+</ul>
+</section>
+<section id="ads-client-layer">
+<h3>ADS Client Layer<a class="headerlink" href="#ads-client-layer" title="Link to this heading">#</a></h3>
+<p>The bottom layer implements the TwinCAT ADS protocol:</p>
+<ul class="simple">
+<li><p><strong>AsyncioADSClient</strong>: Asynchronous ADS client handling all protocol communication</p></li>
+<li><p><strong>RemoteRoute</strong>: UDP-based route management for network discovery</p></li>
+<li><p><strong>Message classes</strong>: Structured ADS message types for various commands</p></li>
+<li><p><strong>Device/Symbol models</strong>: Data classes representing EtherCAT hardware and ADS symbols</p></li>
+</ul>
+</section>
+</section>
+<section id="data-flow">
+<h2>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading">#</a></h2>
+<section id="initialization-flow">
+<h3>Initialization Flow<a class="headerlink" href="#initialization-flow" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Route Discovery</strong>: UDP communication discovers the remote TwinCAT server’s AMS NetId</p></li>
+<li><p><strong>Route Addition</strong>: Client machine is added to the TwinCAT server’s routing table</p></li>
+<li><p><strong>TCP Connection</strong>: Establish persistent TCP connection for ADS communication</p></li>
+<li><p><strong>I/O Introspection</strong>: Query server for devices, slaves, and symbol information</p></li>
+<li><p><strong>Controller Creation</strong>: Build FastCS controller hierarchy matching hardware topology</p></li>
+<li><p><strong>Attribute Registration</strong>: Create EPICS PVs for each accessible parameter</p></li>
+</ol>
+</section>
+<section id="runtime-data-flow">
+<h3>Runtime Data Flow<a class="headerlink" href="#runtime-data-flow" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EPICS Client Request
+        │
+        ▼
+FastCS Attribute Access
+        │
+        ▼
+CATioControllerAttributeIO.update()
+        │
+        ▼
+CATioConnection.send_query()
+        │
+        ▼
+AsyncioADSClient.query() / command()
+        │
+        ▼
+API method dispatch (get_* / set_*)
+        │
+        ▼
+ADS Read/Write/ReadWrite commands
+        │
+        ▼
+TwinCAT Server Response
+        │
+        ▼
+Response propagation back to EPICS
+</pre></div>
+</div>
+</section>
+</section>
+<section id="key-design-decisions">
+<h2>Key Design Decisions<a class="headerlink" href="#key-design-decisions" title="Link to this heading">#</a></h2>
+<section id="asynchronous-architecture">
+<h3>Asynchronous Architecture<a class="headerlink" href="#asynchronous-architecture" title="Link to this heading">#</a></h3>
+<p>The entire stack uses Python’s <code class="docutils literal notranslate"><span class="pre">asyncio</span></code> for non-blocking I/O operations:</p>
+<ul class="simple">
+<li><p>Enables concurrent handling of multiple PV requests</p></li>
+<li><p>Supports continuous notification monitoring without blocking</p></li>
+<li><p>Allows efficient polling of device states</p></li>
+</ul>
+</section>
+<section id="controller-hierarchy">
+<h3>Controller Hierarchy<a class="headerlink" href="#controller-hierarchy" title="Link to this heading">#</a></h3>
+<p>Controllers form a tree structure mirroring the physical EtherCAT topology:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>IOServer
+└── IODevice (EtherCAT Master)
+    ├── IOSlave (EK1100 Coupler)
+    │   ├── IOSlave (EL3xxx Input)
+    │   └── IOSlave (EL4xxx Output)
+    └── IOSlave (EK1101 Coupler)
+        └── ...
+</pre></div>
+</div>
+</section>
+<section id="symbol-based-access">
+<h3>Symbol-Based Access<a class="headerlink" href="#symbol-based-access" title="Link to this heading">#</a></h3>
+<p>ADS symbols provide named access to device parameters rather than raw memory addresses:</p>
+<ul class="simple">
+<li><p>Symbols discovered during introspection</p></li>
+<li><p>Notification subscriptions for efficient updates</p></li>
+<li><p>Type information preserved for proper data conversion</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<p>CATio is configured through command-line parameters:</p>
+<ul class="simple">
+<li><p><strong>target_ip</strong>: IP address of the Beckhoff PLC</p></li>
+<li><p><strong>target_port</strong>: AMS port for the I/O device (typically 851 for TwinCAT)</p></li>
+<li><p><strong>poll_period</strong>: Interval for standard attribute polling</p></li>
+<li><p><strong>notification_period</strong>: Interval for processing ADS notifications</p></li>
+</ul>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="fastcs-epics-ioc.html"><span class="std std-doc">FastCS EPICS IOC Implementation</span></a> - Detailed explanation of the EPICS layer</p></li>
+<li><p><a class="reference internal" href="ads-client.html"><span class="std std-doc">ADS Client Implementation</span></a> - Detailed explanation of the ADS protocol layer</p></li>
+<li><p><a class="reference internal" href="api-decoupling.html"><span class="std std-doc">API Decoupling Analysis</span></a> - Discussion of the API design and potential improvements</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../explanations.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Explanations</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="fastcs-epics-ioc.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">FastCS EPICS IOC Implementation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#high-level-architecture-diagram">High-Level Architecture Diagram</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#component-overview">Component Overview</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fastcs-epics-ioc-layer">FastCS EPICS IOC Layer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#api-bridge-layer">API Bridge Layer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ads-client-layer">ADS Client Layer</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-flow">Data Flow</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#initialization-flow">Initialization Flow</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-data-flow">Runtime Data Flow</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-design-decisions">Key Design Decisions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#asynchronous-architecture">Asynchronous Architecture</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controller-hierarchy">Controller Hierarchy</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-based-access">Symbol-Based Access</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/catio/edit/main/docs/explanations/architecture-overview.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/explanations/architecture-overview.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
