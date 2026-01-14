@@ -1,7 +1,7 @@
 import asyncio
 import random
 
-from catio.client import AsyncioADSClient
+from fastcs_catio.client import AsyncioADSClient
 
 # Connection to CX2020 device
 TARGET_IP = "172.23.240.142"

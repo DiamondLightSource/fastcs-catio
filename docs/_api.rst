@@ -2,7 +2,7 @@
 
 ..
    This page is not included in the TOC tree, but must exist so that the
-   autosummary pages are generated for catio and all its
+   autosummary pages are generated for fastcs_catio and all its
    subpackages
 
 API
@@ -13,4 +13,4 @@ API
     :template: custom-module-template.rst
     :recursive:
 
-    catio
+    fastcs_catio

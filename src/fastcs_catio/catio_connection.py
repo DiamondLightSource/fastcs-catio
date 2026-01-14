@@ -8,7 +8,7 @@ from typing import Any, Self, SupportsInt
 import numpy.typing as npt
 from fastcs.tracer import Tracer
 
-from catio.devices import AdsSymbol
+from fastcs_catio.devices import AdsSymbol
 
 from .client import AsyncioADSClient
 

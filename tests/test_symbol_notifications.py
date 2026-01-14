@@ -1,7 +1,7 @@
 import asyncio
 
-from catio.client import AsyncioADSClient
-from catio.utils import average, process_notifications
+from fastcs_catio.client import AsyncioADSClient
+from fastcs_catio.utils import average, process_notifications
 
 # Connection to CX2020 device
 TARGET_IP = "172.23.240.142"

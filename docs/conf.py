@@ -11,15 +11,15 @@ from subprocess import check_output
 
 import requests
 
-import catio
+import fastcs_catio
 
 # -- General configuration ------------------------------------------------
 
 # General information about the project.
-project = "catio"
+project = "fastcs-catio"
 
 # The full version, including alpha/beta/rc tags.
-release = catio.__version__
+release = fastcs_catio.__version__
 
 # The short X.Y version.
 if "+" in release:
@@ -128,7 +128,7 @@ copybutton_prompt_is_regexp = True
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
-github_repo = "catio"
+github_repo = "fastcs-catio"
 github_user = "DiamondLightSource"
 switcher_json = f"https://{github_user}.github.io/{github_repo}/switcher.json"
 switcher_exists = requests.get(switcher_json).ok

@@ -1,4 +1,4 @@
-"""Interface for ``python -m catio``."""
+"""Interface for ``python -m fastcs_catio``."""
 
 import logging
 import os
@@ -17,7 +17,7 @@ from fastcs.transports.epics.options import (
 )
 from softioc.imports import callbackSetQueueSize
 
-from catio.client import RemoteRoute
+from fastcs_catio.client import RemoteRoute
 
 from . import __version__
 from .catio_controller import (
@@ -121,7 +121,7 @@ def ioc(
 ):
     """
     Run the EtherCAT IOC with the given PREFIX on a HOST server, e.g.
-    'python -m catio ioc BLxx-EA-CATIO-01 ws368'
+    'python -m fastcs_catio ioc BLxx-EA-CATIO-01 ws368'
 
     (use '[command] --help' for more details)
     """
@@ -171,7 +171,8 @@ if __name__ == "__main__":
     app()
 
 # # TO DO: make the yaml config option work if it's preferred
-# # if using a yaml file config: python -m catio run ./src/catio/catio_controller.yaml
+# # if using a yaml file config: python -m fastcs_catio run
+# #     ./src/fastcs_catio/catio_controller.yaml
 # if __name__ == "__main__":
 #     transport = EpicsCATransport(
 #        ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01")

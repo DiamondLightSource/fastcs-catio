@@ -6,7 +6,7 @@ Technical reference material including APIs and release notes.
 :maxdepth: 1
 :glob:
 
-API <_api/catio>
+API <_api/fastcs_catio>
 genindex
-Release Notes <https://github.com/DiamondLightSource/catio/releases>
+Release Notes <https://github.com/DiamondLightSource/fastcs-catio/releases>
 ```

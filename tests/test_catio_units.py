@@ -18,14 +18,14 @@ from typing import Literal, get_type_hints
 import numpy as np
 import pytest
 
-from catio._constants import AdsDataType, DeviceType, SymbolFlag
-from catio._types import AdsMessageDataType, AmsAddress, AmsNetId
-from catio.catio_connection import (
+from fastcs_catio._constants import AdsDataType, DeviceType, SymbolFlag
+from fastcs_catio._types import AdsMessageDataType, AmsAddress, AmsNetId
+from fastcs_catio.catio_connection import (
     CATioFastCSRequest,
     CATioFastCSResponse,
     CATioServerConnectionSettings,
 )
-from catio.devices import (
+from fastcs_catio.devices import (
     AdsSymbol,
     AdsSymbolNode,
     ChainLocation,
@@ -35,8 +35,14 @@ from catio.devices import (
     IOSlave,
     IOTreeNode,
 )
-from catio.messages import DeviceFrames, IOIdentity, Message, SlaveCRC, SlaveState
-from catio.utils import (
+from fastcs_catio.messages import (
+    DeviceFrames,
+    IOIdentity,
+    Message,
+    SlaveCRC,
+    SlaveState,
+)
+from fastcs_catio.utils import (
     add_comment,
     average,
     bytes_to_string,
@@ -84,7 +90,9 @@ class TestLocalHostUtils:
     def test_get_local_netid_str_appends_suffix(self, monkeypatch: pytest.MonkeyPatch):
         """Helper function should append ".1.1" to the localhost IP."""
 
-        monkeypatch.setattr("catio.utils.get_localhost_ip", lambda: "10.11.12.13")
+        monkeypatch.setattr(
+            "fastcs_catio.utils.get_localhost_ip", lambda: "10.11.12.13"
+        )
         assert get_local_netid_str() == "10.11.12.13.1.1"
 
 

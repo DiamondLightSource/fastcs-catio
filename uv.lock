@@ -104,63 +104,6 @@ wheels = [
 ]
 
 [[package]]
-name = "catio"
-source = { editable = "." }
-dependencies = [
-    { name = "fastcs", extra = ["epics"] },
-    { name = "numpy" },
-    { name = "pvi" },
-    { name = "softioc" },
-    { name = "typer" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "copier" },
-    { name = "myst-parser" },
-    { name = "pre-commit" },
-    { name = "pydata-sphinx-theme" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "sphinx-autobuild" },
-    { name = "sphinx-copybutton" },
-    { name = "sphinx-design" },
-    { name = "tox-uv" },
-    { name = "types-mock" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastcs", extras = ["epics"], specifier = "==0.12.0a1" },
-    { name = "numpy" },
-    { name = "pvi" },
-    { name = "softioc", specifier = ">=4.7.0" },
-    { name = "typer" },
-    { name = "typing-extensions", marker = "python_full_version < '3.8'" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "copier" },
-    { name = "myst-parser" },
-    { name = "pre-commit" },
-    { name = "pydata-sphinx-theme", specifier = ">=0.12" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio", specifier = ">=1.3.0" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "sphinx-autobuild" },
-    { name = "sphinx-copybutton" },
-    { name = "sphinx-design" },
-    { name = "tox-uv" },
-    { name = "types-mock" },
-]
-
-[[package]]
 name = "certifi"
 version = "2026.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -689,6 +632,63 @@ epics = [
     { name = "p4p" },
     { name = "pvi" },
     { name = "softioc" },
+]
+
+[[package]]
+name = "fastcs-catio"
+source = { editable = "." }
+dependencies = [
+    { name = "fastcs", extra = ["epics"] },
+    { name = "numpy" },
+    { name = "pvi" },
+    { name = "softioc" },
+    { name = "typer" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "copier" },
+    { name = "myst-parser" },
+    { name = "pre-commit" },
+    { name = "pydata-sphinx-theme" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-copybutton" },
+    { name = "sphinx-design" },
+    { name = "tox-uv" },
+    { name = "types-mock" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastcs", extras = ["epics"], specifier = "==0.12.0a1" },
+    { name = "numpy" },
+    { name = "pvi" },
+    { name = "softioc", specifier = ">=4.7.0" },
+    { name = "typer" },
+    { name = "typing-extensions", marker = "python_full_version < '3.8'" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "copier" },
+    { name = "myst-parser" },
+    { name = "pre-commit" },
+    { name = "pydata-sphinx-theme", specifier = ">=0.12" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-copybutton" },
+    { name = "sphinx-design" },
+    { name = "tox-uv" },
+    { name = "types-mock" },
 ]
 
 [[package]]

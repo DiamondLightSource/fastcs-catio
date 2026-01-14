@@ -8,14 +8,14 @@ component_owner: group:default/beamline-controls
 component_type: application
 description: Control system integration of EtherCAT I/O devices running under TwinCAT
     using pyads and FastCS
-distribution_name: catio
+distribution_name: fastcs-catio
 docker: true
 docker_debug: false
 docs_type: sphinx
 git_platform: github.com
 github_org: DiamondLightSource
-package_name: catio
+package_name: fastcs_catio
 pypi: true
-repo_name: catio
+repo_name: fastcs-catio
 strict_typing: false
 type_checker: pyright
