@@ -2,13 +2,9 @@
 This file checks that all the example boilerplate text has been removed.
 It can be deleted when all the contained tests pass
 """
-import sys
-from pathlib import Path
 
-if sys.version_info < (3, 8):
-    from importlib_metadata import metadata  # noqa
-else:
-    from importlib.metadata import metadata  # noqa
+from importlib.metadata import metadata  # noqa
+from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 
@@ -40,7 +36,7 @@ def test_module_summary():
 
 
 # README
-def test_changed_README_intro():
+def test_changed_readme_intro():
     assert_not_contains_text(
         "README.rst",
         "This is where you should write a short paragraph",
@@ -56,7 +52,7 @@ def test_removed_adopt_skeleton():
     )
 
 
-def test_changed_README_body():
+def test_changed_readme_body():
     assert_not_contains_text(
         "README.rst",
         "This is where you should put some images or code snippets",

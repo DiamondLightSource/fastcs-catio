@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: catio
+  title: catio
+  description: Control system integration of EtherCAT I/O devices running under TwinCAT using pyads and FastCS
+spec:
+  type: application
+  lifecycle: experimental
+  owner: group:default/beamline-controls

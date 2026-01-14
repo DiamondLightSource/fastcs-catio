@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=schema.json
+
+controller:
+  tcp_settings:
+    target_ip: "172.23.240.142"
+    target_port: 27909
+  route:
+    name: "test_route"
+    username: "Administrator"
+    password: "1"
+  scan_timings:
+    poll_period: 1.0
+    notification_period: 0.2
+
+transport:
+  - graphql:
+      host: localhost
+      port: 8083
+      log_level: info
+  - ca_ioc:
+      pv_prefix: BLxxI-EA-CATIO-01
+    gui:
+      title: CATio Controller Demo
+      output_path: ./screens/catio.bob
