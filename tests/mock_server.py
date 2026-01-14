@@ -21,15 +21,16 @@ from collections.abc import Callable
 from typing import Any, SupportsInt
 
 import numpy as np
-from catio._constants import (
+
+from fastcs_catio._constants import (
     AdsState,
     CommandId,
     ErrorCode,
     StateFlag,
 )
-from catio._types import AmsNetId
-from catio.devices import AdsSymbol
-from catio.messages import (
+from fastcs_catio._types import AmsNetId
+from fastcs_catio.devices import AdsSymbol
+from fastcs_catio.messages import (
     AdsAddDeviceNotificationResponse,
     AdsDeleteDeviceNotificationResponse,
     AdsReadDeviceInfoResponse,
@@ -38,7 +39,7 @@ from catio.messages import (
     AdsReadWriteResponse,
     AdsWriteResponse,
 )
-from catio.utils import get_local_netid_str
+from fastcs_catio.utils import get_local_netid_str
 
 logger = logging.getLogger(__name__)
 

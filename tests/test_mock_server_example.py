@@ -12,9 +12,9 @@ python -m pytest tests/test_mock_server_example.py -v
 """
 
 import pytest
-from catio._constants import AdsState
-from catio.client import AsyncioADSClient
 
+from fastcs_catio._constants import AdsState
+from fastcs_catio.client import AsyncioADSClient
 from mock_server import MockADSServer
 
 IO_SERVER_PORT: int = 300

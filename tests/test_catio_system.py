@@ -19,12 +19,15 @@ import asyncio
 
 import numpy as np
 import pytest
-from catio._constants import AdsState
-from catio.catio_connection import CATioServerConnectionSettings, CATioStreamConnection
-from catio.client import AsyncioADSClient
-from catio.devices import AdsSymbol
-from catio.messages import AdsReadDeviceInfoResponse
 
+from fastcs_catio._constants import AdsState
+from fastcs_catio.catio_connection import (
+    CATioServerConnectionSettings,
+    CATioStreamConnection,
+)
+from fastcs_catio.client import AsyncioADSClient
+from fastcs_catio.devices import AdsSymbol
+from fastcs_catio.messages import AdsReadDeviceInfoResponse
 from mock_server import MockADSServer
 
 IO_SERVER_PORT: int = 300
