@@ -19,14 +19,14 @@ from fastcs.tracer import Tracer
 from fastcs.util import ONCE
 from numpy.lib import recfunctions as rfn
 
-from catio._constants import DeviceType
-from catio.catio_attribute_io import (
+from fastcs_catio._constants import DeviceType
+from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
 )
-from catio.client import RemoteRoute, get_remote_address
-from catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
-from catio.utils import (
+from fastcs_catio.client import RemoteRoute, get_remote_address
+from fastcs_catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
+from fastcs_catio.utils import (
     average,
     check_ndarray,
     filetime_to_dt,
@@ -550,7 +550,7 @@ class CATioServerController(CATioController):
         :returns: the subcontroller object created for the current node.
         """
         # Lazy import to prevent circular import reference
-        from catio.catio_hardware import SUPPORTED_CONTROLLERS
+        from fastcs_catio.catio_hardware import SUPPORTED_CONTROLLERS
 
         match node.data.category:
             case IONodeType.Server:

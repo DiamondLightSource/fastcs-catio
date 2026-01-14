@@ -17,7 +17,6 @@ from typing import Literal, get_type_hints
 
 import numpy as np
 import pytest
-
 from catio._constants import AdsDataType, DeviceType, SymbolFlag
 from catio._types import AdsMessageDataType, AmsAddress, AmsNetId
 from catio.catio_connection import (

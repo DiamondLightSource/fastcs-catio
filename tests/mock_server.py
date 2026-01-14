@@ -21,7 +21,6 @@ from collections.abc import Callable
 from typing import Any, SupportsInt
 
 import numpy as np
-
 from catio._constants import (
     AdsState,
     CommandId,

@@ -126,7 +126,8 @@ commands = [
         { replace = "posargs", default = [
         ], extend = true },
     ],
-]description = "Run tests with coverage"
+]
+description = "Run tests with coverage"
 
 [tool.tox.env.docs]
 description = "Run docs build with clean environment"

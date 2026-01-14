@@ -8,7 +8,7 @@ from fastcs.logging import bind_logger
 from fastcs.tracer import Tracer
 from fastcs.util import ONCE
 
-from catio.catio_connection import CATioConnection, CATioFastCSRequest
+from fastcs_catio.catio_connection import CATioConnection, CATioFastCSRequest
 
 tracer = Tracer(name=__name__)
 logger = bind_logger(logger_name=__name__)

@@ -25,9 +25,9 @@ from typing import Any
 
 import numpy as np
 import pytest
-
 from catio.client import AsyncioADSClient
 from catio.devices import AdsSymbol
+
 from mock_server import MockADSServer
 
 IO_SERVER_PORT: int = 25565
