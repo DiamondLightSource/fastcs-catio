@@ -17,8 +17,8 @@ dependencies = [
     "numpy",
     "pvi",
     "typer",
-    "fastcs[all]==0.12.0a1",
-    "softioc@git+https://github.com/DiamondLightSource/pythonSoftIOC",
+    "fastcs[epics]==0.12.0a1",
+    "softioc>=4.6.1",
 ]
 dynamic = ["version"]
 license.file = "LICENSE"
