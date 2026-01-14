@@ -1,9 +1,9 @@
 import subprocess
 import sys
 
-from catio import __version__
+from fastcs_catio import __version__
 
 
 def test_cli_version():
-    cmd = [sys.executable, "-m", "catio", "--version"]
+    cmd = [sys.executable, "-m", "fastcs_catio", "--version"]
     assert subprocess.check_output(cmd).decode().strip() == __version__

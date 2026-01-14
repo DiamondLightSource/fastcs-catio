@@ -1,8 +1,8 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: catio
-  title: catio
+  name: fastcs-catio
+  title: fastcs-catio
   description: Control system integration of EtherCAT I/O devices running under TwinCAT using pyads and FastCS
 spec:
   type: application
