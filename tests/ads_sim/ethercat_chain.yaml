@@ -76,13 +76,6 @@ terminal_types:
         ads_type: 33 # BIT
         type_name: "BIT"
         channels: 4
-      # WcState for status
-      - name_template: "WcState^WcState"
-        index_group: 0xF021 # ADSIGRP_IOIMAGE_RWIX
-        size: 0
-        ads_type: 33 # BIT
-        type_name: "BIT"
-        channels: 1
 
   # Digital Input Terminals (4-channel 24V)
   EL1004:
