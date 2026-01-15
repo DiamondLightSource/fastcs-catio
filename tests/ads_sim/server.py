@@ -18,6 +18,7 @@ from .ethercat_chain import (
     COE_OPERATIONAL_PARAMS_BASE,
     EtherCATChain,
     EtherCATDevice,
+    EtherCATSlave,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,8 +101,160 @@ class IndexGroup:
 
 # Standard ADS ports
 ADS_TCP_PORT = 48898
+ADS_UDP_PORT = 48899
 IO_SERVER_PORT = 300
 ADS_MASTER_PORT = 65535
+SYSTEM_SERVICE_PORT = 10000
+
+# UDP Service IDs
+ADSSVCID_READSERVICEINFO = 0x1
+ADSSVCID_ADDROUTE = 0x6
+ADSSVCID_DELROUTE = 0xB001
+ADSSCVID_RESPONSE = 0x80000000
+
+# UDP Cookie - must match client expectation (0x71146603)
+UDP_COOKIE = 0x71146603
+
+
+class UDPProtocol(asyncio.DatagramProtocol):
+    """UDP Protocol handler for ADS service discovery."""
+
+    def __init__(self, server: ADSSimServer):
+        self.server = server
+        self.transport: asyncio.DatagramTransport | None = None
+
+    def connection_made(self, transport: asyncio.DatagramTransport) -> None:  # type: ignore[override]
+        """Called when the UDP socket is ready."""
+        self.transport = transport
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
+        """Handle incoming UDP datagrams."""
+        if len(data) < 12:
+            logger.warning(f"UDP packet too short from {addr}")
+            return
+
+        # Parse UDP header
+        udp_cookie, invoke_id, service_id = struct.unpack("<III", data[:12])
+
+        # Validate cookie - client sends 0x71146603
+        if udp_cookie != UDP_COOKIE:
+            logger.warning(
+                f"Invalid UDP cookie: {udp_cookie:#x}, expected {UDP_COOKIE:#x}"
+            )
+            return
+
+        logger.debug(f"UDP request: service={service_id:#x}, invoke={invoke_id}")
+
+        # Handle service requests
+        if service_id == ADSSVCID_READSERVICEINFO:
+            response = self._handle_read_service_info(invoke_id)
+        elif service_id == ADSSVCID_ADDROUTE:
+            response = self._handle_add_route(invoke_id, data[12:])
+        elif service_id == ADSSVCID_DELROUTE:
+            response = self._handle_del_route(invoke_id, data[12:])
+        else:
+            logger.warning(f"Unknown UDP service: {service_id:#x}")
+            return
+
+        if self.transport and response:
+            self.transport.sendto(response, addr)
+
+    def _handle_read_service_info(self, invoke_id: int) -> bytes:
+        """Handle ReadServiceInfo request - returns server NetID."""
+        # Get the first device's netid or use a default
+        if self.server.chain.devices:
+            device = next(iter(self.server.chain.devices.values()))
+            netid_bytes = device.get_netid_bytes()
+        else:
+            netid_bytes = bytes([127, 0, 0, 1, 1, 1])
+
+        # Build response
+        # UDP header: cookie (4) + invoke_id (4) + service_id (4)
+        response_service_id = ADSSVCID_READSERVICEINFO | ADSSCVID_RESPONSE
+        udp_header = struct.pack(
+            "<III",
+            UDP_COOKIE,
+            invoke_id,
+            response_service_id,
+        )
+
+        # Response data: netid (6) + port (2) + count (4) + data
+        response_data = struct.pack(
+            "<6sHI",
+            netid_bytes,
+            SYSTEM_SERVICE_PORT,
+            0,  # count of additional info items
+        )
+
+        return udp_header + response_data
+
+    def _handle_add_route(self, invoke_id: int, data: bytes) -> bytes:
+        """Handle AddRoute request."""
+        logger.info("UDP AddRoute request received (simulated success)")
+
+        # Build response
+        response_service_id = ADSSVCID_ADDROUTE | ADSSCVID_RESPONSE
+        udp_header = struct.pack(
+            "<III",
+            UDP_COOKIE,
+            invoke_id,
+            response_service_id,
+        )
+
+        # Get the first device's netid
+        if self.server.chain.devices:
+            device = next(iter(self.server.chain.devices.values()))
+            netid_bytes = device.get_netid_bytes()
+        else:
+            netid_bytes = bytes([127, 0, 0, 1, 1, 1])
+
+        # Response data: netid (6) + port (2) + count (4) + tag info
+        # Tag info: tag_id (2) + length (2) + data (4 = error code)
+        tag_id = 1  # Result tag
+        tag_length = 4
+        error_code = ErrorCode.ERR_NOERROR
+
+        response_data = struct.pack(
+            "<6sHIHHI",
+            netid_bytes,
+            SYSTEM_SERVICE_PORT,
+            1,  # count of info items
+            tag_id,
+            tag_length,
+            error_code,
+        )
+
+        return udp_header + response_data
+
+    def _handle_del_route(self, invoke_id: int, data: bytes) -> bytes:
+        """Handle DeleteRoute request."""
+        logger.info("UDP DeleteRoute request received (simulated success)")
+
+        # Build response
+        response_service_id = ADSSVCID_DELROUTE | ADSSCVID_RESPONSE
+        udp_header = struct.pack(
+            "<III",
+            UDP_COOKIE,
+            invoke_id,
+            response_service_id,
+        )
+
+        # Get the first device's netid
+        if self.server.chain.devices:
+            device = next(iter(self.server.chain.devices.values()))
+            netid_bytes = device.get_netid_bytes()
+        else:
+            netid_bytes = bytes([127, 0, 0, 1, 1, 1])
+
+        # Response data: netid (6) + port (2) + error_code (4)
+        response_data = struct.pack(
+            "<6sHI",
+            netid_bytes,
+            SYSTEM_SERVICE_PORT,
+            ErrorCode.ERR_NOERROR,  # error code in count field for del route
+        )
+
+        return udp_header + response_data
 
 
 class ADSSimServer:
@@ -135,6 +288,7 @@ class ADSSimServer:
         self.host = host
         self.port = port
         self.server: asyncio.Server | None = None
+        self.udp_transport: asyncio.DatagramTransport | None = None
         self.running = False
 
         # Load EtherCAT chain configuration
@@ -164,21 +318,36 @@ class ADSSimServer:
         }
 
     async def start(self) -> None:
-        """Start the ADS simulation server."""
+        """Start the ADS simulation server (TCP and UDP)."""
+        # Start TCP server
         self.server = await asyncio.start_server(
             self._handle_connection, self.host, self.port
         )
+
+        # Start UDP server for service discovery
+        loop = asyncio.get_event_loop()
+        self.udp_transport, _ = await loop.create_datagram_endpoint(
+            lambda: UDPProtocol(self),
+            local_addr=(self.host, ADS_UDP_PORT),
+        )
+
         self.running = True
-        logger.info(f"ADS Simulation server started on {self.host}:{self.port}")
+        logger.info(f"ADS Simulation server started on {self.host}:{self.port} (TCP)")
+        logger.info(f"ADS UDP discovery service on {self.host}:{ADS_UDP_PORT}")
         self.chain.print_chain()
 
     async def stop(self) -> None:
         """Stop the ADS simulation server."""
+        if self.udp_transport:
+            self.udp_transport.close()
+            self.udp_transport = None
+
         if self.server:
             self.server.close()
             await self.server.wait_closed()
-            self.running = False
-            logger.info("ADS Simulation server stopped")
+
+        self.running = False
+        logger.info("ADS Simulation server stopped")
 
     async def serve_forever(self) -> None:
         """Run the server until cancelled."""
@@ -401,6 +570,12 @@ class ADSSimServer:
             f"Read: group={index_group:#x}, offset={index_offset:#x}, len={read_length}"
         )
 
+        # Handle symbol table requests (any port, including target AMS port)
+        if index_group == IndexGroup.ADSIGRP_SYM_UPLOADINFO2:
+            return await self._handle_symbol_upload_info(read_length)
+        if index_group == IndexGroup.ADSIGRP_SYM_UPLOAD:
+            return await self._handle_symbol_upload(read_length)
+
         # Route to appropriate handler based on port and index group
         if port == IO_SERVER_PORT:
             return await self._handle_io_server_read(
@@ -586,6 +761,165 @@ class ADSSimServer:
                 return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
 
         return struct.pack("<II", ErrorCode.ADSERR_DEVICE_INVALIDOFFSET, 0)
+
+    async def _handle_symbol_upload_info(self, read_length: int) -> bytes:
+        """Handle symbol upload info request (index group 0xF00F).
+
+        Returns info about the symbol table: count, length, and reserved bytes.
+        """
+        # Generate symbol table if not cached
+        symbol_table = self._build_symbol_table()
+
+        # AdsSymbolTableInfo format: symbol_count (4) + table_length (4) + reserved (12)
+        symbol_count = len(self._symbol_entries)
+        table_length = len(symbol_table)
+
+        data = struct.pack(
+            "<II12s",
+            symbol_count,
+            table_length,
+            b"\x00" * 12,  # reserved
+        )
+
+        return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
+
+    async def _handle_symbol_upload(self, read_length: int) -> bytes:
+        """Handle symbol upload request (index group 0xF00B).
+
+        Returns the complete symbol table data.
+        """
+        # Generate symbol table if not cached
+        symbol_table = self._build_symbol_table()
+
+        header = struct.pack("<II", ErrorCode.ERR_NOERROR, len(symbol_table))
+        return header + symbol_table
+
+    def _build_symbol_table(self) -> bytes:
+        """Build the symbol table from EtherCAT chain configuration.
+
+        Creates symbols for each slave's input and output channels.
+        """
+        if hasattr(self, "_symbol_table_cache"):
+            return self._symbol_table_cache
+
+        self._symbol_entries: list[dict[str, Any]] = []
+        symbol_data = b""
+
+        # Create symbols for each device and slave
+        for device_id, device in self.chain.devices.items():
+            for slave in device.slaves:
+                # Create input/output symbols based on slave type
+                symbols = self._create_slave_symbols(device_id, slave)
+                for sym in symbols:
+                    entry = self._build_symbol_entry(sym)
+                    symbol_data += entry
+                    self._symbol_entries.append(sym)
+
+        self._symbol_table_cache = symbol_data
+        return symbol_data
+
+    def _create_slave_symbols(
+        self, device_id: int, slave: EtherCATSlave
+    ) -> list[dict[str, Any]]:
+        """Create symbol definitions for a slave based on its type."""
+        symbols: list[dict[str, Any]] = []
+        slave_type = slave.type.upper()
+
+        # Base symbol path
+        base_path = f"TIID^Device {device_id} (EtherCAT)^{slave.name}"
+
+        # EL1xxx = Digital Input terminals
+        if slave_type.startswith("EL1"):
+            # Extract number of channels from type (e.g., EL1014 = 4 channels)
+            try:
+                num_channels = int(slave_type[-1]) if slave_type[-1].isdigit() else 4
+            except (ValueError, IndexError):
+                num_channels = 4
+
+            for ch in range(1, num_channels + 1):
+                symbols.append(
+                    {
+                        "name": f"{base_path}^Channel {ch}^Input",
+                        "index_group": IndexGroup.ADSIGRP_IOIMAGE_RWIX,
+                        "index_offset": slave.address * 16 + ch - 1,
+                        "size": 1,
+                        "ads_type": 33,  # ADS_TYPE_BIT
+                        "type_name": "BIT",
+                        "comment": f"{slave.name} Channel {ch} Input",
+                    }
+                )
+
+        # EL2xxx = Digital Output terminals
+        elif slave_type.startswith("EL2"):
+            try:
+                num_channels = int(slave_type[-1]) if slave_type[-1].isdigit() else 4
+            except (ValueError, IndexError):
+                num_channels = 4
+
+            for ch in range(1, num_channels + 1):
+                symbols.append(
+                    {
+                        "name": f"{base_path}^Channel {ch}^Output",
+                        "index_group": IndexGroup.ADSIGRP_IOIMAGE_RWOX,
+                        "index_offset": slave.address * 16 + ch - 1,
+                        "size": 1,
+                        "ads_type": 33,  # ADS_TYPE_BIT
+                        "type_name": "BIT",
+                        "comment": f"{slave.name} Channel {ch} Output",
+                    }
+                )
+
+        # EL15xx = Analog/Counter inputs
+        elif slave_type.startswith("EL15"):
+            symbols.append(
+                {
+                    "name": f"{base_path}^Value",
+                    "index_group": IndexGroup.ADSIGRP_IOIMAGE_RWIB,
+                    "index_offset": slave.address * 16,
+                    "size": 4,
+                    "ads_type": 3,  # ADS_TYPE_INT32
+                    "type_name": "INT",
+                    "comment": f"{slave.name} Counter Value",
+                }
+            )
+
+        # EKxxxx = Couplers - no I/O symbols
+        elif slave_type.startswith("EK"):
+            pass
+
+        # EL9xxx = Power supply - no I/O symbols
+        elif slave_type.startswith("EL9"):
+            pass
+
+        return symbols
+
+    def _build_symbol_entry(self, sym: dict[str, Any]) -> bytes:
+        """Build a single symbol table entry."""
+        name = sym["name"].encode("utf-8") + b"\x00"
+        type_name = sym["type_name"].encode("utf-8") + b"\x00"
+        comment = sym.get("comment", "").encode("utf-8") + b"\x00"
+
+        # Calculate entry length: header (30 bytes) + name + type + comment
+        header_size = 30
+        entry_length = header_size + len(name) + len(type_name) + len(comment)
+
+        # Build entry header matching AdsSymbolTableEntry dtype:
+        # read_length (u4), index_group (u4), index_offset (u4), size (u4),
+        # ads_type (u4), flag (u4), name_size (u2), type_size (u2), comment_size (u2)
+        header = struct.pack(
+            "<IIIIIIHHH",
+            entry_length,  # read_length (u4)
+            sym["index_group"],  # index_group (u4)
+            sym["index_offset"],  # index_offset (u4)
+            sym["size"],  # size (u4)
+            sym["ads_type"],  # ads_type (u4)
+            0,  # flag (u4)
+            len(name) - 1,  # name_size (u2) - without null terminator
+            len(type_name) - 1,  # type_size (u2) - without null terminator
+            len(comment) - 1,  # comment_size (u2) - without null terminator
+        )
+
+        return header + name + type_name + comment
 
     async def _handle_write(
         self,
