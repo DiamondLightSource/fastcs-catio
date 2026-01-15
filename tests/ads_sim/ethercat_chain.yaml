@@ -76,13 +76,6 @@ terminal_types:
         ads_type: 33 # BIT
         type_name: "BIT"
         channels: 4
-      # Input (readback) channels
-      - name_template: "Channel {channel}^Input"
-        index_group: 0xF021 # ADSIGRP_IOIMAGE_RWIX
-        size: 0
-        ads_type: 33 # BIT
-        type_name: "BIT"
-        channels: 4
       # WcState for status
       - name_template: "WcState^WcState"
         index_group: 0xF021 # ADSIGRP_IOIMAGE_RWIX
@@ -190,7 +183,7 @@ terminal_types:
 # Server Configuration
 # ============================================================
 server:
-  name: "TwinCAT System"
+  name: "I/O Server"
   version: "3.1"
   build: 4024
 
