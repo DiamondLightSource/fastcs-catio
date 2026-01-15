@@ -1052,10 +1052,24 @@ class ADSSimServer:
 
         Sends notifications at regular intervals (every 100ms) for all
         registered notification handles.
+
+        Notification format (AdsNotificationStream):
+          - length (UINT32): Size of stamps+data in bytes
+          - stamps (UINT32): Number of AdsStampHeader elements (always 1)
+          - AdsStampHeader:
+            - timestamp (UINT64): 100ns intervals since Windows epoch (01.01.1601)
+            - samples (UINT32): Number of AdsNotificationSample elements
+            - AdsNotificationSample[]:
+              - handle (UINT32): Notification handle
+              - size (UINT32): Size of data in bytes
+              - data (bytes): Actual data
         """
         import time
 
         notification_interval = 0.1  # 100ms
+
+        # Windows epoch offset (100ns intervals from 01.01.1601 to 01.01.1970)
+        windows_epoch_offset = 116444736000000000
 
         while self.running:
             await asyncio.sleep(notification_interval)
@@ -1063,29 +1077,34 @@ class ADSSimServer:
             if not self._notification_handles or not self._notification_writers:
                 continue
 
-            # Get current timestamp in 100ns units since Windows epoch
-            timestamp = int(time.time() * 10_000_000)
+            # Get current timestamp in 100ns units since Windows epoch (01.01.1601)
+            unix_time = time.time()
+            timestamp = int(unix_time * 10_000_000) + windows_epoch_offset
 
-            # Build notification data for each handle
-            samples = []
+            # Build notification samples for each handle
+            samples_data = b""
+            num_samples = 0
             for handle, handle_info in self._notification_handles.items():
                 # Generate simulated data (zeros for now)
                 data_length = handle_info["length"]
                 data = b"\x00" * data_length
 
-                # Build notification sample header
-                # handle (4) + sample_size (4)
-                sample_header = struct.pack("<II", handle, data_length)
-                samples.append(sample_header + data)
+                # AdsNotificationSample: handle (4) + size (4) + data
+                samples_data += struct.pack("<II", handle, data_length) + data
+                num_samples += 1
 
-            if not samples:
+            if num_samples == 0:
                 continue
 
-            # Build notification message
-            # stamps_length (4) + stamps (8 each: timestamp + samples)
-            # Each stamp: timestamp (8) + sample_count (4) + samples
-            stamp_data = struct.pack("<QI", timestamp, len(samples)) + b"".join(samples)
-            notification_payload = struct.pack("<I", len(stamp_data)) + stamp_data
+            # Build AdsStampHeader: timestamp (8) + samples_count (4) + samples_data
+            stamp_header = struct.pack("<QI", timestamp, num_samples) + samples_data
+
+            # Build AdsNotificationStream: length (4) + stamps (4) + stamp_header
+            # length = size of (stamps field + stamp_header)
+            stamps_count = 1  # Always 1 stamp per notification
+            payload_length = 4 + len(stamp_header)  # stamps (4) + stamp_header
+            notification_payload = struct.pack("<II", payload_length, stamps_count)
+            notification_payload += stamp_header
 
             # Send to all connected clients
             for (client_netid, client_port), writer in list(
