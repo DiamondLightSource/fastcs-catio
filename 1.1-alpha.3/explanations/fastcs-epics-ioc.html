@@ -1,0 +1,992 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a3 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=e13b2ea2"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/fastcs-epics-ioc';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '1.1a3';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ADS Client Implementation" href="ads-client.html" />
+    <link rel="prev" title="CATio Architecture Overview" href="architecture-overview.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1a3" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="architecture-overview.html">CATio Architecture Overview</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">FastCS EPICS IOC Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../explanations.html" class="nav-link">Explanations</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">FastCS EPICS IOC Implementation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="fastcs-epics-ioc-implementation">
+<h1>FastCS EPICS IOC Implementation<a class="headerlink" href="#fastcs-epics-ioc-implementation" title="Link to this heading">#</a></h1>
+<p>This document explains how CATio uses the FastCS framework to expose EtherCAT devices as EPICS Process Variables (PVs), enabling control system integration.</p>
+<section id="what-is-fastcs">
+<h2>What is FastCS?<a class="headerlink" href="#what-is-fastcs" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="https://github.com/DiamondLightSource/FastCS">FastCS</a> is a Python framework for building EPICS Input/Output Controllers (IOCs). It provides a declarative approach where Python class attributes automatically become EPICS PVs. CATio leverages FastCS to create a hierarchical controller structure that mirrors the physical EtherCAT topology.</p>
+<p>Key benefits of using FastCS include:</p>
+<ul class="simple">
+<li><p><strong>Automatic PV generation</strong>: Define Python attributes, get EPICS PVs</p></li>
+<li><p><strong>Asynchronous I/O</strong>: Built on <code class="docutils literal notranslate"><span class="pre">asyncio</span></code> for non-blocking operations</p></li>
+<li><p><strong>Hierarchical controllers</strong>: Natural mapping to nested hardware structures</p></li>
+<li><p><strong>Built-in scanning</strong>: Periodic polling with configurable intervals</p></li>
+</ul>
+</section>
+<section id="the-controller-hierarchy">
+<h2>The Controller Hierarchy<a class="headerlink" href="#the-controller-hierarchy" title="Link to this heading">#</a></h2>
+<p>CATio organizes its FastCS controllers in a tree structure that reflects the physical EtherCAT network:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>CATioServerController (root)
+    └── CATioDeviceController (EtherCAT Master)
+            ├── CATioTerminalController (EK1100 Coupler)
+            │       ├── CATioTerminalController (EL3064 Analog Input)
+            │       └── CATioTerminalController (EL2008 Digital Output)
+            └── CATioTerminalController (EK1101 Coupler)
+                    └── ...
+</pre></div>
+</div>
+<p>This hierarchy is significant because:</p>
+<ol class="arabic simple">
+<li><p><strong>Each level corresponds to physical hardware</strong>: The server represents the Beckhoff PLC, devices represent EtherCAT Masters, and terminals represent individual I/O modules</p></li>
+<li><p><strong>Attributes are scoped appropriately</strong>: Server-level attributes (like version info) are separate from terminal-level attributes (like input values)</p></li>
+<li><p><strong>The tree is auto-generated</strong>: CATio introspects the hardware and builds controllers dynamically</p></li>
+</ol>
+<section id="the-base-controller">
+<h3>The Base Controller<a class="headerlink" href="#the-base-controller" title="Link to this heading">#</a></h3>
+<p>All CATio controllers inherit from <code class="docutils literal notranslate"><span class="pre">CATioController</span></code>, which extends the FastCS <code class="docutils literal notranslate"><span class="pre">Controller</span></code> class. The base class provides:</p>
+<ul class="simple">
+<li><p>A shared TCP connection to the TwinCAT server (class-level singleton)</p></li>
+<li><p>Unique identifiers for API dispatch</p></li>
+<li><p>References to corresponding hardware objects (<code class="docutils literal notranslate"><span class="pre">IOServer</span></code>, <code class="docutils literal notranslate"><span class="pre">IODevice</span></code>, or <code class="docutils literal notranslate"><span class="pre">IOSlave</span></code>)</p></li>
+<li><p>Attribute grouping for organized PV naming</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CATioController</span><span class="p">(</span><span class="n">Controller</span><span class="p">,</span> <span class="n">Tracer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A controller for an ADS-based EtherCAT system.</span>
+<span class="sd">    Such base controller is used to define distinct components in the EtherCAT system, \</span>
+<span class="sd">        e.g. server, devices and slave terminals.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_ctrl_obj</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class counter associating each controller to a unique identifier&quot;&quot;&quot;</span>
+    <span class="n">_tcp_connection</span><span class="p">:</span> <span class="n">CATioConnection</span> <span class="o">=</span> <span class="n">CATioConnection</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;TCP connection to the CATio server, only one per client&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">,</span>
+        <span class="n">ecat_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">group</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="c1"># comments: str = &quot;&quot;    # TO DO: can comments attribute be written to hardware?</span>
+    <span class="p">):</span>
+        <span class="c1"># tracer.log_event(&quot;CATio controller creation&quot;, topic=self, name=name)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">CATioController</span><span class="o">.</span><span class="n">_ctrl_obj</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unique identifier for the controller instance.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_io</span><span class="p">:</span> <span class="n">IOServer</span> <span class="o">|</span> <span class="n">IODevice</span> <span class="o">|</span> <span class="n">IOSlave</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The I/O object referenced by the CATio controller.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the I/O controller.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ecat_name</span> <span class="o">=</span> <span class="n">ecat_name</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the I/O controller in the EtherCAT system.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Group name associated with the controller.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_group_name</span> <span class="o">=</span> <span class="n">trim_ecat_name</span><span class="p">(</span><span class="n">ecat_name</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Controller attributes&#39; group name derived from the ecat name.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;io_function&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">io_function</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Function description of the I/O controller.&quot;&quot;&quot;</span>
+        <span class="c1"># self.comments: str = comments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ads_name_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span>
+            <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># key is FastCS attribute name, value is complex ads symbol name</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map of FastCS attribute names to ADS symbol names.&quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;CATio controller &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ecat_name</span><span class="si">}</span><span class="s2">&#39; instantiated with PV suffix &quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> and registered with id </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">ios</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">CATioControllerAttributeIO</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+
+</pre></div>
+</div>
+</section>
+<section id="the-server-controller">
+<h3>The Server Controller<a class="headerlink" href="#the-server-controller" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">CATioServerController</span></code> is the root of the hierarchy. It handles:</p>
+<ul class="simple">
+<li><p><strong>Route establishment</strong>: Uses UDP to register this client with the TwinCAT router</p></li>
+<li><p><strong>TCP connection</strong>: Opens the persistent ADS communication channel</p></li>
+<li><p><strong>Hardware discovery</strong>: Introspects the I/O server to find all devices and terminals</p></li>
+<li><p><strong>Subcontroller creation</strong>: Instantiates the appropriate controller classes for discovered hardware</p></li>
+</ul>
+<p>During initialization, the server controller queries the TwinCAT system and builds the complete controller tree automatically. The key method is <code class="docutils literal notranslate"><span class="pre">register_subcontrollers()</span></code> which traverses the discovered hardware tree and creates corresponding FastCS controllers.</p>
+</section>
+<section id="device-and-terminal-controllers">
+<h3>Device and Terminal Controllers<a class="headerlink" href="#device-and-terminal-controllers" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">CATioDeviceController</span></code> represents EtherCAT Master devices and exposes attributes like:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SlaveCount</span></code></p></td>
+<td><p>Number of terminals connected to this master</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SlavesStates</span></code></p></td>
+<td><p>Array of EtherCAT state machine values for all terminals</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SlavesCrcCounters</span></code></p></td>
+<td><p>CRC error counters for network diagnostics</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FrameCounters</span></code></p></td>
+<td><p>Statistics on cyclic and acyclic EtherCAT frames</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">CATioTerminalController</span></code> represents individual I/O modules (EK couplers, EL terminals) with attributes like:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EcatState</span></code></p></td>
+<td><p>The terminal’s EtherCAT state machine value</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LinkStatus</span></code></p></td>
+<td><p>Network link health indicator</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CrcErrorSum</span></code></p></td>
+<td><p>Accumulated CRC errors for this terminal</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="hardware-specific-controllers">
+<h2>Hardware-Specific Controllers<a class="headerlink" href="#hardware-specific-controllers" title="Link to this heading">#</a></h2>
+<p>Not all terminals are alike. A digital input module exposes different data than an analog output module. CATio handles this through specialized controller classes defined in <a class="reference download internal" download="" href="../_downloads/ee31b0379f455f18c0dfd76139638f5a/catio_hardware.py"><span class="xref download myst">catio_hardware.py</span></a>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">SUPPORTED_CONTROLLERS</span></code> dictionary maps Beckhoff terminal type codes to their controller classes. When CATio discovers a terminal, it looks up the type (e.g., “EL3064”) in this dictionary and instantiates the appropriate controller.</p>
+<p>Each terminal type exposes its specific attributes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Controller Family</p></th>
+<th class="head"><p>Terminal Types</p></th>
+<th class="head"><p>Key Attributes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EL10xxController</span></code></p></td>
+<td><p>EL1004, EL1008, etc.</p></td>
+<td><p>Digital input values</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EL20xxController</span></code></p></td>
+<td><p>EL2004, EL2008, etc.</p></td>
+<td><p>Digital output values (read/write)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EL30xxController</span></code></p></td>
+<td><p>EL3064, EL3102, etc.</p></td>
+<td><p>Analog input values, scaling info</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EL40xxController</span></code></p></td>
+<td><p>EL4002, EL4132, etc.</p></td>
+<td><p>Analog output values, range config</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ELM3xxxController</span></code></p></td>
+<td><p>ELM3004, ELM3602, etc.</p></td>
+<td><p>High-precision measurements, oversampling</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="the-attribute-i-o-system">
+<h2>The Attribute I/O System<a class="headerlink" href="#the-attribute-i-o-system" title="Link to this heading">#</a></h2>
+<p>FastCS attributes need to know how to read (and optionally write) their values. CATio implements this through <code class="docutils literal notranslate"><span class="pre">CATioControllerAttributeIO</span></code>, which bridges FastCS attributes to the ADS client API.</p>
+<section id="how-attribute-updates-work">
+<h3>How Attribute Updates Work<a class="headerlink" href="#how-attribute-updates-work" title="Link to this heading">#</a></h3>
+<p>The update flow for a CATio attribute follows these steps:</p>
+<ol class="arabic simple">
+<li><p>FastCS calls the <code class="docutils literal notranslate"><span class="pre">update()</span></code> method on an attribute’s I/O handler at the configured polling interval</p></li>
+<li><p>The I/O handler constructs an API query string based on the attribute name and controller context</p></li>
+<li><p>The query is sent through <code class="docutils literal notranslate"><span class="pre">CATioConnection</span></code> to the <code class="docutils literal notranslate"><span class="pre">AsyncioADSClient</span></code></p></li>
+<li><p>The client dispatches to the appropriate <code class="docutils literal notranslate"><span class="pre">get_*</span></code> method</p></li>
+<li><p>The response flows back and the attribute value is updated</p></li>
+</ol>
+<p>This indirection means attributes don’t need to know ADS protocol details - they just specify their name and polling period.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CATioControllerAttributeIORef</span><span class="p">(</span><span class="n">AttributeIORef</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference to a CATio controller attribute IO.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the attribute in the CATio API&quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">:</span> <span class="n">KW_ONLY</span>  <span class="c1"># Additional keyword-only arguments</span>
+    <span class="n">update_period</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update period for the FastCS attribute&quot;&quot;&quot;</span>
+
+
+</pre></div>
+</div>
+</section>
+<section id="polling-vs-notifications">
+<h3>Polling vs Notifications<a class="headerlink" href="#polling-vs-notifications" title="Link to this heading">#</a></h3>
+<p>CATio supports two update mechanisms:</p>
+<p><strong>Polling</strong> (default): The I/O handler periodically queries the ADS server. Simple and reliable, but adds latency and network traffic proportional to the number of attributes and polling rate.</p>
+<p><strong>Notifications</strong>: The ADS server pushes value changes to the client. More efficient for high-frequency data, but requires subscription management and careful buffer handling.</p>
+<p>The choice depends on the attribute’s requirements:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Update Mode</p></th>
+<th class="head"><p>Use Case</p></th>
+<th class="head"><p>Typical Period</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ONCE</span></code></p></td>
+<td><p>Static configuration (device name, version)</p></td>
+<td><p>Read at startup only</p></td>
+</tr>
+<tr class="row-odd"><td><p>Standard polling</p></td>
+<td><p>Slowly-changing diagnostics (CRC counters)</p></td>
+<td><p>1-2 seconds</p></td>
+</tr>
+<tr class="row-even"><td><p>Fast polling</p></td>
+<td><p>Process values needing moderate rates</p></td>
+<td><p>100-500 ms</p></td>
+</tr>
+<tr class="row-odd"><td><p>Notifications</p></td>
+<td><p>High-frequency acquisition data</p></td>
+<td><p>Sub-millisecond</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="pv-naming-convention">
+<h2>PV Naming Convention<a class="headerlink" href="#pv-naming-convention" title="Link to this heading">#</a></h2>
+<p>CATio generates EPICS PV names that reflect the hardware hierarchy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">PREFIX</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Server</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Device</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Coupler</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Terminal</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Attribute</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>PV Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:Name</span></code></p></td>
+<td><p>I/O server name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:ETH1:SlaveCount</span></code></p></td>
+<td><p>Number of slaves on EtherCAT Master 1</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:ETH1:RIO1:MOD5:Value</span></code></p></td>
+<td><p>Value from module 5 on remote I/O node 1</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:ETH1:RIO1:MOD5:EcatState</span></code></p></td>
+<td><p>EtherCAT state of that module</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The naming components come from:</p>
+<ul class="simple">
+<li><p><strong>ecat_name</strong>: The name configured in TwinCAT (e.g., “Device1”, “Term 5 (EL3064)”)</p></li>
+<li><p><strong>get_type_name()</strong>: A method that converts Beckhoff names to PV-friendly format (e.g., “ETH1”, “RIO1”, “MOD5”)</p></li>
+</ul>
+</section>
+<section id="lifecycle-management">
+<h2>Lifecycle Management<a class="headerlink" href="#lifecycle-management" title="Link to this heading">#</a></h2>
+<p>CATio controllers follow a specific lifecycle managed by FastCS:</p>
+<section id="initialization-phase">
+<h3>Initialization Phase<a class="headerlink" href="#initialization-phase" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Route addition</strong>: UDP message registers this client with the TwinCAT router</p></li>
+<li><p><strong>TCP connection</strong>: Establishes persistent ADS communication channel</p></li>
+<li><p><strong>Introspection</strong>: Queries server for devices, terminals, and symbols</p></li>
+<li><p><strong>Controller creation</strong>: Builds the controller tree matching discovered hardware</p></li>
+<li><p><strong>Attribute registration</strong>: Creates FastCS attributes for each controller</p></li>
+</ol>
+</section>
+<section id="runtime-phase">
+<h3>Runtime Phase<a class="headerlink" href="#runtime-phase" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Polling handlers execute at their configured intervals</p></li>
+<li><p>Notification streams are processed and distributed to attributes</p></li>
+<li><p>The controller tree remains stable (hot-plugging is not supported)</p></li>
+</ul>
+</section>
+<section id="shutdown-phase">
+<h3>Shutdown Phase<a class="headerlink" href="#shutdown-phase" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Notification cleanup</strong>: Unsubscribes from all ADS notifications</p></li>
+<li><p><strong>Connection closure</strong>: Closes the TCP connection gracefully</p></li>
+<li><p><strong>Route removal</strong>: Optionally removes the route from TwinCAT</p></li>
+</ol>
+</section>
+</section>
+<section id="testing-considerations">
+<h2>Testing Considerations<a class="headerlink" href="#testing-considerations" title="Link to this heading">#</a></h2>
+<p>When writing tests for CATio controllers, you typically need to mock the ADS client layer. The <code class="docutils literal notranslate"><span class="pre">MockADSServer</span></code> class in the test suite simulates TwinCAT responses:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MockADSServer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A mock ADS server that simulates a Beckhoff TwinCAT device.</span>
+
+<span class="sd">    This server accepts AMS connections over TCP and responds to ADS commands with</span>
+<span class="sd">    mock data, allowing testing of the CATio client without a real device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48898</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the mock ADS server.</span>
+
+<span class="sd">        :param host: Host address to bind to (default: 127.0.0.1)</span>
+<span class="sd">        :param port: Port to listen on (default: 48898)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Server</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_netid</span> <span class="o">=</span> <span class="n">AmsNetId</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">get_local_netid_str</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Mock data info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">AdsSymbol</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device_info</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;DeviceName&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;MockDevice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DeviceVersion&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ads_state</span> <span class="o">=</span> <span class="n">AdsState</span><span class="o">.</span><span class="n">ADSSTATE_RUN</span>
+
+        <span class="c1"># Notification handles and subscriptions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notification_handles</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next_handle</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Message handlers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CommandId</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READSTATE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read_state</span><span class="p">,</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READDEVICEINFO</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read_device_info</span><span class="p">,</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READ</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read</span><span class="p">,</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_WRITE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_write</span><span class="p">,</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READWRITE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read_write</span><span class="p">,</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_ADDDEVICENOTE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_add_notification</span><span class="p">,</span>
+            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_DELETEDEVICENOTE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_delete_notification</span><span class="p">,</span>
+        <span class="p">}</span>
+
+</pre></div>
+</div>
+<p>This allows testing controller logic without real hardware by:</p>
+<ul class="simple">
+<li><p>Simulating ADS command responses</p></li>
+<li><p>Providing mock symbol data</p></li>
+<li><p>Testing notification handling</p></li>
+</ul>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="architecture-overview.html"><span class="std std-doc">Architecture Overview</span></a> - High-level system architecture</p></li>
+<li><p><a class="reference internal" href="ads-client.html"><span class="std std-doc">ADS Client Implementation</span></a> - Details of the ADS protocol layer</p></li>
+<li><p><a class="reference internal" href="api-decoupling.html"><span class="std std-doc">API Decoupling Analysis</span></a> - Discussion of the API design</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="architecture-overview.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">CATio Architecture Overview</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="ads-client.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">ADS Client Implementation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-fastcs">What is FastCS?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-controller-hierarchy">The Controller Hierarchy</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-base-controller">The Base Controller</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-server-controller">The Server Controller</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#device-and-terminal-controllers">Device and Terminal Controllers</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hardware-specific-controllers">Hardware-Specific Controllers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-attribute-i-o-system">The Attribute I/O System</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-attribute-updates-work">How Attribute Updates Work</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#polling-vs-notifications">Polling vs Notifications</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pv-naming-convention">PV Naming Convention</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lifecycle-management">Lifecycle Management</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#initialization-phase">Initialization Phase</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-phase">Runtime Phase</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shutdown-phase">Shutdown Phase</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#testing-considerations">Testing Considerations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/1.1a3/docs/explanations/fastcs-epics-ioc.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/explanations/fastcs-epics-ioc.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
