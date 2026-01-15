@@ -1,0 +1,1002 @@
+# EtherCAT Chain Configuration for ADS Simulation Server
+# This file defines the structure of the simulated EtherCAT chain.
+#
+# Structure mirrors real logging from an EtherCAT chain:
+#   |----EherCAT Master 'Device 1 (EtherCAT)'
+#         |
+#         |----- 0::0  -> EK1110 Term 2 (EK1110)
+#         |----- 1::0  -> Term 3 (EK1100)
+#         ...
+
+server:
+  name: "TwinCAT System"
+  version: "3.1"
+  build: 4024
+
+devices:
+  - id: 1
+    name: "Device 1 (EtherCAT)"
+    type: 94 # IODEVICETYPE_ETHERCAT
+    netid: "10.0.0.1.3.1"
+    identity:
+      vendor_id: 2
+      product_code: 0x044C2C52
+      revision_number: 1
+      serial_number: 1001
+    slaves:
+      # Node 0 - EK1110 EtherCAT extension terminal
+      - type: "EK1110"
+        name: "Term 2 (EK1110)"
+        node: 0
+        position: 0
+        identity:
+          vendor_id: 2
+          product_code: 0x04562852
+          revision_number: 0x00130000
+          serial_number: 0
+
+      # Node 1 - First EK1100 coupler with EL2024 digital output slices
+      - type: "EK1100"
+        name: "Term 3 (EK1100)"
+        node: 1
+        position: 0
+        identity:
+          vendor_id: 2
+          product_code: 0x044C2C52
+          revision_number: 0x00110000
+          serial_number: 0
+
+      # EL2024 digital output terminals on node 1 (positions 1-16)
+      - type: "EL2024"
+        name: "Term 4 (EL2024)"
+        node: 1
+        position: 1
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 5 (EL2024)"
+        node: 1
+        position: 2
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 6 (EL2024)"
+        node: 1
+        position: 3
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 7 (EL2024)"
+        node: 1
+        position: 4
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 8 (EL2024)"
+        node: 1
+        position: 5
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 9 (EL2024)"
+        node: 1
+        position: 6
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 10 (EL2024)"
+        node: 1
+        position: 7
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 11 (EL2024)"
+        node: 1
+        position: 8
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 12 (EL2024)"
+        node: 1
+        position: 9
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 13 (EL2024)"
+        node: 1
+        position: 10
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 14 (EL2024)"
+        node: 1
+        position: 11
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 15 (EL2024)"
+        node: 1
+        position: 12
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 16 (EL2024)"
+        node: 1
+        position: 13
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 17 (EL2024)"
+        node: 1
+        position: 14
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 18 (EL2024)"
+        node: 1
+        position: 15
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 19 (EL2024)"
+        node: 1
+        position: 16
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # EL9410 power supply terminal at position 17
+      - type: "EL9410"
+        name: "Term 20 (EL9410)"
+        node: 1
+        position: 17
+        identity:
+          vendor_id: 2
+          product_code: 0x24C23052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # More EL2024 terminals (positions 18-33)
+      - type: "EL2024"
+        name: "Term 21 (EL2024)"
+        node: 1
+        position: 18
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 22 (EL2024)"
+        node: 1
+        position: 19
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 23 (EL2024)"
+        node: 1
+        position: 20
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 24 (EL2024)"
+        node: 1
+        position: 21
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 25 (EL2024)"
+        node: 1
+        position: 22
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 26 (EL2024)"
+        node: 1
+        position: 23
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 27 (EL2024)"
+        node: 1
+        position: 24
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 28 (EL2024)"
+        node: 1
+        position: 25
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 29 (EL2024)"
+        node: 1
+        position: 26
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 30 (EL2024)"
+        node: 1
+        position: 27
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 31 (EL2024)"
+        node: 1
+        position: 28
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 32 (EL2024)"
+        node: 1
+        position: 29
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 33 (EL2024)"
+        node: 1
+        position: 30
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 34 (EL2024)"
+        node: 1
+        position: 31
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 35 (EL2024)"
+        node: 1
+        position: 32
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 36 (EL2024)"
+        node: 1
+        position: 33
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # Second EL9410 power supply at position 34
+      - type: "EL9410"
+        name: "Term 37 (EL9410)"
+        node: 1
+        position: 34
+        identity:
+          vendor_id: 2
+          product_code: 0x24C23052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # More EL2024 terminals (positions 35-49)
+      - type: "EL2024"
+        name: "Term 38 (EL2024)"
+        node: 1
+        position: 35
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 39 (EL2024)"
+        node: 1
+        position: 36
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 40 (EL2024)"
+        node: 1
+        position: 37
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 41 (EL2024)"
+        node: 1
+        position: 38
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 42 (EL2024)"
+        node: 1
+        position: 39
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 43 (EL2024)"
+        node: 1
+        position: 40
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 44 (EL2024)"
+        node: 1
+        position: 41
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 45 (EL2024)"
+        node: 1
+        position: 42
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 46 (EL2024)"
+        node: 1
+        position: 43
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 47 (EL2024)"
+        node: 1
+        position: 44
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 48 (EL2024)"
+        node: 1
+        position: 45
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 49 (EL2024)"
+        node: 1
+        position: 46
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 50 (EL2024)"
+        node: 1
+        position: 47
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 51 (EL2024)"
+        node: 1
+        position: 48
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 52 (EL2024)"
+        node: 1
+        position: 49
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # Node 2 - Second EK1100 coupler with mixed terminals
+      - type: "EK1100"
+        name: "Term 53 (EK1100)"
+        node: 2
+        position: 0
+        identity:
+          vendor_id: 2
+          product_code: 0x044C2C52
+          revision_number: 0x00110000
+          serial_number: 0
+
+      # EL1014 digital input terminals
+      - type: "EL1014"
+        name: "Term 54 (EL1014)"
+        node: 2
+        position: 1
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 55 (EL1014)"
+        node: 2
+        position: 2
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 56 (EL1014)"
+        node: 2
+        position: 3
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 57 (EL1014)"
+        node: 2
+        position: 4
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 58 (EL1014)"
+        node: 2
+        position: 5
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 59 (EL1014)"
+        node: 2
+        position: 6
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 60 (EL1014)"
+        node: 2
+        position: 7
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 61 (EL1014)"
+        node: 2
+        position: 8
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 62 (EL1014)"
+        node: 2
+        position: 9
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 63 (EL1014)"
+        node: 2
+        position: 10
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1014"
+        name: "Term 64 (EL1014)"
+        node: 2
+        position: 11
+        identity:
+          vendor_id: 2
+          product_code: 0x03F63052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # EL1502 up/down counter terminals
+      - type: "EL1502"
+        name: "Term 65 (EL1502)"
+        node: 2
+        position: 12
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 66 (EL1502)"
+        node: 2
+        position: 13
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 67 (EL1502)"
+        node: 2
+        position: 14
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 68 (EL1502)"
+        node: 2
+        position: 15
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 69 (EL1502)"
+        node: 2
+        position: 16
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 70 (EL1502)"
+        node: 2
+        position: 17
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # EL1004 digital input terminal
+      - type: "EL1004"
+        name: "Term 71 (EL1004)"
+        node: 2
+        position: 18
+        identity:
+          vendor_id: 2
+          product_code: 0x03EC3052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # EL9410 power supply
+      - type: "EL9410"
+        name: "Term 72 (EL9410)"
+        node: 2
+        position: 19
+        identity:
+          vendor_id: 2
+          product_code: 0x24C23052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # EL2024 digital output terminals
+      - type: "EL2024"
+        name: "Term 73 (EL2024)"
+        node: 2
+        position: 20
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 74 (EL2024)"
+        node: 2
+        position: 21
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 75 (EL2024)"
+        node: 2
+        position: 22
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 76 (EL2024)"
+        node: 2
+        position: 23
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 77 (EL2024)"
+        node: 2
+        position: 24
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 78 (EL2024)"
+        node: 2
+        position: 25
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 79 (EL2024)"
+        node: 2
+        position: 26
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 80 (EL2024)"
+        node: 2
+        position: 27
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 81 (EL2024)"
+        node: 2
+        position: 28
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 82 (EL2024)"
+        node: 2
+        position: 29
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 83 (EL2024)"
+        node: 2
+        position: 30
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL2024"
+        name: "Term 84 (EL2024)"
+        node: 2
+        position: 31
+        identity:
+          vendor_id: 2
+          product_code: 0x07E83052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # EL1084 digital input terminals (4ch, 24V DC, 3ms)
+      - type: "EL1084"
+        name: "Term 85 (EL1084)"
+        node: 2
+        position: 32
+        identity:
+          vendor_id: 2
+          product_code: 0x043C3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1084"
+        name: "Term 86 (EL1084)"
+        node: 2
+        position: 33
+        identity:
+          vendor_id: 2
+          product_code: 0x043C3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1084"
+        name: "Term 87 (EL1084)"
+        node: 2
+        position: 34
+        identity:
+          vendor_id: 2
+          product_code: 0x043C3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1084"
+        name: "Term 88 (EL1084)"
+        node: 2
+        position: 35
+        identity:
+          vendor_id: 2
+          product_code: 0x043C3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1084"
+        name: "Term 89 (EL1084)"
+        node: 2
+        position: 36
+        identity:
+          vendor_id: 2
+          product_code: 0x043C3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1084"
+        name: "Term 90 (EL1084)"
+        node: 2
+        position: 37
+        identity:
+          vendor_id: 2
+          product_code: 0x043C3052
+          revision_number: 0x00100000
+          serial_number: 0
+
+      # Node 3 - Third EK1100 coupler with EL1502 counter terminals
+      - type: "EK1100"
+        name: "Term 91 (EK1100)"
+        node: 3
+        position: 0
+        identity:
+          vendor_id: 2
+          product_code: 0x044C2C52
+          revision_number: 0x00110000
+          serial_number: 0
+
+      # EL1502 up/down counter terminals
+      - type: "EL1502"
+        name: "Term 92 (EL1502)"
+        node: 3
+        position: 1
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 93 (EL1502)"
+        node: 3
+        position: 2
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 94 (EL1502)"
+        node: 3
+        position: 3
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 95 (EL1502)"
+        node: 3
+        position: 4
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 96 (EL1502)"
+        node: 3
+        position: 5
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 97 (EL1502)"
+        node: 3
+        position: 6
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 98 (EL1502)"
+        node: 3
+        position: 7
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 99 (EL1502)"
+        node: 3
+        position: 8
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 100 (EL1502)"
+        node: 3
+        position: 9
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 101 (EL1502)"
+        node: 3
+        position: 10
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 102 (EL1502)"
+        node: 3
+        position: 11
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 103 (EL1502)"
+        node: 3
+        position: 12
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 104 (EL1502)"
+        node: 3
+        position: 13
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 105 (EL1502)"
+        node: 3
+        position: 14
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
+      - type: "EL1502"
+        name: "Term 106 (EL1502)"
+        node: 3
+        position: 15
+        identity:
+          vendor_id: 2
+          product_code: 0x05DE3052
+          revision_number: 0x00100000
+          serial_number: 0
