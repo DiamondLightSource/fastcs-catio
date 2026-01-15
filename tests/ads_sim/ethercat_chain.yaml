@@ -143,7 +143,7 @@ terminal_types:
     description: "4-channel Digital Output 12V DC"
     identity:
       vendor_id: 2
-      product_code: 0x07E83052
+      product_code: 0x07E83064
       revision_number: 0x00100000
     symbol_nodes:
       # Output channels - individual bit symbols
