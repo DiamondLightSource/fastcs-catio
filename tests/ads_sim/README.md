@@ -9,6 +9,37 @@ This module provides a simulated EtherCAT chain with configurable devices and
 slaves. It implements the ADS protocol (TCP port 48898, UDP port 48899) and
 responds to the same messages that real Beckhoff hardware would.
 
+## Comparison with real hardware
+
+This simulator was built to closely mimic the behavior of real TwinCAT hardware on Greg's desk with 107 EtherCAT slices.
+
+The following is Gemini 3 Pro's assessment of Claude Opus 4.5's work!:-
+
+Comparison of the output files sim.out (ADS Simulator) and real.out (Real Hardware) shows that they are now **functionally identical** in terms of ADS symbol exposure and connection behavior.
+
+The simulator `ads_sim` has been successfully aligned with the real TwinCAT hardware.
+
+### Key Matches
+
+1.  **Symbol Count**: Both systems now expose exactly **461 available symbols** from 377 table entries.
+    *   *Sim Log:* `INFO: 377 entries in the symbol table returned a total of 461 available symbols.`
+    *   *Real Log:* `INFO: 377 entries in the symbol table returned a total of 461 available symbols.`
+
+2.  **Server Identity**: The simulated server name now matches the real hardware.
+    *   Both report: `INFO: ADS device info: name=I/O Server, version=3-1, build=4024`
+
+3.  **Hardware Tree**: The detected EtherCAT topology is identical in both logs, with the same number of slaves (105) and identical structure (Term 2 to Term 106).
+
+4.  **Symbol Notifications**:
+    *   The subscription sequence matches exactly.
+    *   The cleanup sequence matches exactly (both delete 461 notification handles on shutdown).
+    *   *Note:* The handle IDs (e.g., `1833` vs `2294`) differ, which is expected as these are dynamic runtime assignments.
+
+5.  **Warnings/errors**: Both logs exhibit the same warnings regarding CAS (Channel Access Server) ports and an identical `asyncio.CancelledError` on shutdown, indicating the behavior is consistent even in edge cases.
+
+
+
+
 ## Usage
 
 ### Running the Server
