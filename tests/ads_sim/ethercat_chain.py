@@ -21,6 +21,73 @@ COE_OPERATIONAL_PARAMS_BASE = 0x8000
 
 
 @dataclass
+class SymbolDefinition:
+    """Definition of a symbol from a terminal type."""
+
+    name_template: str
+    index_group: int
+    size: int = 0
+    ads_type: int = 33  # BIT by default
+    type_name: str = "BIT"
+    channels: int = 1
+
+    def expand_symbols(
+        self, device_id: int, terminal_name: str, base_offset: int
+    ) -> list[dict[str, Any]]:
+        """Expand this definition into actual symbols for a terminal.
+
+        Args:
+            device_id: The device ID this terminal belongs to.
+            terminal_name: The name of the terminal (e.g., "Term 4 (EL2024)").
+            base_offset: Base offset for index calculations.
+
+        Returns:
+            List of symbol dictionaries ready for symbol table.
+        """
+        symbols = []
+        base_path = f"TIID^Device {device_id} (EtherCAT)^{terminal_name}"
+
+        for ch in range(1, self.channels + 1):
+            # Format the name template
+            if self.channels == 1:
+                # Single channel - don't include channel number in name
+                name = f"{base_path}^{self.name_template}"
+            else:
+                name = f"{base_path}^{self.name_template.format(channel=ch)}"
+
+            # Calculate offset based on channel and size
+            if self.size == 0:  # Bit
+                offset = base_offset * 32 + (ch - 1)
+            else:
+                offset = base_offset * 64 + (ch - 1) * self.size
+
+            name_formatted = self.name_template.format(channel=ch)
+            symbols.append(
+                {
+                    "name": name,
+                    "index_group": self.index_group,
+                    "index_offset": offset,
+                    "size": self.size,
+                    "ads_type": self.ads_type,
+                    "type_name": self.type_name,
+                    "comment": f"{terminal_name} {name_formatted}",
+                }
+            )
+
+        return symbols
+
+
+@dataclass
+class TerminalType:
+    """Definition of a terminal type with its symbols."""
+
+    name: str
+    description: str = ""
+    identity: SlaveIdentity | None = None
+    symbols: list[SymbolDefinition] = field(default_factory=list)
+
+
+@dataclass
 class SlaveIdentity:
     """CANopen identity for an EtherCAT slave."""
 
@@ -68,6 +135,7 @@ class EtherCATSlave:
     ecat_state: int = 0x08  # Operational state
     link_status: int = 0x00  # Good link state
     crc_counters: tuple[int, int, int, int] = (0, 0, 0, 0)
+    terminal_type: TerminalType | None = None
 
     @property
     def coe_index(self) -> int:
@@ -92,6 +160,23 @@ class EtherCATSlave:
         for crc in self.crc_counters:
             result += crc.to_bytes(4, "little")
         return result
+
+    def get_symbols(self, device_id: int) -> list[dict[str, Any]]:
+        """Get all symbols for this slave based on its terminal type.
+
+        Args:
+            device_id: The device ID this slave belongs to.
+
+        Returns:
+            List of symbol dictionaries.
+        """
+        if not self.terminal_type:
+            return []
+
+        symbols = []
+        for sym_def in self.terminal_type.symbols:
+            symbols.extend(sym_def.expand_symbols(device_id, self.name, self.address))
+        return symbols
 
 
 @dataclass
@@ -158,6 +243,17 @@ class EtherCATDevice:
             + self.acyclic_lost.to_bytes(4, "little")
         )
 
+    def get_all_symbols(self) -> list[dict[str, Any]]:
+        """Get all symbols from all slaves in this device.
+
+        Returns:
+            List of all symbol dictionaries.
+        """
+        symbols = []
+        for slave in self.slaves:
+            symbols.extend(slave.get_symbols(self.id))
+        return symbols
+
 
 @dataclass
 class ServerInfo:
@@ -192,6 +288,7 @@ class EtherCATChain:
         """
         self.server_info = ServerInfo()
         self.devices: dict[int, EtherCATDevice] = {}
+        self.terminal_types: dict[str, TerminalType] = {}
 
         if config_path:
             self.load_config(config_path)
@@ -224,7 +321,8 @@ class EtherCATChain:
         self._parse_config(config)
         logger.info(
             f"Loaded EtherCAT chain config: {len(self.devices)} device(s), "
-            f"{self.total_slave_count} slave(s)"
+            f"{self.total_slave_count} slave(s), "
+            f"{len(self.terminal_types)} terminal type(s)"
         )
 
     def _parse_config(self, config: dict[str, Any]) -> None:
@@ -240,11 +338,54 @@ class EtherCATChain:
                 minor_version=int(srv.get("version", "3.1").split(".")[1]),
             )
 
+        # Parse terminal types first
+        if "terminal_types" in config:
+            for type_name, type_config in config["terminal_types"].items():
+                self.terminal_types[type_name] = self._parse_terminal_type(
+                    type_name, type_config
+                )
+
         # Parse devices
         if "devices" in config:
             for dev_config in config["devices"]:
                 device = self._parse_device(dev_config)
                 self.devices[device.id] = device
+
+    def _parse_terminal_type(
+        self, type_name: str, type_config: dict[str, Any]
+    ) -> TerminalType:
+        """Parse a terminal type configuration."""
+        identity = None
+        if "identity" in type_config:
+            id_config = type_config["identity"]
+            identity = SlaveIdentity(
+                vendor_id=id_config.get("vendor_id", 2),
+                product_code=id_config.get("product_code", 0),
+                revision_number=id_config.get("revision_number", 0),
+                serial_number=id_config.get("serial_number", 0),
+            )
+
+        symbols = []
+        # Support both "symbols" and "symbol_nodes" keys for compatibility
+        sym_configs = type_config.get("symbol_nodes", type_config.get("symbols", []))
+        for sym_config in sym_configs:
+            symbols.append(
+                SymbolDefinition(
+                    name_template=sym_config.get("name_template", ""),
+                    index_group=sym_config.get("index_group", 0xF021),
+                    size=sym_config.get("size", 0),
+                    ads_type=sym_config.get("ads_type", 33),
+                    type_name=sym_config.get("type_name", "BIT"),
+                    channels=sym_config.get("channels", 1),
+                )
+            )
+
+        return TerminalType(
+            name=type_name,
+            description=type_config.get("description", ""),
+            identity=identity,
+            symbols=symbols,
+        )
 
     def _parse_device(self, dev_config: dict[str, Any]) -> EtherCATDevice:
         """Parse a device configuration dictionary."""
@@ -279,7 +420,12 @@ class EtherCATChain:
 
     def _parse_slave(self, slave_config: dict[str, Any]) -> EtherCATSlave:
         """Parse a slave configuration dictionary."""
-        identity = SlaveIdentity()
+        slave_type = slave_config.get("type", "EL2024")
+
+        # Look up terminal type for identity and symbols
+        terminal_type = self.terminal_types.get(slave_type)
+
+        # Use identity from terminal type if not specified in slave config
         if "identity" in slave_config:
             id_config = slave_config["identity"]
             identity = SlaveIdentity(
@@ -288,13 +434,18 @@ class EtherCATChain:
                 revision_number=id_config.get("revision_number", 0),
                 serial_number=id_config.get("serial_number", 0),
             )
+        elif terminal_type and terminal_type.identity:
+            identity = terminal_type.identity
+        else:
+            identity = SlaveIdentity()
 
         return EtherCATSlave(
-            type=slave_config.get("type", "EL2024"),
+            type=slave_type,
             name=slave_config.get("name", "Unknown"),
             node=slave_config.get("node", 0),
             position=slave_config.get("position", 0),
             identity=identity,
+            terminal_type=terminal_type,
         )
 
     @property
@@ -312,6 +463,11 @@ class EtherCATChain:
         """Return total number of slaves across all devices."""
         return sum(dev.slave_count for dev in self.devices.values())
 
+    @property
+    def total_symbol_count(self) -> int:
+        """Return total number of symbols across all devices."""
+        return sum(len(dev.get_all_symbols()) for dev in self.devices.values())
+
     def get_device(self, device_id: int) -> EtherCATDevice | None:
         """Get device by ID."""
         return self.devices.get(device_id)
@@ -323,9 +479,21 @@ class EtherCATChain:
                 return device
         return None
 
+    def get_all_symbols(self) -> list[dict[str, Any]]:
+        """Get all symbols from all devices.
+
+        Returns:
+            List of all symbol dictionaries.
+        """
+        symbols = []
+        for device in self.devices.values():
+            symbols.extend(device.get_all_symbols())
+        return symbols
+
     def print_chain(self) -> None:
         """Print a visual representation of the EtherCAT chain."""
         print("\n============ Simulated EtherCAT Chain ============")
+        print(f"Total symbols: {self.total_symbol_count}")
         print("|")
         for device in self.devices.values():
             print(f"|----EherCAT Master '{device.name}'")

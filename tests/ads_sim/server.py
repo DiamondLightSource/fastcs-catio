@@ -18,7 +18,6 @@ from .ethercat_chain import (
     COE_OPERATIONAL_PARAMS_BASE,
     EtherCATChain,
     EtherCATDevice,
-    EtherCATSlave,
 )
 
 logger = logging.getLogger(__name__)
@@ -301,6 +300,10 @@ class ADSSimServer:
         # Notification management
         self._notification_handles: dict[int, dict[str, Any]] = {}
         self._next_handle = 1
+        self._notification_task: asyncio.Task | None = None
+        self._notification_writers: dict[
+            tuple[bytes, int], asyncio.StreamWriter
+        ] = {}  # (netid, port) -> writer
 
         # Symbol handle management
         self._symbol_handles: dict[int, str] = {}
@@ -332,12 +335,26 @@ class ADSSimServer:
         )
 
         self.running = True
+
+        # Start notification streaming task
+        self._notification_task = asyncio.create_task(self._notification_streamer())
+
         logger.info(f"ADS Simulation server started on {self.host}:{self.port} (TCP)")
         logger.info(f"ADS UDP discovery service on {self.host}:{ADS_UDP_PORT}")
         self.chain.print_chain()
 
     async def stop(self) -> None:
         """Stop the ADS simulation server."""
+        self.running = False
+
+        if self._notification_task:
+            self._notification_task.cancel()
+            try:
+                await self._notification_task
+            except asyncio.CancelledError:
+                pass
+            self._notification_task = None
+
         if self.udp_transport:
             self.udp_transport.close()
             self.udp_transport = None
@@ -346,7 +363,6 @@ class ADSSimServer:
             self.server.close()
             await self.server.wait_closed()
 
-        self.running = False
         logger.info("ADS Simulation server stopped")
 
     async def serve_forever(self) -> None:
@@ -362,6 +378,7 @@ class ADSSimServer:
         """Handle a new client connection."""
         addr = writer.get_extra_info("peername")
         logger.info(f"Client connected from {addr}")
+        client_key: tuple[bytes, int] | None = None
 
         try:
             while True:
@@ -381,6 +398,12 @@ class ADSSimServer:
                 # Read AMS header (32 bytes)
                 ams_header = await reader.readexactly(32)
 
+                # Extract source info for notification tracking
+                source_netid = ams_header[6:12]
+                source_port = int.from_bytes(ams_header[12:14], "little")
+                client_key = (source_netid, source_port)
+                self._notification_writers[client_key] = writer
+
                 # Read payload (frame_length - 32)
                 payload_length = frame_length - 32
                 if payload_length > 0:
@@ -389,7 +412,9 @@ class ADSSimServer:
                     payload = b""
 
                 # Process message and send response
-                response = await self._process_ams_message(ams_header, payload)
+                response = await self._process_ams_message(
+                    ams_header, payload, writer, client_key
+                )
                 if response:
                     writer.write(response)
                     await writer.drain()
@@ -399,11 +424,18 @@ class ADSSimServer:
         except Exception as e:
             logger.error(f"Error handling client {addr}: {e}", exc_info=True)
         finally:
+            # Clean up notification writer
+            if client_key and client_key in self._notification_writers:
+                del self._notification_writers[client_key]
             writer.close()
             await writer.wait_closed()
 
     async def _process_ams_message(
-        self, ams_header: bytes, payload: bytes
+        self,
+        ams_header: bytes,
+        payload: bytes,
+        writer: asyncio.StreamWriter,
+        client_key: tuple[bytes, int],
     ) -> bytes | None:
         """Process an incoming AMS message and generate response."""
         # Parse AMS header
@@ -797,101 +829,25 @@ class ADSSimServer:
     def _build_symbol_table(self) -> bytes:
         """Build the symbol table from EtherCAT chain configuration.
 
-        Creates symbols for each slave's input and output channels.
+        Uses the terminal type definitions from the YAML config.
         """
         if hasattr(self, "_symbol_table_cache"):
             return self._symbol_table_cache
 
-        self._symbol_entries: list[dict[str, Any]] = []
+        # Get symbols from the chain (using terminal type definitions)
+        self._symbol_entries = self.chain.get_all_symbols()
         symbol_data = b""
 
-        # Create symbols for each device and slave
-        for device_id, device in self.chain.devices.items():
-            for slave in device.slaves:
-                # Create input/output symbols based on slave type
-                symbols = self._create_slave_symbols(device_id, slave)
-                for sym in symbols:
-                    entry = self._build_symbol_entry(sym)
-                    symbol_data += entry
-                    self._symbol_entries.append(sym)
+        for sym in self._symbol_entries:
+            entry = self._build_symbol_entry(sym)
+            symbol_data += entry
 
         self._symbol_table_cache = symbol_data
+        logger.info(
+            f"Built symbol table: {len(self._symbol_entries)} symbols, "
+            f"{len(symbol_data)} bytes"
+        )
         return symbol_data
-
-    def _create_slave_symbols(
-        self, device_id: int, slave: EtherCATSlave
-    ) -> list[dict[str, Any]]:
-        """Create symbol definitions for a slave based on its type."""
-        symbols: list[dict[str, Any]] = []
-        slave_type = slave.type.upper()
-
-        # Base symbol path
-        base_path = f"TIID^Device {device_id} (EtherCAT)^{slave.name}"
-
-        # EL1xxx = Digital Input terminals
-        if slave_type.startswith("EL1"):
-            # Extract number of channels from type (e.g., EL1014 = 4 channels)
-            try:
-                num_channels = int(slave_type[-1]) if slave_type[-1].isdigit() else 4
-            except (ValueError, IndexError):
-                num_channels = 4
-
-            for ch in range(1, num_channels + 1):
-                symbols.append(
-                    {
-                        "name": f"{base_path}^Channel {ch}^Input",
-                        "index_group": IndexGroup.ADSIGRP_IOIMAGE_RWIX,
-                        "index_offset": slave.address * 16 + ch - 1,
-                        "size": 1,
-                        "ads_type": 33,  # ADS_TYPE_BIT
-                        "type_name": "BIT",
-                        "comment": f"{slave.name} Channel {ch} Input",
-                    }
-                )
-
-        # EL2xxx = Digital Output terminals
-        elif slave_type.startswith("EL2"):
-            try:
-                num_channels = int(slave_type[-1]) if slave_type[-1].isdigit() else 4
-            except (ValueError, IndexError):
-                num_channels = 4
-
-            for ch in range(1, num_channels + 1):
-                symbols.append(
-                    {
-                        "name": f"{base_path}^Channel {ch}^Output",
-                        "index_group": IndexGroup.ADSIGRP_IOIMAGE_RWOX,
-                        "index_offset": slave.address * 16 + ch - 1,
-                        "size": 1,
-                        "ads_type": 33,  # ADS_TYPE_BIT
-                        "type_name": "BIT",
-                        "comment": f"{slave.name} Channel {ch} Output",
-                    }
-                )
-
-        # EL15xx = Analog/Counter inputs
-        elif slave_type.startswith("EL15"):
-            symbols.append(
-                {
-                    "name": f"{base_path}^Value",
-                    "index_group": IndexGroup.ADSIGRP_IOIMAGE_RWIB,
-                    "index_offset": slave.address * 16,
-                    "size": 4,
-                    "ads_type": 3,  # ADS_TYPE_INT32
-                    "type_name": "INT",
-                    "comment": f"{slave.name} Counter Value",
-                }
-            )
-
-        # EKxxxx = Couplers - no I/O symbols
-        elif slave_type.startswith("EK"):
-            pass
-
-        # EL9xxx = Power supply - no I/O symbols
-        elif slave_type.startswith("EL9"):
-            pass
-
-        return symbols
 
     def _build_symbol_entry(self, sym: dict[str, Any]) -> bytes:
         """Build a single symbol table entry."""
@@ -1090,3 +1046,84 @@ class ADSSimServer:
             logger.debug(f"Deleted notification handle {handle}")
 
         return struct.pack("<I", ErrorCode.ERR_NOERROR)
+
+    async def _notification_streamer(self) -> None:
+        """Background task that sends notification data to clients.
+
+        Sends notifications at regular intervals (every 100ms) for all
+        registered notification handles.
+        """
+        import time
+
+        notification_interval = 0.1  # 100ms
+
+        while self.running:
+            await asyncio.sleep(notification_interval)
+
+            if not self._notification_handles or not self._notification_writers:
+                continue
+
+            # Get current timestamp in 100ns units since Windows epoch
+            timestamp = int(time.time() * 10_000_000)
+
+            # Build notification data for each handle
+            samples = []
+            for handle, handle_info in self._notification_handles.items():
+                # Generate simulated data (zeros for now)
+                data_length = handle_info["length"]
+                data = b"\x00" * data_length
+
+                # Build notification sample header
+                # handle (4) + sample_size (4)
+                sample_header = struct.pack("<II", handle, data_length)
+                samples.append(sample_header + data)
+
+            if not samples:
+                continue
+
+            # Build notification message
+            # stamps_length (4) + stamps (8 each: timestamp + samples)
+            # Each stamp: timestamp (8) + sample_count (4) + samples
+            stamp_data = struct.pack("<QI", timestamp, len(samples)) + b"".join(samples)
+            notification_payload = struct.pack("<I", len(stamp_data)) + stamp_data
+
+            # Send to all connected clients
+            for (client_netid, client_port), writer in list(
+                self._notification_writers.items()
+            ):
+                if writer.is_closing():
+                    continue
+
+                try:
+                    # Get first device's netid for source
+                    if self.chain.devices:
+                        device = next(iter(self.chain.devices.values()))
+                        source_netid = device.get_netid_bytes()
+                    else:
+                        source_netid = bytes([10, 0, 0, 1, 3, 1])
+
+                    # Build AMS notification message
+                    # Command ID 0x8 = ADSSRVID_DEVICENOTE
+                    ams_header = struct.pack(
+                        "<6sH6sHHHIII",
+                        client_netid,  # target netid
+                        client_port,  # target port
+                        source_netid,  # source netid
+                        SYSTEM_SERVICE_PORT,  # source port
+                        CommandId.ADSSRVID_DEVICENOTE,  # command
+                        StateFlag.AMSCMDSF_ADSCMD,  # state flags (no response expected)
+                        len(notification_payload),  # length
+                        ErrorCode.ERR_NOERROR,  # error code
+                        0,  # invoke id (not used for notifications)
+                    )
+
+                    # AMS/TCP header
+                    frame_length = len(ams_header) + len(notification_payload)
+                    tcp_header = b"\x00\x00" + frame_length.to_bytes(4, "little")
+
+                    # Send notification
+                    writer.write(tcp_header + ams_header + notification_payload)
+                    await writer.drain()
+
+                except Exception as e:
+                    logger.debug(f"Failed to send notification to client: {e}")
