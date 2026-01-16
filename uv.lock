@@ -649,6 +649,7 @@ dependencies = [
 dev = [
     { name = "copier" },
     { name = "myst-parser" },
+    { name = "pexpect" },
     { name = "pre-commit" },
     { name = "pydata-sphinx-theme" },
     { name = "pyright" },
@@ -677,6 +678,7 @@ requires-dist = [
 dev = [
     { name = "copier" },
     { name = "myst-parser" },
+    { name = "pexpect" },
     { name = "pre-commit" },
     { name = "pydata-sphinx-theme", specifier = ">=0.12" },
     { name = "pyright" },
