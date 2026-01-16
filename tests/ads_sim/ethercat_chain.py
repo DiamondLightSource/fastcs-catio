@@ -496,7 +496,7 @@ class EtherCATChain:
         print(f"Total symbols: {self.total_symbol_count}")
         print("|")
         for device in self.devices.values():
-            print(f"|----EherCAT Master '{device.name}'")
+            print(f"|----EtherCAT Master '{device.name}'")
             print("\t|")
             for slave in device.slaves:
                 if slave.type in ("EK1100", "EK1110", "EK1200"):

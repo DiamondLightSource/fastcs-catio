@@ -1369,7 +1369,7 @@ class AsyncioADSClient:
         """
         print("\n============ Active EtherCAT devices ============")
         print("|")
-        print(f"|----EherCAT Master '{self._ecdevices[device_id].name}'")
+        print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
             if ("EK1100" in slave.name) | ("EK1200" in slave.name):

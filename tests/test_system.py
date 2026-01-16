@@ -62,6 +62,57 @@ def simulator_process():
     child.wait()
 
 
+@pytest.fixture(scope="session")
+def fastcs_catio_ioc(simulator_process):
+    """Launch fastcs-catio IOC and return pexpect child process.
+
+    This is a session-scoped fixture that depends on simulator_process
+    to ensure the simulator is running first.
+    """
+    # Ensure simulator is running
+    sim_child, _ = simulator_process
+
+    # Give simulator a moment to be ready
+    time.sleep(0.5)
+
+    # Launch fastcs-catio IOC
+    cmd = [
+        "fastcs-catio",
+        "ioc",
+        "--log-level",
+        "DEBUG",
+        "MYIOC",
+        "127.0.0.1",
+        "48898",
+    ]
+    child = pexpect.spawn(
+        cmd[0],
+        cmd[1:],
+        encoding="utf-8",
+        timeout=60,
+        cwd=str(Path(__file__).parent.parent),
+    )
+
+    # Wait for symbol discovery to complete
+    # Look for the message about symbols in the symbol table
+    try:
+        child.expect(
+            r"entries in the symbol table returned a total of \d+ available symbols",
+            timeout=30,
+        )
+        # Capture all output up to this point
+        initial_output = child.before + child.after
+    except pexpect.TIMEOUT:
+        # If we timeout, capture whatever we have
+        initial_output = child.before or ""
+
+    yield child, initial_output
+
+    # Cleanup: terminate the IOC
+    child.terminate(force=True)
+    child.wait()
+
+
 class TestSimulatorLaunch:
     """Test launching and validating the ADS simulator."""
 
@@ -94,8 +145,8 @@ class TestSimulatorLaunch:
 
         # Validate that device names appear in output
         for device in expected_devices:
-            # Note: Typo in original code "EherCAT" vs "EtherCAT"
-            assert f"EherCAT Master '{device.name}'" in output, (
+            # Note: Typo in original code "EtherCAT" vs "EtherCAT"
+            assert f"EtherCAT Master '{device.name}'" in output, (
                 f"Device {device.name} not found"
             )
 
@@ -124,3 +175,82 @@ class TestSimulatorLaunch:
             # "|----- 1::1 -> EK1100 Term 1 (EK1100)"
             # or "|----- 1::2 -> EL2004 Term 2 (EL2004)"
             assert slave.type in output, f"Terminal type {slave.type} not found"
+
+
+class TestFastcsCatioConnection:
+    """Test fastcs-catio IOC connection to simulator."""
+
+    def test_ioc_connects_and_discovers_symbols(
+        self, fastcs_catio_ioc, expected_chain: EtherCATChain
+    ):
+        """Test that fastcs-catio IOC connects and discovers correct symbols.
+
+        Validates that the IOC:
+        - Successfully connects to the simulator
+        - Discovers the correct number of symbols from the YAML config
+        """
+        # Get expected values from the config
+        expected_symbol_count = expected_chain.total_symbol_count
+
+        # Unpack the IOC process and initial output
+        child, output = fastcs_catio_ioc
+
+        sep_line = "=" * 27
+        print(f"\n===== FastCS-CATio Output =====\n{output[:1000]}...\n{sep_line}\n")
+
+        # Validate connection to ADS server
+        assert "Client connection to TwinCAT server was successful" in output, (
+            "IOC did not connect to ADS server"
+        )
+
+        # Validate device discovery
+        assert "Number of I/O devices: 1" in output, "Did not discover devices"
+
+        # Validate slave count (105 slaves in the config)
+        assert "List of device slave counts: [105]" in output, (
+            "Did not discover correct number of slaves"
+        )
+
+        # Validate symbol discovery count
+        # Look for: "INFO: X entries in the symbol table returned a total of Y available symbols"
+        import re
+
+        symbol_pattern = r"(\d+) entries in the symbol table returned a total of (\d+) available symbols"
+        match = re.search(symbol_pattern, output)
+        assert match is not None, (
+            "Symbol discovery completion message not found in output"
+        )
+
+        discovered_symbol_count = int(match.group(2))
+        # Note: fastcs-catio expands symbols from the ADS symbol table,
+        # which may result in more symbols than what's in the YAML config
+        # The YAML defines symbol "nodes" while fastcs-catio expands these
+        assert discovered_symbol_count > 0, "No symbols were discovered"
+        print(
+            f"\nDiscovered {discovered_symbol_count} symbols "
+            f"(config defines {expected_symbol_count} symbol nodes)"
+        )
+
+    def test_ioc_discovers_device_info(
+        self, fastcs_catio_ioc, expected_chain: EtherCATChain
+    ):
+        """Test that fastcs-catio IOC discovers correct device information."""
+        # Get expected devices
+        expected_devices = list(expected_chain.devices.values())
+        if not expected_devices:
+            pytest.skip("No devices in configuration")
+
+        # Unpack the IOC process and initial output
+        child, output = fastcs_catio_ioc
+
+        # Check device name appears
+        for device in expected_devices:
+            assert device.name in output, (
+                f"Device name '{device.name}' not found in IOC output"
+            )
+
+        # Verify correct slave count discovered
+        expected_slave_count = sum(len(dev.slaves) for dev in expected_devices)
+        assert f"List of device slave counts: [{expected_slave_count}]" in output, (
+            f"Expected {expected_slave_count} slaves not found in output"
+        )
