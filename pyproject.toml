@@ -17,7 +17,7 @@ dependencies = [
     "numpy",
     "pvi",
     "typer",
-    "fastcs[epics]==0.12.0a1",
+    "fastcs[epics]==2025.8.1a10",
     "softioc>=4.7.0",
 ]
 dynamic = ["version"]
