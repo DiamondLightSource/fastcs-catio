@@ -1036,6 +1036,7 @@ class AsyncioADSClient:
                     netid=netid,
                     port=ADS_MASTER_PORT,
                 )
+                print(f"address:{address}, response:{response.data.hex()}")
                 identities.append(IOIdentity.from_bytes(response.data))
             slave_identities.append(identities)
 

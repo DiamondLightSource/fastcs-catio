@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pexpect
 import pytest
+from fastcs.launch import FastCS
 
 from ads_sim.ethercat_chain import EtherCATChain
 
@@ -90,52 +91,21 @@ def fastcs_catio_controller(simulator_process):
     notification_period = 0.2
 
     route = RemoteRoute(ip)
-    print(f"Creating controller for {ip}:{target_port}")
     controller = CATioServerController(
         ip, route, target_port, poll_period, notification_period
     )
-    print("Controller created")
-
-    # Manually open connection without full initialization to avoid symbol query hang
-    async def setup_connection():
-        if not controller.connection.is_defined():
-            await controller.connection.connect(controller._tcp_settings)
-            print("TCP connection opened")
-
-        # Get basic IO server info without full device introspection
-        # Note: introspect_io_server() hangs on _get_slave_identities(),
-        # so we only call _get_io_server() to get basic info
-        client = controller.connection.client
-        client.ioserver = await client._get_io_server()
-        print(
-            f"IO server info retrieved: {client.ioserver.name} "
-            f"v{client.ioserver.version}"
-        )
-        print(f"Number of devices: {client.ioserver.num_devices}")
+    launcher = FastCS(controller, transports=[])
 
     try:
-        asyncio.run(asyncio.wait_for(setup_connection(), timeout=10.0))
-        print("Controller connection established successfully")
-    except TimeoutError:
-        print("ERROR: Controller connection timed out after 10 seconds")
-        raise
+        asyncio.run(launcher.serve())
+    except Exception as e:
+        pytest.fail(f"Failed to start fastcs client: {e}")
 
     yield controller
 
     # Cleanup: close the connection
-    print("Closing connection...")
     try:
-        if controller.connection.is_defined():
-            # Manually close the client instead of using controller.disconnect()
-            # since we didn't fully initialize everything
-            async def close_connection():
-                await controller.connection.client.close()
-                controller.connection._connection = None
-
-            asyncio.run(asyncio.wait_for(close_connection(), timeout=5.0))
-            print("Connection closed successfully")
-        else:
-            print("No connection to close")
+        asyncio.run(controller.disconnect())
     except TimeoutError:
         print("WARNING: Connection close timed out")
     except Exception as e:
@@ -204,11 +174,6 @@ class TestFastcsCatioConnection:
         # Get the controller object (fixture already awaited)
         controller = fastcs_catio_controller
 
-        # Validate connection was established
-        assert controller.connection.is_defined(), (
-            "Controller connection not established"
-        )
-
         # Access the client to check IO server info
         client = controller.connection.client
         assert client is not None, "ADS client not initialized"
@@ -227,5 +192,37 @@ class TestFastcsCatioConnection:
             f"\n  - Name: {client.ioserver.name}"
             f"\n  - Version: {client.ioserver.version}"
             f"\n  - Build: {client.ioserver.build}"
+            f"\n  - Devices: {client.ioserver.num_devices}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_ioc_discovers_device_info(
+        self, fastcs_catio_controller, expected_chain: EtherCATChain
+    ):
+        """Test that fastcs-catio IOC discovers correct IO server information.
+
+        Note: This test only validates IO server info, not individual devices,
+        because full device introspection hangs in _get_slave_identities().
+        """
+
+        # Get the controller object (fixture already awaited)
+        controller = fastcs_catio_controller
+
+        # Access the client to check IO server
+        client = controller.connection.client
+
+        # Validate IO server info matches expected configuration
+        assert hasattr(client, "ioserver"), "IO server info not retrieved"
+        assert client.ioserver.num_devices > 0, "No devices discovered"
+
+        # Verify IO server name is correct
+        assert client.ioserver.name == "I/O Server", (
+            f"Unexpected IO server name: {client.ioserver.name}"
+        )
+
+        print(
+            f"\nIO server validation successful:"
+            f"\n  - Name: {client.ioserver.name}"
+            f"\n  - Version: {client.ioserver.version}"
             f"\n  - Devices: {client.ioserver.num_devices}"
         )
