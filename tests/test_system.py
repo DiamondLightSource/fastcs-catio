@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pexpect
 import pytest
+import pytest_asyncio
 from fastcs.launch import FastCS
 
 from ads_sim.ethercat_chain import EtherCATChain
@@ -65,8 +66,8 @@ def simulator_process():
     child.wait()
 
 
-@pytest.fixture(scope="function")
-def fastcs_catio_controller(simulator_process):
+@pytest_asyncio.fixture(scope="function")
+async def fastcs_catio_controller(simulator_process):
     """Create fastcs-catio controller and test basic connection.
 
     This fixture depends on simulator_process to ensure the simulator is running first.
@@ -85,8 +86,9 @@ def fastcs_catio_controller(simulator_process):
     logging.basicConfig(level=logging.DEBUG, force=True)
 
     # Create controller instance
+    # ip = "172.23.242.42"
     ip = "127.0.0.1"
-    target_port = 48898
+    target_port = 27905
     poll_period = 1.0
     notification_period = 0.2
 
@@ -97,10 +99,11 @@ def fastcs_catio_controller(simulator_process):
     launcher = FastCS(controller, transports=[])
 
     try:
-        asyncio.run(launcher.serve())
+        await asyncio.create_task(launcher.serve())
     except Exception as e:
         pytest.fail(f"Failed to start fastcs client: {e}")
 
+    time.sleep(2)  # Allow some time for connection
     yield controller
 
     # Cleanup: close the connection

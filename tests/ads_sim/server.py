@@ -383,9 +383,24 @@ class ADSSimServer:
         try:
             while True:
                 # Read AMS/TCP header (6 bytes: 2 reserved + 4 length)
-                header_bytes = await reader.readexactly(6)
-                if not header_bytes:
+                # Wait indefinitely for first byte, then timeout for remaining bytes
+                first_byte = await reader.readexactly(1)
+                if not first_byte:
                     break
+
+                # Now that we have activity, read remaining 5 bytes with timeout
+                try:
+                    remaining_bytes = await asyncio.wait_for(
+                        reader.readexactly(5), timeout=5.0
+                    )
+                except TimeoutError:
+                    logger.warning(
+                        f"Client {addr} timeout reading TCP header "
+                        f"(first byte was {first_byte})"
+                    )
+                    break
+
+                header_bytes = first_byte + remaining_bytes
 
                 # Validate reserved bytes
                 if header_bytes[:2] != b"\x00\x00":
@@ -395,8 +410,8 @@ class ADSSimServer:
                 # Get frame length
                 frame_length = int.from_bytes(header_bytes[2:], byteorder="little")
 
-                # Read AMS header (32 bytes)
-                ams_header = await reader.readexactly(32)
+                # Read AMS header (32 bytes) with timeout
+                ams_header = await asyncio.wait_for(reader.readexactly(32), timeout=5.0)
 
                 # Extract source info for notification tracking
                 source_netid = ams_header[6:12]
@@ -404,10 +419,12 @@ class ADSSimServer:
                 client_key = (source_netid, source_port)
                 self._notification_writers[client_key] = writer
 
-                # Read payload (frame_length - 32)
+                # Read payload (frame_length - 32) with timeout
                 payload_length = frame_length - 32
                 if payload_length > 0:
-                    payload = await reader.readexactly(payload_length)
+                    payload = await asyncio.wait_for(
+                        reader.readexactly(payload_length), timeout=5.0
+                    )
                 else:
                     payload = b""
 
@@ -419,6 +436,8 @@ class ADSSimServer:
                     writer.write(response)
                     await writer.drain()
 
+        except TimeoutError:
+            logger.warning(f"Client {addr} timeout reading message")
         except asyncio.IncompleteReadError:
             logger.info(f"Client {addr} disconnected")
         except Exception as e:
@@ -451,10 +470,10 @@ class ADSSimServer:
             invoke_id,
         ) = struct.unpack("<6sH6sHHHIII", ams_header)
 
-        logger.debug(
-            f"AMS message: cmd={command_id:#x}, port={target_port}, "
-            f"len={length}, invoke_id={invoke_id}"
-        )
+        # logger.debug(
+        #     f"AMS message: cmd={command_id:#x}, port={target_port}, "
+        #     f"len={length}, invoke_id={invoke_id}"
+        # )
 
         # Get handler
         handler = self._handlers.get(command_id)
