@@ -87,7 +87,7 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - **MUST** keep classes focused on a single responsibility
 - **MUST** keep `__init__` simple; avoid complex logic
 - Use dataclasses for simple data containers
-- Use Pydantic for data validation models
+- Use Pydantic for data validation models and serializing/deserializing data to yaml
 - Prefer composition over inheritance
 - Avoid creating additional class functions if they are not necessary
 - Use `@property` for computed attributes

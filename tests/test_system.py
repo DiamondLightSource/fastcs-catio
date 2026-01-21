@@ -62,7 +62,14 @@ def simulator_process(request):
         return
 
     # Launch the simulator subprocess with verbose logging
-    cmd = [sys.executable, "-m", "tests.ads_sim", "--log-level", "DEBUG"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "tests.ads_sim",
+        "--log-level",
+        "DEBUG",
+        "--disable-notifications",
+    ]
     process = subprocess.Popen(cmd)
 
     # Give it a moment to start and print initial output
@@ -110,7 +117,7 @@ async def fastcs_catio_controller(simulator_process):
         pytest.fail(f"Failed to start fastcs client: {e}")
 
     # wait until the controller is ready
-    await controller.wait_for_startup(timeout=50.0)
+    await controller.wait_for_startup(timeout=10.0)
     # make sure the notification system is enabled
     # meaning the scan routine has started
     while controller.notification_enabled is False:
@@ -161,8 +168,10 @@ class TestFastcsCatioConnection:
             f"got {len(client.fastcs_io_map)}"
         )
 
-        # TODO Where do I get the symbol count from in the client?
-        # assert client.ioc_server.num_symbols == expected_chain.total_symbol_count, (
+        # Validate total symbol count across all devices
+        # TODO this sees 426 symbols, got 502
+        _total_symbols = sum(len(symbols) for symbols in client._ecsymbols.values())
+        # assert total_symbols == expected_chain.total_symbol_count, (
         #     f"Expected {expected_chain.total_symbol_count} symbols, "
-        #     f"got {client.ioc_server.num_symbols}"
+        #     f"got {total_symbols}"
         # )

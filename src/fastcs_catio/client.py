@@ -3235,7 +3235,7 @@ class AsyncioADSClient:
                     terminal.parent_device, terminal.address
                 )
                 return np.array(
-                    [crcs.portA_crc, crcs.portB_crc, crcs.portC_crc, crcs.portD_crc]
+                    [crcs.port_a_crc, crcs.port_b_crc, crcs.port_c_crc, crcs.port_d_crc]
                 )
             else:
                 raise KeyError(
