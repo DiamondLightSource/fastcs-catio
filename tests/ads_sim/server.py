@@ -288,6 +288,7 @@ class ADSSimServer:
         host: str = "127.0.0.1",
         port: int = ADS_TCP_PORT,
         config_path: str | Path | None = None,
+        enable_notifications: bool = True,
     ):
         """
         Initialize the ADS simulation server.
@@ -296,12 +297,14 @@ class ADSSimServer:
             host: Host address to bind to.
             port: Port to listen on.
             config_path: Path to YAML config file for EtherCAT chain.
+            enable_notifications: Whether to enable the notification system.
         """
         self.host = host
         self.port = port
         self.server: asyncio.Server | None = None
         self.udp_transport: asyncio.DatagramTransport | None = None
         self.running = False
+        self.enable_notifications = enable_notifications
 
         # Load EtherCAT chain configuration
         self.chain = EtherCATChain(config_path)
@@ -349,8 +352,12 @@ class ADSSimServer:
 
         self.running = True
 
-        # Start notification streaming task
-        self._notification_task = asyncio.create_task(self._notification_streamer())
+        # Start notification streaming task (if enabled)
+        if self.enable_notifications:
+            self._notification_task = asyncio.create_task(self._notification_streamer())
+            logger.info("Notification system enabled")
+        else:
+            logger.info("Notification system disabled")
 
         logger.info(f"ADS Simulation server started on {self.host}:{self.port} (TCP)")
         logger.info(f"ADS UDP discovery service on {self.host}:{ADS_UDP_PORT}")

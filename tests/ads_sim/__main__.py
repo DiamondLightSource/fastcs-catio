@@ -6,13 +6,18 @@ Run with:
     python -m tests.ads_sim [options]
 
 Options:
-    --host HOST        Host address to bind to (default: 127.0.0.1)
-    --port PORT        Port to listen on (default: 48898)
-    --config PATH      Path to YAML config file (default: ethercat_chain.yaml)
-    --log-level LEVEL  Set logging level: DEBUG, INFO, WARNING, ERROR (default: INFO)
+    --host HOST              Host address to bind to (default: 127.0.0.1)
+    --port PORT              Port to listen on (default: 48898)
+    --config PATH            Path to YAML config file
+                             (default: ethercat_chain.yaml)
+    --log-level LEVEL        Set logging level: DEBUG, INFO, WARNING, ERROR
+                             (default: INFO)
+    --disable-notifications  Disable the notification system to reduce
+                             logging noise
 
 Example:
     python -m tests.ads_sim --host 0.0.0.0 --port 48898 --log-level DEBUG
+    python -m tests.ads_sim --disable-notifications --log-level INFO
 """
 
 from __future__ import annotations
@@ -68,6 +73,12 @@ def parse_args() -> argparse.Namespace:
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Set logging level",
     )
+    parser.add_argument(
+        "--disable-notifications",
+        action="store_true",
+        default=False,
+        help="Disable the notification system to reduce logging noise",
+    )
     return parser.parse_args()
 
 
@@ -97,7 +108,11 @@ async def main() -> int:
         host=args.host,
         port=args.port,
         config_path=config_path,
+        enable_notifications=not args.disable_notifications,
     )
+
+    if args.disable_notifications:
+        logger.info("Notification system disabled")
 
     # Setup graceful shutdown
     loop = asyncio.get_event_loop()
