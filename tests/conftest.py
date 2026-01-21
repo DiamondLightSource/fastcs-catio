@@ -43,3 +43,13 @@ async def mock_ads_server() -> AsyncGenerator[MockADSServer]:
 def mock_server_address() -> tuple[str, int]:
     """Fixture that provides the mock server address."""
     return ("127.0.0.1", 48898)
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Add custom pytest command-line options."""
+    parser.addoption(
+        "--external-simulator",
+        action="store_true",
+        default=False,
+        help="Use an externally launched simulator instead of launching one",
+    )
