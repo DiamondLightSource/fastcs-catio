@@ -60,7 +60,7 @@ def simulator_process(request):
         return
 
     # Launch the simulator subprocess with verbose logging
-    cmd = [sys.executable, "-m", "tests.ads_sim", "--verbose"]
+    cmd = [sys.executable, "-m", "tests.ads_sim", "--log-level", "DEBUG"]
     child = pexpect.spawn(
         cmd[0],
         cmd[1:],
@@ -118,16 +118,21 @@ async def fastcs_catio_controller(simulator_process):
     launcher = FastCS(controller, transports=[])
 
     try:
-        await asyncio.create_task(launcher.serve())
+        asyncio.create_task(launcher.serve())
     except Exception as e:
         pytest.fail(f"Failed to start fastcs client: {e}")
 
-    time.sleep(2)  # Allow some time for connection
+    # wait until the controller is ready
+    await controller.wait_for_startup(timeout=5.0)
+    # make sure the notification system is enabled
+    # meaning the scan routine has started
+    while controller.notification_enabled is False:
+        await asyncio.sleep(0.5)
     yield controller
 
     # Cleanup: close the connection
     try:
-        asyncio.run(controller.disconnect())
+        await controller.disconnect()
     except TimeoutError:
         print("WARNING: Connection close timed out")
     except Exception as e:
@@ -199,11 +204,8 @@ class TestFastcsCatioConnection:
         in _get_slave_identities().
         """
 
-        # Get the controller object (fixture already awaited)
-        controller = fastcs_catio_controller
-
         # Access the client to check IO server info
-        client = controller.connection.client
+        client = fastcs_catio_controller.connection.client
         assert client is not None, "ADS client not initialized"
 
         # Validate IO server info was retrieved
@@ -211,17 +213,21 @@ class TestFastcsCatioConnection:
         assert client.ioserver.num_devices == 1, (
             f"Expected 1 device, got {client.ioserver.num_devices}"
         )
-        assert client.ioserver.name == "I/O Server", (
-            f"Unexpected IO server name: {client.ioserver.name}"
+
+        assert client.ioserver.name == expected_chain.server_info.name, (
+            f"Unexpected IOC server name: {client.ioc_server.name}"
         )
 
-        print(
-            f"\nSuccessfully connected to IO server:"
-            f"\n  - Name: {client.ioserver.name}"
-            f"\n  - Version: {client.ioserver.version}"
-            f"\n  - Build: {client.ioserver.build}"
-            f"\n  - Devices: {client.ioserver.num_devices}"
+        assert len(client.fastcs_io_map) == expected_chain.total_slave_count + 2, (
+            f"Expected {expected_chain.total_slave_count + 2} IO map entries, "
+            f"got {len(client.fastcs_io_map)}"
         )
+
+        # TODO Where do I get the symbol count from in the client?
+        # assert client.ioc_server.num_symbols == expected_chain.total_symbol_count, (
+        #     f"Expected {expected_chain.total_symbol_count} symbols, "
+        #     f"got {client.ioc_server.num_symbols}"
+        # )
 
     @pytest.mark.asyncio
     @pytest.mark.skip(

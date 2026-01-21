@@ -473,6 +473,8 @@ class AsyncioADSClient:
             int, IOServer | IODevice | IOSlave
         ] = {}  # key: FastCS controller object unique identifier, value: CATio object
         """Dictionary comprising all CATio objects mapped by their FastCS unique id"""
+        self.__flush_notifications_task: asyncio.Task | None = None
+        """Asynchronous task which periodically flushes the notification buffer"""
 
     #################################################################
     ### CLIENT CONNECTION -------------------------------------------
@@ -1039,12 +1041,15 @@ class AsyncioADSClient:
         for netid, slave_addresses in zip(dev_netids, dev_slave_addresses, strict=True):
             identities: Sequence[IOIdentity] = []
             for address in slave_addresses:
+                logging.debug(f"READING slave: address={address} ...")
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_identity(address),
                     netid=netid,
                     port=ADS_MASTER_PORT,
                 )
-                print(f"address:{address}, response:{response.data.hex()}")
+                logging.debug(
+                    f"READ slave: address={address}, response={{response.data.hex()}}"
+                )
                 identities.append(IOIdentity.from_bytes(response.data))
             slave_identities.append(identities)
 
@@ -2688,7 +2693,8 @@ class AsyncioADSClient:
         Disable periodic flushing which will also stop the appending of received \
             ADS notifications into the buffer.
         """
-        self.__flush_notifications_task.cancel()
+        if self.__flush_notifications_task is not None:
+            self.__flush_notifications_task.cancel()
 
     async def _periodic_flush(self, interval_sec: float) -> None:
         """
