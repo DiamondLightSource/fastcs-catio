@@ -134,6 +134,10 @@ class UDPProtocol(asyncio.DatagramProtocol):
 
         # Parse UDP header
         udp_cookie, invoke_id, service_id = struct.unpack("<III", data[:12])
+        logger.info(
+            f"UDP incoming from {addr}: cookie={udp_cookie:#x}, "
+            f"service={service_id:#x}, invoke={invoke_id}, len={len(data)}"
+        )
 
         # Validate cookie - client sends 0x71146603
         if udp_cookie != UDP_COOKIE:
@@ -156,6 +160,15 @@ class UDPProtocol(asyncio.DatagramProtocol):
             return
 
         if self.transport and response:
+            # Parse response for logging
+            resp_cookie, resp_invoke_id, resp_service_id = struct.unpack(
+                "<III", response[:12]
+            )
+            logger.info(
+                f"UDP outgoing to {addr}: cookie={resp_cookie:#x}, "
+                "service={resp_service_id:#x}, invoke={resp_invoke_id}, "
+                "len={len(response)}"
+            )
             self.transport.sendto(response, addr)
 
     def _handle_read_service_info(self, invoke_id: int) -> bytes:
@@ -433,6 +446,7 @@ class ADSSimServer:
                     ams_header, payload, writer, client_key
                 )
                 if response:
+                    logger.debug(f"Sending response to {addr}, len={len(response)}")
                     writer.write(response)
                     await writer.drain()
 
@@ -470,10 +484,10 @@ class ADSSimServer:
             invoke_id,
         ) = struct.unpack("<6sH6sHHHIII", ams_header)
 
-        # logger.debug(
-        #     f"AMS message: cmd={command_id:#x}, port={target_port}, "
-        #     f"len={length}, invoke_id={invoke_id}"
-        # )
+        logger.info(
+            f"TCP Incoming AMS message: cmd={command_id:#x}, port={target_port}, "
+            f"len={length}, invoke_id={invoke_id}"
+        )
 
         # Get handler
         handler = self._handlers.get(command_id)
@@ -493,6 +507,10 @@ class ADSSimServer:
         target_netid_str = ".".join(str(b) for b in target_netid)
         device = self.chain.get_device_by_netid(target_netid_str)
 
+        logger.debug(
+            f"Processing command={command_id:#x} for "
+            f"device={target_netid_str}, invoke_id={invoke_id}"
+        )
         # Process command
         try:
             response_payload = await handler(
@@ -542,7 +560,12 @@ class ADSSimServer:
         frame_length = len(ams_header) + len(payload)
         tcp_header = b"\x00\x00" + frame_length.to_bytes(4, "little")
 
-        return tcp_header + ams_header + payload
+        response = tcp_header + ams_header + payload
+        logger.info(
+            f"Built response: cmd={command_id:#x}, invoke={invoke_id}, "
+            f"payload_len={len(payload)}"
+        )
+        return response
 
     def _build_error_response(
         self,
@@ -617,7 +640,7 @@ class ADSSimServer:
             return struct.pack("<II", ErrorCode.ADSERR_DEVICE_INVALIDSIZE, 0)
 
         index_group, index_offset, read_length = struct.unpack("<III", payload[:12])
-        logger.debug(
+        logger.info(
             f"Read: group={index_group:#x}, offset={index_offset:#x}, len={read_length}"
         )
 
@@ -1160,7 +1183,16 @@ class ADSSimServer:
                     tcp_header = b"\x00\x00" + frame_length.to_bytes(4, "little")
 
                     # Send notification
-                    writer.write(tcp_header + ams_header + notification_payload)
+                    notification_message = (
+                        tcp_header + ams_header + notification_payload
+                    )
+                    client_netid_str = ".".join(str(b) for b in client_netid)
+                    logger.debug(
+                        f"Notification outgoing to {client_netid_str}:{client_port}: "
+                        f"samples={num_samples}, timestamp={timestamp}, "
+                        f"len={len(notification_message)}"
+                    )
+                    writer.write(notification_message)
                     await writer.drain()
 
                 except Exception as e:

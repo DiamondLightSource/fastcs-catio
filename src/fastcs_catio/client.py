@@ -558,12 +558,16 @@ class AsyncioADSClient:
         header_raw = ams_header.to_bytes()
         total_length = len(header_raw) + len(payload)
         length_bytes = total_length.to_bytes(4, byteorder="little", signed=False)
+
+        logging.debug(
+            f"Sending AMS packet: len:{total_length}, cmd:{command}, "
+            f"invoke_id:{self.__current_invoke_id}, target:{ams_netid}:{ams_port}"
+        )
         self.__writer.write(b"\x00\x00" + length_bytes + header_raw + payload)
-        # logging.debug(
-        #     "Sending AMS packet: '\x00\x00', "
-        #     + f"{length_bytes.hex(' ')}, {header_raw.hex(' ')}, {payload.hex(' ')}"
-        # )
+
         await self.__writer.drain()
+        logging.debug(f"Sent AMS packet len:{total_length}.")
+
         response_ev = ResponseEvent()
         self.__response_events[self.__current_invoke_id] = response_ev
         return response_ev
@@ -585,6 +589,7 @@ class AsyncioADSClient:
         communication_timeout_sec = 120
         try:
             async with asyncio.timeout(communication_timeout_sec):
+                logging.debug("Waiting to receive AMS message...")
                 msg_bytes = await self.__reader.readexactly(6)
                 assert msg_bytes[:2] == b"\x00\x00", (
                     f"Received an invalid TCP header: {msg_bytes.hex()}"
@@ -592,8 +597,11 @@ class AsyncioADSClient:
                 length = int.from_bytes(
                     msg_bytes[-4:], byteorder="little", signed=False
                 )
+
+                logging.debug(f"Expecting AMS message of length: {length} bytes")
                 packet = await self.__reader.readexactly(length)
-                # logging.debug(f"Received packet is: {packet.hex(' ')}")
+                logging.debug(f"Received packet of length {length} bytes")
+
                 ams_header_length = 32
                 header = AmsHeader.from_bytes(packet[:ams_header_length])
                 body = packet[ams_header_length:]

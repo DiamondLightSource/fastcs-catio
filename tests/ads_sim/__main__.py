@@ -6,13 +6,13 @@ Run with:
     python -m tests.ads_sim [options]
 
 Options:
-    --host HOST     Host address to bind to (default: 127.0.0.1)
-    --port PORT     Port to listen on (default: 48898)
-    --config PATH   Path to YAML config file (default: ethercat_chain.yaml)
-    --verbose       Enable debug logging
+    --host HOST        Host address to bind to (default: 127.0.0.1)
+    --port PORT        Port to listen on (default: 48898)
+    --config PATH      Path to YAML config file (default: ethercat_chain.yaml)
+    --log-level LEVEL  Set logging level: DEBUG, INFO, WARNING, ERROR (default: INFO)
 
 Example:
-    python -m tests.ads_sim --host 0.0.0.0 --port 48898 --verbose
+    python -m tests.ads_sim --host 0.0.0.0 --port 48898 --log-level DEBUG
 """
 
 from __future__ import annotations
@@ -27,9 +27,9 @@ from pathlib import Path
 from .server import ADSSimServer
 
 
-def setup_logging(verbose: bool = False) -> None:
+def setup_logging(log_level: str = "INFO") -> None:
     """Configure logging for the server."""
-    level = logging.DEBUG if verbose else logging.INFO
+    level = getattr(logging, log_level.upper(), logging.INFO)
     logging.basicConfig(
         level=level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -62,10 +62,11 @@ def parse_args() -> argparse.Namespace:
         help="Path to YAML configuration file for EtherCAT chain",
     )
     parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Enable debug logging",
+        "--log-level",
+        type=str,
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set logging level",
     )
     return parser.parse_args()
 
@@ -73,7 +74,7 @@ def parse_args() -> argparse.Namespace:
 async def main() -> int:
     """Main entry point."""
     args = parse_args()
-    setup_logging(args.verbose)
+    setup_logging(args.log_level)
 
     logger = logging.getLogger(__name__)
 
