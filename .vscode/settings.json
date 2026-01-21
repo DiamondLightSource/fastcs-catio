@@ -2,9 +2,9 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     // uncomment this to use external simulator in tests
-    "python.testing.pytestArgs": [
-        "--external-simulator"
-    ],
+    // "python.testing.pytestArgs": [
+    //     "--external-simulator"
+    // ],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"

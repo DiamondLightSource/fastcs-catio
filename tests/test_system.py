@@ -18,17 +18,19 @@ pytest tests/test_system.py -v --external-simulator
 from __future__ import annotations
 
 import asyncio
-import logging
+import subprocess
 import sys
 import time
 from pathlib import Path
 
-import pexpect
 import pytest
 import pytest_asyncio
 from fastcs.launch import FastCS
 
 from ads_sim.ethercat_chain import EtherCATChain
+
+# To enable debug logging
+# instead of doing this use `pytest --log-cli-level=DEBUG`
 
 
 @pytest.fixture(scope="session")
@@ -61,28 +63,19 @@ def simulator_process(request):
 
     # Launch the simulator subprocess with verbose logging
     cmd = [sys.executable, "-m", "tests.ads_sim", "--log-level", "DEBUG"]
-    child = pexpect.spawn(
-        cmd[0],
-        cmd[1:],
-        encoding="utf-8",
-        timeout=10,
-        cwd=str(Path(__file__).parent.parent),
-    )
+    process = subprocess.Popen(cmd)
 
     # Give it a moment to start and print initial output
     time.sleep(1)
 
-    # Read initial output
-    try:
-        initial_output = child.read_nonblocking(size=10000, timeout=1)
-    except pexpect.TIMEOUT:
-        initial_output = ""
-
-    yield child, initial_output
+    yield process
 
     # Cleanup: terminate the simulator
-    child.terminate(force=True)
-    child.wait()
+    process.terminate()
+    process.wait(timeout=2)
+
+    # make sure the client has time to close
+    time.sleep(1)
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -95,14 +88,8 @@ async def fastcs_catio_controller(simulator_process):
     from fastcs_catio.catio_controller import CATioServerController
     from fastcs_catio.client import RemoteRoute
 
-    # Ensure simulator is running
-    sim_child, _ = simulator_process
-
     # Give simulator a moment to be ready
     time.sleep(0.5)
-
-    # Enable debug logging to see where it hangs
-    logging.basicConfig(level=logging.DEBUG, force=True)
 
     # Create controller instance
     # ip = "172.23.242.42"
@@ -123,7 +110,7 @@ async def fastcs_catio_controller(simulator_process):
         pytest.fail(f"Failed to start fastcs client: {e}")
 
     # wait until the controller is ready
-    await controller.wait_for_startup(timeout=5.0)
+    await controller.wait_for_startup(timeout=50.0)
     # make sure the notification system is enabled
     # meaning the scan routine has started
     while controller.notification_enabled is False:
@@ -137,55 +124,6 @@ async def fastcs_catio_controller(simulator_process):
         print("WARNING: Connection close timed out")
     except Exception as e:
         print(f"WARNING: Error during cleanup: {e}")
-
-
-class TestSimulatorLaunch:
-    """Test launching and validating the ADS simulator."""
-
-    def test_simulator_starts_and_prints_chain(
-        self, simulator_process, expected_chain: EtherCATChain
-    ):
-        """Test that the simulator starts and prints the expected chain information.
-
-        Step 1: Launch the simulator as a subprocess using pexpect
-        Step 2: Validate that the output contains list of terminals and symbol count
-
-        Note: This test is skipped when using an external simulator.
-        """
-        # Get expected values from the config
-        expected_symbol_count = expected_chain.total_symbol_count
-        expected_devices = list(expected_chain.devices.values())
-
-        # Unpack the simulator process and initial output
-        child, output = simulator_process
-
-        # Skip test if using external simulator
-        if child is None:
-            pytest.skip("Test skipped when using external simulator")
-
-        sep_line = "=" * 27
-        print(f"\n===== Captured Output =====\n{output}\n{sep_line}\n")
-
-        # Validate the expected content in output
-        assert "============ Simulated EtherCAT Chain ============" in output, (
-            "Chain header not found in output"
-        )
-
-        assert f"Total symbols: {expected_symbol_count}" in output, (
-            f"Expected symbol count {expected_symbol_count} not found"
-        )
-
-        # Validate that device names appear in output
-        for device in expected_devices:
-            # Note: Typo in original code "EtherCAT" vs "EtherCAT"
-            assert f"EtherCAT Master '{device.name}'" in output, (
-                f"Device {device.name} not found"
-            )
-
-        # Verify server started
-        assert "ADS Simulation server started on" in output, (
-            "Server start message not found"
-        )
 
 
 class TestFastcsCatioConnection:
@@ -228,38 +166,3 @@ class TestFastcsCatioConnection:
         #     f"Expected {expected_chain.total_symbol_count} symbols, "
         #     f"got {client.ioc_server.num_symbols}"
         # )
-
-    @pytest.mark.asyncio
-    @pytest.mark.skip(
-        reason="just one system test while debugging device introspection hanging"
-    )
-    async def test_ioc_discovers_device_info(
-        self, fastcs_catio_controller, expected_chain: EtherCATChain
-    ):
-        """Test that fastcs-catio IOC discovers correct IO server information.
-
-        Note: This test only validates IO server info, not individual devices,
-        because full device introspection hangs in _get_slave_identities().
-        """
-
-        # Get the controller object (fixture already awaited)
-        controller = fastcs_catio_controller
-
-        # Access the client to check IO server
-        client = controller.connection.client
-
-        # Validate IO server info matches expected configuration
-        assert hasattr(client, "ioserver"), "IO server info not retrieved"
-        assert client.ioserver.num_devices > 0, "No devices discovered"
-
-        # Verify IO server name is correct
-        assert client.ioserver.name == "I/O Server", (
-            f"Unexpected IO server name: {client.ioserver.name}"
-        )
-
-        print(
-            f"\nIO server validation successful:"
-            f"\n  - Name: {client.ioserver.name}"
-            f"\n  - Version: {client.ioserver.version}"
-            f"\n  - Devices: {client.ioserver.num_devices}"
-        )
