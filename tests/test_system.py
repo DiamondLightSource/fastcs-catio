@@ -117,7 +117,9 @@ async def fastcs_catio_controller(simulator_process):
         pytest.fail(f"Failed to start fastcs client: {e}")
 
     # wait until the controller is ready
-    await controller.wait_for_startup(timeout=10.0)
+    # TODO this requires https://github.com/DiamondLightSource/FastCS/pull/308
+    # await controller.wait_for_startup(timeout=10.0)
+
     # make sure the notification system is enabled
     # meaning the scan routine has started
     while controller.notification_enabled is False:
@@ -170,8 +172,7 @@ class TestFastcsCatioConnection:
 
         # Validate total symbol count across all devices
         # TODO this sees 426 symbols, got 502
-        _total_symbols = sum(len(symbols) for symbols in client._ecsymbols.values())
-        # assert total_symbols == expected_chain.total_symbol_count, (
-        #     f"Expected {expected_chain.total_symbol_count} symbols, "
-        #     f"got {total_symbols}"
-        # )
+        total_symbols = sum(len(symbols) for symbols in client._ecsymbols.values())
+        assert total_symbols == expected_chain.total_symbol_count, (
+            f"Expected {expected_chain.total_symbol_count} symbols, got {total_symbols}"
+        )

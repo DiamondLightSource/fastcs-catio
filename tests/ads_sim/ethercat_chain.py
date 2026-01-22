@@ -465,8 +465,34 @@ class EtherCATChain:
 
     @property
     def total_symbol_count(self) -> int:
-        """Return total number of symbols across all devices."""
-        return sum(len(dev.get_all_symbols()) for dev in self.devices.values())
+        """
+        Return total number of symbols across all devices after client-side expansion.
+
+        The client expands certain BIGTYPE symbol nodes into multiple symbols:
+        - CNT Inputs_TYPE -> 2 symbols (status + counter value)
+        - CNT Outputs_TYPE -> 2 symbols (status + set counter value)
+        - AI Standard Channel 1_TYPE -> 2 symbols (status + value)
+        - AI Inputs Channel 1_TYPE -> 2 symbols (status + value)
+        - Other types -> 1 symbol each
+        """
+        total = 0
+        for dev in self.devices.values():
+            for sym in dev.get_all_symbols():
+                type_name = sym["type_name"]
+                # Count how many symbols this node will expand to on the client
+                if type_name in ("CNT Inputs_TYPE", "CNT Outputs_TYPE"):
+                    total += 2  # Expands to status + value
+                elif type_name.startswith(
+                    "AI Standard Channel 1_"
+                ) and type_name.endswith("TYPE"):
+                    total += 2  # Expands to status + value
+                elif type_name.startswith(
+                    "AI Inputs Channel 1_"
+                ) and type_name.endswith("TYPE"):
+                    total += 2  # Expands to status + value
+                else:
+                    total += 1  # No expansion
+        return total
 
     def get_device(self, device_id: int) -> EtherCATDevice | None:
         """Get device by ID."""
@@ -494,6 +520,7 @@ class EtherCATChain:
         """Print a visual representation of the EtherCAT chain."""
         print("\n============ Simulated EtherCAT Chain ============")
         print(f"Total symbols: {self.total_symbol_count}")
+        print(f"  (Symbol nodes in YAML: {len(self.get_all_symbols())})")
         print("|")
         for device in self.devices.values():
             print(f"|----EtherCAT Master '{device.name}'")
