@@ -308,12 +308,12 @@ class EtherCATChain:
         Load terminal type definitions from YAML files.
 
         Loads terminal types from:
-        1. Built-in terminal types in src/fastcs_catio/terminals/
+        1. Built-in terminal types in src/catio_terminals/terminals/
         2. Legacy terminal_types in the main config (for backwards compatibility)
         """
         # Try to find the terminals directory relative to the package root
         # First check from the src folder
-        pkg_root = Path(__file__).parents[2] / "src" / "fastcs_catio" / "terminals"
+        pkg_root = Path(__file__).parents[2] / "src" / "catio_terminals" / "terminals"
 
         if not pkg_root.exists():
             # Fall back to checking relative to current file location

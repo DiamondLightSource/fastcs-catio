@@ -72,3 +72,6 @@ lockfiles/
 
 # generated bob screens
 screens
+
+.test.yaml
+.nicegui

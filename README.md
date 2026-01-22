@@ -21,6 +21,8 @@ This is where you should put some images or code snippets that illustrate
 some relevant examples. If it is a library then you might put some
 introductory code here:
 
+Some tips about using Claude Code[CLAUDE_NOTES.md].
+
 ```python
 from fastcs_catio import __version__
 

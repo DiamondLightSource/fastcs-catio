@@ -27,6 +27,29 @@ All code you write MUST be fully optimized.
   - If a `polars` dataframe will be printed, **NEVER** simultaneously print the number of entries in the dataframe nor the schema as it is redundant.
   - **NEVER** ingest more than 10 rows of a data frame at a time. Only analyze subsets of code to avoid overloading your memory context.
 
+## Terminal Tool Usage
+
+When using the `run_in_terminal` tool:
+
+- The tool result may show only a minimal acknowledgment (e.g., `#` with a timestamp) rather than the actual command output
+- **ALWAYS** use `terminal_last_command` tool afterward to retrieve the actual output if the `run_in_terminal` result appears empty or truncated
+- Check the exit code in the context to determine if the command succeeded before assuming failure
+
+**CRITICAL: Avoid repeating commands**
+
+- The `<context>` block at the start of each user message contains terminal state including:
+  - `Last Command`: The command that was run
+  - `Exit Code`: Whether it succeeded (0) or failed
+- **BEFORE** running a command, check if the context already shows it ran successfully
+- **NEVER** re-run a command that the context shows already completed with exit code 0
+- If you need the output and the context doesn't show it, use `terminal_last_command` once - do not re-run the command
+
+**Common mistake to avoid:**
+- ❌ Run command → Get minimal output → Try to run same command again
+- ✅ Run command → Get minimal output → Check context for exit code → Use `terminal_last_command` to get full output
+- The `run_in_terminal` tool often returns minimal acknowledgment, but the command still executed successfully
+- Always check the context in the next turn - if Exit Code: 0, the command succeeded; just get the output with `terminal_last_command`
+
 ## Code Style and Formatting
 
 - **MUST** use meaningful, descriptive variable and function names
@@ -150,6 +173,58 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - [ ] All functions have docstrings and type hints
 - [ ] No commented-out code or debug statements
 - [ ] No hardcoded credentials
+
+## Domain Knowledge
+
+This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protocol. Key concepts:
+
+- **Terminal Definitions**: YAML files describing Beckhoff terminal types, their symbols, and CoE objects. See [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) for:
+  - How to generate terminal YAML files using `catio-terminals`
+  - Understanding ADS symbol nodes and index groups
+  - The difference between XML-defined symbols and ADS runtime symbols (e.g., `WcState`)
+  - CoE (CANopen over EtherCAT) object definitions
+
+- **Beckhoff XML Files**: ESI (EtherCAT Slave Information) XML files from Beckhoff group terminals by series:
+  - `Beckhoff EL31xx.xml` contains EL3104, EL3124, etc.
+  - `Beckhoff EL32xx.xml` contains EL3202, EL3204, etc.
+  - Cached at `~/.cache/catio_terminals/beckhoff_xml/`
+  - Use `catio-terminals update-cache` to download/refresh
+
+- **Composite Types**: TwinCAT BIGTYPE structures (ads_type=65) that group primitive fields:
+  - Defined in `src/catio_terminals/config/composite_types.yaml`
+  - Example: `"AI Standard Channel 1_TYPE"` contains Status (UINT) + Value (INT)
+  - Used by simulator for accurate symbol table responses
+  - Used by FastCS generator to create controller attributes
+
+- **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals update-cache` to fetch Beckhoff XML definitions, then use `catio-terminals edit [filename]` to edit files with the GUI.
+
+## Agent Skills
+
+Skills are specialized knowledge that can be loaded on demand. Use these prompts to activate a skill:
+
+### Beckhoff XML Skill
+
+**Activation prompts:**
+- "Load Beckhoff XML skill"
+- "I need to work with ESI XML files"
+- "Help me understand the Beckhoff XML format"
+- "Help me edit terminal YAML files"
+- "I need to understand composite types"
+- "Extract terminal data from XML"
+- "Help me create a terminal YAML from XML"
+
+**Skill context:** Read these documents:
+- [docs/reference/beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) - ESI XML schema (Device, TxPdo, RxPdo, Entry, CoE objects), XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.), what information is NOT in XML (composite type names, ADS offsets)
+- [docs/explanations/terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
+- [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) - Composite type definitions (members, offsets, sizes)
+- XML files cached at `~/.cache/catio_terminals/beckhoff_xml/` - Actual Beckhoff ESI files grouped by series
+
+**Key mappings from XML to YAML:**
+- `Type@ProductCode` → `identity.product_code`
+- `Type@RevisionNo` → `identity.revision_number`
+- `TxPdo/Entry` → `symbol_nodes[]` (inputs)
+- `RxPdo/Entry` → `symbol_nodes[]` (outputs)
+- `Profile/Dictionary/Objects` → `coe_objects[]`
 
 ---
 

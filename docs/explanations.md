@@ -9,7 +9,7 @@ explanations/architecture-overview.md
 explanations/fastcs-epics-ioc.md
 explanations/ads-client.md
 explanations/api-decoupling.md
-explanations/terminal-definitions.md
+explanations/terminal-yaml-definitions.md
 
 explanations/*
 ```
