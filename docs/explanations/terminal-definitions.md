@@ -1,6 +1,6 @@
 # Terminal Type Definitions
 
-Terminal type definitions in CATio describe Beckhoff EtherCAT I/O terminals and their characteristics. These definitions are stored in YAML files organized by terminal class in [`src/fastcs_catio/terminals/`](../../src/fastcs_catio/terminals/).
+Terminal type definitions in CATio describe Beckhoff EtherCAT I/O terminals and their characteristics. These definitions are stored in YAML files organized by terminal class in `src/fastcs_catio/terminals/`.
 
 ## Purpose
 
@@ -142,5 +142,5 @@ To add a new terminal type:
 
 - [ADS Client Architecture](ads-client.md)
 - [Architecture Overview](architecture-overview.md)
-- Terminal type source files: [`src/fastcs_catio/terminals/`](../../src/fastcs_catio/terminals/)
+- Terminal type source files: `src/fastcs_catio/terminals/`
 - Symbol expansion logic: `src/fastcs_catio/symbols.py`
