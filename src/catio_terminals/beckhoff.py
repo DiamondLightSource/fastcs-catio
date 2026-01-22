@@ -501,17 +501,48 @@ class BeckhoffClient:
         """
         try:
             root = ET.fromstring(xml_content)
-            # Parse XML structure - this is a simplified example
-            # Real ESI XML files have a complex structure
 
-            description = root.findtext(
-                ".//Description", default=f"Terminal {terminal_id}"
-            )
+            # Find the device matching the terminal_id
+            device = None
+            for dev in root.findall(".//Device"):
+                type_elem = dev.find("Type")
+                if type_elem is not None and type_elem.text == terminal_id:
+                    device = dev
+                    break
 
-            # Extract identity information
-            vendor_id = int(root.findtext(".//VendorId", default="2"))
-            product_code = int(root.findtext(".//ProductCode", default="0"), 0)
-            revision = int(root.findtext(".//RevisionNo", default="0"), 0)
+            if device is None:
+                logger.warning(f"Device {terminal_id} not found in XML")
+                return self.create_default_terminal(
+                    terminal_id, f"Terminal {terminal_id}"
+                )
+
+            # Extract Type element attributes for identity
+            type_elem = device.find("Type")
+            # Handle Beckhoff's #x prefix for hex values
+            product_code_str = type_elem.get("ProductCode", "0").replace("#x", "0x")
+            revision_str = type_elem.get("RevisionNo", "0").replace("#x", "0x")
+            product_code = int(product_code_str, 0)
+            revision = int(revision_str, 0)
+
+            # Extract name/description (prefer English LcId=1033)
+            description = f"Terminal {terminal_id}"
+            for name_elem in device.findall("Name"):
+                if name_elem.get("LcId") == "1033":
+                    if name_elem.text:
+                        # Extract description after terminal ID
+                        # e.g., "EL3004 4Ch. Ana. Input +/-10V" ->
+                        #     "4Ch. Ana. Input +/-10V"
+                        desc_text = name_elem.text.strip()
+                        if desc_text.startswith(terminal_id):
+                            desc_text = desc_text[len(terminal_id) :].strip()
+                        description = desc_text if desc_text else name_elem.text
+                    break
+                elif name_elem.text:
+                    description = name_elem.text
+
+            # Extract vendor ID (should be 2 for Beckhoff)
+            vendor_elem = root.find(".//Vendor/Id")
+            vendor_id = int(vendor_elem.text) if vendor_elem is not None else 2
 
             identity = Identity(
                 vendor_id=vendor_id,
@@ -519,24 +550,69 @@ class BeckhoffClient:
                 revision_number=revision,
             )
 
-            # Extract symbol nodes - simplified
+            # Extract symbol nodes from TxPdo and RxPdo
             symbol_nodes = []
-            for symbol in root.findall(".//Symbol"):
-                name = symbol.findtext("Name", "")
-                index_group = int(symbol.findtext("IndexGroup", "0"), 0)
-                size = int(symbol.findtext("Size", "0"))
-                ads_type = int(symbol.findtext("DataType", "0"))
 
-                symbol_nodes.append(
-                    SymbolNode(
-                        name_template=name,
-                        index_group=index_group,
-                        size=size,
-                        ads_type=ads_type,
-                        type_name=symbol.findtext("TypeName", "UNKNOWN"),
-                        channels=1,
+            # Process TxPdo (inputs from terminal to controller)
+            for pdo in device.findall(".//TxPdo"):
+                for entry in pdo.findall("Entry"):
+                    name = entry.findtext("Name", "")
+                    if not name:  # Skip padding entries
+                        continue
+
+                    # Handle Beckhoff's #x prefix for hex values
+                    index_str = entry.findtext("Index", "0").replace("#x", "0x")
+                    index = int(index_str, 0)
+                    _sub_index = int(entry.findtext("SubIndex", "0"))
+                    bit_len = int(entry.findtext("BitLen", "0"))
+                    data_type = entry.findtext("DataType", "UNKNOWN")
+
+                    # Calculate index_group from index (upper 16 bits)
+                    index_group = (index >> 16) & 0xFFFF
+                    if index_group == 0:
+                        index_group = 0xF020  # Default TxPdo index group
+
+                    symbol_nodes.append(
+                        SymbolNode(
+                            name_template=name,
+                            index_group=index_group,
+                            size=(bit_len + 7) // 8,  # Convert bits to bytes
+                            ads_type=self._get_ads_type(data_type),
+                            type_name=data_type,
+                            channels=1,
+                        )
                     )
-                )
+
+            # Process RxPdo (outputs from controller to terminal)
+            for pdo in device.findall(".//RxPdo"):
+                for entry in pdo.findall("Entry"):
+                    name = entry.findtext("Name", "")
+                    if not name:  # Skip padding entries
+                        continue
+
+                    # Handle Beckhoff's #x prefix for hex values
+                    index_str = entry.findtext("Index", "0").replace("#x", "0x")
+                    index = int(index_str, 0)
+                    # TODO do we need sub_index?
+                    _sub_index = int(entry.findtext("SubIndex", "0"))
+                    bit_len = int(entry.findtext("BitLen", "0"))
+                    data_type = entry.findtext("DataType", "UNKNOWN")
+
+                    # Calculate index_group from index (upper 16 bits)
+                    index_group = (index >> 16) & 0xFFFF
+                    if index_group == 0:
+                        index_group = 0xF030  # Default RxPdo index group
+
+                    symbol_nodes.append(
+                        SymbolNode(
+                            name_template=name,
+                            index_group=index_group,
+                            size=(bit_len + 7) // 8,  # Convert bits to bytes
+                            ads_type=self._get_ads_type(data_type),
+                            type_name=data_type,
+                            channels=1,
+                        )
+                    )
 
             return TerminalType(
                 description=description,
@@ -547,6 +623,34 @@ class BeckhoffClient:
         except ET.ParseError as e:
             logger.error(f"Failed to parse XML: {e}")
             raise ValueError(f"Invalid XML content: {e}") from e
+        except Exception as e:
+            logger.error(f"Error parsing terminal XML: {e}", exc_info=True)
+            return self.create_default_terminal(terminal_id, f"Terminal {terminal_id}")
+
+    def _get_ads_type(self, data_type: str) -> int:
+        """Map EtherCAT data types to ADS types.
+
+        Args:
+            data_type: EtherCAT data type name
+
+        Returns:
+            ADS type code
+        """
+        type_map = {
+            "BOOL": 33,
+            "BYTE": 16,
+            "USINT": 16,
+            "SINT": 17,
+            "WORD": 18,
+            "UINT": 18,
+            "INT": 2,
+            "DWORD": 19,
+            "UDINT": 19,
+            "DINT": 3,
+            "REAL": 4,
+            "LREAL": 5,
+        }
+        return type_map.get(data_type.upper(), 65)  # 65 = generic structure
 
     def create_default_terminal(
         self, terminal_id: str, description: str
