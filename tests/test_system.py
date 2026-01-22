@@ -146,9 +146,8 @@ class TestFastcsCatioConnection:
 
         Validates that the IOC:
         - Successfully connects to the simulator
-        - Retrieves basic IO server information
-        Note: Full device/slave introspection is skipped due to hanging
-        in _get_slave_identities().
+        - Retrieves basic IO server info
+        - Validates the number of devices and symbols discovered
         """
 
         # Access the client to check IO server info
@@ -176,3 +175,54 @@ class TestFastcsCatioConnection:
         assert total_symbols == expected_chain.total_symbol_count, (
             f"Expected {expected_chain.total_symbol_count} symbols, got {total_symbols}"
         )
+
+    @pytest.mark.asyncio
+    async def test_discovered_terminals_match_yaml_config(
+        self, fastcs_catio_controller, expected_chain: EtherCATChain
+    ):
+        """Test that discovered EtherCAT terminals match the YAML configuration.
+
+        Validates that:
+        - The number of terminals matches the expected count from YAML
+        - Each terminal type matches the expected configuration
+        - Terminal addresses and positions are correct
+        """
+        client = fastcs_catio_controller.connection.client
+        assert client is not None, "ADS client not initialized"
+
+        # Get all discovered devices
+        devices = client._ecdevices
+        assert len(devices) > 0, "No EtherCAT devices discovered"
+
+        # Validate total slave count across all devices
+        total_discovered_slaves = sum(len(device.slaves) for device in devices.values())
+        assert total_discovered_slaves == expected_chain.total_slave_count, (
+            f"Expected {expected_chain.total_slave_count} slaves, "
+            f"got {total_discovered_slaves}"
+        )
+
+        # Validate each device's slaves match the expected configuration
+        for device_id, device in devices.items():
+            expected_device = expected_chain.get_device(device_id)
+            assert expected_device is not None, (
+                f"Device {device_id} found in client but not in expected config"
+            )
+
+            assert len(device.slaves) == len(expected_device.slaves), (
+                f"Device {device_id}: Expected {len(expected_device.slaves)} slaves, "
+                f"got {len(device.slaves)}"
+            )
+
+            # Validate each slave terminal
+            for discovered_slave, expected_slave in zip(
+                device.slaves, expected_device.slaves, strict=True
+            ):
+                assert discovered_slave.type == expected_slave.type, (
+                    f"Terminal type mismatch: expected {expected_slave.type}, "
+                    f"got {discovered_slave.type}"
+                )
+
+                assert discovered_slave.address == expected_slave.address, (
+                    f"Terminal {expected_slave.type} address mismatch: "
+                    f"expected {expected_slave.address}, got {discovered_slave.address}"
+                )
