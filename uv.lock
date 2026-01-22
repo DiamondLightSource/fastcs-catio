@@ -803,6 +803,7 @@ terminals = [
     { name = "nicegui" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "ruamel-yaml" },
 ]
 
 [package.dev-dependencies]
@@ -833,6 +834,7 @@ requires-dist = [
     { name = "pvi" },
     { name = "pydantic", marker = "extra == 'terminals'", specifier = ">=2.0.0" },
     { name = "pyyaml", marker = "extra == 'terminals'", specifier = ">=6.0" },
+    { name = "ruamel-yaml", marker = "extra == 'terminals'", specifier = ">=0.18.0" },
     { name = "softioc", specifier = ">=4.7.0" },
     { name = "typer" },
     { name = "typing-extensions", marker = "python_full_version < '3.8'" },

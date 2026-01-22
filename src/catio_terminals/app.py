@@ -650,7 +650,7 @@ def main() -> None:
                     if (window.hasUnsavedChanges === true) {
                         event.preventDefault();
                         event.returnValue = '';
-                        return 'You have unsaved changes. Are you sure you want to leave?';
+                        return 'You have unsaved changes. Are you sure?';
                     }
                 });
             </script>
