@@ -25,33 +25,100 @@ class TerminalEditorApp:
     async def show_file_selector(self) -> None:
         """Show file selector dialog."""
 
-        with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
+        with ui.dialog() as dialog, ui.card().classes("w-[800px] max-h-[600px]"):
             ui.label("Select Terminal YAML File").classes("text-lg font-bold mb-4")
 
-            # Common paths for quick access
-            ui.label("Quick Access:").classes("text-caption text-gray-600 mt-2")
-            common_paths = [
-                "src/fastcs_catio/terminals/analog_output.yaml",
-                "src/fastcs_catio/terminals/digital_input.yaml",
-                "src/fastcs_catio/terminals/digital_output.yaml",
-            ]
+            # Folder browser with local state
+            current_dir = {"path": Path.cwd()}
+
+            ui.label("Browse Folders:").classes("text-caption text-gray-600 mt-2")
+
+            # Current directory display
+            dir_label = ui.label(f"Current: {current_dir['path']}").classes(
+                "text-sm text-blue-300 mb-2"
+            )
+
+            # Folder navigation
+            folder_container = ui.column().classes(
+                "w-full max-h-48 overflow-y-auto border border-gray-600 rounded p-2"
+            )
+
+            def update_folder_view():
+                """Update the folder view with current directory contents."""
+                folder_container.clear()
+                dir_label.text = f"Current: {current_dir['path']}"
+
+                with folder_container:
+                    # Parent directory button
+                    if current_dir["path"].parent != current_dir["path"]:
+                        with ui.row().classes(
+                            "w-full hover:bg-gray-700 cursor-pointer p-1"
+                        ):
+                            ui.icon("folder").classes("text-yellow-500")
+
+                            def go_up():
+                                current_dir["path"] = current_dir["path"].parent
+                                update_folder_view()
+
+                            ui.label("..").on("click", go_up)
+
+                    # List directories and YAML files
+                    try:
+                        items = sorted(current_dir["path"].iterdir())
+                        for item in items:
+                            if item.is_dir():
+                                with ui.row().classes(
+                                    "w-full hover:bg-gray-700 cursor-pointer p-1"
+                                ):
+                                    ui.icon("folder").classes("text-yellow-500")
+
+                                    def go_into(target=item):
+                                        current_dir["path"] = target
+                                        update_folder_view()
+
+                                    ui.label(item.name).on("click", go_into)
+                            elif item.suffix in [".yaml", ".yml"]:
+                                with ui.row().classes(
+                                    "w-full hover:bg-gray-700 cursor-pointer p-1"
+                                ):
+                                    ui.icon("description").classes("text-blue-400")
+
+                                    def select_file(target=item):
+                                        file_path.set_value(str(target))
+
+                                    ui.label(item.name).on("click", select_file)
+                    except PermissionError:
+                        ui.label("Permission denied").classes("text-red-400")
+
+            update_folder_view()
+
+            def navigate_to_path():
+                """Navigate to the path typed in the file_path input."""
+                path_str = file_path.value.strip()
+                if path_str:
+                    try:
+                        new_path = Path(path_str)
+                        if new_path.is_dir():
+                            current_dir["path"] = new_path
+                            update_folder_view()
+                        elif new_path.parent.is_dir():
+                            # If it's a file path, navigate to its parent directory
+                            current_dir["path"] = new_path.parent
+                            update_folder_view()
+                    except (ValueError, OSError):
+                        # Invalid path, keep current directory
+                        pass
 
             file_path = ui.input(
                 label="File Path",
-                placeholder="/path/to/terminals.yaml",
+                placeholder="/path/to/terminals.yaml (press Enter to navigate)",
                 validation={
                     "File must end with .yaml": lambda v: v.endswith(".yaml")
                     or v.endswith(".yml")
                 },
-            ).classes("w-full mt-2")
+            ).classes("w-full mt-4")
 
-            with ui.row().classes("w-full gap-2 mb-2"):
-                for path in common_paths:
-                    if Path(path).exists():
-                        ui.button(
-                            Path(path).name,
-                            on_click=lambda p=path: file_path.set_value(p),
-                        ).props("flat size=sm")
+            file_path.on("keyup.enter", navigate_to_path)
 
             with ui.row().classes("w-full justify-end gap-2"):
                 ui.button("Cancel", on_click=dialog.close).props("flat")
@@ -344,39 +411,32 @@ class TerminalEditorApp:
                         ui.label("No terminals found").classes("text-gray-500")
                     else:
                         for term in terminals:
-                            with ui.card().classes(
-                                "w-full cursor-pointer hover:bg-gray-100"
-                            ):
-                                ui.label(f"{term.terminal_id} - {term.name}").classes(
-                                    "font-bold"
-                                )
-                                ui.label(term.description).classes("text-caption")
+                            with ui.card().classes("w-full hover:bg-gray-700"):
+                                with ui.row().classes(
+                                    "w-full items-center justify-between"
+                                ):
+                                    with ui.column().classes("flex-grow"):
+                                        ui.label(
+                                            f"{term.terminal_id} - {term.name}"
+                                        ).classes("font-bold text-white")
+                                        ui.label(term.description).classes(
+                                            "text-caption text-gray-300"
+                                        )
 
-                                def add_term(t=term):
-                                    return self.add_terminal_from_beckhoff(t, dialog)
+                                    def add_term(t=term):
+                                        return self.add_terminal_from_beckhoff(
+                                            t, dialog
+                                        )
 
-                                ui.button(
-                                    "Add",
-                                    on_click=add_term,
-                                ).props("flat color=primary")
+                                    ui.button(
+                                        "Add",
+                                        on_click=add_term,
+                                    ).props("color=primary")
 
             search_input.on("keyup.enter", search_terminals)
-            ui.button("Search", on_click=search_terminals).props("color=primary")
-
-            ui.separator().classes("my-4")
-
-            ui.label("Or Create Manually").classes("text-caption text-gray-600")
-            manual_id = ui.input(label="Terminal ID (e.g., EL4004)").classes("w-full")
-            manual_desc = ui.input(label="Description").classes("w-full")
-
-            with ui.row().classes("w-full justify-end gap-2 mt-4"):
+            with ui.row().classes("w-full justify-between mt-4"):
                 ui.button("Cancel", on_click=dialog.close).props("flat")
-                ui.button(
-                    "Create Manually",
-                    on_click=lambda: self.add_manual_terminal(
-                        manual_id.value, manual_desc.value, dialog
-                    ),
-                ).props("color=secondary")
+                ui.button("Search", on_click=search_terminals).props("color=primary")
 
         dialog.open()
 
@@ -463,6 +523,56 @@ class TerminalEditorApp:
             logger.exception("Failed to save file")
             ui.notify(f"Failed to save: {e}", type="negative")
 
+    async def close_editor(self) -> None:
+        """Close the editor and return to file selector.
+
+        Warns if there are unsaved changes.
+        """
+        if self.has_unsaved_changes:
+            with ui.dialog() as dialog, ui.card():
+                ui.label("Unsaved Changes").classes("text-h6")
+                ui.label(
+                    "You have unsaved changes. What would you like to do?"
+                ).classes("text-caption mb-4")
+
+                action_result = {"value": None}
+
+                def submit_action(value):
+                    action_result["value"] = value
+                    dialog.close()
+
+                with ui.row().classes("w-full justify-end gap-2"):
+                    ui.button("Cancel", on_click=lambda: submit_action("cancel")).props(
+                        "flat"
+                    )
+                    ui.button(
+                        "Discard Changes", on_click=lambda: submit_action("discard")
+                    ).props("color=negative")
+                    ui.button(
+                        "Save & Close", on_click=lambda: submit_action("save")
+                    ).props("color=positive")
+
+            await dialog
+
+            action = action_result["value"]
+
+            if action == "cancel" or action is None:
+                return
+            elif action == "save":
+                # Save the file first
+                await self.save_file()
+                # If save failed, don't close
+                if self.has_unsaved_changes:
+                    return
+            # If action == "discard" or save succeeded, continue to close
+
+        # Reset state and navigate to file selector
+        self.config = None
+        self.current_file = None
+        self.has_unsaved_changes = False
+        ui.run_javascript("window.hasUnsavedChanges = false;")
+        ui.navigate.to("/")
+
 
 def main() -> None:
     """Main entry point for the application."""
@@ -485,9 +595,10 @@ def main() -> None:
             with ui.column().classes("gap-0"):
                 ui.label("Terminal Configuration Editor").classes("text-h5")
                 if editor.current_file:
-                    ui.label(
+                    file_info = (
                         f"📄 {editor.current_file.name} - {editor.current_file.parent}"
-                    ).classes("text-sm text-blue-300")
+                    )
+                    ui.label(file_info).classes("text-sm text-blue-300")
 
             with ui.row().classes("gap-2"):
                 # Prominent Save button
@@ -496,6 +607,13 @@ def main() -> None:
                     icon="save",
                     on_click=editor.save_file,
                 ).props("color=positive")
+
+                # Close button
+                ui.button(
+                    "Close",
+                    icon="close",
+                    on_click=editor.close_editor,
+                ).props("color=negative")
 
                 ui.button(
                     "Add Terminal",
@@ -525,21 +643,18 @@ def main() -> None:
         # Warn before leaving with unsaved changes
         ui.add_head_html("""
             <script>
+                // Initialize the flag to false
+                window.hasUnsavedChanges = false;
+
                 window.addEventListener('beforeunload', (event) => {
-                    if (window.hasUnsavedChanges) {
+                    if (window.hasUnsavedChanges === true) {
                         event.preventDefault();
                         event.returnValue = '';
-                        const msg = 'You have unsaved changes.';
-                        return msg + ' Are you sure you want to leave?';
+                        return 'You have unsaved changes. Are you sure you want to leave?';
                     }
                 });
             </script>
         """)
-
-        # Update the global unsaved changes flag
-        ui.run_javascript(
-            f"window.hasUnsavedChanges = {str(editor.has_unsaved_changes).lower()};"
-        )
 
     ui.run(
         title="Terminal Configuration Editor",
