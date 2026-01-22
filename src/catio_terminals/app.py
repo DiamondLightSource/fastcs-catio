@@ -20,22 +20,38 @@ class TerminalEditorApp:
         self.current_file: Path | None = None
         self.beckhoff_client = BeckhoffClient()
         self.tree_data: dict[str, dict] = {}
+        self.has_unsaved_changes = False
 
     async def show_file_selector(self) -> None:
         """Show file selector dialog."""
 
-        with ui.dialog() as dialog, ui.card().classes("w-96"):
+        with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
             ui.label("Select Terminal YAML File").classes("text-lg font-bold mb-4")
 
-            with ui.row().classes("w-full gap-2"):
-                file_path = ui.input(
-                    label="File Path",
-                    placeholder="/path/to/terminals.yaml",
-                    validation={
-                        "File must end with .yaml": lambda v: v.endswith(".yaml")
-                        or v.endswith(".yml")
-                    },
-                ).classes("flex-grow")
+            # Common paths for quick access
+            ui.label("Quick Access:").classes("text-caption text-gray-600 mt-2")
+            common_paths = [
+                "src/fastcs_catio/terminals/analog_output.yaml",
+                "src/fastcs_catio/terminals/digital_input.yaml",
+                "src/fastcs_catio/terminals/digital_output.yaml",
+            ]
+
+            file_path = ui.input(
+                label="File Path",
+                placeholder="/path/to/terminals.yaml",
+                validation={
+                    "File must end with .yaml": lambda v: v.endswith(".yaml")
+                    or v.endswith(".yml")
+                },
+            ).classes("w-full mt-2")
+
+            with ui.row().classes("w-full gap-2 mb-2"):
+                for path in common_paths:
+                    if Path(path).exists():
+                        ui.button(
+                            Path(path).name,
+                            on_click=lambda p=path: file_path.set_value(p),
+                        ).props("flat size=sm")
 
             with ui.row().classes("w-full justify-end gap-2"):
                 ui.button("Cancel", on_click=dialog.close).props("flat")
@@ -68,6 +84,7 @@ class TerminalEditorApp:
 
         self.config = TerminalConfig()
         self.current_file = path
+        self.has_unsaved_changes = False
         dialog.close()
         await self.build_editor_ui()
         ui.notify(f"Created new file: {path.name}", type="positive")
@@ -91,6 +108,7 @@ class TerminalEditorApp:
         try:
             self.config = TerminalConfig.from_yaml(path)
             self.current_file = path
+            self.has_unsaved_changes = False
             dialog.close()
             await self.build_editor_ui()
             ui.notify(f"Opened: {path.name}", type="positive")
@@ -137,8 +155,9 @@ class TerminalEditorApp:
             on_select=lambda e: self.on_tree_select(e.value),
         ).classes("w-full")
 
-        # Add context menu for terminals
-        tree.props("selected-color=primary")
+        # Better contrast for selected items
+        tree.props("selected-color=blue-7")
+        tree.classes("text-white")
 
     def on_tree_select(self, node_id: str) -> None:
         """Handle tree node selection.
@@ -214,7 +233,9 @@ class TerminalEditorApp:
             ui.input(
                 label="Name Template",
                 value=symbol.name_template,
-                on_change=lambda e: setattr(symbol, "name_template", e.value),
+                on_change=lambda e: self._mark_changed(
+                    lambda: setattr(symbol, "name_template", e.value)
+                ),
             ).classes("w-full")
 
             with ui.row().classes("w-full gap-2"):
@@ -222,33 +243,53 @@ class TerminalEditorApp:
                     label="Index Group",
                     value=symbol.index_group,
                     format="0x%04X",
-                    on_change=lambda e: setattr(symbol, "index_group", int(e.value)),
+                    on_change=lambda e: self._mark_changed(
+                        lambda: setattr(symbol, "index_group", int(e.value))
+                    ),
                 ).classes("flex-1")
 
                 ui.number(
                     label="Size",
                     value=symbol.size,
-                    on_change=lambda e: setattr(symbol, "size", int(e.value)),
+                    on_change=lambda e: self._mark_changed(
+                        lambda: setattr(symbol, "size", int(e.value))
+                    ),
                 ).classes("flex-1")
 
             with ui.row().classes("w-full gap-2"):
                 ui.number(
                     label="ADS Type",
                     value=symbol.ads_type,
-                    on_change=lambda e: setattr(symbol, "ads_type", int(e.value)),
+                    on_change=lambda e: self._mark_changed(
+                        lambda: setattr(symbol, "ads_type", int(e.value))
+                    ),
                 ).classes("flex-1")
 
                 ui.number(
                     label="Channels",
                     value=symbol.channels,
-                    on_change=lambda e: setattr(symbol, "channels", int(e.value)),
+                    on_change=lambda e: self._mark_changed(
+                        lambda: setattr(symbol, "channels", int(e.value))
+                    ),
                 ).classes("flex-1")
 
             ui.input(
                 label="Type Name",
                 value=symbol.type_name,
-                on_change=lambda e: setattr(symbol, "type_name", e.value),
+                on_change=lambda e: self._mark_changed(
+                    lambda: setattr(symbol, "type_name", e.value)
+                ),
             ).classes("w-full")
+
+    def _mark_changed(self, action) -> None:
+        """Mark that changes have been made and execute the action.
+
+        Args:
+            action: Function to execute
+        """
+        action()
+        self.has_unsaved_changes = True
+        ui.run_javascript("window.hasUnsavedChanges = true;")
 
     async def delete_terminal(self, terminal_id: str) -> None:
         """Delete a terminal type.
@@ -273,6 +314,7 @@ class TerminalEditorApp:
 
         if await result:
             self.config.remove_terminal(terminal_id)
+            self.has_unsaved_changes = True
             await self.build_editor_ui()
             ui.notify(f"Deleted terminal: {terminal_id}", type="info")
 
@@ -371,6 +413,7 @@ class TerminalEditorApp:
             )
 
         self.config.add_terminal(terminal_info.terminal_id, terminal)
+        self.has_unsaved_changes = True
         dialog.close()
         await self.build_editor_ui()
         ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
@@ -400,6 +443,7 @@ class TerminalEditorApp:
             terminal_id, description or f"Terminal {terminal_id}"
         )
         self.config.add_terminal(terminal_id, terminal)
+        self.has_unsaved_changes = True
         dialog.close()
         await self.build_editor_ui()
         ui.notify(f"Added terminal: {terminal_id}", type="positive")
@@ -412,6 +456,8 @@ class TerminalEditorApp:
 
         try:
             self.config.to_yaml(self.current_file)
+            self.has_unsaved_changes = False
+            ui.run_javascript("window.hasUnsavedChanges = false;")
             ui.notify(f"Saved: {self.current_file.name}", type="positive")
         except Exception as e:
             logger.exception("Failed to save file")
@@ -435,24 +481,35 @@ def main() -> None:
         """Editor page - main interface."""
         ui.dark_mode().enable()
 
-        with ui.header().classes("items-center justify-between"):
-            ui.label("Terminal Configuration Editor").classes("text-h5")
-            with ui.row():
+        with ui.header().classes("items-center justify-between px-4"):
+            with ui.column().classes("gap-0"):
+                ui.label("Terminal Configuration Editor").classes("text-h5")
+                if editor.current_file:
+                    ui.label(
+                        f"📄 {editor.current_file.name} - {editor.current_file.parent}"
+                    ).classes("text-sm text-blue-300")
+
+            with ui.row().classes("gap-2"):
+                # Prominent Save button
                 ui.button(
                     "Save",
                     icon="save",
                     on_click=editor.save_file,
-                ).props("flat")
+                ).props("color=positive")
+
                 ui.button(
                     "Add Terminal",
                     icon="add",
                     on_click=editor.show_add_terminal_dialog,
                 ).props("color=primary")
 
-        if editor.current_file:
-            ui.label(f"File: {editor.current_file}").classes(
-                "text-caption text-gray-600 px-4"
-            )
+        # Unsaved changes indicator
+        if editor.has_unsaved_changes:
+            with ui.row().classes("w-full justify-center bg-orange-900 py-1"):
+                ui.icon("warning").classes("text-orange-300")
+                ui.label("You have unsaved changes").classes(
+                    "text-sm text-orange-300 font-bold"
+                )
 
         with ui.splitter(value=30).classes("w-full h-full") as splitter:
             with splitter.before:
@@ -464,6 +521,25 @@ def main() -> None:
                 with ui.card().classes("w-full h-full"):
                     ui.label("Details").classes("text-h6 mb-2")
                     editor.details_container = ui.column().classes("w-full")
+
+        # Warn before leaving with unsaved changes
+        ui.add_head_html("""
+            <script>
+                window.addEventListener('beforeunload', (event) => {
+                    if (window.hasUnsavedChanges) {
+                        event.preventDefault();
+                        event.returnValue = '';
+                        const msg = 'You have unsaved changes.';
+                        return msg + ' Are you sure you want to leave?';
+                    }
+                });
+            </script>
+        """)
+
+        # Update the global unsaved changes flag
+        ui.run_javascript(
+            f"window.hasUnsavedChanges = {str(editor.has_unsaved_changes).lower()};"
+        )
 
     ui.run(
         title="Terminal Configuration Editor",

@@ -790,6 +790,7 @@ name = "fastcs-catio"
 source = { editable = "." }
 dependencies = [
     { name = "fastcs", extra = ["epics"] },
+    { name = "nicegui" },
     { name = "numpy" },
     { name = "pvi" },
     { name = "softioc" },
@@ -826,6 +827,7 @@ dev = [
 requires-dist = [
     { name = "fastcs", extras = ["epics"], specifier = "==0.12.0a1" },
     { name = "httpx", marker = "extra == 'terminals'", specifier = ">=0.27.0" },
+    { name = "nicegui", specifier = ">=3.6.1" },
     { name = "nicegui", marker = "extra == 'terminals'", specifier = ">=2.0.0" },
     { name = "numpy" },
     { name = "pvi" },
