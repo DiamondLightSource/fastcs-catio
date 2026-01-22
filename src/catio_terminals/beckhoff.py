@@ -20,6 +20,7 @@ class BeckhoffTerminalInfo:
     name: str
     description: str
     url: str
+    xml_file: str | None = None
 
 
 class BeckhoffClient:
@@ -28,6 +29,7 @@ class BeckhoffClient:
     BASE_URL = "https://www.beckhoff.com"
     SEARCH_API = f"{BASE_URL}/en-us/products/i-o/ethercat-terminals/"
     XML_DOWNLOAD_URL = "https://download.beckhoff.com/download/configuration-files/io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
+    MAX_TERMINALS = 20  # Set to 0 to fetch all terminals
 
     def __init__(self) -> None:
         """Initialize Beckhoff client."""
@@ -45,9 +47,7 @@ class BeckhoffClient:
         self.xml_cache_file = self.cache_dir / "Beckhoff_EtherCAT_XML.zip"
         self.xml_extract_dir = self.cache_dir / "beckhoff_xml"
         self.terminals_cache_file = self.cache_dir / "terminals_cache.json"
-        self.xml_map_cache_file = self.cache_dir / "xml_map_cache.json"
         self._cached_terminals: list[BeckhoffTerminalInfo] | None = None
-        self._xml_file_map: dict[str, str] | None = None
 
     def get_cached_terminals(self) -> list[BeckhoffTerminalInfo] | None:
         """Get terminals from cache if available.
@@ -212,6 +212,7 @@ class BeckhoffClient:
                                     name=name,
                                     description=description,
                                     url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
+                                    xml_file=str(xml_file),
                                 )
                             )
 
@@ -332,12 +333,28 @@ class BeckhoffClient:
                                     name=name,
                                     description=description,
                                     url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
+                                    xml_file=str(xml_file),
                                 )
                             )
+
+                            # Check if we've reached the limit
+                            if (
+                                self.MAX_TERMINALS > 0
+                                and len(terminals) >= self.MAX_TERMINALS
+                            ):
+                                logger.info(
+                                    f"Reached MAX_TERMINALS limit of "
+                                    f"{self.MAX_TERMINALS}"
+                                )
+                                break
 
                 except Exception as e:
                     logger.debug(f"Failed to parse {xml_file.name}: {e}")
                     continue
+
+                # Break outer loop if we've reached the limit
+                if self.MAX_TERMINALS > 0 and len(terminals) >= self.MAX_TERMINALS:
+                    break
 
             # Step 3: Save to cache
             if progress_callback:
@@ -415,55 +432,6 @@ class BeckhoffClient:
         logger.info(f"Found {len(terminals)} matching terminals")
         return terminals
 
-    def _load_xml_map(self) -> dict[str, str]:
-        """Load or build a map of terminal IDs to XML file paths.
-
-        Returns:
-            Dictionary mapping terminal IDs to XML file paths
-        """
-        if self._xml_file_map:
-            return self._xml_file_map
-
-        # Try to load from cache
-        if self.xml_map_cache_file.exists():
-            try:
-                import json
-
-                with self.xml_map_cache_file.open("r") as f:
-                    self._xml_file_map = json.load(f)
-                logger.debug(f"Loaded XML map with {len(self._xml_file_map)} entries")
-                return self._xml_file_map
-            except Exception as e:
-                logger.debug(f"Failed to load XML map cache: {e}")
-
-        # Build the map by scanning XML files
-        import json
-        import re
-
-        self._xml_file_map = {}
-        logger.info("Building XML file map...")
-
-        for xml_file in self.xml_extract_dir.rglob("*.xml"):
-            try:
-                # Extract terminal IDs from filename or content
-                terminal_ids = re.findall(
-                    r"\b(E[LKPSJ]\d{4})\b", xml_file.name, re.IGNORECASE
-                )
-                for terminal_id in terminal_ids:
-                    self._xml_file_map[terminal_id.upper()] = str(xml_file)
-            except Exception as e:
-                logger.debug(f"Error processing {xml_file.name}: {e}")
-
-        # Save to cache
-        try:
-            with self.xml_map_cache_file.open("w") as f:
-                json.dump(self._xml_file_map, f, indent=2)
-            logger.info(f"Saved XML map with {len(self._xml_file_map)} entries")
-        except Exception as e:
-            logger.debug(f"Failed to save XML map cache: {e}")
-
-        return self._xml_file_map
-
     async def fetch_terminal_xml(self, terminal_id: str) -> str | None:
         """Fetch XML description for a terminal.
 
@@ -475,26 +443,32 @@ class BeckhoffClient:
         """
         logger.info(f"Fetching XML for terminal: {terminal_id}")
 
-        # Ensure XML files are downloaded
+        # Try to get from cached terminals first
+        terminals = self.get_cached_terminals()
+        if terminals:
+            for terminal in terminals:
+                if terminal.terminal_id == terminal_id and terminal.xml_file:
+                    xml_file_path = Path(terminal.xml_file)
+                    if xml_file_path.exists():
+                        try:
+                            with xml_file_path.open(
+                                "r", encoding="utf-8", errors="ignore"
+                            ) as f:
+                                content = f.read()
+                                logger.info(
+                                    f"Found XML for {terminal_id} in "
+                                    "{xml_file_path.name}"
+                                )
+                                return content
+                        except Exception as e:
+                            logger.error(f"Error reading cached XML file: {e}")
+                    break
+
+        # Fallback: ensure XML files are downloaded and search all files
+        logger.debug(f"Terminal {terminal_id} not in cache, searching files...")
         if not self._download_xml_files():
             logger.error("Could not download XML files")
             return None
-
-        # Load XML map
-        xml_map = self._load_xml_map()
-
-        # Check if we have a direct mapping
-        if terminal_id.upper() in xml_map:
-            xml_file_path = Path(xml_map[terminal_id.upper()])
-            try:
-                with xml_file_path.open("r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                    logger.info(f"Found XML for {terminal_id} in {xml_file_path.name}")
-                    return content
-            except Exception as e:
-                logger.error(f"Error reading cached XML file: {e}")
-
-        # Fallback: search all files (shouldn't happen often)
         import re
 
         logger.debug(f"Terminal {terminal_id} not in map, searching files...")
@@ -504,8 +478,6 @@ class BeckhoffClient:
                     content = f.read()
                     if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):
                         logger.info(f"Found XML for {terminal_id} in {xml_file.name}")
-                        # Update the map for next time
-                        xml_map[terminal_id.upper()] = str(xml_file)
                         return content
             except Exception as e:
                 logger.debug(f"Error reading {xml_file.name}: {e}")
