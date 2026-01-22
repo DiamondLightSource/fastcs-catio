@@ -9,7 +9,7 @@ Options:
     --host HOST              Host address to bind to (default: 127.0.0.1)
     --port PORT              Port to listen on (default: 48898)
     --config PATH            Path to YAML config file
-                             (default: ethercat_chain.yaml)
+                             (default: server_config.yaml)
     --log-level LEVEL        Set logging level: DEBUG, INFO, WARNING, ERROR
                              (default: INFO)
     --disable-notifications  Disable the notification system to reduce
@@ -98,7 +98,7 @@ async def main() -> int:
             return 1
     else:
         # Use default config from package
-        default_config = Path(__file__).parent / "ethercat_chain.yaml"
+        default_config = Path(__file__).parent / "server_config.yaml"
         if default_config.exists():
             config_path = default_config
             logger.info(f"Using default config: {config_path}")

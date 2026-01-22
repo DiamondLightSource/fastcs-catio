@@ -36,7 +36,7 @@ from ads_sim.ethercat_chain import EtherCATChain
 @pytest.fixture(scope="session")
 def expected_chain() -> EtherCATChain:
     """Load and return the expected EtherCAT chain configuration."""
-    config_path = Path(__file__).parent / "ads_sim" / "ethercat_chain.yaml"
+    config_path = Path(__file__).parent / "ads_sim" / "server_config.yaml"
     return EtherCATChain(config_path)
 
 

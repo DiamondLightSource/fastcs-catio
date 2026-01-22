@@ -290,15 +290,59 @@ class EtherCATChain:
         self.devices: dict[int, EtherCATDevice] = {}
         self.terminal_types: dict[str, TerminalType] = {}
 
+        # Load terminal types from separate YAML files
+        self._load_terminal_types()
+
         if config_path:
             self.load_config(config_path)
         else:
             # Load default config from package
-            default_config = Path(__file__).parent / "ethercat_chain.yaml"
+            default_config = Path(__file__).parent / "server_config.yaml"
             if default_config.exists():
                 self.load_config(default_config)
             else:
                 logger.warning("No config file found, using empty chain")
+
+    def _load_terminal_types(self) -> None:
+        """
+        Load terminal type definitions from YAML files.
+
+        Loads terminal types from:
+        1. Built-in terminal types in src/fastcs_catio/terminals/
+        2. Legacy terminal_types in the main config (for backwards compatibility)
+        """
+        # Try to find the terminals directory relative to the package root
+        # First check from the src folder
+        pkg_root = Path(__file__).parents[2] / "src" / "fastcs_catio" / "terminals"
+
+        if not pkg_root.exists():
+            # Fall back to checking relative to current file location
+            pkg_root = Path(__file__).parent / "terminals"
+
+        if pkg_root.exists():
+            # Load all YAML files in the terminals directory
+            for yaml_file in sorted(pkg_root.glob("*.yaml")):
+                try:
+                    with open(yaml_file) as f:
+                        terminal_config = yaml.safe_load(f)
+
+                    if "terminal_types" in terminal_config:
+                        for type_name, type_config in terminal_config[
+                            "terminal_types"
+                        ].items():
+                            self.terminal_types[type_name] = self._parse_terminal_type(
+                                type_name, type_config
+                            )
+                        logger.debug(
+                            f"Loaded {len(terminal_config['terminal_types'])} "
+                            f"terminal types from {yaml_file.name}"
+                        )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load terminal types from {yaml_file}: {e}"
+                    )
+        else:
+            logger.warning(f"Terminal types directory not found: {pkg_root}")
 
     def load_config(self, config_path: str | Path) -> None:
         """

@@ -1,0 +1,166 @@
+# Analog Input Terminals
+# ========================================================
+# Analog input terminals for various voltage ranges and resolutions
+
+terminal_types:
+  # Analog Input Terminals (4-channel 12-bit/16-bit)
+  EL3004:
+    description: "4-channel Analog Input +/-10V 12-bit"
+    identity:
+      vendor_id: 2
+      product_code: 0x0BBC3052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "AI Standard Channel {channel}"
+        index_group: 0xF020
+        size: 4 # Status + Value
+        ads_type: 65
+        type_name: "AI Standard Channel 1_TYPE"
+        channels: 4
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  EL3064:
+    description: "4-channel Analog Input 0..10V 12-bit"
+    identity:
+      vendor_id: 2
+      product_code: 0x0BF83052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "AI Standard Channel {channel}"
+        index_group: 0xF020
+        size: 4 # Status + Value
+        ads_type: 65
+        type_name: "AI Standard Channel 1_TYPE"
+        channels: 4
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  EL3104:
+    description: "4-channel Analog Input +/-10V 16-bit"
+    identity:
+      vendor_id: 2
+      product_code: 0x0C203052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "AI Standard Channel {channel}"
+        index_group: 0xF020
+        size: 4 # Status + Value
+        ads_type: 65
+        type_name: "AI Standard Channel 1_TYPE"
+        channels: 4
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  EL3124:
+    description: "4-channel Analog Input 4..20mA 16-bit"
+    identity:
+      vendor_id: 2
+      product_code: 0x0C343052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "AI Standard Channel {channel}"
+        index_group: 0xF020
+        size: 4
+        ads_type: 65
+        type_name: "AI Standard Channel 1_TYPE"
+        channels: 4
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  # Analog Input Terminals (2-channel 24-bit)
+  EL3602:
+    description: "2-channel Analog Input +/-10V 24-bit"
+    identity:
+      vendor_id: 2
+      product_code: 0x0E123052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "AI Inputs Channel {channel}"
+        index_group: 0xF020
+        size: 6 # Status + Value
+        ads_type: 65
+        type_name: "AI Inputs Channel 1_TYPE"
+        channels: 2
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  # Oversampling Analog Input (2-channel)
+  EL3702:
+    description: "2-channel Analog Input 16-bit Oversampling"
+    identity:
+      vendor_id: 2
+      product_code: 0x0E763052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "Ch{channel} CycleCount"
+        index_group: 0xF020
+        size: 2
+        ads_type: 65
+        type_name: "Ch1 CycleCount_TYPE"
+        channels: 2
+      - name_template: "Ch{channel} Sample 0"
+        index_group: 0xF020
+        size: 200 # 100 samples * 2 bytes
+        ads_type: 65
+        type_name: "Ch1 Sample 0_TYPE_ARR"
+        channels: 2
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  # ELM3704 (4-channel Multi-function)
+  ELM3704-0000:
+    description: "4-channel Multi-function Analog Input"
+    identity:
+      vendor_id: 2
+      product_code: 0x0E783052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "PAI Status Channel {channel}"
+        index_group: 0xF020
+        size: 2
+        ads_type: 65
+        type_name: "PAI Status Channel 1_TYPE"
+        channels: 4
+      - name_template: "PAI Timestamp Channel {channel}"
+        index_group: 0xF020
+        size: 8
+        ads_type: 65
+        type_name: "PAI Timestamp Channel 1_TYPE"
+        channels: 4
+      - name_template: "PAI Samples 50 Channel {channel}"
+        index_group: 0xF020
+        size: 200 # 50 samples * 4 bytes
+        ads_type: 65
+        type_name: "PAI Samples 50 Channel 1_TYPE"
+        channels: 4
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1

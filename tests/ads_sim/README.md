@@ -82,27 +82,15 @@ asyncio.run(main())
 ## Configuration
 
 The EtherCAT chain is configured via YAML. The default configuration is in
-`ethercat_chain.yaml`.
+`server_config.yaml`, which defines the server settings and device instances.
+Terminal type definitions are stored in separate YAML files in
+`src/fastcs_catio/terminals/`, organized by terminal class.
 
 ### Structure
 
-```yaml
-# Define terminal types and their symbols
-terminal_types:
-  EL2024:
-    description: "4-channel Digital Output 24V DC"
-    identity:
-      vendor_id: 2
-      product_code: 0x07E83052
-      revision_number: 0x00100000
-    symbol_nodes:
-      - name_template: "Channel {channel}^Output"
-        index_group: 0xF031  # ADSIGRP_IOIMAGE_RWOX
-        size: 0
-        ads_type: 33  # BIT
-        type_name: "BIT"
-        channels: 4
+Server configuration file (`server_config.yaml`):
 
+```yaml
 # Server information
 server:
   name: "TwinCAT System"
@@ -124,6 +112,26 @@ devices:
         name: "Term 2 (EL2024)"
         node: 1
         position: 1
+```
+
+Terminal type definition files (`src/fastcs_catio/terminals/*.yaml`):
+
+```yaml
+# Define terminal types and their symbols
+terminal_types:
+  EL2024:
+    description: "4-channel Digital Output 24V DC"
+    identity:
+      vendor_id: 2
+      product_code: 0x07E83052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "Channel {channel}^Output"
+        index_group: 0xF031  # ADSIGRP_IOIMAGE_RWOX
+        size: 0
+        ads_type: 33  # BIT
+        type_name: "BIT"
+        channels: 4
 ```
 
 ### Terminal Types
@@ -173,9 +181,18 @@ tests/ads_sim/
 ├── __init__.py          # Package exports
 ├── __main__.py          # CLI entry point
 ├── ethercat_chain.py    # Chain configuration parser
-├── ethercat_chain.yaml  # Default chain configuration
+├── server_config.yaml   # Default server/device configuration
 ├── server.py            # ADS protocol server
 └── README.md            # This file
+
+src/fastcs_catio/terminals/
+├── analog_input.yaml    # Analog input terminal types
+├── analog_output.yaml   # Analog output terminal types
+├── bus_couplers.yaml    # EtherCAT couplers and extensions
+├── counter.yaml         # Counter/frequency input terminals
+├── digital_input.yaml   # Digital input terminal types
+├── digital_output.yaml  # Digital output terminal types
+└── power_supply.yaml    # Power supply terminals
 ```
 
 ## Development
@@ -192,7 +209,9 @@ uv run pyright tests/ads_sim/
 
 ### Adding New Terminal Types
 
-1. Add the terminal type definition to `ethercat_chain.yaml` under `terminal_types`
+1. Add the terminal type definition to the appropriate YAML file in
+   `src/fastcs_catio/terminals/` (or create a new one for a new class)
 2. Define the `identity` (vendor_id, product_code, revision_number)
 3. Define `symbol_nodes` with appropriate `type_name` values that match
    patterns in `src/fastcs_catio/symbols.py`
+4. The new terminal type will be automatically loaded when the server starts

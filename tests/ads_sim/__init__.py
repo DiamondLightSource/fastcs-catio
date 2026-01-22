@@ -9,7 +9,7 @@ Usage:
     python -m tests.ads_sim [--host HOST] [--port PORT] [--config CONFIG]
 
 Example:
-    python -m tests.ads_sim --host 127.0.0.1 --port 48898 --config ethercat_chain.yaml
+    python -m tests.ads_sim --host 127.0.0.1 --port 48898 --config server_config.yaml
 """
 
 from .ethercat_chain import EtherCATChain, EtherCATSlave
