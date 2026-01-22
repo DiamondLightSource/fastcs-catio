@@ -523,6 +523,45 @@ class TerminalEditorApp:
             logger.exception("Failed to save file")
             ui.notify(f"Failed to save: {e}", type="negative")
 
+    async def fetch_terminal_database(self) -> None:
+        """Fetch and parse Beckhoff terminal database with progress dialog."""
+        with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
+            ui.label("Fetching Terminal Database").classes("text-h6 mb-4")
+
+            progress_label = ui.label("Initializing...").classes("mb-2")
+            progress_bar = ui.linear_progress(value=0).props("instant-feedback")
+
+            # Prevent closing the dialog while fetching
+            dialog.props("persistent")
+
+            def update_progress(message: str, progress: float):
+                """Update progress in the dialog."""
+                progress_label.text = message
+                progress_bar.value = progress
+
+            dialog.open()
+
+            try:
+                # Fetch and parse in background
+                terminals = await self.beckhoff_client.fetch_and_parse_xml(
+                    progress_callback=update_progress
+                )
+
+                if terminals:
+                    ui.notify(
+                        f"Successfully fetched {len(terminals)} terminals!",
+                        type="positive",
+                    )
+                else:
+                    ui.notify("No terminals found", type="warning")
+
+            except Exception as e:
+                logger.exception("Failed to fetch terminal database")
+                ui.notify(f"Error: {e}", type="negative")
+
+            finally:
+                dialog.close()
+
     async def close_editor(self) -> None:
         """Close the editor and return to file selector.
 
@@ -620,6 +659,12 @@ def main() -> None:
                     icon="add",
                     on_click=editor.show_add_terminal_dialog,
                 ).props("color=primary")
+
+                ui.button(
+                    "Fetch Terminal Database",
+                    icon="download",
+                    on_click=editor.fetch_terminal_database,
+                ).props("color=secondary")
 
         # Unsaved changes indicator
         if editor.has_unsaved_changes:

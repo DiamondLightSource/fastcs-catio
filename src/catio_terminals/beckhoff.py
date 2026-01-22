@@ -3,6 +3,7 @@
 import logging
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from pathlib import Path
 
 import httpx
 
@@ -26,82 +27,383 @@ class BeckhoffClient:
 
     BASE_URL = "https://www.beckhoff.com"
     SEARCH_API = f"{BASE_URL}/en-us/products/i-o/ethercat-terminals/"
+    XML_DOWNLOAD_URL = "https://download.beckhoff.com/download/configuration-files/io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
 
     def __init__(self) -> None:
         """Initialize Beckhoff client."""
-        self.client = httpx.Client(timeout=30.0)
+        self.client = httpx.Client(
+            timeout=30.0,
+            follow_redirects=True,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                )
+            },
+        )
+        self.cache_dir = Path.home() / ".cache" / "catio_terminals"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.xml_cache_file = self.cache_dir / "Beckhoff_EtherCAT_XML.zip"
+        self.xml_extract_dir = self.cache_dir / "beckhoff_xml"
+        self.terminals_cache_file = self.cache_dir / "terminals_cache.json"
+        self._cached_terminals: list[BeckhoffTerminalInfo] | None = None
 
-    async def search_terminals(self, query: str = "") -> list[BeckhoffTerminalInfo]:
-        """Search for Beckhoff terminals.
+    def get_cached_terminals(self) -> list[BeckhoffTerminalInfo] | None:
+        """Get terminals from cache if available.
+
+        Returns:
+            List of cached terminals or None if cache doesn't exist
+        """
+        if self._cached_terminals:
+            return self._cached_terminals
+
+        if self.terminals_cache_file.exists():
+            try:
+                import json
+
+                with self.terminals_cache_file.open("r") as f:
+                    data = json.load(f)
+
+                self._cached_terminals = [BeckhoffTerminalInfo(**item) for item in data]
+                logger.info(
+                    f"Loaded {len(self._cached_terminals)} terminals from cache"
+                )
+                return self._cached_terminals
+            except Exception as e:
+                logger.error(f"Failed to load terminals cache: {e}")
+                return None
+
+        return None
+
+    def _save_terminals_cache(self, terminals: list[BeckhoffTerminalInfo]) -> None:
+        """Save terminals to cache.
+
+        Args:
+            terminals: List of terminals to cache
+        """
+        try:
+            import json
+            from dataclasses import asdict
+
+            with self.terminals_cache_file.open("w") as f:
+                json.dump([asdict(t) for t in terminals], f, indent=2)
+
+            self._cached_terminals = terminals
+            logger.info(f"Saved {len(terminals)} terminals to cache")
+        except Exception as e:
+            logger.error(f"Failed to save terminals cache: {e}")
+
+    def _download_xml_files(self) -> bool:
+        """Download and extract Beckhoff XML files if not cached.
+
+        Returns:
+            True if files are available, False otherwise
+        """
+        import zipfile
+
+        # Check if already extracted
+        if self.xml_extract_dir.exists() and list(self.xml_extract_dir.glob("*.xml")):
+            logger.debug("XML files already cached")
+            return True
+
+        try:
+            # Download ZIP file if not cached
+            if not self.xml_cache_file.exists():
+                logger.info(
+                    f"Downloading Beckhoff XML files from {self.XML_DOWNLOAD_URL}"
+                )
+                response = self.client.get(self.XML_DOWNLOAD_URL)
+                response.raise_for_status()
+
+                with self.xml_cache_file.open("wb") as f:
+                    f.write(response.content)
+                logger.info(f"Downloaded {len(response.content)} bytes")
+
+            # Extract ZIP file
+            logger.info(f"Extracting XML files to {self.xml_extract_dir}")
+            self.xml_extract_dir.mkdir(parents=True, exist_ok=True)
+
+            with zipfile.ZipFile(self.xml_cache_file, "r") as zip_ref:
+                zip_ref.extractall(self.xml_extract_dir)
+
+            logger.info("XML files extracted successfully")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to download/extract XML files: {e}", exc_info=True)
+            return False
+
+    def _parse_xml_files(self, query: str = "") -> list[BeckhoffTerminalInfo]:
+        """Parse Beckhoff XML files to extract terminal information.
 
         Args:
             query: Search query string
 
         Returns:
             List of terminal information
-
-        Note:
-            This is a simplified implementation. In practice, you would need to
-            scrape the Beckhoff website or use their API if available.
-            For now, this returns some common terminal types as examples.
         """
-        # This is a placeholder - in a real implementation, you would scrape
-        # the Beckhoff website or use an API
-        logger.info(f"Searching for terminals: {query}")
+        terminals = []
+        seen_ids = set()
 
-        common_terminals = [
-            BeckhoffTerminalInfo(
-                terminal_id="EL1008",
-                name="8-channel Digital Input 24V DC",
-                description="8-channel digital input terminal 24V DC, 3ms",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el1008/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL2008",
-                name="8-channel Digital Output 24V DC",
-                description="8-channel digital output terminal 24V DC, 0.5A",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el2008/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL3064",
-                name="4-channel Analog Input 0..10V",
-                description="4-channel analog input terminal 0..10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el3064/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL4004",
-                name="4-channel Analog Output 0..10V",
-                description="4-channel analog output terminal 0..10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el4004/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL4034",
-                name="4-channel Analog Output +/-10V",
-                description="4-channel analog output terminal +/-10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el4034/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL4134",
-                name="4-channel Analog Output +/-10V 16-bit",
-                description="4-channel analog output terminal +/-10V, 16-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el4134/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL5101",
-                name="1-channel Incremental Encoder",
-                description="1-channel encoder terminal, incremental, 24V DC",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el5101/",
-            ),
-        ]
+        try:
+            # Find all XML files in the extracted directory
+            xml_files = list(self.xml_extract_dir.rglob("*.xml"))
+            logger.debug(f"Found {len(xml_files)} XML files")
 
+            for xml_file in xml_files:
+                try:
+                    tree = ET.parse(xml_file)
+                    root = tree.getroot()
+
+                    # Look for Device elements in the ESI XML structure
+                    # ESI files use various namespaces, so we'll search broadly
+                    for device in root.iter():
+                        if device.tag.endswith("Device") or device.tag.endswith(
+                            "Devices"
+                        ):
+                            # Extract Type (terminal ID)
+                            type_elem = device.find(".//*[@ProductCode]/..")
+                            if type_elem is None:
+                                continue
+
+                            # Try to get the terminal ID from the Type element
+                            terminal_id = None
+                            for child in device.iter():
+                                if "Type" in child.tag:
+                                    type_text = child.text
+                                    if type_text and type_text.startswith(
+                                        ("EL", "EK", "EP", "ES", "EJ")
+                                    ):
+                                        terminal_id = type_text.strip()
+                                        break
+
+                            # Also check for ProductCode and use filename as fallback
+                            if not terminal_id:
+                                # Try to extract from filename
+                                filename = xml_file.stem
+                                import re
+
+                                match = re.search(
+                                    r"(E[LKPSJ]\d{4})", filename, re.IGNORECASE
+                                )
+                                if match:
+                                    terminal_id = match.group(1).upper()
+
+                            if not terminal_id or terminal_id in seen_ids:
+                                continue
+
+                            seen_ids.add(terminal_id)
+
+                            # Extract name/description
+                            name = terminal_id
+                            description = f"Terminal {terminal_id}"
+
+                            for child in device.iter():
+                                if "Name" in child.tag and child.text:
+                                    name = child.text.strip()
+                                if "Info" in child.tag or "Description" in child.tag:
+                                    if child.text:
+                                        description = child.text.strip()
+
+                            terminals.append(
+                                BeckhoffTerminalInfo(
+                                    terminal_id=terminal_id,
+                                    name=name,
+                                    description=description,
+                                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
+                                )
+                            )
+
+                except Exception as e:
+                    logger.debug(f"Failed to parse {xml_file.name}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Failed to parse XML files: {e}", exc_info=True)
+
+        # Filter by query if provided
         if query:
             query_lower = query.lower()
-            return [
+            terminals = [
                 t
-                for t in common_terminals
-                if query_lower in t.terminal_id.lower() or query_lower in t.name.lower()
+                for t in terminals
+                if query_lower in t.terminal_id.lower()
+                or query_lower in t.name.lower()
+                or query_lower in t.description.lower()
             ]
-        return common_terminals
+
+        return terminals
+
+    async def fetch_and_parse_xml(
+        self, progress_callback=None
+    ) -> list[BeckhoffTerminalInfo]:
+        """Fetch XML files and parse all terminals with progress updates.
+
+        Args:
+            progress_callback: Optional callback function(message: str, progress: float)
+                              where progress is 0.0 to 1.0
+
+        Returns:
+            List of all terminals found
+        """
+        terminals = []
+        seen_ids = set()
+
+        try:
+            # Step 1: Download XML files
+            if progress_callback:
+                progress_callback("Downloading XML files...", 0.1)
+
+            if not self._download_xml_files():
+                return []
+
+            # Step 2: Parse XML files
+            if progress_callback:
+                progress_callback("Parsing XML files...", 0.2)
+
+            xml_files = list(self.xml_extract_dir.rglob("*.xml"))
+            logger.info(f"Found {len(xml_files)} XML files to parse")
+            total_files = len(xml_files)
+
+            for idx, xml_file in enumerate(xml_files):
+                if progress_callback and idx % 10 == 0:
+                    progress = 0.2 + (0.7 * idx / total_files)
+                    progress_callback(f"Parsing {xml_file.name}...", progress)
+
+                try:
+                    tree = ET.parse(xml_file)
+                    root = tree.getroot()
+
+                    for device in root.iter():
+                        if device.tag.endswith("Device") or device.tag.endswith(
+                            "Devices"
+                        ):
+                            type_elem = device.find(".//*[@ProductCode]/..")
+                            if type_elem is None:
+                                continue
+
+                            terminal_id = None
+                            for child in device.iter():
+                                if "Type" in child.tag:
+                                    type_text = child.text
+                                    if type_text and type_text.startswith(
+                                        ("EL", "EK", "EP", "ES", "EJ")
+                                    ):
+                                        terminal_id = type_text.strip()
+                                        break
+
+                            if not terminal_id:
+                                filename = xml_file.stem
+                                import re
+
+                                match = re.search(
+                                    r"(E[LKPSJ]\d{4})", filename, re.IGNORECASE
+                                )
+                                if match:
+                                    terminal_id = match.group(1).upper()
+
+                            if not terminal_id or terminal_id in seen_ids:
+                                continue
+
+                            seen_ids.add(terminal_id)
+
+                            name = terminal_id
+                            description = f"Terminal {terminal_id}"
+
+                            for child in device.iter():
+                                if "Name" in child.tag and child.text:
+                                    name = child.text.strip()
+                                if "Info" in child.tag or "Description" in child.tag:
+                                    if child.text:
+                                        description = child.text.strip()
+
+                            terminals.append(
+                                BeckhoffTerminalInfo(
+                                    terminal_id=terminal_id,
+                                    name=name,
+                                    description=description,
+                                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
+                                )
+                            )
+
+                except Exception as e:
+                    logger.debug(f"Failed to parse {xml_file.name}: {e}")
+                    continue
+
+            # Step 3: Save to cache
+            if progress_callback:
+                progress_callback("Saving to cache...", 0.95)
+
+            self._save_terminals_cache(terminals)
+
+            if progress_callback:
+                progress_callback(f"Done! Found {len(terminals)} terminals", 1.0)
+
+            logger.info(f"Fetched and parsed {len(terminals)} terminals")
+            return terminals
+
+        except Exception as e:
+            logger.error(f"Failed to fetch and parse XML: {e}", exc_info=True)
+            if progress_callback:
+                progress_callback(f"Error: {e}", 0.0)
+            return []
+
+    async def search_terminals(self, query: str = "") -> list[BeckhoffTerminalInfo]:
+        """Search for Beckhoff terminals using cached data.
+
+        Args:
+            query: Search query string
+
+        Returns:
+            List of terminal information
+        """
+        logger.info(f"Searching for terminals: {query}")
+
+        # Try to get cached terminals first
+        terminals = self.get_cached_terminals()
+
+        if not terminals:
+            logger.warning("No cached terminals found, using fallback data")
+            # Fallback to hardcoded common terminals
+            terminals = [
+                BeckhoffTerminalInfo(
+                    terminal_id="EL1008",
+                    name="8-channel Digital Input 24V DC",
+                    description="8-channel digital input terminal 24V DC, 3ms",
+                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el1008/",
+                ),
+                BeckhoffTerminalInfo(
+                    terminal_id="EL2008",
+                    name="8-channel Digital Output 24V DC",
+                    description="8-channel digital output terminal 24V DC, 0.5A",
+                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el2008/",
+                ),
+                BeckhoffTerminalInfo(
+                    terminal_id="EL3064",
+                    name="4-channel Analog Input 0..10V",
+                    description="4-channel analog input terminal 0..10V, 12-bit",
+                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el3064/",
+                ),
+                BeckhoffTerminalInfo(
+                    terminal_id="EL4004",
+                    name="4-channel Analog Output 0..10V",
+                    description="4-channel analog output terminal 0..10V, 12-bit",
+                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el4004/",
+                ),
+            ]
+
+        # Filter by query if provided
+        if query:
+            query_lower = query.lower()
+            terminals = [
+                t
+                for t in terminals
+                if query_lower in t.terminal_id.lower()
+                or query_lower in t.name.lower()
+                or query_lower in t.description.lower()
+            ]
+
+        logger.info(f"Found {len(terminals)} matching terminals")
+        return terminals
 
     async def fetch_terminal_xml(self, terminal_id: str) -> str | None:
         """Fetch XML description for a terminal.
@@ -111,18 +413,42 @@ class BeckhoffClient:
 
         Returns:
             XML content as string, or None if not found
-
-        Note:
-            This is a placeholder. In practice, you would need to download
-            the ESI XML file from Beckhoff's website or TwinCAT installation.
         """
         logger.info(f"Fetching XML for terminal: {terminal_id}")
 
-        # Placeholder - return None for now
-        # In a real implementation, you would:
-        # 1. Download ESI files from Beckhoff
-        # 2. Parse the XML to extract terminal information
-        # 3. Return the XML content
+        # Ensure XML files are downloaded
+        if not self._download_xml_files():
+            logger.error("Could not download XML files")
+            return None
+
+        # Search for XML file containing this terminal
+        import re
+
+        for xml_file in self.xml_extract_dir.rglob("*.xml"):
+            try:
+                # Check filename first for efficiency
+                if terminal_id.lower() in xml_file.name.lower():
+                    with xml_file.open("r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                        # Verify it actually contains the terminal ID
+                        if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):
+                            logger.info(
+                                f"Found XML for {terminal_id} in {xml_file.name}"
+                            )
+                            return content
+
+                # If not found by filename, search content
+                with xml_file.open("r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                    if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):
+                        logger.info(f"Found XML for {terminal_id} in {xml_file.name}")
+                        return content
+
+            except Exception as e:
+                logger.debug(f"Error reading {xml_file.name}: {e}")
+                continue
+
+        logger.warning(f"No XML file found for terminal {terminal_id}")
         return None
 
     def parse_terminal_xml(self, xml_content: str, terminal_id: str) -> TerminalType:
