@@ -45,7 +45,9 @@ class BeckhoffClient:
         self.xml_cache_file = self.cache_dir / "Beckhoff_EtherCAT_XML.zip"
         self.xml_extract_dir = self.cache_dir / "beckhoff_xml"
         self.terminals_cache_file = self.cache_dir / "terminals_cache.json"
+        self.xml_map_cache_file = self.cache_dir / "xml_map_cache.json"
         self._cached_terminals: list[BeckhoffTerminalInfo] | None = None
+        self._xml_file_map: dict[str, str] | None = None
 
     def get_cached_terminals(self) -> list[BeckhoffTerminalInfo] | None:
         """Get terminals from cache if available.
@@ -267,8 +269,9 @@ class BeckhoffClient:
             total_files = len(xml_files)
 
             for idx, xml_file in enumerate(xml_files):
-                # Yield control on EVERY file to prevent blocking
-                await asyncio.sleep(0)
+                # Yield control frequently to prevent blocking and keep websocket alive
+                if idx % 3 == 0:
+                    await asyncio.sleep(0.01)
 
                 if idx % 5 == 0 and progress_callback:
                     progress = 0.2 + (0.7 * idx / total_files)
@@ -412,6 +415,55 @@ class BeckhoffClient:
         logger.info(f"Found {len(terminals)} matching terminals")
         return terminals
 
+    def _load_xml_map(self) -> dict[str, str]:
+        """Load or build a map of terminal IDs to XML file paths.
+
+        Returns:
+            Dictionary mapping terminal IDs to XML file paths
+        """
+        if self._xml_file_map:
+            return self._xml_file_map
+
+        # Try to load from cache
+        if self.xml_map_cache_file.exists():
+            try:
+                import json
+
+                with self.xml_map_cache_file.open("r") as f:
+                    self._xml_file_map = json.load(f)
+                logger.debug(f"Loaded XML map with {len(self._xml_file_map)} entries")
+                return self._xml_file_map
+            except Exception as e:
+                logger.debug(f"Failed to load XML map cache: {e}")
+
+        # Build the map by scanning XML files
+        import json
+        import re
+
+        self._xml_file_map = {}
+        logger.info("Building XML file map...")
+
+        for xml_file in self.xml_extract_dir.rglob("*.xml"):
+            try:
+                # Extract terminal IDs from filename or content
+                terminal_ids = re.findall(
+                    r"\b(E[LKPSJ]\d{4})\b", xml_file.name, re.IGNORECASE
+                )
+                for terminal_id in terminal_ids:
+                    self._xml_file_map[terminal_id.upper()] = str(xml_file)
+            except Exception as e:
+                logger.debug(f"Error processing {xml_file.name}: {e}")
+
+        # Save to cache
+        try:
+            with self.xml_map_cache_file.open("w") as f:
+                json.dump(self._xml_file_map, f, indent=2)
+            logger.info(f"Saved XML map with {len(self._xml_file_map)} entries")
+        except Exception as e:
+            logger.debug(f"Failed to save XML map cache: {e}")
+
+        return self._xml_file_map
+
     async def fetch_terminal_xml(self, terminal_id: str) -> str | None:
         """Fetch XML description for a terminal.
 
@@ -428,29 +480,33 @@ class BeckhoffClient:
             logger.error("Could not download XML files")
             return None
 
-        # Search for XML file containing this terminal
+        # Load XML map
+        xml_map = self._load_xml_map()
+
+        # Check if we have a direct mapping
+        if terminal_id.upper() in xml_map:
+            xml_file_path = Path(xml_map[terminal_id.upper()])
+            try:
+                with xml_file_path.open("r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                    logger.info(f"Found XML for {terminal_id} in {xml_file_path.name}")
+                    return content
+            except Exception as e:
+                logger.error(f"Error reading cached XML file: {e}")
+
+        # Fallback: search all files (shouldn't happen often)
         import re
 
+        logger.debug(f"Terminal {terminal_id} not in map, searching files...")
         for xml_file in self.xml_extract_dir.rglob("*.xml"):
             try:
-                # Check filename first for efficiency
-                if terminal_id.lower() in xml_file.name.lower():
-                    with xml_file.open("r", encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
-                        # Verify it actually contains the terminal ID
-                        if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):
-                            logger.info(
-                                f"Found XML for {terminal_id} in {xml_file.name}"
-                            )
-                            return content
-
-                # If not found by filename, search content
                 with xml_file.open("r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                     if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):
                         logger.info(f"Found XML for {terminal_id} in {xml_file.name}")
+                        # Update the map for next time
+                        xml_map[terminal_id.upper()] = str(xml_file)
                         return content
-
             except Exception as e:
                 logger.debug(f"Error reading {xml_file.name}: {e}")
                 continue

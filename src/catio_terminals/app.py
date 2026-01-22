@@ -539,7 +539,9 @@ class TerminalEditorApp:
         with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
             ui.label("Fetching Terminal Database").classes("text-h6 mb-4")
             progress_label = ui.label("Initializing...").classes("mb-2")
-            progress_bar = ui.linear_progress(value=0)
+            progress_bar = ui.linear_progress(value=0, show_value=False).props(
+                "instant-feedback"
+            )
 
         # Define update function that properly updates UI
         def update_progress(message: str, progress: float):
