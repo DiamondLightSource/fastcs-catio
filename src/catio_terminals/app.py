@@ -367,19 +367,27 @@ class TerminalEditorApp:
         if not self.config:
             return
 
-        result = await ui.dialog().props("persistent")
-
-        with result, ui.card():
+        with ui.dialog() as dialog, ui.card():
             ui.label(f"Delete terminal {terminal_id}?").classes("text-h6")
             ui.label("This action cannot be undone.").classes("text-caption")
 
-            with ui.row().classes("w-full justify-end gap-2"):
-                ui.button("Cancel", on_click=lambda: result.submit(False)).props("flat")
-                ui.button("Delete", on_click=lambda: result.submit(True)).props(
-                    "color=negative"
-                )
+            result = {"confirm": False}
 
-        if await result:
+            def confirm_delete():
+                result["confirm"] = True
+                dialog.close()
+
+            def cancel_delete():
+                result["confirm"] = False
+                dialog.close()
+
+            with ui.row().classes("w-full justify-end gap-2"):
+                ui.button("Cancel", on_click=cancel_delete).props("flat")
+                ui.button("Delete", on_click=confirm_delete).props("color=negative")
+
+        await dialog
+
+        if result["confirm"]:
             self.config.remove_terminal(terminal_id)
             self.has_unsaved_changes = True
             await self.build_editor_ui()
@@ -525,42 +533,46 @@ class TerminalEditorApp:
 
     async def fetch_terminal_database(self) -> None:
         """Fetch and parse Beckhoff terminal database with progress dialog."""
+        import asyncio
+
+        # Create dialog with progress UI
         with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
             ui.label("Fetching Terminal Database").classes("text-h6 mb-4")
-
             progress_label = ui.label("Initializing...").classes("mb-2")
-            progress_bar = ui.linear_progress(value=0).props("instant-feedback")
+            progress_bar = ui.linear_progress(value=0)
 
-            # Prevent closing the dialog while fetching
-            dialog.props("persistent")
+        # Define update function that properly updates UI
+        def update_progress(message: str, progress: float):
+            """Update progress in the dialog."""
+            progress_label.set_text(message)
+            progress_bar.set_value(progress)
 
-            def update_progress(message: str, progress: float):
-                """Update progress in the dialog."""
-                progress_label.text = message
-                progress_bar.value = progress
+        # Open dialog before starting work
+        dialog.open()
 
-            dialog.open()
+        # Small delay to ensure dialog is rendered
+        await asyncio.sleep(0.1)
 
-            try:
-                # Fetch and parse in background
-                terminals = await self.beckhoff_client.fetch_and_parse_xml(
-                    progress_callback=update_progress
+        try:
+            # Fetch and parse (now with async sleeps to prevent blocking)
+            terminals = await self.beckhoff_client.fetch_and_parse_xml(
+                progress_callback=update_progress
+            )
+
+            if terminals:
+                ui.notify(
+                    f"Successfully fetched {len(terminals)} terminals!",
+                    type="positive",
                 )
+            else:
+                ui.notify("No terminals found", type="warning")
 
-                if terminals:
-                    ui.notify(
-                        f"Successfully fetched {len(terminals)} terminals!",
-                        type="positive",
-                    )
-                else:
-                    ui.notify("No terminals found", type="warning")
+        except Exception as e:
+            logger.exception("Failed to fetch terminal database")
+            ui.notify(f"Error: {e}", type="negative")
 
-            except Exception as e:
-                logger.exception("Failed to fetch terminal database")
-                ui.notify(f"Error: {e}", type="negative")
-
-            finally:
-                dialog.close()
+        finally:
+            dialog.close()
 
     async def close_editor(self) -> None:
         """Close the editor and return to file selector.

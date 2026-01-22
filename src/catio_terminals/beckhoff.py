@@ -245,6 +245,8 @@ class BeckhoffClient:
         Returns:
             List of all terminals found
         """
+        import asyncio
+
         terminals = []
         seen_ids = set()
 
@@ -265,9 +267,14 @@ class BeckhoffClient:
             total_files = len(xml_files)
 
             for idx, xml_file in enumerate(xml_files):
-                if progress_callback and idx % 10 == 0:
+                # Yield control on EVERY file to prevent blocking
+                await asyncio.sleep(0)
+
+                if idx % 5 == 0 and progress_callback:
                     progress = 0.2 + (0.7 * idx / total_files)
-                    progress_callback(f"Parsing {xml_file.name}...", progress)
+                    progress_callback(
+                        f"Parsing file {idx + 1}/{total_files}...", progress
+                    )
 
                 try:
                     tree = ET.parse(xml_file)
