@@ -382,10 +382,10 @@ class SlaveCRC(Message):
     def __array__(self):
         return np.array(
             [
-                self.portA_crc,
-                self.portB_crc,
-                self.portC_crc,
-                self.portD_crc,
+                self.port_a_crc,
+                self.port_b_crc,
+                self.port_c_crc,
+                self.port_d_crc,
             ],
             dtype=np.uint32,
         )

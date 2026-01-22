@@ -69,6 +69,8 @@ addopts = """
 filterwarnings = "error"
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "docs src tests"
+# Enable auto mode for pytest-asyncio to handle async fixtures
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 patch = ["subprocess"]

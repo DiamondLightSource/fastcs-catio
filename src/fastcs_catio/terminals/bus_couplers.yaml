@@ -1,0 +1,35 @@
+# Bus Couplers and Extensions
+# ========================================================
+# EtherCAT couplers and extension terminals that connect the EtherCAT
+# bus to terminal modules. These typically have no I/O symbols.
+
+terminal_types:
+  EK1100:
+    description: "EtherCAT Coupler"
+    identity:
+      vendor_id: 2
+      product_code: 0x044C2C52
+      revision_number: 0x00110000
+    symbol_nodes: [] # No I/O symbols for couplers
+
+  EK1110:
+    description: "EtherCAT Extension"
+    identity:
+      vendor_id: 2
+      product_code: 0x04562852
+      revision_number: 0x00130000
+    symbol_nodes: [] # No I/O symbols for extensions
+
+  EK1101:
+    description: "EtherCAT Coupler with ID switch"
+    identity:
+      vendor_id: 2
+      product_code: 0x044D2C52
+      revision_number: 0x00110000
+    symbol_nodes:
+      - name_template: "ID"
+        index_group: 0xF020
+        size: 2
+        ads_type: 65
+        type_name: "ID_TYPE"
+        channels: 1

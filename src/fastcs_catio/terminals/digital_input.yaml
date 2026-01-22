@@ -1,0 +1,151 @@
+# Digital Input Terminals
+# ========================================================
+# Digital input terminals for various voltages and channel counts
+
+terminal_types:
+  # Digital Input Terminals (4-channel 24V)
+  EL1004:
+    description: "4-channel Digital Input 24V DC"
+    identity:
+      vendor_id: 2
+      product_code: 0x03EC3052
+      revision_number: 0x00100000
+    symbol_nodes:
+      # Channel 1 combined input - type_name triggers client expansion
+      - name_template: "Channel 1"
+        index_group: 0xF020 # ADSIGRP_IOIMAGE_RWIB (byte)
+        size: 1
+        ads_type: 65 # BIGTYPE
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  EL1014:
+    description: "4-channel Digital Input 24V DC"
+    identity:
+      vendor_id: 2
+      product_code: 0x03F63052
+      revision_number: 0x00100000
+    symbol_nodes:
+      # Channel 1 combined input - type_name triggers client expansion
+      - name_template: "Channel 1"
+        index_group: 0xF020 # ADSIGRP_IOIMAGE_RWIB (byte)
+        size: 1
+        ads_type: 65 # BIGTYPE
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  # Digital Input Terminals (8-channel 24V)
+  EL1008:
+    description: "8-channel Digital Input 24V DC 3ms"
+    identity:
+      vendor_id: 2
+      product_code: 0x03F03052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "Channel 1"
+        index_group: 0xF020
+        size: 1 # 1 byte for 8 channels
+        ads_type: 65
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  EL1018:
+    description: "8-channel Digital Input 24V DC 10us"
+    identity:
+      vendor_id: 2
+      product_code: 0x03FA3052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "Channel 1"
+        index_group: 0xF020
+        size: 1
+        ads_type: 65
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  EL1084:
+    description: "8-channel Digital Input 24V DC Neg Switching"
+    identity:
+      vendor_id: 2
+      product_code: 0x043C3052
+      revision_number: 0x00100000
+    symbol_nodes:
+      # Channel 1 combined input - type_name triggers client expansion
+      - name_template: "Channel 1"
+        index_group: 0xF020 # ADSIGRP_IOIMAGE_RWIB (byte)
+        size: 1
+        ads_type: 65 # BIGTYPE
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  # Digital Input Terminals (16-channel 24V)
+  EL1809:
+    description: "16-channel Digital Input 24V DC"
+    identity:
+      vendor_id: 2
+      product_code: 0x07113052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "Channel 1"
+        index_group: 0xF020
+        size: 2 # 2 bytes
+        ads_type: 65
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1
+
+  # Digital Input Terminals (4-channel 5V)
+  EL1124:
+    description: "4-channel Digital Input 5V DC"
+    identity:
+      vendor_id: 2
+      product_code: 0x04643052
+      revision_number: 0x00100000
+    symbol_nodes:
+      - name_template: "Channel 1"
+        index_group: 0xF020
+        size: 1
+        ads_type: 65
+        type_name: "Channel 1_TYPE"
+        channels: 1
+      - name_template: "WcState^WcState"
+        index_group: 0xF021
+        size: 0
+        ads_type: 33
+        type_name: "BIT"
+        channels: 1

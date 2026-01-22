@@ -473,6 +473,8 @@ class AsyncioADSClient:
             int, IOServer | IODevice | IOSlave
         ] = {}  # key: FastCS controller object unique identifier, value: CATio object
         """Dictionary comprising all CATio objects mapped by their FastCS unique id"""
+        self.__flush_notifications_task: asyncio.Task | None = None
+        """Asynchronous task which periodically flushes the notification buffer"""
 
     #################################################################
     ### CLIENT CONNECTION -------------------------------------------
@@ -558,12 +560,16 @@ class AsyncioADSClient:
         header_raw = ams_header.to_bytes()
         total_length = len(header_raw) + len(payload)
         length_bytes = total_length.to_bytes(4, byteorder="little", signed=False)
+
+        logging.debug(
+            f"Sending AMS packet: len:{total_length}, cmd:{command}, "
+            f"invoke_id:{self.__current_invoke_id}, target:{ams_netid}:{ams_port}"
+        )
         self.__writer.write(b"\x00\x00" + length_bytes + header_raw + payload)
-        # logging.debug(
-        #     "Sending AMS packet: '\x00\x00', "
-        #     + f"{length_bytes.hex(' ')}, {header_raw.hex(' ')}, {payload.hex(' ')}"
-        # )
+
         await self.__writer.drain()
+        logging.debug(f"Sent AMS packet len:{total_length}.")
+
         response_ev = ResponseEvent()
         self.__response_events[self.__current_invoke_id] = response_ev
         return response_ev
@@ -585,6 +591,7 @@ class AsyncioADSClient:
         communication_timeout_sec = 120
         try:
             async with asyncio.timeout(communication_timeout_sec):
+                logging.debug("Waiting to receive AMS message...")
                 msg_bytes = await self.__reader.readexactly(6)
                 assert msg_bytes[:2] == b"\x00\x00", (
                     f"Received an invalid TCP header: {msg_bytes.hex()}"
@@ -592,8 +599,11 @@ class AsyncioADSClient:
                 length = int.from_bytes(
                     msg_bytes[-4:], byteorder="little", signed=False
                 )
+
+                logging.debug(f"Expecting AMS message of length: {length} bytes")
                 packet = await self.__reader.readexactly(length)
-                # logging.debug(f"Received packet is: {packet.hex(' ')}")
+                logging.debug(f"Received packet of length {length} bytes")
+
                 ams_header_length = 32
                 header = AmsHeader.from_bytes(packet[:ams_header_length])
                 body = packet[ams_header_length:]
@@ -1031,10 +1041,14 @@ class AsyncioADSClient:
         for netid, slave_addresses in zip(dev_netids, dev_slave_addresses, strict=True):
             identities: Sequence[IOIdentity] = []
             for address in slave_addresses:
+                logging.debug(f"READING slave: address={address} ...")
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_identity(address),
                     netid=netid,
                     port=ADS_MASTER_PORT,
+                )
+                logging.debug(
+                    f"READ slave: address={address}, response={{response.data.hex()}}"
                 )
                 identities.append(IOIdentity.from_bytes(response.data))
             slave_identities.append(identities)
@@ -1369,7 +1383,7 @@ class AsyncioADSClient:
         """
         print("\n============ Active EtherCAT devices ============")
         print("|")
-        print(f"|----EherCAT Master '{self._ecdevices[device_id].name}'")
+        print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
             if ("EK1100" in slave.name) | ("EK1200" in slave.name):
@@ -2679,7 +2693,8 @@ class AsyncioADSClient:
         Disable periodic flushing which will also stop the appending of received \
             ADS notifications into the buffer.
         """
-        self.__flush_notifications_task.cancel()
+        if self.__flush_notifications_task is not None:
+            self.__flush_notifications_task.cancel()
 
     async def _periodic_flush(self, interval_sec: float) -> None:
         """
@@ -3220,7 +3235,7 @@ class AsyncioADSClient:
                     terminal.parent_device, terminal.address
                 )
                 return np.array(
-                    [crcs.portA_crc, crcs.portB_crc, crcs.portC_crc, crcs.portD_crc]
+                    [crcs.port_a_crc, crcs.port_b_crc, crcs.port_c_crc, crcs.port_d_crc]
                 )
             else:
                 raise KeyError(
