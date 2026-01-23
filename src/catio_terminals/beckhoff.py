@@ -413,10 +413,12 @@ class BeckhoffClient:
                             if match:
                                 terminal_id = match.group(1).upper()
 
-                            if not terminal_id or terminal_id in seen_ids:
-                                continue
+                        # CRITICAL: Do NOT indent the following lines - they must run for ALL devices
+                        # This checks if terminal_id is valid and not already processed
+                        if not terminal_id or terminal_id in seen_ids:
+                            continue
 
-                            seen_ids.add(terminal_id)
+                        seen_ids.add(terminal_id)
 
                         # Extract product code and revision from Type element
                         type_elem = device.find("Type")
@@ -435,6 +437,7 @@ class BeckhoffClient:
 
                         name_elems = device.xpath(".//Name[@LcId='1033']")
                         if name_elems and name_elems[0].text:
+                            name = name_elems[0].text.strip()
                             # Extract description after terminal ID for clean display
                             desc_text = name
                             if desc_text.startswith(terminal_id):
@@ -446,31 +449,32 @@ class BeckhoffClient:
                             if name_elems and name_elems[0].text:
                                 name = name_elems[0].text.strip()
 
-                            terminals.append(
-                                BeckhoffTerminalInfo(
-                                    terminal_id=terminal_id,
-                                    name=name,
-                                    description=description,
-                                    url=self._generate_terminal_url(
-                                        terminal_id, group_type
-                                    ),
-                                    xml_file=str(xml_file),
-                                    product_code=product_code,
-                                    revision_number=revision_number,
-                                    group_type=group_type,
-                                )
+                        # CRITICAL: Do NOT indent - terminals.append() must run for ALL devices
+                        # regardless of whether name was found with LcId='1033' or not
+                        terminals.append(
+                            BeckhoffTerminalInfo(
+                                terminal_id=terminal_id,
+                                name=name,
+                                description=description,
+                                url=self._generate_terminal_url(
+                                    terminal_id, group_type
+                                ),
+                                xml_file=str(xml_file),
+                                product_code=product_code,
+                                revision_number=revision_number,
+                                group_type=group_type,
                             )
+                        )
 
-                            # Check if we've reached the limit
-                            if (
-                                self.MAX_TERMINALS > 0
-                                and len(terminals) >= self.MAX_TERMINALS
-                            ):
-                                logger.info(
-                                    f"Reached MAX_TERMINALS limit of "
-                                    f"{self.MAX_TERMINALS}"
-                                )
-                                break
+                        # Check if we've reached the limit
+                        if (
+                            self.MAX_TERMINALS > 0
+                            and len(terminals) >= self.MAX_TERMINALS
+                        ):
+                            logger.info(
+                                f"Reached MAX_TERMINALS limit of {self.MAX_TERMINALS}"
+                            )
+                            break
 
                 except Exception as e:
                     logger.debug(f"Failed to parse {xml_file.name}: {e}")
