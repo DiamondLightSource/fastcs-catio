@@ -15,6 +15,24 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Human-readable group type mapping
+GROUP_TYPE_LABELS = {
+    "All": "All",
+    "DigIn": "Digital Input",
+    "DigOut": "Digital Output",
+    "AnaIn": "Analog Input",
+    "AnaOut": "Analog Output",
+    "PowerSupply": "Power Supply",
+    "CpBk": "Bus Couplers",
+    "System": "System",
+    "SystemBk": "System (Bus)",
+    "Communication": "Communication",
+    "Measuring": "Measuring",
+    "Multifunction": "Multifunction",
+    "Safety": "Safety",
+    "Other": "Other",
+}
+
 
 async def show_file_selector(app: "TerminalEditorApp") -> None:
     """Show file selector dialog.
@@ -237,6 +255,14 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
     with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
         ui.label("Add Terminal Type").classes("text-lg font-bold mb-4")
 
+        # Group type filter dropdown
+        ui.label("Filter by Type").classes("text-caption text-gray-600")
+        group_filter = ui.select(
+            options=GROUP_TYPE_LABELS,
+            value="All",
+            label="Terminal Type",
+        ).classes("w-full mb-2")
+
         ui.label("Search Beckhoff Terminals").classes("text-caption text-gray-600")
         search_input = ui.input(
             placeholder="Search terminals...",
@@ -252,6 +278,13 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
 
             results_container.clear()
             terminals = await app.beckhoff_client.search_terminals(search_input.value)
+
+            # Filter by group type if not "All"
+            selected_group = group_filter.value
+            if selected_group and selected_group != "All":
+                terminals = [
+                    term for term in terminals if term.group_type == selected_group
+                ]
 
             # Filter out terminals that are already added
             filtered_terminals = [
@@ -276,6 +309,10 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                             if term.description
                             else term.terminal_id
                         )
+                        # Show group type label
+                        group_label = GROUP_TYPE_LABELS.get(
+                            term.group_type, term.group_type
+                        )
                         with (
                             ui.row()
                             .classes(
@@ -284,9 +321,13 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                             )
                             .style("min-width: 0")
                         ):
-                            ui.label(f"{term.terminal_id} - {description}").classes(
-                                "overflow-hidden text-ellipsis whitespace-nowrap"
-                            ).style("flex: 1; min-width: 0")
+                            with ui.column().classes("flex-1").style("min-width: 0"):
+                                ui.label(f"{term.terminal_id} - {description}").classes(
+                                    "overflow-hidden text-ellipsis whitespace-nowrap"
+                                )
+                                ui.label(f"Type: {group_label}").classes(
+                                    "text-xs text-gray-400"
+                                )
                             ui.button(
                                 "Add",
                                 on_click=lambda t=term: _add_terminal_and_refresh(
@@ -294,6 +335,8 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                                 ),
                             ).props("color=primary")
 
+        # Trigger search when group filter changes
+        group_filter.on("update:model-value", search_terminals)
         search_input.on("keydown.enter", search_terminals)
         ui.button("Search", on_click=search_terminals).props("color=primary")
 

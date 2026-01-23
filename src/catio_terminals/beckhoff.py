@@ -23,6 +23,7 @@ class BeckhoffTerminalInfo:
     xml_file: str | None = None
     product_code: int = 0
     revision_number: int = 0
+    group_type: str = "Other"
 
 
 class BeckhoffClient:
@@ -31,7 +32,7 @@ class BeckhoffClient:
     BASE_URL = "https://www.beckhoff.com"
     SEARCH_API = f"{BASE_URL}/en-us/products/i-o/ethercat-terminals/"
     XML_DOWNLOAD_URL = "https://download.beckhoff.com/download/configuration-files/io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
-    MAX_TERMINALS = 20  # Set to 0 to fetch all terminals
+    MAX_TERMINALS = 200  # Set to 0 to fetch all terminals
 
     def __init__(self) -> None:
         """Initialize Beckhoff client."""
@@ -171,6 +172,18 @@ class BeckhoffClient:
                     tree = ET.parse(xml_file)
                     root = tree.getroot()
 
+                    # Extract GroupType from the file (usually defined at the top)
+                    group_type = "Other"
+                    for group in root.iter():
+                        if "GroupType" in group.tag or group.tag.endswith("Type"):
+                            if group.text and group.text.strip():
+                                potential_type = group.text.strip()
+                                # Only use if it looks like a group type
+                                terminal_prefixes = ("EL", "EK", "EP", "ES", "EJ")
+                                if not potential_type.startswith(terminal_prefixes):
+                                    group_type = potential_type
+                                    break
+
                     # Look for Device elements in the ESI XML structure
                     # ESI files use various namespaces, so we'll search broadly
                     for device in root.iter():
@@ -228,6 +241,7 @@ class BeckhoffClient:
                                     description=description,
                                     url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
                                     xml_file=str(xml_file),
+                                    group_type=group_type,
                                 )
                             )
 
@@ -298,6 +312,14 @@ class BeckhoffClient:
                 try:
                     tree = ET.parse(xml_file)
                     root = tree.getroot()
+
+                    # Extract GroupType from the file
+                    group_type = "Other"
+                    for group in root.iter():
+                        if "GroupType" in group.tag:
+                            if group.text and group.text.strip():
+                                group_type = group.text.strip()
+                                break
 
                     for device in root.iter():
                         if device.tag.endswith("Device") or device.tag.endswith(
@@ -378,6 +400,7 @@ class BeckhoffClient:
                                     xml_file=str(xml_file),
                                     product_code=product_code,
                                     revision_number=revision_number,
+                                    group_type=group_type,
                                 )
                             )
 
