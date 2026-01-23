@@ -33,7 +33,7 @@ class BeckhoffClient:
     BASE_URL = "https://www.beckhoff.com"
     SEARCH_API = f"{BASE_URL}/en-us/products/i-o/ethercat-terminals/"
     XML_DOWNLOAD_URL = "https://download.beckhoff.com/download/configuration-files/io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
-    MAX_TERMINALS = 50  # Set to 0 to fetch all terminals
+    MAX_TERMINALS = 0  # Set to 0 to fetch all terminals
 
     def __init__(self) -> None:
         """Initialize Beckhoff client."""

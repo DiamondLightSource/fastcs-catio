@@ -125,7 +125,22 @@ def show_terminal_details(
     """
     from catio_terminals import ui_dialogs
 
-    ui.label(f"Terminal: {terminal_id}").classes("text-h5 mb-4")
+    # Get the URL from cached terminals
+    product_url = None
+    cached_terminals = app.beckhoff_client.get_cached_terminals()
+    if cached_terminals:
+        for cached_terminal in cached_terminals:
+            if cached_terminal.terminal_id.lower() == terminal_id.lower():
+                product_url = cached_terminal.url
+                break
+
+    # Display terminal name with product information link
+    with ui.row().classes("items-center mb-4 gap-4"):
+        ui.label(f"Terminal: {terminal_id}").classes("text-h5")
+        if product_url:
+            ui.link("Product Information", target=product_url).props(
+                "target=_blank"
+            ).classes("text-blue-400")
 
     with ui.card().classes("w-full mb-4"):
         ui.label("Description").classes("text-caption text-gray-600")
