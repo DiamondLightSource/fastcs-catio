@@ -115,6 +115,11 @@ def run() -> None:
                 overflow: hidden !important;
                 height: 100vh;
             }
+            .main-container {
+                height: calc(100vh - 60px);
+                display: flex;
+                flex-direction: column;
+            }
         </style>
         """
         )
@@ -152,38 +157,45 @@ def run() -> None:
                     on_click=lambda: dialogs.show_fetch_database_dialog(editor),
                 ).props("color=secondary")
 
-        # Unsaved changes indicator
-        if editor.has_unsaved_changes:
-            with ui.row().classes("w-full justify-center bg-orange-900 py-1"):
-                ui.icon("warning").classes("text-orange-300")
-                ui.label("You have unsaved changes").classes(
-                    "text-sm text-orange-300 font-bold"
-                )
-
-        with ui.splitter(value=30).classes("w-full h-full") as splitter:
-            with splitter.before:
-                with ui.card().classes("w-full h-full flex flex-col"):
-                    ui.label("Terminal Types").classes("text-h6 mb-2")
-                    editor.tree_container = (
-                        ui.column()
-                        .classes("w-full overflow-y-auto")
-                        .style("flex: 1; min-height: 0;")
+        with ui.column().classes("main-container w-full"):
+            # Unsaved changes indicator
+            if editor.has_unsaved_changes:
+                with ui.row().classes(
+                    "w-full justify-center bg-orange-900 py-1 flex-shrink-0"
+                ):
+                    ui.icon("warning").classes("text-orange-300")
+                    ui.label("You have unsaved changes").classes(
+                        "text-sm text-orange-300 font-bold"
                     )
-                    with editor.tree_container:
-                        await editor.build_tree_view()
 
-            with splitter.after:
-                with ui.card().classes("w-full h-full flex flex-col"):
-                    ui.label("Details").classes("text-h6 mb-2")
-                    editor.details_container = (
-                        ui.column()
-                        .classes("w-full overflow-y-auto")
-                        .style("flex: 1; min-height: 0;")
-                    )
-                    with editor.details_container:
-                        ui.label("Select a terminal to view details").classes(
-                            "text-gray-500"
+            with (
+                ui.splitter(value=30)
+                .classes("w-full")
+                .style("flex: 1; min-height: 0") as splitter
+            ):
+                with splitter.before:
+                    with ui.card().classes("w-full h-full flex flex-col"):
+                        ui.label("Terminal Types").classes("text-h6 mb-2")
+                        editor.tree_container = (
+                            ui.column()
+                            .classes("w-full overflow-y-auto")
+                            .style("flex: 1; min-height: 0;")
                         )
+                        with editor.tree_container:
+                            await editor.build_tree_view()
+
+                with splitter.after:
+                    with ui.card().classes("w-full h-full flex flex-col"):
+                        ui.label("Details").classes("text-h6 mb-2")
+                        editor.details_container = (
+                            ui.column()
+                            .classes("w-full overflow-y-auto")
+                            .style("flex: 1; min-height: 0;")
+                        )
+                        with editor.details_container:
+                            ui.label("Select a terminal to view details").classes(
+                                "text-gray-500"
+                            )
 
     ui.run(title="CATio Terminal Editor", reload=False)
 
