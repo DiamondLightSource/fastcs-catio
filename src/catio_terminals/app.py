@@ -23,6 +23,8 @@ class TerminalEditorApp:
         self.has_unsaved_changes = False
         self.details_container: ui.column | None = None
         self.tree_container: ui.column | None = None
+        self.tree_widget: ui.tree | None = None
+        self.last_added_terminal: str | None = None
 
     @staticmethod
     def to_pascal_case(name: str) -> str:
@@ -239,7 +241,7 @@ class TerminalEditorApp:
         for terminal_id, terminal in self.config.terminal_types.items():
             self.tree_data[terminal_id] = {
                 "id": terminal_id,
-                "label": terminal.description,
+                "label": f"{terminal_id} - {terminal.description}",
                 "icon": "memory",
             }
 
@@ -247,22 +249,40 @@ class TerminalEditorApp:
         if self.tree_container is not None:
             self.tree_container.clear()
             with self.tree_container:
-                tree = ui.tree(
+                self.tree_widget = ui.tree(
                     list(self.tree_data.values()),
                     label_key="label",
                     on_select=lambda e: self.on_tree_select(e.value),
-                ).classes("w-full")
-                tree.props("selected-color=blue-7")
-                tree.classes("text-white")
+                ).classes("w-full overflow-y-auto")
+                self.tree_widget.props("selected-color=blue-7")
+                self.tree_widget.classes("text-white")
+
+                # If there's a last added terminal, scroll to it and select it
+                if self.last_added_terminal:
+                    # Set the selected node
+                    self.tree_widget.props(f"selected={self.last_added_terminal}")
+                    # Scroll to the selected node using JavaScript
+                    ui.run_javascript(f'''
+                        const tree = document.querySelector('.q-tree');
+                        const node = tree.querySelector(
+                            '[data-id="{self.last_added_terminal}"]'
+                        );
+                        if (node) {{
+                            node.scrollIntoView(
+                                {{ behavior: 'smooth', block: 'center' }}
+                            );
+                        }}
+                    ''')
+                    self.last_added_terminal = None
         else:
             # Initial build
-            tree = ui.tree(
+            self.tree_widget = ui.tree(
                 list(self.tree_data.values()),
                 label_key="label",
                 on_select=lambda e: self.on_tree_select(e.value),
-            ).classes("w-full")
-            tree.props("selected-color=blue-7")
-            tree.classes("text-white")
+            ).classes("w-full overflow-y-auto")
+            self.tree_widget.props("selected-color=blue-7")
+            self.tree_widget.classes("text-white")
 
     def on_tree_select(self, node_id: str) -> None:
         """Handle tree node selection.
@@ -550,12 +570,14 @@ class TerminalEditorApp:
                         for term in filtered_terminals:
                             with ui.card().classes("w-full hover:bg-gray-700"):
                                 with ui.row().classes(
-                                    "w-full items-center justify-between"
+                                    "w-full items-center gap-2 flex-nowrap"
                                 ):
-                                    with ui.column().classes("flex-grow"):
-                                        ui.label(
-                                            f"{term.terminal_id} - {term.description}"
-                                        ).classes("font-bold text-white")
+                                    ui.label(
+                                        f"{term.terminal_id} - {term.description}"
+                                    ).classes(
+                                        "font-bold text-white overflow-hidden "
+                                        "text-ellipsis whitespace-nowrap flex-grow"
+                                    )
 
                                     async def add_term(t=term):
                                         await self.add_terminal_from_beckhoff(t)
@@ -565,7 +587,7 @@ class TerminalEditorApp:
                                     ui.button(
                                         "Add",
                                         on_click=add_term,
-                                    ).props("color=primary")
+                                    ).props("color=primary").classes("flex-shrink-0")
 
             search_input.on("keyup.enter", search_terminals)
             with ui.row().classes("w-full justify-between mt-4"):
@@ -605,6 +627,8 @@ class TerminalEditorApp:
 
         self.config.add_terminal(terminal_info.terminal_id, terminal)
         self.has_unsaved_changes = True
+        # Store the last added terminal for scrolling
+        self.last_added_terminal = terminal_info.terminal_id
         # Rebuild the tree view without navigating (which would close the dialog)
         await self.build_tree_view()
         ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
@@ -767,6 +791,16 @@ def main() -> None:
         """Editor page - main interface."""
         ui.dark_mode().enable()
 
+        # Prevent page scrolling - make it fixed height
+        ui.add_head_html("""
+            <style>
+                body, #app, .nicegui-content {
+                    overflow: hidden !important;
+                    height: 100vh;
+                }
+            </style>
+        """)
+
         with ui.header().classes("items-center justify-between px-4"):
             with ui.column().classes("gap-0"):
                 ui.label("Terminal Configuration Editor").classes("text-h5")
@@ -813,16 +847,24 @@ def main() -> None:
 
         with ui.splitter(value=30).classes("w-full h-full") as splitter:
             with splitter.before:
-                with ui.card().classes("w-full h-full"):
+                with ui.card().classes("w-full h-full flex flex-col"):
                     ui.label("Terminal Types").classes("text-h6 mb-2")
-                    editor.tree_container = ui.column().classes("w-full")
+                    editor.tree_container = (
+                        ui.column()
+                        .classes("w-full overflow-y-auto")
+                        .style("flex: 1; min-height: 0;")
+                    )
                     with editor.tree_container:
                         await editor.build_tree_view()
 
             with splitter.after:
-                with ui.card().classes("w-full h-full"):
+                with ui.card().classes("w-full h-full flex flex-col"):
                     ui.label("Details").classes("text-h6 mb-2")
-                    editor.details_container = ui.column().classes("w-full")
+                    editor.details_container = (
+                        ui.column()
+                        .classes("w-full overflow-y-auto")
+                        .style("flex: 1; min-height: 0;")
+                    )
 
         # Warn before leaving with unsaved changes
         ui.add_head_html("""
