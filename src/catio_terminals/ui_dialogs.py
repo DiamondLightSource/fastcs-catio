@@ -304,8 +304,12 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
         # Results container
         results_container = ui.column().classes("w-full max-h-64 overflow-y-auto")
 
+        # Track filtered terminals for "Add All" functionality
+        filtered_terminals_list: list = []
+
         async def search_terminals() -> None:
             """Search for terminals."""
+            nonlocal filtered_terminals_list
             if not app.config:
                 return
 
@@ -331,6 +335,9 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                 if not TerminalService.is_terminal_already_added(app.config, term)
             ]
 
+            # Update tracked list for "Add All" button
+            filtered_terminals_list = filtered_terminals.copy()
+
             # Update status label
             total_matching = len(terminals)
             already_added_count = len(already_added)
@@ -339,6 +346,9 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                 f"Showing {available_count} available terminal(s) "
                 f"({already_added_count} already added, {total_matching} total matches)"
             )
+
+            # Update Add All button visibility
+            add_all_btn.visible = available_count > 0
 
             with results_container:
                 if not filtered_terminals:
@@ -387,7 +397,24 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
         search_input.on("keydown.enter", search_terminals)
         search_input.on("keyup", search_terminals)
 
-        with ui.row().classes("w-full justify-end gap-2 mt-4"):
+        async def add_all_terminals() -> None:
+            """Add all filtered terminals."""
+            if not filtered_terminals_list:
+                ui.notify("No terminals to add", type="warning")
+                return
+
+            count = len(filtered_terminals_list)
+            for terminal_info in filtered_terminals_list:
+                await _add_terminal_from_beckhoff(app, terminal_info)
+
+            ui.notify(f"Added {count} terminal(s)", type="positive")
+            await search_terminals()
+
+        with ui.row().classes("w-full justify-between gap-2 mt-4"):
+            add_all_btn = ui.button(
+                "Add All",
+                on_click=add_all_terminals,
+            ).props("color=primary")
             ui.button("Close", on_click=dialog.close).props("flat")
 
     dialog.open()
