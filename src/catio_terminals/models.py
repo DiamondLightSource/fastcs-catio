@@ -24,6 +24,10 @@ class SymbolNode(BaseModel):
     ads_type: int = Field(description="ADS data type")
     type_name: str = Field(description="Type name")
     channels: int = Field(default=1, description="Number of channels")
+    access: str | None = Field(default=None, description="Read-only or Read/Write")
+    fastcs_name: str | None = Field(
+        default=None, description="PascalCase name for FastCS"
+    )
 
 
 class TerminalType(BaseModel):
@@ -34,6 +38,7 @@ class TerminalType(BaseModel):
     symbol_nodes: list[SymbolNode] = Field(
         default_factory=list, description="List of symbol nodes"
     )
+    group_type: str | None = Field(default=None, description="Terminal group type")
 
 
 class TerminalConfig(BaseModel):

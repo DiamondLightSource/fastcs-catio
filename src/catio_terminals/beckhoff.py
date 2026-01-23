@@ -553,12 +553,15 @@ class BeckhoffClient:
         logger.warning(f"No XML file found for terminal {terminal_id}")
         return None
 
-    def parse_terminal_xml(self, xml_content: str, terminal_id: str) -> TerminalType:
+    def parse_terminal_xml(
+        self, xml_content: str, terminal_id: str, group_type: str | None = None
+    ) -> TerminalType:
         """Parse terminal XML and create TerminalType.
 
         Args:
             xml_content: XML content string
             terminal_id: Terminal ID
+            group_type: Optional terminal group type
 
         Returns:
             TerminalType instance
@@ -649,6 +652,10 @@ class BeckhoffClient:
                     if index_group == 0:
                         index_group = 0xF020  # Default TxPdo index group
 
+                    # Calculate access and fastcs_name
+                    access = "Read-only" if index_group == 0xF020 else "Read/Write"
+                    fastcs_name = self._to_pascal_case(name)
+
                     symbol_nodes.append(
                         SymbolNode(
                             name_template=name,
@@ -657,6 +664,8 @@ class BeckhoffClient:
                             ads_type=self._get_ads_type(data_type),
                             type_name=data_type,
                             channels=1,
+                            access=access,
+                            fastcs_name=fastcs_name,
                         )
                     )
 
@@ -680,6 +689,10 @@ class BeckhoffClient:
                     if index_group == 0:
                         index_group = 0xF030  # Default RxPdo index group
 
+                    # Calculate access and fastcs_name
+                    access = "Read/Write" if index_group == 0xF030 else "Read-only"
+                    fastcs_name = self._to_pascal_case(name)
+
                     symbol_nodes.append(
                         SymbolNode(
                             name_template=name,
@@ -688,6 +701,8 @@ class BeckhoffClient:
                             ads_type=self._get_ads_type(data_type),
                             type_name=data_type,
                             channels=1,
+                            access=access,
+                            fastcs_name=fastcs_name,
                         )
                     )
 
@@ -695,6 +710,7 @@ class BeckhoffClient:
                 description=description,
                 identity=identity,
                 symbol_nodes=symbol_nodes,
+                group_type=group_type,
             )
 
         except ET.ParseError as e:
@@ -729,14 +745,32 @@ class BeckhoffClient:
         }
         return type_map.get(data_type.upper(), 65)  # 65 = generic structure
 
+    def _to_pascal_case(self, name: str) -> str:
+        """Convert symbol name to PascalCase for FastCS attribute.
+
+        Args:
+            name: Symbol name
+
+        Returns:
+            PascalCase version of the name
+        """
+        import re
+
+        # Replace special characters with spaces
+        name = re.sub(r"[^a-zA-Z0-9]+", " ", name)
+        # Split on spaces and capitalize each word
+        words = name.split()
+        return "".join(word.capitalize() for word in words if word)
+
     def create_default_terminal(
-        self, terminal_id: str, description: str
+        self, terminal_id: str, description: str, group_type: str | None = None
     ) -> TerminalType:
         """Create a default terminal type with placeholder values.
 
         Args:
             terminal_id: Terminal ID
             description: Terminal description
+            group_type: Optional terminal group type
 
         Returns:
             TerminalType instance with default values
@@ -790,6 +824,7 @@ class BeckhoffClient:
                     channels=1,
                 ),
             ],
+            group_type=group_type,
         )
 
     def close(self) -> None:

@@ -102,16 +102,20 @@ class TerminalService:
         if xml_content:
             try:
                 terminal = beckhoff_client.parse_terminal_xml(
-                    xml_content, terminal_info.terminal_id
+                    xml_content, terminal_info.terminal_id, terminal_info.group_type
                 )
             except ValueError:
                 logger.error("Failed to parse XML, using default")
                 terminal = beckhoff_client.create_default_terminal(
-                    terminal_info.terminal_id, terminal_info.description
+                    terminal_info.terminal_id,
+                    terminal_info.description,
+                    terminal_info.group_type,
                 )
         else:
             terminal = beckhoff_client.create_default_terminal(
-                terminal_info.terminal_id, terminal_info.description
+                terminal_info.terminal_id,
+                terminal_info.description,
+                terminal_info.group_type,
             )
 
         config.add_terminal(terminal_info.terminal_id, terminal)
