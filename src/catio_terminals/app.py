@@ -22,6 +22,45 @@ class TerminalEditorApp:
         self.tree_data: dict[str, dict] = {}
         self.has_unsaved_changes = False
 
+    @staticmethod
+    def to_pascal_case(name: str) -> str:
+        """Convert symbol name to PascalCase for FastCS attribute.
+
+        Args:
+            name: Symbol name
+
+        Returns:
+            PascalCase version of the name
+        """
+        # Remove special characters and split by spaces, underscores,
+        # and camelCase boundaries
+        import re
+
+        # Replace special characters with spaces
+        name = re.sub(r"[^a-zA-Z0-9]+", " ", name)
+        # Split on spaces and capitalize each word
+        words = name.split()
+        return "".join(word.capitalize() for word in words if word)
+
+    @staticmethod
+    def get_symbol_access(index_group: int) -> str:
+        """Determine if symbol is read-only or read/write.
+
+        Args:
+            index_group: ADS index group
+
+        Returns:
+            'Read-only' or 'Read/Write'
+        """
+        # 0xF020 = TxPdo (inputs from terminal to controller) = Read-only
+        # 0xF030 = RxPdo (outputs from controller to terminal) = Read/Write
+        if index_group == 0xF020:
+            return "Read-only"
+        elif index_group == 0xF030:
+            return "Read/Write"
+        else:
+            return "Unknown"
+
     async def show_file_selector(self) -> None:
         """Show file selector dialog."""
 
@@ -189,31 +228,17 @@ class TerminalEditorApp:
         ui.navigate.to("/editor")
 
     async def build_tree_view(self) -> None:
-        """Build tree view of terminal types."""
+        """Build flat list view of terminal types."""
         if not self.config:
             return
 
-        # Build tree data structure
+        # Build flat list data structure (just terminal descriptions)
         self.tree_data = {}
         for terminal_id, terminal in self.config.terminal_types.items():
-            symbol_children = []
-            for idx, symbol in enumerate(terminal.symbol_nodes):
-                label = f"{symbol.name_template} (channels: {symbol.channels})"
-                symbol_children.append(
-                    {
-                        "id": f"{terminal_id}_symbol_{idx}",
-                        "label": label,
-                        "icon": "data_object",
-                        "terminal_id": terminal_id,
-                        "symbol_idx": idx,
-                    }
-                )
-
             self.tree_data[terminal_id] = {
                 "id": terminal_id,
-                "label": f"{terminal_id} - {terminal.description}",
+                "label": terminal.description,
                 "icon": "memory",
-                "children": symbol_children,
             }
 
         tree = ui.tree(
@@ -238,19 +263,10 @@ class TerminalEditorApp:
         self.details_container.clear()
 
         with self.details_container:
-            # Check if it's a terminal or symbol
-            if "_symbol_" in node_id:
-                # Symbol selected
-                terminal_id, _, symbol_idx = node_id.split("_symbol_")
-                symbol_idx = int(symbol_idx)
-                terminal = self.config.terminal_types.get(terminal_id)
-                if terminal and symbol_idx < len(terminal.symbol_nodes):
-                    self.show_symbol_details(terminal_id, symbol_idx)
-            else:
-                # Terminal selected
-                terminal = self.config.terminal_types.get(node_id)
-                if terminal:
-                    self.show_terminal_details(node_id, terminal)
+            # Terminal selected
+            terminal = self.config.terminal_types.get(node_id)
+            if terminal:
+                self.show_terminal_details(node_id, terminal)
 
     def show_terminal_details(self, terminal_id: str, terminal: TerminalType) -> None:
         """Show terminal details.
@@ -272,14 +288,75 @@ class TerminalEditorApp:
             ui.label(f"Product Code: 0x{terminal.identity.product_code:08X}")
             ui.label(f"Revision: 0x{terminal.identity.revision_number:08X}")
 
-        ui.label(f"Symbols ({len(terminal.symbol_nodes)})").classes("text-h6 mb-2")
-
         with ui.row().classes("w-full justify-end mb-2"):
             ui.button(
                 "Delete Terminal",
                 icon="delete",
                 on_click=lambda: self.delete_terminal(terminal_id),
             ).props("color=negative")
+
+        ui.separator().classes("my-4")
+
+        ui.label(f"Symbols ({len(terminal.symbol_nodes)})").classes("text-h6 mb-2")
+
+        # Build symbol tree data
+        symbol_tree_data = []
+        for idx, symbol in enumerate(terminal.symbol_nodes):
+            # Determine access type
+            access = self.get_symbol_access(symbol.index_group)
+
+            # Convert to PascalCase for FastCS
+            pascal_name = self.to_pascal_case(symbol.name_template)
+
+            # Build symbol properties as children
+            symbol_children = [
+                {
+                    "id": f"{terminal_id}_sym{idx}_access",
+                    "label": f"Access: {access}",
+                    "icon": "lock" if access == "Read-only" else "edit",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_type",
+                    "label": f"Type: {symbol.type_name}",
+                    "icon": "code",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_fastcs",
+                    "label": f"FastCS Name: {pascal_name}",
+                    "icon": "label",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_channels",
+                    "label": f"Channels: {symbol.channels}",
+                    "icon": "numbers",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_size",
+                    "label": f"Size: {symbol.size} bytes",
+                    "icon": "straighten",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_index",
+                    "label": f"Index Group: 0x{symbol.index_group:04X}",
+                    "icon": "tag",
+                },
+            ]
+
+            symbol_tree_data.append(
+                {
+                    "id": f"{terminal_id}_symbol_{idx}",
+                    "label": symbol.name_template,
+                    "icon": "data_object",
+                    "children": symbol_children,
+                }
+            )
+
+        if symbol_tree_data:
+            with ui.card().classes("w-full"):
+                ui.tree(
+                    symbol_tree_data,
+                    label_key="label",
+                ).classes("w-full").props("selected-color=blue-7")
 
     def show_symbol_details(self, terminal_id: str, symbol_idx: int) -> None:
         """Show symbol details.
