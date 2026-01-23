@@ -240,7 +240,28 @@ async def show_delete_terminal_dialog(
     await dialog
 
     if result["confirm"]:
+        # Find a terminal to select after deletion
+        terminal_ids = list(app.config.terminal_types.keys())
+        next_terminal_to_select = None
+
+        if len(terminal_ids) > 1:
+            # Try to select the next terminal in the list
+            try:
+                current_index = terminal_ids.index(terminal_id)
+                # Select the next one if available, otherwise the previous one
+                if current_index < len(terminal_ids) - 1:
+                    next_terminal_to_select = terminal_ids[current_index + 1]
+                elif current_index > 0:
+                    next_terminal_to_select = terminal_ids[current_index - 1]
+            except ValueError:
+                # Terminal not found in list, select first one
+                next_terminal_to_select = terminal_ids[0]
+
         TerminalService.delete_terminal(app.config, terminal_id)
+
+        # Update selected terminal to the next one
+        app.selected_terminal_id = next_terminal_to_select
+
         app.has_unsaved_changes = True
         await app.build_editor_ui()
         ui.notify(f"Deleted terminal: {terminal_id}", type="info")

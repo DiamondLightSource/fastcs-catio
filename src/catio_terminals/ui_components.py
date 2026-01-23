@@ -31,11 +31,15 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
         # If we just added a terminal, select it
         terminal_to_select = app.last_added_terminal
         app.last_added_terminal = None
-    elif app.tree_data and not app.selected_terminal_id:
-        # If no terminal is selected and we have terminals, select the first one
+    elif app.selected_terminal_id and app.selected_terminal_id in app.tree_data:
+        # If a terminal is selected and still exists, keep it selected
+        terminal_to_select = app.selected_terminal_id
+    elif app.tree_data:
+        # If no terminal is selected or deleted, select the first one
         first_terminal = next(iter(app.tree_data.keys()), None)
         if first_terminal:
             terminal_to_select = first_terminal
+            app.selected_terminal_id = first_terminal
 
     # If tree_container exists, clear and rebuild
     if app.tree_container is not None:
