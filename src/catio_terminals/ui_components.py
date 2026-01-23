@@ -231,29 +231,41 @@ def show_terminal_details(
 
     if symbol_tree_data:
         with ui.card().classes("w-full"):
+            tree = (
+                ui.tree(
+                    symbol_tree_data,
+                    label_key="label",
+                    node_key="id",
+                )
+                .classes("w-full")
+                .props("selected-color=blue-7")
+            )
 
             def make_symbol_toggle_handler(symbol_idx: int):
                 def toggle(e):
-                    terminal.symbol_nodes[symbol_idx].selected = e.args
+                    # e.args contains the new boolean value
+                    new_value = (
+                        e.args
+                        if isinstance(e.args, bool)
+                        else e.args[0]
+                        if e.args
+                        else False
+                    )
+                    terminal.symbol_nodes[symbol_idx].selected = new_value
                     _mark_changed(app, lambda: None)
 
                 return toggle
-
-            tree = ui.tree(
-                symbol_tree_data,
-                label_key="label",
-            ).classes("w-full").props("selected-color=blue-7")
 
             # Add custom slot to include checkbox for root items
             tree.add_slot(
                 "default-header",
                 r"""
                 <div class="row items-center">
-                    <q-checkbox 
+                    <q-checkbox
                         v-if="props.node.symbol_idx !== undefined"
                         :model-value="props.node.selected"
-                        @update:model-value="(val) => $parent.$emit('toggle-symbol-' + props.node.symbol_idx, val)"
-                        @click.stop
+                        @click.stop="() => {}"
+                        @update:model-value="(val) => { props.node.selected = val; $parent.$emit('toggle-symbol-' + props.node.symbol_idx, val); }"
                         dense
                         class="q-mr-xs"
                     />
@@ -261,7 +273,7 @@ def show_terminal_details(
                     <span>{{ props.node.label }}</span>
                 </div>
                 """,
-            )
+            )  # noqa: E501
 
             # Connect event handlers for each symbol
             for node in symbol_tree_data:
@@ -398,29 +410,41 @@ def show_terminal_details(
 
         if coe_tree_data:
             with ui.card().classes("w-full"):
+                tree = (
+                    ui.tree(
+                        coe_tree_data,
+                        label_key="label",
+                        node_key="id",
+                    )
+                    .classes("w-full")
+                    .props("selected-color=blue-7")
+                )
 
                 def make_coe_toggle_handler(coe_idx: int):
                     def toggle(e):
-                        terminal.coe_objects[coe_idx].selected = e.args
+                        # e.args contains the new boolean value
+                        new_value = (
+                            e.args
+                            if isinstance(e.args, bool)
+                            else e.args[0]
+                            if e.args
+                            else False
+                        )
+                        terminal.coe_objects[coe_idx].selected = new_value
                         _mark_changed(app, lambda: None)
 
                     return toggle
-
-                tree = ui.tree(
-                    coe_tree_data,
-                    label_key="label",
-                ).classes("w-full").props("selected-color=blue-7")
 
                 # Add custom slot to include checkbox for root items
                 tree.add_slot(
                     "default-header",
                     r"""
                     <div class="row items-center">
-                        <q-checkbox 
+                        <q-checkbox
                             v-if="props.node.coe_idx !== undefined"
                             :model-value="props.node.selected"
-                            @update:model-value="(val) => $parent.$emit('toggle-coe-' + props.node.coe_idx, val)"
-                            @click.stop
+                            @click.stop="() => {}"
+                            @update:model-value="(val) => { props.node.selected = val; $parent.$emit('toggle-coe-' + props.node.coe_idx, val); }"
                             dense
                             class="q-mr-xs"
                         />
