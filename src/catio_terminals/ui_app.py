@@ -45,6 +45,7 @@ class TerminalEditorApp:
         self.tree_widget: ui.tree | None = None
         self.last_added_terminal: str | None = None
         self.selected_terminal_id: str | None = None
+        self.bulk_add_count: int = 0
 
     async def build_editor_ui(self) -> None:
         """Build the main editor UI."""
@@ -183,6 +184,7 @@ def run() -> None:
                             .classes("w-full overflow-y-auto")
                             .style("flex: 1; min-height: 0;")
                         )
+                        assert editor.tree_container is not None
                         with editor.tree_container:
                             await editor.build_tree_view()
 
@@ -194,6 +196,7 @@ def run() -> None:
                             .classes("w-full overflow-y-auto")
                             .style("flex: 1; min-height: 0;")
                         )
+                        assert editor.details_container is not None
                         with editor.details_container:
                             ui.label("Select a terminal to view details").classes(
                                 "text-gray-500"

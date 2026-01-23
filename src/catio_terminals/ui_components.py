@@ -50,11 +50,13 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
                 label_key="label",
                 on_select=lambda e: _on_tree_select(app, e.value),
             ).classes("w-full overflow-y-auto")
+            assert app.tree_widget is not None
             app.tree_widget.props("selected-color=blue-7")
             app.tree_widget.classes("text-white")
 
             # Select the determined terminal
             if terminal_to_select:
+                assert app.tree_widget is not None
                 app.tree_widget.props(f"selected={terminal_to_select}")
                 # Scroll to the selected node using JavaScript
                 ui.run_javascript(
@@ -81,11 +83,13 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
             label_key="label",
             on_select=lambda e: _on_tree_select(app, e.value),
         ).classes("w-full overflow-y-auto")
+        assert app.tree_widget is not None
         app.tree_widget.props("selected-color=blue-7")
         app.tree_widget.classes("text-white")
 
         # Select the determined terminal on initial build
         if terminal_to_select:
+            assert app.tree_widget is not None
             app.tree_widget.props(f"selected={terminal_to_select}")
             # Trigger the selection to show details (deferred to let UI initialize)
             ui.timer(0.01, lambda: _on_tree_select(app, terminal_to_select), once=True)
