@@ -21,6 +21,7 @@ class TerminalEditorApp:
         self.beckhoff_client = BeckhoffClient()
         self.tree_data: dict[str, dict] = {}
         self.has_unsaved_changes = False
+        self.details_container: ui.column | None = None
 
     @staticmethod
     def to_pascal_case(name: str) -> str:
@@ -257,7 +258,7 @@ class TerminalEditorApp:
         Args:
             node_id: Selected node ID
         """
-        if not self.config:
+        if not self.config or not self.details_container:
             return
 
         self.details_container.clear()

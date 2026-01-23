@@ -518,9 +518,15 @@ class BeckhoffClient:
 
             # Extract Type element attributes for identity
             type_elem = device.find("Type")
+            if type_elem is None:
+                logger.warning(f"Type element not found for {terminal_id}")
+                return self.create_default_terminal(
+                    terminal_id, f"Terminal {terminal_id}"
+                )
+
             # Handle Beckhoff's #x prefix for hex values
-            product_code_str = type_elem.get("ProductCode", "0").replace("#x", "0x")
-            revision_str = type_elem.get("RevisionNo", "0").replace("#x", "0x")
+            product_code_str = (type_elem.get("ProductCode") or "0").replace("#x", "0x")
+            revision_str = (type_elem.get("RevisionNo") or "0").replace("#x", "0x")
             product_code = int(product_code_str, 0)
             revision = int(revision_str, 0)
 
@@ -542,7 +548,11 @@ class BeckhoffClient:
 
             # Extract vendor ID (should be 2 for Beckhoff)
             vendor_elem = root.find(".//Vendor/Id")
-            vendor_id = int(vendor_elem.text) if vendor_elem is not None else 2
+            vendor_id = (
+                int(vendor_elem.text or "2")
+                if vendor_elem is not None and vendor_elem.text
+                else 2
+            )
 
             identity = Identity(
                 vendor_id=vendor_id,
@@ -563,7 +573,7 @@ class BeckhoffClient:
                     # Handle Beckhoff's #x prefix for hex values
                     index_str = entry.findtext("Index", "0").replace("#x", "0x")
                     index = int(index_str, 0)
-                    _sub_index = int(entry.findtext("SubIndex", "0"))
+                    _sub_index = int(entry.findtext("SubIndex") or "0")
                     bit_len = int(entry.findtext("BitLen", "0"))
                     data_type = entry.findtext("DataType", "UNKNOWN")
 
@@ -594,7 +604,7 @@ class BeckhoffClient:
                     index_str = entry.findtext("Index", "0").replace("#x", "0x")
                     index = int(index_str, 0)
                     # TODO do we need sub_index?
-                    _sub_index = int(entry.findtext("SubIndex", "0"))
+                    _sub_index = int(entry.findtext("SubIndex") or "0")
                     bit_len = int(entry.findtext("BitLen", "0"))
                     data_type = entry.findtext("DataType", "UNKNOWN")
 
