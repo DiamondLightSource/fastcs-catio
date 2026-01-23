@@ -270,49 +270,51 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                         ui.label("No terminals found").classes("text-gray-500")
                 else:
                     for term in filtered_terminals:
-                        with ui.card().classes("w-full hover:bg-gray-700"):
-                            with ui.row().classes(
-                                "w-full items-center gap-2 flex-nowrap"
-                            ):
-                                ui.label(f"{term.terminal_id}").classes(
-                                    "font-bold text-blue-300 flex-shrink-0"
-                                )
-                                ui.label(term.description).classes(
-                                    "text-sm text-gray-400 overflow-hidden "
-                                    "text-ellipsis whitespace-nowrap flex-shrink"
-                                )
-                                ui.button(
-                                    icon="add",
-                                    on_click=lambda t=term: _add_terminal_from_beckhoff(
-                                        app, t
-                                    ),
-                                ).props("flat dense color=primary").classes(
-                                    "flex-shrink-0"
-                                )
+                        # Use cleaned description, matching Terminal Types list format
+                        description = (
+                            term.description.replace("\n", " ").strip()
+                            if term.description
+                            else term.terminal_id
+                        )
+                        with (
+                            ui.row()
+                            .classes(
+                                "w-full items-center gap-2 p-2 hover:bg-gray-700"
+                                " rounded"
+                            )
+                            .style("min-width: 0")
+                        ):
+                            ui.label(f"{term.terminal_id} - {description}").classes(
+                                "overflow-hidden text-ellipsis whitespace-nowrap"
+                            ).style("flex: 1; min-width: 0")
+                            ui.button(
+                                "Add",
+                                on_click=lambda t=term: _add_terminal_and_refresh(
+                                    app, t, search_terminals
+                                ),
+                            ).props("color=primary")
 
         search_input.on("keydown.enter", search_terminals)
         ui.button("Search", on_click=search_terminals).props("color=primary")
 
-        ui.separator().classes("my-4")
-        ui.label("Add Terminal Manually").classes("text-caption text-gray-600")
-
-        manual_id = ui.input(label="Terminal ID", placeholder="ETH1_RIO1_MOD1").classes(
-            "w-full"
-        )
-        manual_desc = ui.input(label="Description", placeholder="Optional").classes(
-            "w-full"
-        )
-
         with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Close", on_click=dialog.close).props("flat")
-            ui.button(
-                "Add Manually",
-                on_click=lambda: _add_manual_terminal(
-                    app, manual_id.value, manual_desc.value, dialog
-                ),
-            ).props("color=secondary")
 
     dialog.open()
+
+
+async def _add_terminal_and_refresh(
+    app: "TerminalEditorApp", terminal_info, refresh_callback
+) -> None:
+    """Add terminal and refresh the search results.
+
+    Args:
+        app: Terminal editor application instance
+        terminal_info: BeckhoffTerminalInfo instance
+        refresh_callback: Function to refresh search results
+    """
+    await _add_terminal_from_beckhoff(app, terminal_info)
+    await refresh_callback()
 
 
 async def _add_terminal_from_beckhoff(app: "TerminalEditorApp", terminal_info) -> None:
