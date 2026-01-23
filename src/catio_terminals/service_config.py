@@ -25,10 +25,12 @@ class ConfigService:
                     if terminal.description
                     else terminal_id
                 )
+                # Use different icon for terminals with CoE objects
+                icon = "settings_ethernet" if terminal.coe_objects else "memory"
                 tree_data[terminal_id] = {
                     "id": terminal_id,
                     "label": f"{terminal_id} - {description}",
-                    "icon": "memory",
+                    "icon": icon,
                 }
         return tree_data
 
