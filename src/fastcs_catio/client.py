@@ -2777,7 +2777,8 @@ class AsyncioADSClient:
             except asyncio.CancelledError:
                 # Add the last notification buffer to the queue despite the flushing
                 # period not having completed.
-                if self.__buffer is not None:
+                if self.__buffer is not None and not first_flush:
+                    # Only process buffer if we have valid dtype (not first flush)
                     buffer = self.__buffer
                     self.__buffer = None
                     self.__notification_queue.put_nowait(
