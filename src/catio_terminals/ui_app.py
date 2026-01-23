@@ -125,11 +125,11 @@ def run() -> None:
 
         with ui.header():
             with ui.row().classes("w-full items-center justify-between"):
-                with ui.row().classes("items-center gap-4"):
+                with ui.column().classes("gap-0"):
                     ui.label("CATio Terminal Editor").classes("text-h6")
                     if editor.current_file:
-                        ui.label(f"File: {editor.current_file.name}").classes(
-                            "text-sm text-gray-400"
+                        ui.label(f"{editor.current_file}").classes(
+                            "text-xs text-gray-200"
                         )
 
                 with ui.row().classes("gap-2"):
