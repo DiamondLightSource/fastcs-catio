@@ -18,7 +18,7 @@ terminal_types:
         type_name: "AO Output Channel 1_TYPE"
         channels: 4
         access: "Read/Write"
-        fastcs_name: "AoOutputChannelChannel"
+        fastcs_name: "AoOutputChannel{channel}"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
@@ -43,7 +43,7 @@ terminal_types:
         type_name: "AO Output Channel 1_TYPE"
         channels: 4
         access: "Read/Write"
-        fastcs_name: "AoOutputChannelChannel"
+        fastcs_name: "AoOutputChannel{channel}"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
@@ -68,7 +68,7 @@ terminal_types:
         type_name: "AO Output Channel 1_TYPE"
         channels: 4
         access: "Read/Write"
-        fastcs_name: "AoOutputChannelChannel"
+        fastcs_name: "AoOutputChannel{channel}"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0

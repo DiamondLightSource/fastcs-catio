@@ -8,6 +8,7 @@ from pathlib import Path
 import httpx
 
 from catio_terminals.models import Identity, SymbolNode, TerminalType
+from catio_terminals.utils import to_pascal_case
 
 logger = logging.getLogger(__name__)
 
@@ -654,7 +655,7 @@ class BeckhoffClient:
 
                     # Calculate access and fastcs_name
                     access = "Read-only" if index_group == 0xF020 else "Read/Write"
-                    fastcs_name = self._to_pascal_case(name)
+                    fastcs_name = to_pascal_case(name)
 
                     symbol_nodes.append(
                         SymbolNode(
@@ -691,7 +692,7 @@ class BeckhoffClient:
 
                     # Calculate access and fastcs_name
                     access = "Read/Write" if index_group == 0xF030 else "Read-only"
-                    fastcs_name = self._to_pascal_case(name)
+                    fastcs_name = to_pascal_case(name)
 
                     symbol_nodes.append(
                         SymbolNode(
@@ -744,23 +745,6 @@ class BeckhoffClient:
             "LREAL": 5,
         }
         return type_map.get(data_type.upper(), 65)  # 65 = generic structure
-
-    def _to_pascal_case(self, name: str) -> str:
-        """Convert symbol name to PascalCase for FastCS attribute.
-
-        Args:
-            name: Symbol name
-
-        Returns:
-            PascalCase version of the name
-        """
-        import re
-
-        # Replace special characters with spaces
-        name = re.sub(r"[^a-zA-Z0-9]+", " ", name)
-        # Split on spaces and capitalize each word
-        words = name.split()
-        return "".join(word.capitalize() for word in words if word)
 
     def create_default_terminal(
         self, terminal_id: str, description: str, group_type: str | None = None

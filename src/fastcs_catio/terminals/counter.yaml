@@ -19,7 +19,7 @@ terminal_types:
         type_name: "CNT Inputs_TYPE"
         channels: 2
         access: "Read-only"
-        fastcs_name: "CntInputsChannelChannel"
+        fastcs_name: "CntInputsChannel{channel}"
       # CNT Outputs - client expands to control + set counter value
       - name_template: "CNT Outputs Channel {channel}"
         index_group: 0xF030 # ADSIGRP_IOIMAGE_RWOB
@@ -28,7 +28,7 @@ terminal_types:
         type_name: "CNT Outputs_TYPE"
         channels: 2
         access: "Read/Write"
-        fastcs_name: "CntOutputsChannelChannel"
+        fastcs_name: "CntOutputsChannel{channel}"
       # WcState
       - name_template: "WcState^WcState"
         index_group: 0xF021

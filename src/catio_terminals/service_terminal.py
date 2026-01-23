@@ -1,7 +1,6 @@
 """Terminal management service."""
 
 import logging
-import re
 
 from catio_terminals.beckhoff import BeckhoffClient, BeckhoffTerminalInfo
 from catio_terminals.models import TerminalConfig, TerminalType
@@ -11,22 +10,6 @@ logger = logging.getLogger(__name__)
 
 class TerminalService:
     """Service for managing terminals."""
-
-    @staticmethod
-    def to_pascal_case(name: str) -> str:
-        """Convert symbol name to PascalCase for FastCS attribute.
-
-        Args:
-            name: Symbol name
-
-        Returns:
-            PascalCase version of the name
-        """
-        # Replace special characters with spaces
-        name = re.sub(r"[^a-zA-Z0-9]+", " ", name)
-        # Split on spaces and capitalize each word
-        words = name.split()
-        return "".join(word.capitalize() for word in words if word)
 
     @staticmethod
     def get_symbol_access(index_group: int) -> str:

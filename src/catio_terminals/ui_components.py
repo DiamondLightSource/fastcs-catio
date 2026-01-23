@@ -7,6 +7,7 @@ from nicegui import ui
 from catio_terminals.models import TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
+from catio_terminals.utils import to_pascal_case
 
 if TYPE_CHECKING:
     from catio_terminals.app import TerminalEditorApp
@@ -158,7 +159,7 @@ def show_terminal_details(
         access = TerminalService.get_symbol_access(symbol.index_group)
 
         # Convert to PascalCase for FastCS
-        pascal_name = TerminalService.to_pascal_case(symbol.name_template)
+        pascal_name = to_pascal_case(symbol.name_template)
 
         # Build symbol properties as children
         symbol_children = [
