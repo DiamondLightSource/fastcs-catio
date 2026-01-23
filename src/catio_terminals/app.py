@@ -44,6 +44,7 @@ class TerminalEditorApp:
         self.tree_container: ui.column | None = None
         self.tree_widget: ui.tree | None = None
         self.last_added_terminal: str | None = None
+        self.selected_terminal_id: str | None = None
 
     async def build_editor_ui(self) -> None:
         """Build the main editor UI."""

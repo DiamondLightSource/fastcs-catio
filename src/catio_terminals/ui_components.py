@@ -24,6 +24,18 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
     # Build flat list data structure using ConfigService
     app.tree_data = ConfigService.build_tree_data(app.config)
 
+    # Determine which terminal to select
+    terminal_to_select = None
+    if app.last_added_terminal:
+        # If we just added a terminal, select it
+        terminal_to_select = app.last_added_terminal
+        app.last_added_terminal = None
+    elif app.tree_data and not app.selected_terminal_id:
+        # If no terminal is selected and we have terminals, select the first one
+        first_terminal = next(iter(app.tree_data.keys()), None)
+        if first_terminal:
+            terminal_to_select = first_terminal
+
     # If tree_container exists, clear and rebuild
     if app.tree_container is not None:
         app.tree_container.clear()
@@ -36,16 +48,15 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
             app.tree_widget.props("selected-color=blue-7")
             app.tree_widget.classes("text-white")
 
-            # If there's a last added terminal, scroll to it and select it
-            if app.last_added_terminal:
-                # Set the selected node
-                app.tree_widget.props(f"selected={app.last_added_terminal}")
+            # Select the determined terminal
+            if terminal_to_select:
+                app.tree_widget.props(f"selected={terminal_to_select}")
                 # Scroll to the selected node using JavaScript
                 ui.run_javascript(
                     f"""
                     const tree = document.querySelector('.q-tree');
                     const node = tree.querySelector(
-                        '[data-id="{app.last_added_terminal}"]'
+                        '[data-id="{terminal_to_select}"]'
                     );
                     if (node) {{
                         node.scrollIntoView(
@@ -54,7 +65,10 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
                     }}
                 """
                 )
-                app.last_added_terminal = None
+                # Trigger the selection to show details (deferred to let UI initialize)
+                ui.timer(
+                    0.01, lambda: _on_tree_select(app, terminal_to_select), once=True
+                )
     else:
         # Initial build
         app.tree_widget = ui.tree(
@@ -64,6 +78,12 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
         ).classes("w-full overflow-y-auto")
         app.tree_widget.props("selected-color=blue-7")
         app.tree_widget.classes("text-white")
+
+        # Select the determined terminal on initial build
+        if terminal_to_select:
+            app.tree_widget.props(f"selected={terminal_to_select}")
+            # Trigger the selection to show details (deferred to let UI initialize)
+            ui.timer(0.01, lambda: _on_tree_select(app, terminal_to_select), once=True)
 
 
 def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
@@ -75,6 +95,9 @@ def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
     """
     if not app.config or not app.details_container:
         return
+
+    # Track selected terminal
+    app.selected_terminal_id = node_id
 
     app.details_container.clear()
 

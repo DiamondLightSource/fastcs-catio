@@ -252,6 +252,13 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
     Args:
         app: Terminal editor application instance
     """
+    # Determine initial group type based on selected terminal
+    initial_group_type = "All"
+    if app.selected_terminal_id and app.config:
+        selected_terminal = app.config.terminal_types.get(app.selected_terminal_id)
+        if selected_terminal and selected_terminal.group_type:
+            initial_group_type = selected_terminal.group_type
+
     with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
         ui.label("Add Terminal Type").classes("text-lg font-bold mb-4")
 
@@ -259,7 +266,7 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
         ui.label("Filter by Type").classes("text-caption text-gray-600")
         group_filter = ui.select(
             options=GROUP_TYPE_LABELS,
-            value="All",
+            value=initial_group_type,
             label="Terminal Type",
         ).classes("w-full mb-2")
 
@@ -335,15 +342,17 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                                 ),
                             ).props("color=primary")
 
-        # Trigger search when group filter changes
+        # Trigger search when group filter changes or search input changes
         group_filter.on("update:model-value", search_terminals)
         search_input.on("keydown.enter", search_terminals)
-        ui.button("Search", on_click=search_terminals).props("color=primary")
+        search_input.on("keyup", search_terminals)
 
         with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Close", on_click=dialog.close).props("flat")
 
     dialog.open()
+    # Show filtered results immediately
+    await search_terminals()
 
 
 async def _add_terminal_and_refresh(
