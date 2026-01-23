@@ -33,7 +33,7 @@ class BeckhoffClient:
     BASE_URL = "https://www.beckhoff.com"
     SEARCH_API = f"{BASE_URL}/en-us/products/i-o/ethercat-terminals/"
     XML_DOWNLOAD_URL = "https://download.beckhoff.com/download/configuration-files/io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
-    MAX_TERMINALS = 0  # Set to 0 to fetch all terminals
+    MAX_TERMINALS = 50  # Set to 0 to fetch all terminals
 
     def __init__(self) -> None:
         """Initialize Beckhoff client."""
@@ -151,6 +151,35 @@ class BeckhoffClient:
             logger.error(f"Failed to download/extract XML files: {e}", exc_info=True)
             return False
 
+    def _generate_terminal_url(self, terminal_id: str, group_type: str) -> str:
+        """Generate Beckhoff website URL based on terminal ID and group type.
+
+        Args:
+            terminal_id: Terminal ID (e.g., "EL3318")
+            group_type: Terminal group type (e.g., "AnaIn")
+
+        Returns:
+            Full URL to the terminal's webpage
+        """
+        # Map group types to URL categories
+        category_map = {
+            "DigIn": "el-ed1xxx-digital-input",
+            "DigOut": "el-ed2xxx-digital-output",
+            "AnaIn": "el-ed3xxx-analog-input",
+            "AnaOut": "el-ed4xxx-analog-output",
+            "Measuring": "el5xxx-position-measurement",
+            "Communication": "el6xxx-communication",
+            "Motor": "el7xxx-servo-drive",
+            "PowerSupply": "el9xxx-power-supply",
+        }
+
+        # Get category from group type, default to generic path
+        category = category_map.get(group_type, "ethercat-terminals")
+
+        # Generate URL
+        base_path = f"{self.BASE_URL}/en-gb/products/i-o/ethercat-terminals"
+        return f"{base_path}/{category}/{terminal_id.lower()}.html"
+
     def _parse_xml_files(self, query: str = "") -> list[BeckhoffTerminalInfo]:
         """Parse Beckhoff XML files to extract terminal information.
 
@@ -240,7 +269,9 @@ class BeckhoffClient:
                                     terminal_id=terminal_id,
                                     name=name,
                                     description=description,
-                                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
+                                    url=self._generate_terminal_url(
+                                        terminal_id, group_type
+                                    ),
                                     xml_file=str(xml_file),
                                     group_type=group_type,
                                 )
@@ -396,7 +427,9 @@ class BeckhoffClient:
                                     terminal_id=terminal_id,
                                     name=name,
                                     description=description,
-                                    url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
+                                    url=self._generate_terminal_url(
+                                        terminal_id, group_type
+                                    ),
                                     xml_file=str(xml_file),
                                     product_code=product_code,
                                     revision_number=revision_number,
