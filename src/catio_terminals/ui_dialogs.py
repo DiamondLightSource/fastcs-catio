@@ -267,7 +267,6 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
         group_filter = ui.select(
             options=GROUP_TYPE_LABELS,
             value=initial_group_type,
-            label="Terminal Type",
         ).classes("w-full mb-2")
 
         ui.label("Search Beckhoff Terminals").classes("text-caption text-gray-600")

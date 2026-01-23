@@ -132,6 +132,13 @@ def show_terminal_details(
         ui.label(f"Vendor ID: {terminal.identity.vendor_id}")
         ui.label(f"Product Code: 0x{terminal.identity.product_code:08X}")
         ui.label(f"Revision: 0x{terminal.identity.revision_number:08X}")
+        if terminal.group_type:
+            from catio_terminals.ui_dialogs import GROUP_TYPE_LABELS
+
+            group_label = GROUP_TYPE_LABELS.get(
+                terminal.group_type, terminal.group_type
+            )
+            ui.label(f"Group Type: {group_label}")
 
     with ui.row().classes("w-full justify-end mb-2"):
         ui.button(

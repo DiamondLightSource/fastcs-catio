@@ -95,11 +95,9 @@ def run() -> None:
         editor = get_editor()
 
         ui.label("CATio Terminal Editor").classes("text-h3 mb-4")
-        ui.button(
-            "Open Terminal Configuration",
-            icon="folder_open",
-            on_click=lambda: ui_dialogs.show_file_selector(editor),
-        ).props("size=lg")
+
+        # Automatically open file selector
+        await ui_dialogs.show_file_selector(editor)
 
     @ui.page("/editor")
     async def editor_page() -> None:
