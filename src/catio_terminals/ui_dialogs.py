@@ -283,17 +283,23 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
     with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
         ui.label("Add Terminal Type").classes("text-lg font-bold mb-4")
 
-        # Group type filter dropdown
-        ui.label("Filter by Type").classes("text-caption text-gray-600")
-        group_filter = ui.select(
-            options=GROUP_TYPE_LABELS,
-            value=initial_group_type,
-        ).classes("w-full mb-2")
+        # Filter and search on same row
+        with ui.row().classes("w-full gap-2 items-end mb-2"):
+            with ui.column().classes("flex-none w-48"):
+                ui.label("Filter by Type").classes("text-caption text-gray-600")
+                group_filter = ui.select(
+                    options=GROUP_TYPE_LABELS,
+                    value=initial_group_type,
+                )
 
-        ui.label("Search Beckhoff Terminals").classes("text-caption text-gray-600")
-        search_input = ui.input(
-            placeholder="Search terminals...",
-        ).classes("w-full mb-2")
+            with ui.column().classes("flex-1"):
+                ui.label("Search Terminals").classes("text-caption text-gray-600")
+                search_input = ui.input(
+                    placeholder="Search terminals...",
+                ).classes("w-full")
+
+        # Status line showing counts
+        status_label = ui.label("").classes("text-sm text-gray-400 mb-2")
 
         # Results container
         results_container = ui.column().classes("w-full max-h-64 overflow-y-auto")
@@ -313,12 +319,26 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                     term for term in terminals if term.group_type == selected_group
                 ]
 
-            # Filter out terminals that are already added
+            # Separate terminals into already added and available
+            already_added = [
+                term
+                for term in terminals
+                if TerminalService.is_terminal_already_added(app.config, term)
+            ]
             filtered_terminals = [
                 term
                 for term in terminals
                 if not TerminalService.is_terminal_already_added(app.config, term)
             ]
+
+            # Update status label
+            total_matching = len(terminals)
+            already_added_count = len(already_added)
+            available_count = len(filtered_terminals)
+            status_label.text = (
+                f"Showing {available_count} available terminal(s) "
+                f"({already_added_count} already added, {total_matching} total matches)"
+            )
 
             with results_container:
                 if not filtered_terminals:
