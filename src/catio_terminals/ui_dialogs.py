@@ -21,7 +21,9 @@ GROUP_TYPE_LABELS = {
     "DigIn": "Digital Input",
     "DigOut": "Digital Output",
     "AnaIn": "Analog Input",
+    "AnaInFast": "Analog Input (Fast)",
     "AnaOut": "Analog Output",
+    "AnaOutFast": "Analog Output (Fast)",
     "PowerSupply": "Power Supply",
     "CpBk": "Bus Couplers",
     "System": "System",
@@ -30,6 +32,29 @@ GROUP_TYPE_LABELS = {
     "Measuring": "Measuring",
     "Multifunction": "Multifunction",
     "Safety": "Safety",
+    "SafetyTerminals": "Safety Terminals",
+    "SafetyCoupler": "Safety Couplers",
+    "SafetyFieldbusBoxes": "Safety Fieldbus Boxes",
+    "FieldbusBoxEP1xxx": "Fieldbus Box EP1xxx",
+    "FieldbusBoxEP2xxx": "Fieldbus Box EP2xxx",
+    "FieldbusBoxEP3xxx": "Fieldbus Box EP3xxx",
+    "FieldbusBoxEP4xxx": "Fieldbus Box EP4xxx",
+    "FieldbusBoxEP5xxx": "Fieldbus Box EP5xxx",
+    "FieldbusBoxEP6xxx": "Fieldbus Box EP6xxx",
+    "FieldbusBoxEP7xxx": "Fieldbus Box EP7xxx",
+    "FieldbusBoxEP8xxx": "Fieldbus Box EP8xxx",
+    "FieldbusBoxEPP1xxx": "Fieldbus Box EPP1xxx",
+    "FieldbusBoxEPP2xxx": "Fieldbus Box EPP2xxx",
+    "FieldbusBoxEPP3xxx": "Fieldbus Box EPP3xxx",
+    "FieldbusBoxEPP4xxx": "Fieldbus Box EPP4xxx",
+    "FieldbusBoxEPP5xxx": "Fieldbus Box EPP5xxx",
+    "FieldbusBoxEPP6xxx": "Fieldbus Box EPP6xxx",
+    "FieldbusBoxEPP7xxx": "Fieldbus Box EPP7xxx",
+    "FieldbusBoxEPX1xxx": "Fieldbus Box EPX1xxx",
+    "EJ_Coupler": "EJ Couplers",
+    "EKM": "EKM",
+    "ELM": "ELM",
+    "DriveAxisTerminals": "Drive Axis Terminals",
     "Other": "Other",
 }
 
@@ -278,7 +303,9 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
     if app.selected_terminal_id and app.config:
         selected_terminal = app.config.terminal_types.get(app.selected_terminal_id)
         if selected_terminal and selected_terminal.group_type:
-            initial_group_type = selected_terminal.group_type
+            # Only use the group type if it's in our labels dictionary
+            if selected_terminal.group_type in GROUP_TYPE_LABELS:
+                initial_group_type = selected_terminal.group_type
 
     with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
         ui.label("Add Terminal Type").classes("text-lg font-bold mb-4")
@@ -414,7 +441,9 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                 progress_label = ui.label("0 of 0").classes(
                     "text-sm text-gray-400 mb-2"
                 )
-                progress_bar = ui.linear_progress(value=0).props("instant-feedback")
+                progress_bar = ui.linear_progress(value=0, show_value=False).props(
+                    "instant-feedback"
+                )
 
             progress_dialog.open()
 
