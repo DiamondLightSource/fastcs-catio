@@ -6,7 +6,10 @@ from pathlib import Path
 from nicegui import ui
 
 from catio_terminals.beckhoff import BeckhoffClient
+from catio_terminals.config_service import ConfigService
+from catio_terminals.file_service import FileService
 from catio_terminals.models import TerminalConfig, TerminalType
+from catio_terminals.terminal_service import TerminalService
 
 logger = logging.getLogger(__name__)
 
@@ -25,45 +28,6 @@ class TerminalEditorApp:
         self.tree_container: ui.column | None = None
         self.tree_widget: ui.tree | None = None
         self.last_added_terminal: str | None = None
-
-    @staticmethod
-    def to_pascal_case(name: str) -> str:
-        """Convert symbol name to PascalCase for FastCS attribute.
-
-        Args:
-            name: Symbol name
-
-        Returns:
-            PascalCase version of the name
-        """
-        # Remove special characters and split by spaces, underscores,
-        # and camelCase boundaries
-        import re
-
-        # Replace special characters with spaces
-        name = re.sub(r"[^a-zA-Z0-9]+", " ", name)
-        # Split on spaces and capitalize each word
-        words = name.split()
-        return "".join(word.capitalize() for word in words if word)
-
-    @staticmethod
-    def get_symbol_access(index_group: int) -> str:
-        """Determine if symbol is read-only or read/write.
-
-        Args:
-            index_group: ADS index group
-
-        Returns:
-            'Read-only' or 'Read/Write'
-        """
-        # 0xF020 = TxPdo (inputs from terminal to controller) = Read-only
-        # 0xF030 = RxPdo (outputs from controller to terminal) = Read/Write
-        if index_group == 0xF020:
-            return "Read-only"
-        elif index_group == 0xF030:
-            return "Read/Write"
-        else:
-            return "Unknown"
 
     async def show_file_selector(self) -> None:
         """Show file selector dialog."""
@@ -192,7 +156,7 @@ class TerminalEditorApp:
             ui.notify("File already exists. Use Open instead.", type="warning")
             return
 
-        self.config = TerminalConfig()
+        self.config = FileService.create_file(path)
         self.current_file = path
         self.has_unsaved_changes = False
         dialog.close()
@@ -216,7 +180,7 @@ class TerminalEditorApp:
             return
 
         try:
-            self.config = TerminalConfig.from_yaml(path)
+            self.config = FileService.open_file(path)
             self.current_file = path
             self.has_unsaved_changes = False
             dialog.close()
@@ -236,14 +200,8 @@ class TerminalEditorApp:
         if not self.config:
             return
 
-        # Build flat list data structure (just terminal descriptions)
-        self.tree_data = {}
-        for terminal_id, terminal in self.config.terminal_types.items():
-            self.tree_data[terminal_id] = {
-                "id": terminal_id,
-                "label": f"{terminal_id} - {terminal.description}",
-                "icon": "memory",
-            }
+        # Build flat list data structure using ConfigService
+        self.tree_data = ConfigService.build_tree_data(self.config)
 
         # If tree_container exists, clear and rebuild
         if self.tree_container is not None:
@@ -297,7 +255,7 @@ class TerminalEditorApp:
 
         with self.details_container:
             # Terminal selected
-            terminal = self.config.terminal_types.get(node_id)
+            terminal = ConfigService.get_terminal(self.config, node_id)
             if terminal:
                 self.show_terminal_details(node_id, terminal)
 
@@ -336,10 +294,10 @@ class TerminalEditorApp:
         symbol_tree_data = []
         for idx, symbol in enumerate(terminal.symbol_nodes):
             # Determine access type
-            access = self.get_symbol_access(symbol.index_group)
+            access = TerminalService.get_symbol_access(symbol.index_group)
 
             # Convert to PascalCase for FastCS
-            pascal_name = self.to_pascal_case(symbol.name_template)
+            pascal_name = TerminalService.to_pascal_case(symbol.name_template)
 
             # Build symbol properties as children
             symbol_children = [
@@ -498,7 +456,7 @@ class TerminalEditorApp:
         await dialog
 
         if result["confirm"]:
-            self.config.remove_terminal(terminal_id)
+            TerminalService.delete_terminal(self.config, terminal_id)
             self.has_unsaved_changes = True
             await self.build_editor_ui()
             ui.notify(f"Deleted terminal: {terminal_id}", type="info")
@@ -517,37 +475,11 @@ class TerminalEditorApp:
             # Results container
             results_container = ui.column().classes("w-full max-h-64 overflow-y-auto")
 
-            def is_terminal_already_added(term) -> bool:
-                """Check if terminal is already in config.
-
-                Args:
-                    term: BeckhoffTerminalInfo instance
-
-                Returns:
-                    True if terminal already exists
-                """
-                if not self.config:
-                    return False
-
-                # First check by terminal ID
-                if term.terminal_id in self.config.terminal_types:
-                    return True
-
-                # Check if any existing terminal has same product code and revision
-                # (using cached values from terminals_cache.json for speed)
-                if term.product_code and term.revision_number:
-                    for existing_terminal in self.config.terminal_types.values():
-                        if (
-                            existing_terminal.identity.product_code == term.product_code
-                            and existing_terminal.identity.revision_number
-                            == term.revision_number
-                        ):
-                            return True
-
-                return False
-
             async def search_terminals() -> None:
                 """Search for terminals."""
+                if not self.config:
+                    return
+
                 results_container.clear()
                 terminals = await self.beckhoff_client.search_terminals(
                     search_input.value
@@ -555,7 +487,9 @@ class TerminalEditorApp:
 
                 # Filter out terminals that are already added
                 filtered_terminals = [
-                    term for term in terminals if not is_terminal_already_added(term)
+                    term
+                    for term in terminals
+                    if not TerminalService.is_terminal_already_added(self.config, term)
                 ]
 
                 with results_container:
@@ -605,27 +539,11 @@ class TerminalEditorApp:
         if not self.config:
             return
 
-        # Try to fetch XML, otherwise use default
-        xml_content = await self.beckhoff_client.fetch_terminal_xml(
-            terminal_info.terminal_id
+        # Use TerminalService to handle the logic
+        await TerminalService.add_terminal_from_beckhoff(
+            self.config, terminal_info, self.beckhoff_client
         )
 
-        if xml_content:
-            try:
-                terminal = self.beckhoff_client.parse_terminal_xml(
-                    xml_content, terminal_info.terminal_id
-                )
-            except ValueError:
-                logger.error("Failed to parse XML, using default")
-                terminal = self.beckhoff_client.create_default_terminal(
-                    terminal_info.terminal_id, terminal_info.description
-                )
-        else:
-            terminal = self.beckhoff_client.create_default_terminal(
-                terminal_info.terminal_id, terminal_info.description
-            )
-
-        self.config.add_terminal(terminal_info.terminal_id, terminal)
         self.has_unsaved_changes = True
         # Store the last added terminal for scrolling
         self.last_added_terminal = terminal_info.terminal_id
@@ -670,7 +588,7 @@ class TerminalEditorApp:
             return
 
         try:
-            self.config.to_yaml(self.current_file)
+            FileService.save_file(self.config, self.current_file)
             self.has_unsaved_changes = False
             ui.run_javascript("window.hasUnsavedChanges = false;")
             ui.notify(f"Saved: {self.current_file.name}", type="positive")

@@ -1,0 +1,128 @@
+"""Terminal management service."""
+
+import logging
+import re
+
+from catio_terminals.beckhoff import BeckhoffClient, BeckhoffTerminalInfo
+from catio_terminals.models import TerminalConfig, TerminalType
+
+logger = logging.getLogger(__name__)
+
+
+class TerminalService:
+    """Service for managing terminals."""
+
+    @staticmethod
+    def to_pascal_case(name: str) -> str:
+        """Convert symbol name to PascalCase for FastCS attribute.
+
+        Args:
+            name: Symbol name
+
+        Returns:
+            PascalCase version of the name
+        """
+        # Replace special characters with spaces
+        name = re.sub(r"[^a-zA-Z0-9]+", " ", name)
+        # Split on spaces and capitalize each word
+        words = name.split()
+        return "".join(word.capitalize() for word in words if word)
+
+    @staticmethod
+    def get_symbol_access(index_group: int) -> str:
+        """Determine if symbol is read-only or read/write.
+
+        Args:
+            index_group: ADS index group
+
+        Returns:
+            'Read-only' or 'Read/Write'
+        """
+        # 0xF020 = TxPdo (inputs from terminal to controller) = Read-only
+        # 0xF030 = RxPdo (outputs from controller to terminal) = Read/Write
+        if index_group == 0xF020:
+            return "Read-only"
+        elif index_group == 0xF030:
+            return "Read/Write"
+        else:
+            return "Unknown"
+
+    @staticmethod
+    def is_terminal_already_added(
+        config: TerminalConfig, terminal_info: BeckhoffTerminalInfo
+    ) -> bool:
+        """Check if terminal is already in config.
+
+        Args:
+            config: Terminal configuration
+            terminal_info: Terminal information to check
+
+        Returns:
+            True if terminal already exists
+        """
+        # First check by terminal ID
+        if terminal_info.terminal_id in config.terminal_types:
+            return True
+
+        # Check if any existing terminal has same product code and revision
+        # (using cached values from terminals_cache.json for speed)
+        if terminal_info.product_code and terminal_info.revision_number:
+            for existing_terminal in config.terminal_types.values():
+                if (
+                    existing_terminal.identity.product_code
+                    == terminal_info.product_code
+                    and existing_terminal.identity.revision_number
+                    == terminal_info.revision_number
+                ):
+                    return True
+
+        return False
+
+    @staticmethod
+    async def add_terminal_from_beckhoff(
+        config: TerminalConfig,
+        terminal_info: BeckhoffTerminalInfo,
+        beckhoff_client: BeckhoffClient,
+    ) -> TerminalType:
+        """Add terminal from Beckhoff information.
+
+        Args:
+            config: Configuration to add terminal to
+            terminal_info: BeckhoffTerminalInfo instance
+            beckhoff_client: Beckhoff client for fetching XML
+
+        Returns:
+            The added TerminalType
+        """
+        # Try to fetch XML, otherwise use default
+        xml_content = await beckhoff_client.fetch_terminal_xml(
+            terminal_info.terminal_id
+        )
+
+        if xml_content:
+            try:
+                terminal = beckhoff_client.parse_terminal_xml(
+                    xml_content, terminal_info.terminal_id
+                )
+            except ValueError:
+                logger.error("Failed to parse XML, using default")
+                terminal = beckhoff_client.create_default_terminal(
+                    terminal_info.terminal_id, terminal_info.description
+                )
+        else:
+            terminal = beckhoff_client.create_default_terminal(
+                terminal_info.terminal_id, terminal_info.description
+            )
+
+        config.add_terminal(terminal_info.terminal_id, terminal)
+        return terminal
+
+    @staticmethod
+    def delete_terminal(config: TerminalConfig, terminal_id: str) -> None:
+        """Delete a terminal from configuration.
+
+        Args:
+            config: Configuration to delete from
+            terminal_id: Terminal ID to delete
+        """
+        config.remove_terminal(terminal_id)
