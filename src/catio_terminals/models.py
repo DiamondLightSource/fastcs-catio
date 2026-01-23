@@ -35,6 +35,9 @@ class CoEObject(BaseModel):
     subindices: list[CoESubIndex] = Field(
         default_factory=list, description="List of subindices"
     )
+    selected: bool = Field(
+        default=False, description="Whether to include in YAML output"
+    )
 
 
 class SymbolNode(BaseModel):
@@ -51,6 +54,9 @@ class SymbolNode(BaseModel):
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
         default=None, description="PascalCase name for FastCS"
+    )
+    selected: bool = Field(
+        default=True, description="Whether to include in YAML output"
     )
 
 
@@ -100,8 +106,23 @@ class TerminalConfig(BaseModel):
 
         from ruamel.yaml import YAML
 
-        # Convert to dict and write with nice formatting
+        # Convert to dict, excluding 'selected' field and filtering items
         data = self.model_dump(exclude_none=True)
+
+        # Filter symbol_nodes and coe_objects based on 'selected' field
+        for terminal_id, terminal_data in data.get("terminal_types", {}).items():
+            if "symbol_nodes" in terminal_data:
+                terminal_data["symbol_nodes"] = [
+                    {k: v for k, v in sym.items() if k != "selected"}
+                    for sym in terminal_data["symbol_nodes"]
+                    if sym.get("selected", True)
+                ]
+            if "coe_objects" in terminal_data:
+                terminal_data["coe_objects"] = [
+                    {k: v for k, v in coe.items() if k != "selected"}
+                    for coe in terminal_data["coe_objects"]
+                    if coe.get("selected", False)
+                ]
 
         yaml = YAML()
         yaml.default_flow_style = False

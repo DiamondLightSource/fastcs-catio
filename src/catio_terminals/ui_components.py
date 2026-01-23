@@ -175,7 +175,7 @@ def show_terminal_details(
 
     ui.label(f"Symbols ({len(terminal.symbol_nodes)})").classes("text-h6 mb-2")
 
-    # Build symbol tree data
+    # Build symbol tree data with checkboxes
     symbol_tree_data = []
     for idx, symbol in enumerate(terminal.symbol_nodes):
         # Determine access type
@@ -224,22 +224,56 @@ def show_terminal_details(
                 "label": symbol.name_template,
                 "icon": "data_object",
                 "children": symbol_children,
+                "symbol_idx": idx,
+                "selected": symbol.selected,
             }
         )
 
     if symbol_tree_data:
         with ui.card().classes("w-full"):
-            ui.tree(
+
+            def make_symbol_toggle_handler(symbol_idx: int):
+                def toggle(e):
+                    terminal.symbol_nodes[symbol_idx].selected = e.args
+                    _mark_changed(app, lambda: None)
+
+                return toggle
+
+            tree = ui.tree(
                 symbol_tree_data,
                 label_key="label",
             ).classes("w-full").props("selected-color=blue-7")
+
+            # Add custom slot to include checkbox for root items
+            tree.add_slot(
+                "default-header",
+                r"""
+                <div class="row items-center">
+                    <q-checkbox 
+                        v-if="props.node.symbol_idx !== undefined"
+                        :model-value="props.node.selected"
+                        @update:model-value="(val) => $parent.$emit('toggle-symbol-' + props.node.symbol_idx, val)"
+                        @click.stop
+                        dense
+                        class="q-mr-xs"
+                    />
+                    <q-icon :name="props.node.icon || 'folder'" size="xs" class="q-mr-xs"/>
+                    <span>{{ props.node.label }}</span>
+                </div>
+                """,
+            )
+
+            # Connect event handlers for each symbol
+            for node in symbol_tree_data:
+                idx = node["symbol_idx"]
+                tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
 
     # Display CoE Objects if available
     if terminal.coe_objects:
         ui.separator().classes("my-4")
         ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6 mb-2")
 
-        # Build CoE tree data
+        # Build CoE tree data with checkboxes
         coe_tree_data = []
         for idx, coe_obj in enumerate(terminal.coe_objects):
             # Map access flags to readable text
@@ -357,14 +391,49 @@ def show_terminal_details(
                     "label": coe_obj.name,
                     "icon": "settings",
                     "children": coe_children,
+                    "coe_idx": idx,
+                    "selected": coe_obj.selected,
                 }
             )
 
-        with ui.card().classes("w-full"):
-            ui.tree(
-                coe_tree_data,
-                label_key="label",
-            ).classes("w-full").props("selected-color=blue-7")
+        if coe_tree_data:
+            with ui.card().classes("w-full"):
+
+                def make_coe_toggle_handler(coe_idx: int):
+                    def toggle(e):
+                        terminal.coe_objects[coe_idx].selected = e.args
+                        _mark_changed(app, lambda: None)
+
+                    return toggle
+
+                tree = ui.tree(
+                    coe_tree_data,
+                    label_key="label",
+                ).classes("w-full").props("selected-color=blue-7")
+
+                # Add custom slot to include checkbox for root items
+                tree.add_slot(
+                    "default-header",
+                    r"""
+                    <div class="row items-center">
+                        <q-checkbox 
+                            v-if="props.node.coe_idx !== undefined"
+                            :model-value="props.node.selected"
+                            @update:model-value="(val) => $parent.$emit('toggle-coe-' + props.node.coe_idx, val)"
+                            @click.stop
+                            dense
+                            class="q-mr-xs"
+                        />
+                        <q-icon :name="props.node.icon || 'folder'" size="xs" class="q-mr-xs"/>
+                        <span>{{ props.node.label }}</span>
+                    </div>
+                    """,
+                )
+
+                # Connect event handlers for each CoE object
+                for node in coe_tree_data:
+                    idx = node["coe_idx"]
+                    tree.on(f"toggle-coe-{idx}", make_coe_toggle_handler(idx))
 
 
 def show_symbol_details(
