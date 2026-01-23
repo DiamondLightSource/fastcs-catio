@@ -484,6 +484,40 @@ async def show_fetch_database_dialog(app: "TerminalEditorApp") -> None:
         dialog.close()
 
 
+async def show_save_confirmation_dialog(app: "TerminalEditorApp") -> None:
+    """Show save confirmation dialog.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    if not app.config or not app.current_file:
+        ui.notify("No file loaded", type="warning")
+        return
+
+    with ui.dialog() as dialog, ui.card():
+        ui.label("Save Configuration").classes("text-h6")
+        ui.label(f"Save changes to {app.current_file.name}?").classes("text-caption")
+
+        result = {"confirm": False}
+
+        def confirm_save():
+            result["confirm"] = True
+            dialog.close()
+
+        def cancel_save():
+            result["confirm"] = False
+            dialog.close()
+
+        with ui.row().classes("w-full justify-end gap-2"):
+            ui.button("Cancel", on_click=cancel_save).props("flat")
+            ui.button("Save", on_click=confirm_save).props("color=primary")
+
+    await dialog
+
+    if result["confirm"]:
+        await app.save_file()
+
+
 async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
     """Show close editor confirmation dialog if there are unsaved changes.
 

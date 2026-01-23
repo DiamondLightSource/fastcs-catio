@@ -123,38 +123,41 @@ def run() -> None:
         """
         )
 
-        with ui.header().classes("items-center justify-between"):
-            ui.label("CATio Terminal Editor").classes("text-h6")
+        with ui.header():
+            with ui.row().classes("w-full items-center justify-between"):
+                with ui.row().classes("items-center gap-4"):
+                    ui.label("CATio Terminal Editor").classes("text-h6")
+                    if editor.current_file:
+                        ui.label(f"File: {editor.current_file.name}").classes(
+                            "text-sm text-gray-400"
+                        )
 
-            if editor.current_file:
-                ui.label(f"File: {editor.current_file.name}").classes(
-                    "text-sm text-gray-400"
-                )
+                with ui.row().classes("gap-2"):
+                    ui.button(
+                        "Save",
+                        icon="save",
+                        on_click=lambda: ui_dialogs.show_save_confirmation_dialog(
+                            editor
+                        ),
+                    )
 
-            with ui.row():
-                ui.button(
-                    "Save",
-                    icon="save",
-                    on_click=editor.save_file,
-                ).props("flat")
+                    ui.button(
+                        "Close",
+                        icon="close",
+                        on_click=lambda: ui_dialogs.show_close_editor_dialog(editor),
+                    ).props("color=negative")
 
-                ui.button(
-                    "Close",
-                    icon="close",
-                    on_click=lambda: ui_dialogs.show_close_editor_dialog(editor),
-                ).props("color=negative")
+                    ui.button(
+                        "Add Terminal",
+                        icon="add",
+                        on_click=lambda: ui_dialogs.show_add_terminal_dialog(editor),
+                    ).props("color=primary")
 
-                ui.button(
-                    "Add Terminal",
-                    icon="add",
-                    on_click=lambda: ui_dialogs.show_add_terminal_dialog(editor),
-                ).props("color=primary")
-
-                ui.button(
-                    "Fetch Terminal Database",
-                    icon="download",
-                    on_click=lambda: ui_dialogs.show_fetch_database_dialog(editor),
-                ).props("color=secondary")
+                    ui.button(
+                        "Fetch Terminal Database",
+                        icon="download",
+                        on_click=lambda: ui_dialogs.show_fetch_database_dialog(editor),
+                    ).props("color=secondary")
 
         with ui.column().classes("main-container w-full"):
             # Unsaved changes indicator

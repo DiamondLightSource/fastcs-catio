@@ -301,7 +301,7 @@ class BeckhoffClient:
 
             for idx, xml_file in enumerate(xml_files):
                 # Yield control every file to prevent blocking and keep websocket alive
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(0.01)
 
                 if idx % 5 == 0 and progress_callback:
                     progress = 0.2 + (0.7 * idx / total_files)
