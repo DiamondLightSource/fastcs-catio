@@ -4,12 +4,16 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import httpx
 from lxml import etree
 
 from catio_terminals.models import Identity, SymbolNode, TerminalType
 from catio_terminals.utils import to_pascal_case
+
+if TYPE_CHECKING:
+    from lxml.etree import _Element
 
 logger = logging.getLogger(__name__)
 
@@ -234,9 +238,9 @@ class BeckhoffClient:
                     group_type = "Other"
                     # Try to find GroupType element
                     group_elements = root.xpath("//*[local-name()='GroupType']")
-                    if group_elements and isinstance(group_elements, list):
+                    if isinstance(group_elements, list) and group_elements:
                         group_elem = group_elements[0]
-                        if hasattr(group_elem, "text") and group_elem.text:
+                        if isinstance(group_elem, _Element) and group_elem.text:
                             group_text = str(group_elem.text)
                             if group_text.strip():
                                 potential_type = group_text.strip()
@@ -248,18 +252,32 @@ class BeckhoffClient:
 
                     # Use XPath to find Device elements directly
                     devices_result = root.xpath("//*[local-name()='Device']")
-                    devices = devices_result if isinstance(devices_result, list) else []
+                    devices = (
+                        [d for d in devices_result if isinstance(d, _Element)]
+                        if isinstance(devices_result, list)
+                        else []
+                    )
 
                     for device in devices:
                         # Use XPath to find Type element with ProductCode
-                        type_elems = device.xpath(".//*[@ProductCode]/..")
+                        type_elems_result = device.xpath(".//*[@ProductCode]/..")
+                        type_elems = (
+                            [e for e in type_elems_result if isinstance(e, _Element)]
+                            if isinstance(type_elems_result, list)
+                            else []
+                        )
                         if not type_elems:
                             continue
 
                         # Try to get the terminal ID from Type elements
                         terminal_id = None
-                        type_children = device.xpath(
+                        type_children_result = device.xpath(
                             ".//*[contains(local-name(), 'Type')]"
+                        )
+                        type_children = (
+                            [c for c in type_children_result if isinstance(c, _Element)]
+                            if isinstance(type_children_result, list)
+                            else []
                         )
                         for child in type_children:
                             type_text = child.text
@@ -285,13 +303,23 @@ class BeckhoffClient:
                         name = terminal_id
                         description = f"Terminal {terminal_id}"
 
-                        name_elems = device.xpath(".//*[local-name()='Name']")
+                        name_elems_result = device.xpath(".//*[local-name()='Name']")
+                        name_elems = (
+                            [e for e in name_elems_result if isinstance(e, _Element)]
+                            if isinstance(name_elems_result, list)
+                            else []
+                        )
                         for name_elem in name_elems:
                             if name_elem.text:
                                 name = name_elem.text.strip()
 
-                        info_elems = device.xpath(
+                        info_elems_result = device.xpath(
                             ".//*[local-name()='Info' or local-name()='Description']"
+                        )
+                        info_elems = (
+                            [e for e in info_elems_result if isinstance(e, _Element)]
+                            if isinstance(info_elems_result, list)
+                            else []
                         )
                         for info_elem in info_elems:
                             if info_elem.text:
@@ -379,15 +407,22 @@ class BeckhoffClient:
 
                     # Extract GroupType using XPath
                     group_type = "Other"
-                    group_elements = root.xpath("//*[local-name()='GroupType']")
-                    if group_elements and isinstance(group_elements, list):
-                        group_elem = group_elements[0]
-                        if hasattr(group_elem, "text") and group_elem.text:
+                    group_elements_result = root.xpath("//*[local-name()='GroupType']")
+                    if (
+                        isinstance(group_elements_result, list)
+                        and group_elements_result
+                    ):
+                        group_elem = group_elements_result[0]
+                        if isinstance(group_elem, _Element) and group_elem.text:
                             group_type = str(group_elem.text).strip()
 
                     # Use XPath to find all Device elements directly
                     devices_result = root.xpath("//*[local-name()='Device']")
-                    devices = devices_result if isinstance(devices_result, list) else []
+                    devices = (
+                        [d for d in devices_result if isinstance(d, _Element)]
+                        if isinstance(devices_result, list)
+                        else []
+                    )
 
                     for device in devices:
                         # Use XPath to check for ProductCode
@@ -396,8 +431,13 @@ class BeckhoffClient:
                             continue
 
                         terminal_id = None
-                        type_children = device.xpath(
+                        type_children_result = device.xpath(
                             ".//*[contains(local-name(), 'Type')]"
+                        )
+                        type_children = (
+                            [c for c in type_children_result if isinstance(c, _Element)]
+                            if isinstance(type_children_result, list)
+                            else []
                         )
                         for child in type_children:
                             type_text = child.text
@@ -413,7 +453,8 @@ class BeckhoffClient:
                             if match:
                                 terminal_id = match.group(1).upper()
 
-                        # CRITICAL: Do NOT indent the following lines - they must run for ALL devices
+                        # CRITICAL: Do NOT indent the following lines
+                        # They must run for ALL devices
                         # This checks if terminal_id is valid and not already processed
                         if not terminal_id or terminal_id in seen_ids:
                             continue
@@ -435,7 +476,12 @@ class BeckhoffClient:
                         name = terminal_id
                         description = f"Terminal {terminal_id}"
 
-                        name_elems = device.xpath(".//Name[@LcId='1033']")
+                        name_elems_result = device.xpath(".//Name[@LcId='1033']")
+                        name_elems = (
+                            [e for e in name_elems_result if isinstance(e, _Element)]
+                            if isinstance(name_elems_result, list)
+                            else []
+                        )
                         if name_elems and name_elems[0].text:
                             name = name_elems[0].text.strip()
                             # Extract description after terminal ID for clean display
@@ -445,12 +491,22 @@ class BeckhoffClient:
                             description = desc_text if desc_text else name
                         else:
                             # Fallback to any Name element
-                            name_elems = device.xpath(".//Name")
-                            if name_elems and name_elems[0].text:
-                                name = name_elems[0].text.strip()
+                            name_elems_result2 = device.xpath(".//Name")
+                            name_elems2 = (
+                                [
+                                    e
+                                    for e in name_elems_result2
+                                    if isinstance(e, _Element)
+                                ]
+                                if isinstance(name_elems_result2, list)
+                                else []
+                            )
+                            if name_elems2 and name_elems2[0].text:
+                                name = name_elems2[0].text.strip()
 
-                        # CRITICAL: Do NOT indent - terminals.append() must run for ALL devices
-                        # regardless of whether name was found with LcId='1033' or not
+                        # CRITICAL: Do NOT indent - terminals.append() must run
+                        # for ALL devices regardless of whether name was found
+                        # with LcId='1033' or not
                         terminals.append(
                             BeckhoffTerminalInfo(
                                 terminal_id=terminal_id,

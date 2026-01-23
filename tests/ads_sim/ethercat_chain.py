@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
+from ruamel.yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -321,10 +321,11 @@ class EtherCATChain:
 
         if pkg_root.exists():
             # Load all YAML files in the terminals directory
+            yaml = YAML()
             for yaml_file in sorted(pkg_root.glob("*.yaml")):
                 try:
                     with open(yaml_file) as f:
-                        terminal_config = yaml.safe_load(f)
+                        terminal_config = yaml.load(f)
 
                     if "terminal_types" in terminal_config:
                         for type_name, type_config in terminal_config[
@@ -359,8 +360,9 @@ class EtherCATChain:
         if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
+        yaml = YAML()
         with open(config_path) as f:
-            config = yaml.safe_load(f)
+            config = yaml.load(f)
 
         self._parse_config(config)
         logger.info(
