@@ -485,6 +485,35 @@ class TerminalEditorApp:
             # Results container
             results_container = ui.column().classes("w-full max-h-64 overflow-y-auto")
 
+            def is_terminal_already_added(term) -> bool:
+                """Check if terminal is already in config.
+
+                Args:
+                    term: BeckhoffTerminalInfo instance
+
+                Returns:
+                    True if terminal already exists
+                """
+                if not self.config:
+                    return False
+
+                # First check by terminal ID
+                if term.terminal_id in self.config.terminal_types:
+                    return True
+
+                # Check if any existing terminal has same product code and revision
+                # (using cached values from terminals_cache.json for speed)
+                if term.product_code and term.revision_number:
+                    for existing_terminal in self.config.terminal_types.values():
+                        if (
+                            existing_terminal.identity.product_code == term.product_code
+                            and existing_terminal.identity.revision_number
+                            == term.revision_number
+                        ):
+                            return True
+
+                return False
+
             async def search_terminals() -> None:
                 """Search for terminals."""
                 results_container.clear()
@@ -492,11 +521,21 @@ class TerminalEditorApp:
                     search_input.value
                 )
 
+                # Filter out terminals that are already added
+                filtered_terminals = [
+                    term for term in terminals if not is_terminal_already_added(term)
+                ]
+
                 with results_container:
-                    if not terminals:
-                        ui.label("No terminals found").classes("text-gray-500")
+                    if not filtered_terminals:
+                        if terminals:
+                            ui.label(
+                                "All matching terminals are already added"
+                            ).classes("text-gray-500")
+                        else:
+                            ui.label("No terminals found").classes("text-gray-500")
                     else:
-                        for term in terminals:
+                        for term in filtered_terminals:
                             with ui.card().classes("w-full hover:bg-gray-700"):
                                 with ui.row().classes(
                                     "w-full items-center justify-between"
@@ -509,10 +548,10 @@ class TerminalEditorApp:
                                             "text-caption text-gray-300"
                                         )
 
-                                    def add_term(t=term):
-                                        return self.add_terminal_from_beckhoff(
-                                            t, dialog
-                                        )
+                                    async def add_term(t=term):
+                                        await self.add_terminal_from_beckhoff(t)
+                                        # Refresh the search to update the filtered list
+                                        await search_terminals()
 
                                     ui.button(
                                         "Add",
@@ -521,19 +560,16 @@ class TerminalEditorApp:
 
             search_input.on("keyup.enter", search_terminals)
             with ui.row().classes("w-full justify-between mt-4"):
-                ui.button("Cancel", on_click=dialog.close).props("flat")
+                ui.button("Done", on_click=dialog.close).props("color=positive")
                 ui.button("Search", on_click=search_terminals).props("color=primary")
 
         dialog.open()
 
-    async def add_terminal_from_beckhoff(
-        self, terminal_info, dialog: ui.dialog
-    ) -> None:
+    async def add_terminal_from_beckhoff(self, terminal_info) -> None:
         """Add terminal from Beckhoff information.
 
         Args:
             terminal_info: BeckhoffTerminalInfo instance
-            dialog: Dialog to close
         """
         if not self.config:
             return
@@ -560,7 +596,6 @@ class TerminalEditorApp:
 
         self.config.add_terminal(terminal_info.terminal_id, terminal)
         self.has_unsaved_changes = True
-        dialog.close()
         await self.build_editor_ui()
         ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
 

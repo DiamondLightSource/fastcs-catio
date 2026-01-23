@@ -21,6 +21,8 @@ class BeckhoffTerminalInfo:
     description: str
     url: str
     xml_file: str | None = None
+    product_code: int = 0
+    revision_number: int = 0
 
 
 class BeckhoffClient:
@@ -65,7 +67,17 @@ class BeckhoffClient:
                 with self.terminals_cache_file.open("r") as f:
                     data = json.load(f)
 
-                self._cached_terminals = [BeckhoffTerminalInfo(**item) for item in data]
+                # Handle both old list format and new dict format
+                if isinstance(data, dict):
+                    self._cached_terminals = [
+                        BeckhoffTerminalInfo(**item) for item in data.values()
+                    ]
+                else:
+                    # Old format - list of items
+                    self._cached_terminals = [
+                        BeckhoffTerminalInfo(**item) for item in data
+                    ]
+
                 logger.info(
                     f"Loaded {len(self._cached_terminals)} terminals from cache"
                 )
@@ -77,7 +89,7 @@ class BeckhoffClient:
         return None
 
     def _save_terminals_cache(self, terminals: list[BeckhoffTerminalInfo]) -> None:
-        """Save terminals to cache.
+        """Save terminals to cache as dictionary keyed by terminal_id.
 
         Args:
             terminals: List of terminals to cache
@@ -86,8 +98,11 @@ class BeckhoffClient:
             import json
             from dataclasses import asdict
 
+            # Convert list to dictionary keyed by terminal_id
+            terminals_dict = {t.terminal_id: asdict(t) for t in terminals}
+
             with self.terminals_cache_file.open("w") as f:
-                json.dump([asdict(t) for t in terminals], f, indent=2)
+                json.dump(terminals_dict, f, indent=2)
 
             self._cached_terminals = terminals
             logger.info(f"Saved {len(terminals)} terminals to cache")
@@ -317,15 +332,42 @@ class BeckhoffClient:
 
                             seen_ids.add(terminal_id)
 
+                            # Extract product code and revision from Type element
+                            type_elem = device.find("Type")
+                            product_code = 0
+                            revision_number = 0
+                            if type_elem is not None:
+                                product_code_str = (
+                                    type_elem.get("ProductCode") or "0"
+                                ).replace("#x", "0x")
+                                revision_str = (
+                                    type_elem.get("RevisionNo") or "0"
+                                ).replace("#x", "0x")
+                                product_code = int(product_code_str, 0)
+                                revision_number = int(revision_str, 0)
+
+                            # Extract name and description
                             name = terminal_id
                             description = f"Terminal {terminal_id}"
 
                             for child in device.iter():
                                 if "Name" in child.tag and child.text:
-                                    name = child.text.strip()
-                                if "Info" in child.tag or "Description" in child.tag:
-                                    if child.text:
-                                        description = child.text.strip()
+                                    # Use English name if available
+                                    if child.get("LcId") == "1033":
+                                        name = child.text.strip()
+                                        # Extract description after terminal ID
+                                        # for clean display
+                                        desc_text = child.text.strip()
+                                        if desc_text.startswith(terminal_id):
+                                            desc_text = desc_text[
+                                                len(terminal_id) :
+                                            ].strip()
+                                        description = (
+                                            desc_text if desc_text else child.text
+                                        )
+                                        break
+                                    elif not name or name == terminal_id:
+                                        name = child.text.strip()
 
                             terminals.append(
                                 BeckhoffTerminalInfo(
@@ -334,6 +376,8 @@ class BeckhoffClient:
                                     description=description,
                                     url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/{terminal_id.lower()}/",
                                     xml_file=str(xml_file),
+                                    product_code=product_code,
+                                    revision_number=revision_number,
                                 )
                             )
 
