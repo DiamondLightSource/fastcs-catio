@@ -1,6 +1,6 @@
 """UI component builders for the terminal editor application."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
@@ -296,7 +296,7 @@ def show_terminal_details(
         ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6 mb-2")
 
         # Build CoE tree data with checkboxes
-        coe_tree_data = []
+        coe_tree_data: list[dict[str, Any]] = []
         for idx, coe_obj in enumerate(terminal.coe_objects):
             # Map access flags to readable text
             access_map = {
@@ -307,7 +307,7 @@ def show_terminal_details(
             access_text = access_map.get(coe_obj.access, coe_obj.access.upper())
 
             # Build CoE object properties as children
-            coe_children = [
+            coe_children: list[dict[str, Any]] = [
                 {
                     "id": f"{terminal_id}_coe{idx}_index",
                     "label": f"Index: 0x{coe_obj.index:04X}",
@@ -476,7 +476,7 @@ def show_terminal_details(
 
                 # Connect event handlers for each CoE object
                 for node in coe_tree_data:
-                    idx = node["coe_idx"]
+                    idx = int(node["coe_idx"])
                     tree.on(f"toggle-coe-{idx}", make_coe_toggle_handler(idx))
 
 

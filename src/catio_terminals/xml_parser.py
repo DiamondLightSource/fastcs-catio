@@ -150,6 +150,10 @@ def parse_terminal_catalog(
                 continue
 
             for device in devices:
+                # Ensure device is an Element (xpath can return strings/bytes)
+                if not etree.iselement(device):
+                    continue
+
                 # Must have Type element with ProductCode
                 type_elem = device.find("Type")
                 if type_elem is None:
@@ -176,16 +180,26 @@ def parse_terminal_catalog(
                 description = f"Terminal {terminal_id}"
 
                 name_elems = device.xpath(".//Name[@LcId='1033']")
-                if name_elems and name_elems[0].text:
-                    name = name_elems[0].text.strip()
+                first_name_elem = (
+                    name_elems[0]
+                    if isinstance(name_elems, list) and name_elems
+                    else None
+                )
+                if etree.iselement(first_name_elem) and first_name_elem.text:
+                    name = first_name_elem.text.strip()
                     desc_text = name
                     if desc_text.startswith(terminal_id):
                         desc_text = desc_text[len(terminal_id) :].strip()
                     description = desc_text if desc_text else name
                 else:
                     name_elems = device.xpath(".//Name")
-                    if name_elems and name_elems[0].text:
-                        name = name_elems[0].text.strip()
+                    first_name_elem = (
+                        name_elems[0]
+                        if isinstance(name_elems, list) and name_elems
+                        else None
+                    )
+                    if etree.iselement(first_name_elem) and first_name_elem.text:
+                        name = first_name_elem.text.strip()
 
                 terminals.append(
                     BeckhoffTerminalInfo(

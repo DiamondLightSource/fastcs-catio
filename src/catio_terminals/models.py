@@ -110,7 +110,7 @@ class TerminalConfig(BaseModel):
         data = self.model_dump(exclude_none=True)
 
         # Filter symbol_nodes and coe_objects based on 'selected' field
-        for terminal_id, terminal_data in data.get("terminal_types", {}).items():
+        for _terminal_id, terminal_data in data.get("terminal_types", {}).items():
             if "symbol_nodes" in terminal_data:
                 terminal_data["symbol_nodes"] = [
                     {k: v for k, v in sym.items() if k != "selected"}
