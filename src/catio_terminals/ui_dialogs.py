@@ -11,7 +11,7 @@ from catio_terminals.service_file import FileService
 from catio_terminals.service_terminal import TerminalService
 
 if TYPE_CHECKING:
-    from catio_terminals.app import TerminalEditorApp
+    from catio_terminals.ui_app import TerminalEditorApp
 
 logger = logging.getLogger(__name__)
 

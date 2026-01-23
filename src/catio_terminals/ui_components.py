@@ -10,7 +10,7 @@ from catio_terminals.service_terminal import TerminalService
 from catio_terminals.utils import to_pascal_case
 
 if TYPE_CHECKING:
-    from catio_terminals.app import TerminalEditorApp
+    from catio_terminals.ui_app import TerminalEditorApp
 
 
 async def build_tree_view(app: "TerminalEditorApp") -> None:

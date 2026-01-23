@@ -33,7 +33,7 @@ class BeckhoffClient:
     BASE_URL = "https://www.beckhoff.com"
     SEARCH_API = f"{BASE_URL}/en-us/products/i-o/ethercat-terminals/"
     XML_DOWNLOAD_URL = "https://download.beckhoff.com/download/configuration-files/io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
-    MAX_TERMINALS = 200  # Set to 0 to fetch all terminals
+    MAX_TERMINALS = 0  # Set to 0 to fetch all terminals
 
     def __init__(self) -> None:
         """Initialize Beckhoff client."""
@@ -300,9 +300,8 @@ class BeckhoffClient:
             total_files = len(xml_files)
 
             for idx, xml_file in enumerate(xml_files):
-                # Yield control frequently to prevent blocking and keep websocket alive
-                if idx % 3 == 0:
-                    await asyncio.sleep(0.01)
+                # Yield control every file to prevent blocking and keep websocket alive
+                await asyncio.sleep(0.001)
 
                 if idx % 5 == 0 and progress_callback:
                     progress = 0.2 + (0.7 * idx / total_files)
