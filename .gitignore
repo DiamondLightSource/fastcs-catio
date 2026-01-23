@@ -74,3 +74,4 @@ lockfiles/
 screens
 
 .test.yaml
+.nicegui
