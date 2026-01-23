@@ -7,10 +7,10 @@ from pathlib import Path
 
 from nicegui import app, ui
 
-from catio_terminals import dialogs, ui_components
+from catio_terminals import ui_components, ui_dialogs
 from catio_terminals.beckhoff import BeckhoffClient
-from catio_terminals.file_service import FileService
 from catio_terminals.models import TerminalConfig
+from catio_terminals.service_file import FileService
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ def run() -> None:
         ui.button(
             "Open Terminal Configuration",
             icon="folder_open",
-            on_click=lambda: dialogs.show_file_selector(editor),
+            on_click=lambda: ui_dialogs.show_file_selector(editor),
         ).props("size=lg")
 
     @ui.page("/editor")
@@ -142,19 +142,19 @@ def run() -> None:
                 ui.button(
                     "Close",
                     icon="close",
-                    on_click=lambda: dialogs.show_close_editor_dialog(editor),
+                    on_click=lambda: ui_dialogs.show_close_editor_dialog(editor),
                 ).props("color=negative")
 
                 ui.button(
                     "Add Terminal",
                     icon="add",
-                    on_click=lambda: dialogs.show_add_terminal_dialog(editor),
+                    on_click=lambda: ui_dialogs.show_add_terminal_dialog(editor),
                 ).props("color=primary")
 
                 ui.button(
                     "Fetch Terminal Database",
                     icon="download",
-                    on_click=lambda: dialogs.show_fetch_database_dialog(editor),
+                    on_click=lambda: ui_dialogs.show_fetch_database_dialog(editor),
                 ).props("color=secondary")
 
         with ui.column().classes("main-container w-full"):

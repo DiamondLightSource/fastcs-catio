@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from nicegui import ui
 
-from catio_terminals.file_service import FileService
-from catio_terminals.terminal_service import TerminalService
+from catio_terminals.service_file import FileService
+from catio_terminals.service_terminal import TerminalService
 
 if TYPE_CHECKING:
     from catio_terminals.app import TerminalEditorApp

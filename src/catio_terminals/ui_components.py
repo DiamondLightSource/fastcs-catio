@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 
 from nicegui import ui
 
-from catio_terminals.config_service import ConfigService
 from catio_terminals.models import TerminalType
-from catio_terminals.terminal_service import TerminalService
+from catio_terminals.service_config import ConfigService
+from catio_terminals.service_terminal import TerminalService
 
 if TYPE_CHECKING:
     from catio_terminals.app import TerminalEditorApp
@@ -95,7 +95,7 @@ def show_terminal_details(
         terminal_id: Terminal ID
         terminal: Terminal instance
     """
-    from catio_terminals import dialogs
+    from catio_terminals import ui_dialogs
 
     ui.label(f"Terminal: {terminal_id}").classes("text-h5 mb-4")
 
@@ -114,7 +114,7 @@ def show_terminal_details(
         ui.button(
             "Delete Terminal",
             icon="delete",
-            on_click=lambda: dialogs.show_delete_terminal_dialog(app, terminal_id),
+            on_click=lambda: ui_dialogs.show_delete_terminal_dialog(app, terminal_id),
         ).props("color=negative")
 
     ui.separator().classes("my-4")
