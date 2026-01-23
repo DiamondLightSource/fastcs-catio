@@ -265,15 +265,25 @@ def show_terminal_details(
                         v-if="props.node.symbol_idx !== undefined"
                         :model-value="props.node.selected"
                         @click.stop="() => {}"
-                        @update:model-value="(val) => { props.node.selected = val; $parent.$emit('toggle-symbol-' + props.node.symbol_idx, val); }"
+                        @update:model-value="(val) => {
+                            props.node.selected = val;
+                            $parent.$emit(
+                                'toggle-symbol-' + props.node.symbol_idx,
+                                val
+                            );
+                        }"
                         dense
                         class="q-mr-xs"
                     />
-                    <q-icon :name="props.node.icon || 'folder'" size="xs" class="q-mr-xs"/>
+                    <q-icon
+                        :name="props.node.icon || 'folder'"
+                        size="xs"
+                        class="q-mr-xs"
+                    />
                     <span>{{ props.node.label }}</span>
                 </div>
                 """,
-            )  # noqa: E501
+            )
 
             # Connect event handlers for each symbol
             for node in symbol_tree_data:
@@ -444,11 +454,21 @@ def show_terminal_details(
                             v-if="props.node.coe_idx !== undefined"
                             :model-value="props.node.selected"
                             @click.stop="() => {}"
-                            @update:model-value="(val) => { props.node.selected = val; $parent.$emit('toggle-coe-' + props.node.coe_idx, val); }"
+                            @update:model-value="(val) => {
+                                props.node.selected = val;
+                                $parent.$emit(
+                                    'toggle-coe-' + props.node.coe_idx,
+                                    val
+                                );
+                            }"
                             dense
                             class="q-mr-xs"
                         />
-                        <q-icon :name="props.node.icon || 'folder'" size="xs" class="q-mr-xs"/>
+                        <q-icon
+                            :name="props.node.icon || 'folder'"
+                            size="xs"
+                            class="q-mr-xs"
+                        />
                         <span>{{ props.node.label }}</span>
                     </div>
                     """,
