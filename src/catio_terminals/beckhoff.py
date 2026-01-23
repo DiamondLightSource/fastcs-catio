@@ -941,6 +941,50 @@ class BeckhoffClient:
 
             # Parse CoE Objects (CANopen over EtherCAT dictionary)
             coe_objects = []
+
+            # First, build a dictionary of DataType definitions for subindex details
+            datatype_map = {}
+            datatypes_section = device.find(".//Profile/Dictionary/DataTypes")
+            if datatypes_section is not None:
+                for datatype in datatypes_section.findall("DataType"):
+                    dt_name = datatype.findtext("Name", "")
+                    if not dt_name:
+                        continue
+
+                    # Store subitem information
+                    subitems = []
+                    for subitem in datatype.findall("SubItem"):
+                        subidx_str = subitem.findtext("SubIdx", "0")
+                        try:
+                            subidx = int(subidx_str)
+                        except ValueError:
+                            continue
+
+                        sub_name = subitem.findtext("Name", "")
+                        sub_type = subitem.findtext("Type", "")
+                        sub_bitsize_str = subitem.findtext("BitSize", "0")
+                        try:
+                            sub_bitsize = int(sub_bitsize_str)
+                        except ValueError:
+                            sub_bitsize = 0
+
+                        sub_flags = subitem.find("Flags")
+                        sub_access = "ro"
+                        if sub_flags is not None:
+                            sub_access = sub_flags.findtext("Access", "ro").lower()
+
+                        subitems.append(
+                            {
+                                "subindex": subidx,
+                                "name": sub_name,
+                                "type": sub_type,
+                                "bitsize": sub_bitsize,
+                                "access": sub_access,
+                            }
+                        )
+
+                    datatype_map[dt_name] = subitems
+
             objects_section = device.find(".//Profile/Dictionary/Objects")
             if objects_section is not None:
                 for obj in objects_section.findall("Object"):
@@ -968,6 +1012,57 @@ class BeckhoffClient:
                     else:
                         access = "ro"
 
+                    # Get datatype definition for subindices
+                    datatype_subitems = datatype_map.get(type_name, [])
+
+                    # Parse SubIndices from Object's Info section
+                    subindices = []
+                    info_section = obj.find("Info")
+                    if info_section is not None:
+                        for idx, subitem in enumerate(info_section.findall("SubItem")):
+                            subitem_name = subitem.findtext("Name", f"SubIndex {idx}")
+
+                            # Get default data from the Object's Info section
+                            subitem_info = subitem.find("Info")
+                            default_data = None
+                            if subitem_info is not None:
+                                default_data = subitem_info.findtext("DefaultData")
+
+                            # Match with DataType definition by name
+                            subitem_type = None
+                            subitem_bitsize = None
+                            subitem_access = None
+                            subindex_num = idx
+
+                            for dt_sub in datatype_subitems:
+                                if dt_sub["name"] == subitem_name:
+                                    subindex_num = dt_sub["subindex"]
+                                    subitem_type = dt_sub["type"]
+                                    subitem_bitsize = dt_sub["bitsize"]
+                                    subitem_access = dt_sub["access"]
+                                    break
+
+                            # Fallback: try to extract subindex from name
+                            if subitem_type is None and "SubIndex" in subitem_name:
+                                try:
+                                    num_str = subitem_name.split()[-1]
+                                    subindex_num = int(num_str)
+                                except (ValueError, IndexError):
+                                    pass
+
+                            from catio_terminals.models import CoESubIndex
+
+                            subindices.append(
+                                CoESubIndex(
+                                    subindex=subindex_num,
+                                    name=subitem_name,
+                                    type_name=subitem_type,
+                                    bit_size=subitem_bitsize,
+                                    access=subitem_access,
+                                    default_data=default_data,
+                                )
+                            )
+
                     from catio_terminals.models import CoEObject
 
                     coe_objects.append(
@@ -977,6 +1072,7 @@ class BeckhoffClient:
                             type_name=type_name,
                             bit_size=bit_size,
                             access=access,
+                            subindices=subindices,
                         )
                     )
 

@@ -13,6 +13,17 @@ class Identity(BaseModel):
     revision_number: int = Field(description="Revision number")
 
 
+class CoESubIndex(BaseModel):
+    """CANopen over EtherCAT (CoE) subindex definition."""
+
+    subindex: int = Field(description="SubIndex number")
+    name: str = Field(description="SubIndex name")
+    type_name: str | None = Field(default=None, description="Data type name")
+    bit_size: int | None = Field(default=None, description="Size in bits")
+    access: str | None = Field(default=None, description="Access type (ro, rw, wo)")
+    default_data: str | None = Field(default=None, description="Default data value")
+
+
 class CoEObject(BaseModel):
     """CANopen over EtherCAT (CoE) object definition."""
 
@@ -21,6 +32,9 @@ class CoEObject(BaseModel):
     type_name: str = Field(description="Data type name")
     bit_size: int = Field(description="Size in bits")
     access: str = Field(description="Access type (ro, rw, wo)")
+    subindices: list[CoESubIndex] = Field(
+        default_factory=list, description="List of subindices"
+    )
 
 
 class SymbolNode(BaseModel):

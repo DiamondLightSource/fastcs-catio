@@ -274,6 +274,83 @@ def show_terminal_details(
                 },
             ]
 
+            # Add subindices container if present
+            if coe_obj.subindices:
+                subindices_children = []
+                for sub_idx, subindex in enumerate(coe_obj.subindices):
+                    # Build subindex details with subindex number first
+                    subindex_details = [
+                        {
+                            "id": f"{terminal_id}_coe{idx}_sub{sub_idx}_num",
+                            "label": f"SubIndex: 0x{subindex.subindex:02X}",
+                            "icon": "tag",
+                        }
+                    ]
+
+                    if subindex.type_name:
+                        subindex_details.append(
+                            {
+                                "id": f"{terminal_id}_coe{idx}_sub{sub_idx}_type",
+                                "label": f"Type: {subindex.type_name}",
+                                "icon": "code",
+                            }
+                        )
+
+                    if subindex.bit_size is not None:
+                        subindex_details.append(
+                            {
+                                "id": f"{terminal_id}_coe{idx}_sub{sub_idx}_size",
+                                "label": f"Size: {subindex.bit_size} bits",
+                                "icon": "straighten",
+                            }
+                        )
+
+                    if subindex.access:
+                        # Map access flags to readable text
+                        access_map = {
+                            "ro": "Read-only",
+                            "rw": "Read/Write",
+                            "wo": "Write-only",
+                        }
+                        sub_access_text = access_map.get(
+                            subindex.access, subindex.access.upper()
+                        )
+                        subindex_details.append(
+                            {
+                                "id": f"{terminal_id}_coe{idx}_sub{sub_idx}_access",
+                                "label": f"Access: {sub_access_text}",
+                                "icon": ("lock" if subindex.access == "ro" else "edit"),
+                            }
+                        )
+
+                    if subindex.default_data:
+                        subindex_details.append(
+                            {
+                                "id": f"{terminal_id}_coe{idx}_sub{sub_idx}_default",
+                                "label": f"Default: {subindex.default_data}",
+                                "icon": "data_object",
+                            }
+                        )
+
+                    subindices_children.append(
+                        {
+                            "id": f"{terminal_id}_coe{idx}_subindex_{sub_idx}",
+                            "label": subindex.name,
+                            "icon": "subdirectory_arrow_right",
+                            "children": subindex_details,
+                        }
+                    )
+
+                # Add the Subindices container node
+                coe_children.append(
+                    {
+                        "id": f"{terminal_id}_coe{idx}_subindices",
+                        "label": f"Subindices ({len(coe_obj.subindices)})",
+                        "icon": "list",
+                        "children": subindices_children,
+                    }
+                )
+
             coe_tree_data.append(
                 {
                     "id": f"{terminal_id}_coe_{idx}",
