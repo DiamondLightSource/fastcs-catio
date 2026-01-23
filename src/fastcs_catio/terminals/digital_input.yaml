@@ -10,6 +10,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x03EC3052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       # Channel 1 combined input - type_name triggers client expansion
       - name_template: "Channel 1"
@@ -18,12 +19,16 @@ terminal_types:
         ads_type: 65 # BIGTYPE
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL1014:
     description: "4-channel Digital Input 24V DC"
@@ -31,6 +36,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x03F63052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       # Channel 1 combined input - type_name triggers client expansion
       - name_template: "Channel 1"
@@ -39,12 +45,16 @@ terminal_types:
         ads_type: 65 # BIGTYPE
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   # Digital Input Terminals (8-channel 24V)
   EL1008:
@@ -53,6 +63,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x03F03052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       - name_template: "Channel 1"
         index_group: 0xF020
@@ -60,12 +71,16 @@ terminal_types:
         ads_type: 65
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL1018:
     description: "8-channel Digital Input 24V DC 10us"
@@ -73,6 +88,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x03FA3052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       - name_template: "Channel 1"
         index_group: 0xF020
@@ -80,12 +96,16 @@ terminal_types:
         ads_type: 65
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL1084:
     description: "8-channel Digital Input 24V DC Neg Switching"
@@ -93,6 +113,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x043C3052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       # Channel 1 combined input - type_name triggers client expansion
       - name_template: "Channel 1"
@@ -101,12 +122,16 @@ terminal_types:
         ads_type: 65 # BIGTYPE
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   # Digital Input Terminals (16-channel 24V)
   EL1809:
@@ -115,6 +140,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x07113052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       - name_template: "Channel 1"
         index_group: 0xF020
@@ -122,12 +148,16 @@ terminal_types:
         ads_type: 65
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   # Digital Input Terminals (4-channel 5V)
   EL1124:
@@ -136,6 +166,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x04643052
       revision_number: 0x00100000
+    group_type: "DigIn"
     symbol_nodes:
       - name_template: "Channel 1"
         index_group: 0xF020
@@ -143,9 +174,13 @@ terminal_types:
         ads_type: 65
         type_name: "Channel 1_TYPE"
         channels: 1
+        access: "Read-only"
+        fastcs_name: "Channel1"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"

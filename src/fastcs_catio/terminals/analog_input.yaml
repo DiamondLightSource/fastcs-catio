@@ -10,6 +10,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0BBC3052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "AI Standard Channel {channel}"
         index_group: 0xF020
@@ -17,12 +18,16 @@ terminal_types:
         ads_type: 65
         type_name: "AI Standard Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "AiStandardChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL3064:
     description: "4-channel Analog Input 0..10V 12-bit"
@@ -30,6 +35,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0BF83052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "AI Standard Channel {channel}"
         index_group: 0xF020
@@ -37,12 +43,16 @@ terminal_types:
         ads_type: 65
         type_name: "AI Standard Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "AiStandardChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL3104:
     description: "4-channel Analog Input +/-10V 16-bit"
@@ -50,6 +60,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0C203052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "AI Standard Channel {channel}"
         index_group: 0xF020
@@ -57,12 +68,16 @@ terminal_types:
         ads_type: 65
         type_name: "AI Standard Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "AiStandardChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL3124:
     description: "4-channel Analog Input 4..20mA 16-bit"
@@ -70,6 +85,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0C343052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "AI Standard Channel {channel}"
         index_group: 0xF020
@@ -77,12 +93,16 @@ terminal_types:
         ads_type: 65
         type_name: "AI Standard Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "AiStandardChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   # Analog Input Terminals (2-channel 24-bit)
   EL3602:
@@ -91,6 +111,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0E123052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "AI Inputs Channel {channel}"
         index_group: 0xF020
@@ -98,12 +119,16 @@ terminal_types:
         ads_type: 65
         type_name: "AI Inputs Channel 1_TYPE"
         channels: 2
+        access: "Read-only"
+        fastcs_name: "AiInputsChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   # Oversampling Analog Input (2-channel)
   EL3702:
@@ -112,6 +137,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0E763052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "Ch{channel} CycleCount"
         index_group: 0xF020
@@ -119,18 +145,24 @@ terminal_types:
         ads_type: 65
         type_name: "Ch1 CycleCount_TYPE"
         channels: 2
+        access: "Read-only"
+        fastcs_name: "ChChannelCyclecount"
       - name_template: "Ch{channel} Sample 0"
         index_group: 0xF020
         size: 200 # 100 samples * 2 bytes
         ads_type: 65
         type_name: "Ch1 Sample 0_TYPE_ARR"
         channels: 2
+        access: "Read-only"
+        fastcs_name: "ChChannelSample0"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   # ELM3704 (4-channel Multi-function)
   ELM3704-0000:
@@ -139,6 +171,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0E783052
       revision_number: 0x00100000
+    group_type: "AnaIn"
     symbol_nodes:
       - name_template: "PAI Status Channel {channel}"
         index_group: 0xF020
@@ -146,21 +179,29 @@ terminal_types:
         ads_type: 65
         type_name: "PAI Status Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "PaiStatusChannelChannel"
       - name_template: "PAI Timestamp Channel {channel}"
         index_group: 0xF020
         size: 8
         ads_type: 65
         type_name: "PAI Timestamp Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "PaiTimestampChannelChannel"
       - name_template: "PAI Samples 50 Channel {channel}"
         index_group: 0xF020
         size: 200 # 50 samples * 4 bytes
         ads_type: 65
         type_name: "PAI Samples 50 Channel 1_TYPE"
         channels: 4
+        access: "Read-only"
+        fastcs_name: "PaiSamples50ChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"

@@ -9,6 +9,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x05DE3052
       revision_number: 0x00130000
+    group_type: "Measuring"
     symbol_nodes:
       # CNT Inputs - client expands to status + counter value
       - name_template: "CNT Inputs Channel {channel}"
@@ -17,6 +18,8 @@ terminal_types:
         ads_type: 65 # BIGTYPE
         type_name: "CNT Inputs_TYPE"
         channels: 2
+        access: "Read-only"
+        fastcs_name: "CntInputsChannelChannel"
       # CNT Outputs - client expands to control + set counter value
       - name_template: "CNT Outputs Channel {channel}"
         index_group: 0xF030 # ADSIGRP_IOIMAGE_RWOB
@@ -24,6 +27,8 @@ terminal_types:
         ads_type: 65 # BIGTYPE
         type_name: "CNT Outputs_TYPE"
         channels: 2
+        access: "Read/Write"
+        fastcs_name: "CntOutputsChannelChannel"
       # WcState
       - name_template: "WcState^WcState"
         index_group: 0xF021
@@ -31,3 +36,5 @@ terminal_types:
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"

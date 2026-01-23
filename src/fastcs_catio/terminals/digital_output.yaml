@@ -9,6 +9,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x07D43052
       revision_number: 0x00100000
+    group_type: "DigOut"
     symbol_nodes:
       - name_template: "Channel {channel}^Output"
         index_group: 0xF031
@@ -16,12 +17,16 @@ terminal_types:
         ads_type: 33
         type_name: "BIT"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "ChannelChannelOutput"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL2008:
     description: "8-channel Digital Output 24V DC 0.5A"
@@ -29,6 +34,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x07D83052
       revision_number: 0x00100000
+    group_type: "DigOut"
     symbol_nodes:
       - name_template: "Channel {channel}^Output"
         index_group: 0xF031
@@ -36,12 +42,16 @@ terminal_types:
         ads_type: 33
         type_name: "BIT"
         channels: 8
+        access: "Read/Write"
+        fastcs_name: "ChannelChannelOutput"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL2024:
     description: "4-channel Digital Output 24V DC"
@@ -49,6 +59,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x07E83052
       revision_number: 0x00100000
+    group_type: "DigOut"
     symbol_nodes:
       # Output channels - individual bit symbols
       - name_template: "Channel {channel}^Output"
@@ -57,12 +68,16 @@ terminal_types:
         ads_type: 33 # BIT
         type_name: "BIT"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "ChannelChannelOutput"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL2024-0010:
     description: "4-channel Digital Output 12V DC"
@@ -70,6 +85,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x07E83064
       revision_number: 0x00100000
+    group_type: "DigOut"
     symbol_nodes:
       # Output channels - individual bit symbols
       - name_template: "Channel {channel}^Output"
@@ -78,12 +94,16 @@ terminal_types:
         ads_type: 33 # BIT
         type_name: "BIT"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "ChannelChannelOutput"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL2809:
     description: "16-channel Digital Output 24V DC 0.5A"
@@ -91,6 +111,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0AF93052
       revision_number: 0x00100000
+    group_type: "DigOut"
     symbol_nodes:
       - name_template: "Channel {channel}^Output"
         index_group: 0xF031
@@ -98,12 +119,16 @@ terminal_types:
         ads_type: 33
         type_name: "BIT"
         channels: 16
+        access: "Read/Write"
+        fastcs_name: "ChannelChannelOutput"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL2124:
     description: "4-channel Digital Output 5V DC"
@@ -111,6 +136,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x084C3052
       revision_number: 0x00100000
+    group_type: "DigOut"
     symbol_nodes:
       - name_template: "Channel {channel}^Output"
         index_group: 0xF031
@@ -118,9 +144,13 @@ terminal_types:
         ads_type: 33
         type_name: "BIT"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "ChannelChannelOutput"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"

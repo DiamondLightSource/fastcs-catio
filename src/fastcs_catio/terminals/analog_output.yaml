@@ -9,6 +9,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0FA43052
       revision_number: 0x00100000
+    group_type: "AnaOut"
     symbol_nodes:
       - name_template: "AO Output Channel {channel}"
         index_group: 0xF030
@@ -16,12 +17,16 @@ terminal_types:
         ads_type: 65
         type_name: "AO Output Channel 1_TYPE"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "AoOutputChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL4034:
     description: "4-channel Analog Output +/-10V 12-bit"
@@ -29,6 +34,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x0FC23052
       revision_number: 0x00100000
+    group_type: "AnaOut"
     symbol_nodes:
       - name_template: "AO Output Channel {channel}"
         index_group: 0xF030
@@ -36,12 +42,16 @@ terminal_types:
         ads_type: 65
         type_name: "AO Output Channel 1_TYPE"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "AoOutputChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
 
   EL4134:
     description: "4-channel Analog Output +/-10V 16-bit"
@@ -49,6 +59,7 @@ terminal_types:
       vendor_id: 2
       product_code: 0x10263052
       revision_number: 0x00100000
+    group_type: "AnaOut"
     symbol_nodes:
       - name_template: "AO Output Channel {channel}"
         index_group: 0xF030
@@ -56,9 +67,13 @@ terminal_types:
         ads_type: 65
         type_name: "AO Output Channel 1_TYPE"
         channels: 4
+        access: "Read/Write"
+        fastcs_name: "AoOutputChannelChannel"
       - name_template: "WcState^WcState"
         index_group: 0xF021
         size: 0
         ads_type: 33
         type_name: "BIT"
         channels: 1
+        access: "Unknown"
+        fastcs_name: "WcstateWcstate"
