@@ -181,7 +181,7 @@ def run() -> None:
                         ui.label("Terminal Types").classes("text-h6 mb-2")
                         editor.tree_container = (
                             ui.column()
-                            .classes("w-full overflow-y-auto")
+                            .classes("w-full overflow-y-auto pr-2 pb-4")
                             .style("flex: 1; min-height: 0;")
                         )
                         assert editor.tree_container is not None
@@ -193,7 +193,7 @@ def run() -> None:
                         ui.label("Details").classes("text-h6 mb-2")
                         editor.details_container = (
                             ui.column()
-                            .classes("w-full overflow-y-auto")
+                            .classes("w-full overflow-y-auto pr-2 pb-4")
                             .style("flex: 1; min-height: 0;")
                         )
                         assert editor.details_container is not None
