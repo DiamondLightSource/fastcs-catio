@@ -22,6 +22,7 @@ class TerminalEditorApp:
         self.tree_data: dict[str, dict] = {}
         self.has_unsaved_changes = False
         self.details_container: ui.column | None = None
+        self.tree_container: ui.column | None = None
 
     @staticmethod
     def to_pascal_case(name: str) -> str:
@@ -242,15 +243,26 @@ class TerminalEditorApp:
                 "icon": "memory",
             }
 
-        tree = ui.tree(
-            list(self.tree_data.values()),
-            label_key="label",
-            on_select=lambda e: self.on_tree_select(e.value),
-        ).classes("w-full")
-
-        # Better contrast for selected items
-        tree.props("selected-color=blue-7")
-        tree.classes("text-white")
+        # If tree_container exists, clear and rebuild
+        if self.tree_container is not None:
+            self.tree_container.clear()
+            with self.tree_container:
+                tree = ui.tree(
+                    list(self.tree_data.values()),
+                    label_key="label",
+                    on_select=lambda e: self.on_tree_select(e.value),
+                ).classes("w-full")
+                tree.props("selected-color=blue-7")
+                tree.classes("text-white")
+        else:
+            # Initial build
+            tree = ui.tree(
+                list(self.tree_data.values()),
+                label_key="label",
+                on_select=lambda e: self.on_tree_select(e.value),
+            ).classes("w-full")
+            tree.props("selected-color=blue-7")
+            tree.classes("text-white")
 
     def on_tree_select(self, node_id: str) -> None:
         """Handle tree node selection.
@@ -542,11 +554,8 @@ class TerminalEditorApp:
                                 ):
                                     with ui.column().classes("flex-grow"):
                                         ui.label(
-                                            f"{term.terminal_id} - {term.name}"
+                                            f"{term.terminal_id} - {term.description}"
                                         ).classes("font-bold text-white")
-                                        ui.label(term.description).classes(
-                                            "text-caption text-gray-300"
-                                        )
 
                                     async def add_term(t=term):
                                         await self.add_terminal_from_beckhoff(t)
@@ -596,7 +605,8 @@ class TerminalEditorApp:
 
         self.config.add_terminal(terminal_info.terminal_id, terminal)
         self.has_unsaved_changes = True
-        await self.build_editor_ui()
+        # Rebuild the tree view without navigating (which would close the dialog)
+        await self.build_tree_view()
         ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
 
     async def add_manual_terminal(
@@ -805,7 +815,9 @@ def main() -> None:
             with splitter.before:
                 with ui.card().classes("w-full h-full"):
                     ui.label("Terminal Types").classes("text-h6 mb-2")
-                    await editor.build_tree_view()
+                    editor.tree_container = ui.column().classes("w-full")
+                    with editor.tree_container:
+                        await editor.build_tree_view()
 
             with splitter.after:
                 with ui.card().classes("w-full h-full"):
