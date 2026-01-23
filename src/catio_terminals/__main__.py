@@ -1,5 +1,5 @@
 """Entry point for catio_terminals application."""
 
-from catio_terminals.app import main
+from catio_terminals.app import run
 
-main()
+run()

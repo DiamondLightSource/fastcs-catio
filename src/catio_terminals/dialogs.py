@@ -1,0 +1,465 @@
+"""Dialog functions for the terminal editor application."""
+
+import asyncio
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from nicegui import ui
+
+from catio_terminals.file_service import FileService
+from catio_terminals.terminal_service import TerminalService
+
+if TYPE_CHECKING:
+    from catio_terminals.app import TerminalEditorApp
+
+logger = logging.getLogger(__name__)
+
+
+async def show_file_selector(app: "TerminalEditorApp") -> None:
+    """Show file selector dialog.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    with ui.dialog() as dialog, ui.card().classes("w-[800px] max-h-[600px]"):
+        ui.label("Select Terminal YAML File").classes("text-lg font-bold mb-4")
+
+        # Folder browser with local state
+        current_dir = {"path": Path.cwd()}
+
+        ui.label("Browse Folders:").classes("text-caption text-gray-600 mt-2")
+
+        # Current directory display
+        dir_label = ui.label(f"Current: {current_dir['path']}").classes(
+            "text-sm text-blue-300 mb-2"
+        )
+
+        # Folder navigation
+        folder_container = ui.column().classes(
+            "w-full max-h-48 overflow-y-auto border border-gray-600 rounded p-2"
+        )
+
+        def update_folder_view():
+            """Update the folder view with current directory contents."""
+            folder_container.clear()
+            dir_label.text = f"Current: {current_dir['path']}"
+
+            with folder_container:
+                # Parent directory button
+                if current_dir["path"].parent != current_dir["path"]:
+                    with ui.row().classes(
+                        "w-full hover:bg-gray-700 cursor-pointer p-1"
+                    ):
+                        ui.icon("folder").classes("text-yellow-500")
+
+                        def go_up():
+                            current_dir["path"] = current_dir["path"].parent
+                            update_folder_view()
+
+                        ui.label("..").on("click", go_up)
+
+                # List directories and YAML files
+                try:
+                    items = sorted(current_dir["path"].iterdir())
+                    for item in items:
+                        if item.is_dir():
+                            with ui.row().classes(
+                                "w-full hover:bg-gray-700 cursor-pointer p-1"
+                            ):
+                                ui.icon("folder").classes("text-yellow-500")
+
+                                def go_into(target=item):
+                                    current_dir["path"] = target
+                                    update_folder_view()
+
+                                ui.label(item.name).on("click", go_into)
+                        elif item.suffix in [".yaml", ".yml"]:
+                            with ui.row().classes(
+                                "w-full hover:bg-gray-700 cursor-pointer p-1"
+                            ):
+                                ui.icon("description").classes("text-blue-400")
+
+                                def select_file(target=item):
+                                    file_path.set_value(str(target))
+
+                                ui.label(item.name).on("click", select_file)
+                except PermissionError:
+                    ui.label("Permission denied").classes("text-red-400")
+
+        update_folder_view()
+
+        def navigate_to_path():
+            """Navigate to the path typed in the file_path input."""
+            path_str = file_path.value.strip()
+            if path_str:
+                try:
+                    new_path = Path(path_str)
+                    if new_path.is_dir():
+                        current_dir["path"] = new_path
+                        update_folder_view()
+                    elif new_path.parent.is_dir():
+                        # If it's a file path, navigate to its parent directory
+                        current_dir["path"] = new_path.parent
+                        update_folder_view()
+                except (ValueError, OSError):
+                    # Invalid path, keep current directory
+                    pass
+
+        file_path = ui.input(
+            label="File Path",
+            placeholder="/path/to/terminals.yaml (press Enter to navigate)",
+            validation={
+                "File must end with .yaml": lambda v: v.endswith(".yaml")
+                or v.endswith(".yml")
+            },
+        ).classes("w-full mt-4")
+
+        file_path.on("keyup.enter", navigate_to_path)
+
+        with ui.row().classes("w-full justify-end gap-2"):
+            ui.button("Cancel", on_click=dialog.close).props("flat")
+            ui.button(
+                "Create New",
+                on_click=lambda: _create_new_file(app, dialog, file_path.value),
+            ).props("flat color=secondary")
+            ui.button(
+                "Open",
+                on_click=lambda: _open_file(app, dialog, file_path.value),
+            ).props("color=primary")
+
+    dialog.open()
+
+
+async def _create_new_file(
+    app: "TerminalEditorApp", dialog: ui.dialog, file_path: str
+) -> None:
+    """Create a new YAML file.
+
+    Args:
+        app: Terminal editor application instance
+        dialog: Dialog to close
+        file_path: Path to new file
+    """
+    if not file_path:
+        ui.notify("Please specify a file path", type="warning")
+        return
+
+    path = Path(file_path)
+    if path.exists():
+        ui.notify("File already exists. Use Open instead.", type="warning")
+        return
+
+    app.config = FileService.create_file(path)
+    app.current_file = path
+    app.has_unsaved_changes = False
+    dialog.close()
+    await app.build_editor_ui()
+    ui.notify(f"Created new file: {path.name}", type="positive")
+
+
+async def _open_file(
+    app: "TerminalEditorApp", dialog: ui.dialog, file_path: str
+) -> None:
+    """Open an existing YAML file.
+
+    Args:
+        app: Terminal editor application instance
+        dialog: Dialog to close
+        file_path: Path to file
+    """
+    if not file_path:
+        ui.notify("Please specify a file path", type="warning")
+        return
+
+    path = Path(file_path)
+    if not path.exists():
+        ui.notify("File does not exist. Use Create New instead.", type="warning")
+        return
+
+    try:
+        app.config = FileService.open_file(path)
+        app.current_file = path
+        app.has_unsaved_changes = False
+        dialog.close()
+        await app.build_editor_ui()
+        ui.notify(f"Opened: {path.name}", type="positive")
+    except Exception as e:
+        logger.exception("Failed to open file")
+        ui.notify(f"Failed to open file: {e}", type="negative")
+
+
+async def show_delete_terminal_dialog(
+    app: "TerminalEditorApp", terminal_id: str
+) -> None:
+    """Show delete terminal confirmation dialog.
+
+    Args:
+        app: Terminal editor application instance
+        terminal_id: Terminal ID to delete
+    """
+    if not app.config:
+        return
+
+    with ui.dialog() as dialog, ui.card():
+        ui.label(f"Delete terminal {terminal_id}?").classes("text-h6")
+        ui.label("This action cannot be undone.").classes("text-caption")
+
+        result = {"confirm": False}
+
+        def confirm_delete():
+            result["confirm"] = True
+            dialog.close()
+
+        def cancel_delete():
+            result["confirm"] = False
+            dialog.close()
+
+        with ui.row().classes("w-full justify-end gap-2"):
+            ui.button("Cancel", on_click=cancel_delete).props("flat")
+            ui.button("Delete", on_click=confirm_delete).props("color=negative")
+
+    await dialog
+
+    if result["confirm"]:
+        TerminalService.delete_terminal(app.config, terminal_id)
+        app.has_unsaved_changes = True
+        await app.build_editor_ui()
+        ui.notify(f"Deleted terminal: {terminal_id}", type="info")
+
+
+async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
+    """Show dialog to add a new terminal.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
+        ui.label("Add Terminal Type").classes("text-lg font-bold mb-4")
+
+        ui.label("Search Beckhoff Terminals").classes("text-caption text-gray-600")
+        search_input = ui.input(
+            placeholder="Search terminals...",
+        ).classes("w-full mb-2")
+
+        # Results container
+        results_container = ui.column().classes("w-full max-h-64 overflow-y-auto")
+
+        async def search_terminals() -> None:
+            """Search for terminals."""
+            if not app.config:
+                return
+
+            results_container.clear()
+            terminals = await app.beckhoff_client.search_terminals(search_input.value)
+
+            # Filter out terminals that are already added
+            filtered_terminals = [
+                term
+                for term in terminals
+                if not TerminalService.is_terminal_already_added(app.config, term)
+            ]
+
+            with results_container:
+                if not filtered_terminals:
+                    if terminals:
+                        ui.label("All matching terminals are already added").classes(
+                            "text-gray-500"
+                        )
+                    else:
+                        ui.label("No terminals found").classes("text-gray-500")
+                else:
+                    for term in filtered_terminals:
+                        with ui.card().classes("w-full hover:bg-gray-700"):
+                            with ui.row().classes(
+                                "w-full items-center gap-2 flex-nowrap"
+                            ):
+                                ui.label(f"{term.terminal_id}").classes(
+                                    "font-bold text-blue-300 flex-shrink-0"
+                                )
+                                ui.label(term.description).classes(
+                                    "text-sm text-gray-400 overflow-hidden "
+                                    "text-ellipsis whitespace-nowrap flex-shrink"
+                                )
+                                ui.button(
+                                    icon="add",
+                                    on_click=lambda t=term: _add_terminal_from_beckhoff(
+                                        app, t
+                                    ),
+                                ).props("flat dense color=primary").classes(
+                                    "flex-shrink-0"
+                                )
+
+        search_input.on("keydown.enter", search_terminals)
+        ui.button("Search", on_click=search_terminals).props("color=primary")
+
+        ui.separator().classes("my-4")
+        ui.label("Add Terminal Manually").classes("text-caption text-gray-600")
+
+        manual_id = ui.input(label="Terminal ID", placeholder="ETH1_RIO1_MOD1").classes(
+            "w-full"
+        )
+        manual_desc = ui.input(label="Description", placeholder="Optional").classes(
+            "w-full"
+        )
+
+        with ui.row().classes("w-full justify-end gap-2 mt-4"):
+            ui.button("Close", on_click=dialog.close).props("flat")
+            ui.button(
+                "Add Manually",
+                on_click=lambda: _add_manual_terminal(
+                    app, manual_id.value, manual_desc.value, dialog
+                ),
+            ).props("color=secondary")
+
+    dialog.open()
+
+
+async def _add_terminal_from_beckhoff(app: "TerminalEditorApp", terminal_info) -> None:
+    """Add terminal from Beckhoff information.
+
+    Args:
+        app: Terminal editor application instance
+        terminal_info: BeckhoffTerminalInfo instance
+    """
+    if not app.config:
+        return
+
+    # Use TerminalService to handle the logic
+    await TerminalService.add_terminal_from_beckhoff(
+        app.config, terminal_info, app.beckhoff_client
+    )
+
+    app.has_unsaved_changes = True
+    # Store the last added terminal for scrolling
+    app.last_added_terminal = terminal_info.terminal_id
+    # Rebuild the tree view without navigating (which would close the dialog)
+    await app.build_tree_view()
+    ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
+
+
+async def _add_manual_terminal(
+    app: "TerminalEditorApp",
+    terminal_id: str,
+    description: str,
+    dialog: ui.dialog,
+) -> None:
+    """Add terminal manually.
+
+    Args:
+        app: Terminal editor application instance
+        terminal_id: Terminal ID
+        description: Terminal description
+        dialog: Dialog to close
+    """
+    if not app.config:
+        return
+
+    if not terminal_id:
+        ui.notify("Please enter a terminal ID", type="warning")
+        return
+
+    if terminal_id in app.config.terminal_types:
+        ui.notify("Terminal ID already exists", type="warning")
+        return
+
+    terminal = app.beckhoff_client.create_default_terminal(
+        terminal_id, description or f"Terminal {terminal_id}"
+    )
+    app.config.add_terminal(terminal_id, terminal)
+    app.has_unsaved_changes = True
+    dialog.close()
+    await app.build_editor_ui()
+    ui.notify(f"Added terminal: {terminal_id}", type="positive")
+
+
+async def show_fetch_database_dialog(app: "TerminalEditorApp") -> None:
+    """Show fetch terminal database progress dialog.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    # Create dialog with progress UI
+    with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
+        ui.label("Fetching Terminal Database").classes("text-h6 mb-4")
+        progress_label = ui.label("Initializing...").classes("mb-2")
+        progress_bar = ui.linear_progress(value=0, show_value=False).props(
+            "instant-feedback"
+        )
+
+    # Define update function that properly updates UI
+    def update_progress(message: str, progress: float):
+        """Update progress in the dialog."""
+        progress_label.set_text(message)
+        progress_bar.set_value(progress)
+
+    # Open dialog before starting work
+    dialog.open()
+
+    # Small delay to ensure dialog is rendered
+    await asyncio.sleep(0.1)
+
+    try:
+        # Fetch and parse the XML asynchronously with progress updates
+        await app.beckhoff_client.fetch_and_parse_xml(update_progress)
+        ui.notify("Terminal database updated successfully", type="positive")
+    except Exception as e:
+        logger.exception("Failed to fetch terminal database")
+        ui.notify(f"Failed to fetch database: {e}", type="negative")
+    finally:
+        dialog.close()
+
+
+async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
+    """Show close editor confirmation dialog if there are unsaved changes.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    if app.has_unsaved_changes:
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Unsaved Changes").classes("text-h6")
+            ui.label(
+                "You have unsaved changes. Do you want to save before closing?"
+            ).classes("text-caption")
+
+            result = {"action": "cancel"}
+
+            def save_and_close():
+                result["action"] = "save"
+                dialog.close()
+
+            def discard_and_close():
+                result["action"] = "discard"
+                dialog.close()
+
+            def cancel_close():
+                result["action"] = "cancel"
+                dialog.close()
+
+            with ui.row().classes("w-full justify-end gap-2"):
+                ui.button("Cancel", on_click=cancel_close).props("flat")
+                ui.button("Discard Changes", on_click=discard_and_close).props(
+                    "flat color=negative"
+                )
+                ui.button("Save & Close", on_click=save_and_close).props(
+                    "color=primary"
+                )
+
+        await dialog
+
+        if result["action"] == "save":
+            await app.save_file()
+            app.config = None
+            app.current_file = None
+            app.has_unsaved_changes = False
+            ui.navigate.to("/")
+        elif result["action"] == "discard":
+            app.config = None
+            app.current_file = None
+            app.has_unsaved_changes = False
+            ui.navigate.to("/")
+    else:
+        app.config = None
+        app.current_file = None
+        ui.navigate.to("/")
