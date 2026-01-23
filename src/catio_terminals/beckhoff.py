@@ -2,16 +2,28 @@
 
 import logging
 import re
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+from lxml import etree
 
 from catio_terminals.models import Identity, SymbolNode, TerminalType
 from catio_terminals.utils import to_pascal_case
 
 logger = logging.getLogger(__name__)
+
+# Pre-compiled regex patterns for performance
+TERMINAL_ID_PATTERN = re.compile(r"(E[LKPSJ]\d{4})", re.IGNORECASE)
+CHANNEL_KEYWORD_PATTERN = re.compile(
+    r"(.*?)\s*(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
+    re.IGNORECASE,
+)
+CHANNEL_NUMBER_PATTERN = re.compile(r"(.+?)\s+(\d+)$")
+HEX_PREFIX_PATTERN = re.compile(r"#x([0-9a-fA-F]+)")
+KEYWORD_EXTRACT_PATTERN = re.compile(
+    r"(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)", re.IGNORECASE
+)
 
 
 @dataclass
@@ -53,6 +65,21 @@ class BeckhoffClient:
         self.xml_extract_dir = self.cache_dir / "beckhoff_xml"
         self.terminals_cache_file = self.cache_dir / "terminals_cache.json"
         self._cached_terminals: list[BeckhoffTerminalInfo] | None = None
+
+    def _parse_hex_value(self, value: str) -> int:
+        """Parse Beckhoff hex string to integer.
+
+        Handles both '#x' prefix (Beckhoff format) and standard '0x' prefix.
+
+        Args:
+            value: Hex string to parse
+
+        Returns:
+            Integer value
+        """
+        if value.startswith("#x"):
+            return int(value[2:], 16)
+        return int(value, 0)
 
     def get_cached_terminals(self) -> list[BeckhoffTerminalInfo] | None:
         """Get terminals from cache if available.
@@ -200,70 +227,75 @@ class BeckhoffClient:
 
             for xml_file in xml_files:
                 try:
-                    tree = ET.parse(xml_file)
+                    tree = etree.parse(str(xml_file))
                     root = tree.getroot()
 
-                    # Extract GroupType from the file (usually defined at the top)
+                    # Extract GroupType using XPath (much faster than iteration)
                     group_type = "Other"
-                    for group in root.iter():
-                        if "GroupType" in group.tag or group.tag.endswith("Type"):
-                            if group.text and group.text.strip():
-                                potential_type = group.text.strip()
+                    # Try to find GroupType element
+                    group_elements = root.xpath("//*[local-name()='GroupType']")
+                    if group_elements and isinstance(group_elements, list):
+                        group_elem = group_elements[0]
+                        if hasattr(group_elem, "text") and group_elem.text:
+                            group_text = str(group_elem.text)
+                            if group_text.strip():
+                                potential_type = group_text.strip()
                                 # Only use if it looks like a group type
                                 terminal_prefixes = ("EL", "EK", "EP", "ES", "EJ")
                                 if not potential_type.startswith(terminal_prefixes):
                                     group_type = potential_type
-                                    break
+                                group_type = potential_type
 
-                    # Look for Device elements in the ESI XML structure
-                    # ESI files use various namespaces, so we'll search broadly
-                    for device in root.iter():
-                        if device.tag.endswith("Device") or device.tag.endswith(
-                            "Devices"
-                        ):
-                            # Extract Type (terminal ID)
-                            type_elem = device.find(".//*[@ProductCode]/..")
-                            if type_elem is None:
-                                continue
+                    # Use XPath to find Device elements directly
+                    devices_result = root.xpath("//*[local-name()='Device']")
+                    devices = devices_result if isinstance(devices_result, list) else []
 
-                            # Try to get the terminal ID from the Type element
-                            terminal_id = None
-                            for child in device.iter():
-                                if "Type" in child.tag:
-                                    type_text = child.text
-                                    if type_text and type_text.startswith(
-                                        ("EL", "EK", "EP", "ES", "EJ")
-                                    ):
-                                        terminal_id = type_text.strip()
-                                        break
+                    for device in devices:
+                        # Use XPath to find Type element with ProductCode
+                        type_elems = device.xpath(".//*[@ProductCode]/..")
+                        if not type_elems:
+                            continue
 
-                            # Also check for ProductCode and use filename as fallback
-                            if not terminal_id:
-                                # Try to extract from filename
-                                filename = xml_file.stem
-                                import re
+                        # Try to get the terminal ID from Type elements
+                        terminal_id = None
+                        type_children = device.xpath(
+                            ".//*[contains(local-name(), 'Type')]"
+                        )
+                        for child in type_children:
+                            type_text = child.text
+                            if type_text and type_text.startswith(
+                                ("EL", "EK", "EP", "ES", "EJ")
+                            ):
+                                terminal_id = type_text.strip()
+                                break
 
-                                match = re.search(
-                                    r"(E[LKPSJ]\d{4})", filename, re.IGNORECASE
-                                )
-                                if match:
-                                    terminal_id = match.group(1).upper()
+                        # Use pre-compiled regex to extract from filename as fallback
+                        if not terminal_id:
+                            filename = xml_file.stem
+                            match = TERMINAL_ID_PATTERN.search(filename)
+                            if match:
+                                terminal_id = match.group(1).upper()
 
-                            if not terminal_id or terminal_id in seen_ids:
-                                continue
+                        if not terminal_id or terminal_id in seen_ids:
+                            continue
 
-                            seen_ids.add(terminal_id)
+                        seen_ids.add(terminal_id)
 
-                            # Extract name/description
-                            name = terminal_id
-                            description = f"Terminal {terminal_id}"
+                        # Use XPath to extract name/description more efficiently
+                        name = terminal_id
+                        description = f"Terminal {terminal_id}"
 
-                            for child in device.iter():
-                                if "Name" in child.tag and child.text:
-                                    name = child.text.strip()
-                                if "Info" in child.tag or "Description" in child.tag:
-                                    if child.text:
-                                        description = child.text.strip()
+                        name_elems = device.xpath(".//*[local-name()='Name']")
+                        for name_elem in name_elems:
+                            if name_elem.text:
+                                name = name_elem.text.strip()
+
+                        info_elems = device.xpath(
+                            ".//*[local-name()='Info' or local-name()='Description']"
+                        )
+                        for info_elem in info_elems:
+                            if info_elem.text:
+                                description = info_elem.text.strip()
 
                             terminals.append(
                                 BeckhoffTerminalInfo(
@@ -342,86 +374,77 @@ class BeckhoffClient:
                     )
 
                 try:
-                    tree = ET.parse(xml_file)
+                    tree = etree.parse(str(xml_file))
                     root = tree.getroot()
 
-                    # Extract GroupType from the file
+                    # Extract GroupType using XPath
                     group_type = "Other"
-                    for group in root.iter():
-                        if "GroupType" in group.tag:
-                            if group.text and group.text.strip():
-                                group_type = group.text.strip()
+                    group_elements = root.xpath("//*[local-name()='GroupType']")
+                    if group_elements and isinstance(group_elements, list):
+                        group_elem = group_elements[0]
+                        if hasattr(group_elem, "text") and group_elem.text:
+                            group_type = str(group_elem.text).strip()
+
+                    # Use XPath to find all Device elements directly
+                    devices_result = root.xpath("//*[local-name()='Device']")
+                    devices = devices_result if isinstance(devices_result, list) else []
+
+                    for device in devices:
+                        # Use XPath to check for ProductCode
+                        type_elem = device.find("Type")
+                        if type_elem is None:
+                            continue
+
+                        terminal_id = None
+                        type_children = device.xpath(
+                            ".//*[contains(local-name(), 'Type')]"
+                        )
+                        for child in type_children:
+                            type_text = child.text
+                            if type_text and type_text.startswith(
+                                ("EL", "EK", "EP", "ES", "EJ")
+                            ):
+                                terminal_id = type_text.strip()
                                 break
 
-                    for device in root.iter():
-                        if device.tag.endswith("Device") or device.tag.endswith(
-                            "Devices"
-                        ):
-                            type_elem = device.find(".//*[@ProductCode]/..")
-                            if type_elem is None:
-                                continue
-
-                            terminal_id = None
-                            for child in device.iter():
-                                if "Type" in child.tag:
-                                    type_text = child.text
-                                    if type_text and type_text.startswith(
-                                        ("EL", "EK", "EP", "ES", "EJ")
-                                    ):
-                                        terminal_id = type_text.strip()
-                                        break
-
-                            if not terminal_id:
-                                filename = xml_file.stem
-                                import re
-
-                                match = re.search(
-                                    r"(E[LKPSJ]\d{4})", filename, re.IGNORECASE
-                                )
-                                if match:
-                                    terminal_id = match.group(1).upper()
+                        if not terminal_id:
+                            filename = xml_file.stem
+                            match = TERMINAL_ID_PATTERN.search(filename)
+                            if match:
+                                terminal_id = match.group(1).upper()
 
                             if not terminal_id or terminal_id in seen_ids:
                                 continue
 
                             seen_ids.add(terminal_id)
 
-                            # Extract product code and revision from Type element
-                            type_elem = device.find("Type")
-                            product_code = 0
-                            revision_number = 0
-                            if type_elem is not None:
-                                product_code_str = (
-                                    type_elem.get("ProductCode") or "0"
-                                ).replace("#x", "0x")
-                                revision_str = (
-                                    type_elem.get("RevisionNo") or "0"
-                                ).replace("#x", "0x")
-                                product_code = int(product_code_str, 0)
-                                revision_number = int(revision_str, 0)
+                        # Extract product code and revision from Type element
+                        type_elem = device.find("Type")
+                        product_code = 0
+                        revision_number = 0
+                        if type_elem is not None:
+                            # Use helper function for hex conversion
+                            product_code_str = type_elem.get("ProductCode") or "0"
+                            revision_str = type_elem.get("RevisionNo") or "0"
+                            product_code = self._parse_hex_value(product_code_str)
+                            revision_number = self._parse_hex_value(revision_str)
 
-                            # Extract name and description
-                            name = terminal_id
-                            description = f"Terminal {terminal_id}"
+                        # Use XPath to extract English name (LcId=1033)
+                        name = terminal_id
+                        description = f"Terminal {terminal_id}"
 
-                            for child in device.iter():
-                                if "Name" in child.tag and child.text:
-                                    # Use English name if available
-                                    if child.get("LcId") == "1033":
-                                        name = child.text.strip()
-                                        # Extract description after terminal ID
-                                        # for clean display
-                                        desc_text = child.text.strip()
-                                        if desc_text.startswith(terminal_id):
-                                            desc_text = desc_text[
-                                                len(terminal_id) :
-                                            ].strip()
-                                        description = (
-                                            desc_text if desc_text else child.text
-                                        )
-                                        break
-                                    elif not name or name == terminal_id:
-                                        name = child.text.strip()
+                        name_elems = device.xpath(".//Name[@LcId='1033']")
+                        if name_elems and name_elems[0].text:
+                            # Extract description after terminal ID for clean display
+                            desc_text = name
+                            if desc_text.startswith(terminal_id):
+                                desc_text = desc_text[len(terminal_id) :].strip()
+                            description = desc_text if desc_text else name
+                        else:
+                            # Fallback to any Name element
+                            name_elems = device.xpath(".//Name")
+                            if name_elems and name_elems[0].text:
+                                name = name_elems[0].text.strip()
 
                             terminals.append(
                                 BeckhoffTerminalInfo(
@@ -604,7 +627,11 @@ class BeckhoffClient:
             ValueError: If XML parsing fails
         """
         try:
-            root = ET.fromstring(xml_content)
+            # Parse XML content - lxml expects bytes or string
+            if isinstance(xml_content, str):
+                root = etree.fromstring(xml_content.encode("utf-8"))
+            else:
+                root = etree.fromstring(xml_content)
 
             # Find the device matching the terminal_id
             device = None
@@ -629,10 +656,10 @@ class BeckhoffClient:
                 )
 
             # Handle Beckhoff's #x prefix for hex values
-            product_code_str = (type_elem.get("ProductCode") or "0").replace("#x", "0x")
-            revision_str = (type_elem.get("RevisionNo") or "0").replace("#x", "0x")
-            product_code = int(product_code_str, 0)
-            revision = int(revision_str, 0)
+            product_code_str = type_elem.get("ProductCode") or "0"
+            revision_str = type_elem.get("RevisionNo") or "0"
+            product_code = self._parse_hex_value(product_code_str)
+            revision = self._parse_hex_value(revision_str)
 
             # Extract name/description (prefer English LcId=1033)
             description = f"Terminal {terminal_id}"
@@ -685,12 +712,10 @@ class BeckhoffClient:
                         continue
 
                     # Handle Beckhoff's #x prefix for hex values
-                    index_str = entry.findtext("Index", "0").replace("#x", "0x")
-                    index = int(index_str, 0)
-                    sub_index_str = (entry.findtext("SubIndex") or "0").replace(
-                        "#x", "0x"
-                    )
-                    _sub_index = int(sub_index_str, 0)
+                    index_str = entry.findtext("Index", "0")
+                    index = self._parse_hex_value(index_str)
+                    sub_index_str = entry.findtext("SubIndex") or "0"
+                    _sub_index = self._parse_hex_value(sub_index_str)
                     bit_len = int(entry.findtext("BitLen", "0"))
                     data_type = entry.findtext("DataType", "UNKNOWN")
 
@@ -704,18 +729,11 @@ class BeckhoffClient:
                     size = (bit_len + 7) // 8  # Convert bits to bytes
                     ads_type = self._get_ads_type(data_type)
 
-                    # Check if name contains channel pattern
-                    # Patterns: "Channel 1", "Input 2", "AI 3", "Status 4"
-                    # or name ending with number
-                    channel_match = re.search(
-                        r"(.*?)\s*(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
-                        name,
-                        re.IGNORECASE,
-                    )
+                    # Use pre-compiled regex for channel pattern detection
+                    channel_match = CHANNEL_KEYWORD_PATTERN.search(name)
                     if not channel_match:
                         # Try matching names that end with a number
-                        # (e.g., "Status 1")
-                        channel_match = re.search(r"(.+?)\s+(\d+)$", name)
+                        channel_match = CHANNEL_NUMBER_PATTERN.search(name)
 
                     if channel_match:
                         prefix = channel_match.group(1).strip()
@@ -728,17 +746,9 @@ class BeckhoffClient:
 
                         # Create pattern - preserve original word if explicit
                         # (Channel/Input/etc) or use prefix with number
-                        if re.search(
-                            r"(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+\d+",
-                            name,
-                            re.IGNORECASE,
-                        ):
-                            # Extract the keyword
-                            keyword_match = re.search(
-                                r"(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)",
-                                name,
-                                re.IGNORECASE,
-                            )
+                        if CHANNEL_KEYWORD_PATTERN.search(name):
+                            # Extract the keyword using pre-compiled pattern
+                            keyword_match = KEYWORD_EXTRACT_PATTERN.search(name)
                             keyword = (
                                 keyword_match.group(1) if keyword_match else "Channel"
                             )
@@ -788,13 +798,11 @@ class BeckhoffClient:
                         continue
 
                     # Handle Beckhoff's #x prefix for hex values
-                    index_str = entry.findtext("Index", "0").replace("#x", "0x")
-                    index = int(index_str, 0)
+                    index_str = entry.findtext("Index", "0")
+                    index = self._parse_hex_value(index_str)
                     # TODO do we need sub_index?
-                    sub_index_str = (entry.findtext("SubIndex") or "0").replace(
-                        "#x", "0x"
-                    )
-                    _sub_index = int(sub_index_str, 0)
+                    sub_index_str = entry.findtext("SubIndex") or "0"
+                    _sub_index = self._parse_hex_value(sub_index_str)
                     bit_len = int(entry.findtext("BitLen", "0"))
                     data_type = entry.findtext("DataType", "UNKNOWN")
 
@@ -808,18 +816,11 @@ class BeckhoffClient:
                     size = (bit_len + 7) // 8  # Convert bits to bytes
                     ads_type = self._get_ads_type(data_type)
 
-                    # Check if name contains channel pattern
-                    # Patterns: "Channel 1", "Input 2", "AI 3", "Status 4"
-                    # or name ending with number
-                    channel_match = re.search(
-                        r"(.*?)\s*(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
-                        name,
-                        re.IGNORECASE,
-                    )
+                    # Use pre-compiled regex for channel pattern detection
+                    channel_match = CHANNEL_KEYWORD_PATTERN.search(name)
                     if not channel_match:
                         # Try matching names that end with a number
-                        # (e.g., "Status 1")
-                        channel_match = re.search(r"(.+?)\s+(\d+)$", name)
+                        channel_match = CHANNEL_NUMBER_PATTERN.search(name)
 
                     if channel_match:
                         prefix = channel_match.group(1).strip()
@@ -832,17 +833,9 @@ class BeckhoffClient:
 
                         # Create pattern - preserve original word if explicit
                         # (Channel/Input/etc) or use prefix with number
-                        if re.search(
-                            r"(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+\d+",
-                            name,
-                            re.IGNORECASE,
-                        ):
-                            # Extract the keyword
-                            keyword_match = re.search(
-                                r"(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)",
-                                name,
-                                re.IGNORECASE,
-                            )
+                        if CHANNEL_KEYWORD_PATTERN.search(name):
+                            # Extract the keyword using pre-compiled pattern
+                            keyword_match = KEYWORD_EXTRACT_PATTERN.search(name)
                             keyword = (
                                 keyword_match.group(1) if keyword_match else "Channel"
                             )
@@ -989,9 +982,9 @@ class BeckhoffClient:
             if objects_section is not None:
                 for obj in objects_section.findall("Object"):
                     # Get CoE Index
-                    index_str = obj.findtext("Index", "0").replace("#x", "0x")
+                    index_str = obj.findtext("Index", "0")
                     try:
-                        coe_index = int(index_str, 0)
+                        coe_index = self._parse_hex_value(index_str)
                     except ValueError:
                         logger.warning(f"Invalid CoE index: {index_str}")
                         continue
@@ -1084,7 +1077,7 @@ class BeckhoffClient:
                 group_type=group_type,
             )
 
-        except ET.ParseError as e:
+        except etree.ParseError as e:
             logger.error(f"Failed to parse XML: {e}")
             raise ValueError(f"Invalid XML content: {e}") from e
         except Exception as e:
