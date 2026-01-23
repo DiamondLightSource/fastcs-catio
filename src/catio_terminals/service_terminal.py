@@ -1,5 +1,6 @@
 """Terminal management service."""
 
+import asyncio
 import logging
 
 from catio_terminals.beckhoff import BeckhoffClient, BeckhoffTerminalInfo
@@ -87,6 +88,8 @@ class TerminalService:
                 terminal = beckhoff_client.parse_terminal_xml(
                     xml_content, terminal_info.terminal_id, terminal_info.group_type
                 )
+                # Yield control after parsing
+                await asyncio.sleep(0)
             except ValueError:
                 logger.error("Failed to parse XML, using default")
                 terminal = beckhoff_client.create_default_terminal(

@@ -676,7 +676,10 @@ class BeckhoffClient:
                     # Handle Beckhoff's #x prefix for hex values
                     index_str = entry.findtext("Index", "0").replace("#x", "0x")
                     index = int(index_str, 0)
-                    _sub_index = int(entry.findtext("SubIndex") or "0")
+                    sub_index_str = (entry.findtext("SubIndex") or "0").replace(
+                        "#x", "0x"
+                    )
+                    _sub_index = int(sub_index_str, 0)
                     bit_len = int(entry.findtext("BitLen", "0"))
                     data_type = entry.findtext("DataType", "UNKNOWN")
 
@@ -713,7 +716,10 @@ class BeckhoffClient:
                     index_str = entry.findtext("Index", "0").replace("#x", "0x")
                     index = int(index_str, 0)
                     # TODO do we need sub_index?
-                    _sub_index = int(entry.findtext("SubIndex") or "0")
+                    sub_index_str = (entry.findtext("SubIndex") or "0").replace(
+                        "#x", "0x"
+                    )
+                    _sub_index = int(sub_index_str, 0)
                     bit_len = int(entry.findtext("BitLen", "0"))
                     data_type = entry.findtext("DataType", "UNKNOWN")
 

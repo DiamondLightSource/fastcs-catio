@@ -404,11 +404,54 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                 return
 
             count = len(filtered_terminals_list)
-            for terminal_info in filtered_terminals_list:
-                await _add_terminal_from_beckhoff(app, terminal_info)
 
-            ui.notify(f"Added {count} terminal(s)", type="positive")
-            await search_terminals()
+            # Track bulk add count for notification later
+            app.bulk_add_count = count
+
+            # Create progress dialog
+            with ui.dialog() as progress_dialog, ui.card():
+                ui.label(f"Adding {count} terminals...").classes("text-lg mb-4")
+                progress_label = ui.label("0 of 0").classes(
+                    "text-sm text-gray-400 mb-2"
+                )
+                progress_bar = ui.linear_progress(value=0).props("instant-feedback")
+
+            progress_dialog.open()
+
+            try:
+                # Add terminals with progress updates
+                for idx, terminal_info in enumerate(filtered_terminals_list, 1):
+                    # Yield before starting to keep connection alive
+                    await asyncio.sleep(0.001)
+
+                    await _add_terminal_from_beckhoff(
+                        app, terminal_info, notify=False, rebuild_tree=False
+                    )
+
+                    # Update progress (safely check if elements still exist)
+                    try:
+                        progress_value = idx / count
+                        progress_bar.value = progress_value
+                        progress_label.text = f"{idx} of {count}"
+                    except (RuntimeError, AttributeError):
+                        pass  # Dialog was closed, continue without updates
+
+                    # Yield after each terminal to keep connection alive
+                    await asyncio.sleep(0.001)
+            finally:
+                # Ensure dialog is closed
+                try:
+                    progress_dialog.close()
+                except (RuntimeError, AttributeError):
+                    pass
+
+            # Rebuild tree view and refresh search
+            try:
+                # Force tree rebuild outside dialog context
+                await app.build_tree_view()
+                await search_terminals()
+            except (RuntimeError, AttributeError):
+                pass  # Dialog context lost, ignore
 
         with ui.row().classes("w-full justify-between gap-2 mt-4"):
             add_all_btn = ui.button(
@@ -417,6 +460,16 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
             ).props("color=primary")
             ui.button("Close", on_click=dialog.close).props("flat")
 
+    async def on_dialog_close() -> None:
+        """Rebuild tree when dialog closes."""
+        if app.has_unsaved_changes:
+            await app.build_tree_view()
+            # Show notification if terminals were added in bulk
+            if hasattr(app, "bulk_add_count") and app.bulk_add_count > 0:
+                ui.notify(f"Added {app.bulk_add_count} terminal(s)", type="positive")
+                app.bulk_add_count = 0
+
+    dialog.on("close", on_dialog_close)
     dialog.open()
     # Show filtered results immediately
     await search_terminals()
@@ -436,12 +489,19 @@ async def _add_terminal_and_refresh(
     await refresh_callback()
 
 
-async def _add_terminal_from_beckhoff(app: "TerminalEditorApp", terminal_info) -> None:
+async def _add_terminal_from_beckhoff(
+    app: "TerminalEditorApp",
+    terminal_info,
+    notify: bool = True,
+    rebuild_tree: bool = True,
+) -> None:
     """Add terminal from Beckhoff information.
 
     Args:
         app: Terminal editor application instance
         terminal_info: BeckhoffTerminalInfo instance
+        notify: Whether to show notification (default True)
+        rebuild_tree: Whether to rebuild tree view (default True)
     """
     if not app.config:
         return
@@ -455,8 +515,10 @@ async def _add_terminal_from_beckhoff(app: "TerminalEditorApp", terminal_info) -
     # Store the last added terminal for scrolling
     app.last_added_terminal = terminal_info.terminal_id
     # Rebuild the tree view without navigating (which would close the dialog)
-    await app.build_tree_view()
-    ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
+    if rebuild_tree:
+        await app.build_tree_view()
+    if notify:
+        ui.notify(f"Added terminal: {terminal_info.terminal_id}", type="positive")
 
 
 async def _add_manual_terminal(
