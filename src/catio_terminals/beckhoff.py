@@ -1,6 +1,7 @@
 """Utilities for fetching and parsing Beckhoff terminal information."""
 
 import logging
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -666,6 +667,16 @@ class BeckhoffClient:
             # Extract symbol nodes from TxPdo and RxPdo
             symbol_nodes = []
 
+            # Dictionary to track symbols with channel patterns
+            # Key: (name_pattern, index_group, size, ads_type, type_name, access)
+            # Value: list of channel numbers
+            channel_groups: dict = {}
+
+            # Dictionary to track duplicate entries (same name, no channel number)
+            # Key: (name, index_group, size, ads_type, type_name, access)
+            # Value: count of duplicates
+            duplicate_tracker: dict = {}
+
             # Process TxPdo (inputs from terminal to controller)
             for pdo in device.findall(".//TxPdo"):
                 for entry in pdo.findall("Entry"):
@@ -690,20 +701,84 @@ class BeckhoffClient:
 
                     # Calculate access and fastcs_name
                     access = "Read-only" if index_group == 0xF020 else "Read/Write"
-                    fastcs_name = to_pascal_case(name)
+                    size = (bit_len + 7) // 8  # Convert bits to bytes
+                    ads_type = self._get_ads_type(data_type)
 
-                    symbol_nodes.append(
-                        SymbolNode(
-                            name_template=name,
-                            index_group=index_group,
-                            size=(bit_len + 7) // 8,  # Convert bits to bytes
-                            ads_type=self._get_ads_type(data_type),
-                            type_name=data_type,
-                            channels=1,
-                            access=access,
-                            fastcs_name=fastcs_name,
-                        )
+                    # Check if name contains channel pattern
+                    # Patterns: "Channel 1", "Input 2", "AI 3", "Status 4"
+                    # or name ending with number
+                    channel_match = re.search(
+                        r"(.*?)\s*(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
+                        name,
+                        re.IGNORECASE,
                     )
+                    if not channel_match:
+                        # Try matching names that end with a number
+                        # (e.g., "Status 1")
+                        channel_match = re.search(r"(.+?)\s+(\d+)$", name)
+
+                    if channel_match:
+                        prefix = channel_match.group(1).strip()
+                        channel_num = int(channel_match.group(2))
+                        suffix = (
+                            channel_match.group(3).strip()
+                            if len(channel_match.groups()) > 2
+                            else ""
+                        )
+
+                        # Create pattern - preserve original word if explicit
+                        # (Channel/Input/etc) or use prefix with number
+                        if re.search(
+                            r"(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+\d+",
+                            name,
+                            re.IGNORECASE,
+                        ):
+                            # Extract the keyword
+                            keyword_match = re.search(
+                                r"(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)",
+                                name,
+                                re.IGNORECASE,
+                            )
+                            keyword = (
+                                keyword_match.group(1) if keyword_match else "Channel"
+                            )
+                            if prefix and suffix:
+                                name_pattern = (
+                                    f"{prefix} {keyword} {{channel}} {suffix}"
+                                )
+                            elif prefix:
+                                name_pattern = f"{prefix} {keyword} {{channel}}"
+                            elif suffix:
+                                name_pattern = f"{keyword} {{channel}} {suffix}"
+                            else:
+                                name_pattern = f"{keyword} {{channel}}"
+                        else:
+                            # Just name ending with number
+                            name_pattern = f"{prefix} {{channel}}"
+
+                        # Create grouping key
+                        group_key = (
+                            name_pattern,
+                            index_group,
+                            size,
+                            ads_type,
+                            data_type,
+                            access,
+                        )
+
+                        if group_key not in channel_groups:
+                            channel_groups[group_key] = []
+                        channel_groups[group_key].append(channel_num)
+                    else:
+                        # No channel pattern - check if this is a duplicate entry
+                        dup_key = (name, index_group, size, ads_type, data_type, access)
+
+                        if dup_key in duplicate_tracker:
+                            # This is a duplicate - increment count
+                            duplicate_tracker[dup_key] += 1
+                        else:
+                            # First occurrence - track it
+                            duplicate_tracker[dup_key] = 1
 
             # Process RxPdo (outputs from controller to terminal)
             for pdo in device.findall(".//RxPdo"):
@@ -730,14 +805,133 @@ class BeckhoffClient:
 
                     # Calculate access and fastcs_name
                     access = "Read/Write" if index_group == 0xF030 else "Read-only"
-                    fastcs_name = to_pascal_case(name)
+                    size = (bit_len + 7) // 8  # Convert bits to bytes
+                    ads_type = self._get_ads_type(data_type)
 
+                    # Check if name contains channel pattern
+                    # Patterns: "Channel 1", "Input 2", "AI 3", "Status 4"
+                    # or name ending with number
+                    channel_match = re.search(
+                        r"(.*?)\s*(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
+                        name,
+                        re.IGNORECASE,
+                    )
+                    if not channel_match:
+                        # Try matching names that end with a number
+                        # (e.g., "Status 1")
+                        channel_match = re.search(r"(.+?)\s+(\d+)$", name)
+
+                    if channel_match:
+                        prefix = channel_match.group(1).strip()
+                        channel_num = int(channel_match.group(2))
+                        suffix = (
+                            channel_match.group(3).strip()
+                            if len(channel_match.groups()) > 2
+                            else ""
+                        )
+
+                        # Create pattern - preserve original word if explicit
+                        # (Channel/Input/etc) or use prefix with number
+                        if re.search(
+                            r"(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+\d+",
+                            name,
+                            re.IGNORECASE,
+                        ):
+                            # Extract the keyword
+                            keyword_match = re.search(
+                                r"(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)",
+                                name,
+                                re.IGNORECASE,
+                            )
+                            keyword = (
+                                keyword_match.group(1) if keyword_match else "Channel"
+                            )
+                            if prefix and suffix:
+                                name_pattern = (
+                                    f"{prefix} {keyword} {{channel}} {suffix}"
+                                )
+                            elif prefix:
+                                name_pattern = f"{prefix} {keyword} {{channel}}"
+                            elif suffix:
+                                name_pattern = f"{keyword} {{channel}} {suffix}"
+                            else:
+                                name_pattern = f"{keyword} {{channel}}"
+                        else:
+                            # Just name ending with number
+                            name_pattern = f"{prefix} {{channel}}"
+
+                        # Create grouping key
+                        group_key = (
+                            name_pattern,
+                            index_group,
+                            size,
+                            ads_type,
+                            data_type,
+                            access,
+                        )
+
+                        if group_key not in channel_groups:
+                            channel_groups[group_key] = []
+                        channel_groups[group_key].append(channel_num)
+                    else:
+                        # No channel pattern - check if this is a duplicate entry
+                        dup_key = (name, index_group, size, ads_type, data_type, access)
+
+                        if dup_key in duplicate_tracker:
+                            # This is a duplicate - increment count
+                            duplicate_tracker[dup_key] += 1
+                        else:
+                            # First occurrence - track it
+                            duplicate_tracker[dup_key] = 1
+
+            # Create symbol nodes for grouped channels
+            for group_key, channel_nums in channel_groups.items():
+                name_pattern, index_group, size, ads_type, data_type, access = group_key
+                num_channels = len(channel_nums)
+                fastcs_name = to_pascal_case(name_pattern)
+
+                symbol_nodes.append(
+                    SymbolNode(
+                        name_template=name_pattern,
+                        index_group=index_group,
+                        size=size,
+                        ads_type=ads_type,
+                        type_name=data_type,
+                        channels=num_channels,
+                        access=access,
+                        fastcs_name=fastcs_name,
+                    )
+                )
+
+            # Create symbol nodes for duplicate entries (same name, no channel number)
+            for dup_key, count in duplicate_tracker.items():
+                name, index_group, size, ads_type, data_type, access = dup_key
+
+                if count > 1:
+                    # Multiple entries with same name - create symbol with {channel}
+                    name_pattern = f"{name} {{channel}}"
+                    fastcs_name = to_pascal_case(name_pattern)
+                    symbol_nodes.append(
+                        SymbolNode(
+                            name_template=name_pattern,
+                            index_group=index_group,
+                            size=size,
+                            ads_type=ads_type,
+                            type_name=data_type,
+                            channels=count,
+                            access=access,
+                            fastcs_name=fastcs_name,
+                        )
+                    )
+                else:
+                    # Single entry - create as-is
+                    fastcs_name = to_pascal_case(name)
                     symbol_nodes.append(
                         SymbolNode(
                             name_template=name,
                             index_group=index_group,
-                            size=(bit_len + 7) // 8,  # Convert bits to bytes
-                            ads_type=self._get_ads_type(data_type),
+                            size=size,
+                            ads_type=ads_type,
                             type_name=data_type,
                             channels=1,
                             access=access,
