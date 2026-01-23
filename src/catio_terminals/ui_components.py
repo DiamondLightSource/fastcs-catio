@@ -234,6 +234,61 @@ def show_terminal_details(
                 label_key="label",
             ).classes("w-full").props("selected-color=blue-7")
 
+    # Display CoE Objects if available
+    if terminal.coe_objects:
+        ui.separator().classes("my-4")
+        ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6 mb-2")
+
+        # Build CoE tree data
+        coe_tree_data = []
+        for idx, coe_obj in enumerate(terminal.coe_objects):
+            # Map access flags to readable text
+            access_map = {
+                "ro": "Read-only",
+                "rw": "Read/Write",
+                "wo": "Write-only",
+            }
+            access_text = access_map.get(coe_obj.access, coe_obj.access.upper())
+
+            # Build CoE object properties as children
+            coe_children = [
+                {
+                    "id": f"{terminal_id}_coe{idx}_index",
+                    "label": f"Index: 0x{coe_obj.index:04X}",
+                    "icon": "tag",
+                },
+                {
+                    "id": f"{terminal_id}_coe{idx}_type",
+                    "label": f"Type: {coe_obj.type_name}",
+                    "icon": "code",
+                },
+                {
+                    "id": f"{terminal_id}_coe{idx}_size",
+                    "label": f"Size: {coe_obj.bit_size} bits",
+                    "icon": "straighten",
+                },
+                {
+                    "id": f"{terminal_id}_coe{idx}_access",
+                    "label": f"Access: {access_text}",
+                    "icon": "lock" if coe_obj.access == "ro" else "edit",
+                },
+            ]
+
+            coe_tree_data.append(
+                {
+                    "id": f"{terminal_id}_coe_{idx}",
+                    "label": coe_obj.name,
+                    "icon": "settings",
+                    "children": coe_children,
+                }
+            )
+
+        with ui.card().classes("w-full"):
+            ui.tree(
+                coe_tree_data,
+                label_key="label",
+            ).classes("w-full").props("selected-color=blue-7")
+
 
 def show_symbol_details(
     app: "TerminalEditorApp", terminal_id: str, symbol_idx: int

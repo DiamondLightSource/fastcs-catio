@@ -13,6 +13,16 @@ class Identity(BaseModel):
     revision_number: int = Field(description="Revision number")
 
 
+class CoEObject(BaseModel):
+    """CANopen over EtherCAT (CoE) object definition."""
+
+    index: int = Field(description="CoE index")
+    name: str = Field(description="Object name")
+    type_name: str = Field(description="Data type name")
+    bit_size: int = Field(description="Size in bits")
+    access: str = Field(description="Access type (ro, rw, wo)")
+
+
 class SymbolNode(BaseModel):
     """Symbol node definition."""
 
@@ -37,6 +47,9 @@ class TerminalType(BaseModel):
     identity: Identity = Field(description="Terminal identity")
     symbol_nodes: list[SymbolNode] = Field(
         default_factory=list, description="List of symbol nodes"
+    )
+    coe_objects: list[CoEObject] = Field(
+        default_factory=list, description="CoE object dictionary"
     )
     group_type: str | None = Field(default=None, description="Terminal group type")
 

@@ -939,10 +939,52 @@ class BeckhoffClient:
                         )
                     )
 
+            # Parse CoE Objects (CANopen over EtherCAT dictionary)
+            coe_objects = []
+            objects_section = device.find(".//Profile/Dictionary/Objects")
+            if objects_section is not None:
+                for obj in objects_section.findall("Object"):
+                    # Get CoE Index
+                    index_str = obj.findtext("Index", "0").replace("#x", "0x")
+                    try:
+                        coe_index = int(index_str, 0)
+                    except ValueError:
+                        logger.warning(f"Invalid CoE index: {index_str}")
+                        continue
+
+                    # Get object name
+                    obj_name = obj.findtext("Name", "Unknown")
+
+                    # Get data type
+                    type_name = obj.findtext("Type", "UNKNOWN")
+
+                    # Get bit size
+                    bit_size = int(obj.findtext("BitSize", "0"))
+
+                    # Get access flags
+                    flags = obj.find("Flags")
+                    if flags is not None:
+                        access = flags.findtext("Access", "ro").lower()
+                    else:
+                        access = "ro"
+
+                    from catio_terminals.models import CoEObject
+
+                    coe_objects.append(
+                        CoEObject(
+                            index=coe_index,
+                            name=obj_name,
+                            type_name=type_name,
+                            bit_size=bit_size,
+                            access=access,
+                        )
+                    )
+
             return TerminalType(
                 description=description,
                 identity=identity,
                 symbol_nodes=symbol_nodes,
+                coe_objects=coe_objects,
                 group_type=group_type,
             )
 
