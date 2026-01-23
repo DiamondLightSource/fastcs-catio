@@ -224,6 +224,11 @@ async def _open_file(
         app.config = FileService.open_file(path)
         app.current_file = path
         app.has_unsaved_changes = False
+
+        # Merge XML data to show all available symbols/CoE objects
+        ui.notify("Loading XML data...", type="info")
+        await FileService.merge_xml_data(app.config, app.beckhoff_client)
+
         dialog.close()
         await app.build_editor_ui()
         ui.notify(f"Opened: {path.name}", type="positive")
