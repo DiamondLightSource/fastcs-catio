@@ -173,7 +173,25 @@ def show_terminal_details(
 
     ui.separator().classes("my-4")
 
-    ui.label(f"Symbols ({len(terminal.symbol_nodes)})").classes("text-h6 mb-2")
+    # Symbols section with Select All button
+    with ui.row().classes("items-center w-full justify-between mb-2"):
+        ui.label(f"Symbols ({len(terminal.symbol_nodes)})").classes("text-h6")
+
+        def toggle_all_symbols():
+            all_selected = all(s.selected for s in terminal.symbol_nodes)
+            new_value = not all_selected
+            for symbol in terminal.symbol_nodes:
+                symbol.selected = new_value
+            _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
+
+        # Determine button label based on current state
+        all_symbols_selected = all(s.selected for s in terminal.symbol_nodes)
+        symbol_btn_label = "Deselect All" if all_symbols_selected else "Select All"
+        ui.button(
+            symbol_btn_label,
+            icon="check_box" if all_symbols_selected else "check_box_outline_blank",
+            on_click=toggle_all_symbols,
+        ).props("flat dense")
 
     # Build symbol tree data with checkboxes
     symbol_tree_data = []
@@ -293,7 +311,26 @@ def show_terminal_details(
     # Display CoE Objects if available
     if terminal.coe_objects:
         ui.separator().classes("my-4")
-        ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6 mb-2")
+
+        # CoE Objects section with Select All button
+        with ui.row().classes("items-center w-full justify-between mb-2"):
+            ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6")
+
+            def toggle_all_coe():
+                all_selected = all(c.selected for c in terminal.coe_objects)
+                new_value = not all_selected
+                for coe in terminal.coe_objects:
+                    coe.selected = new_value
+                _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
+
+            # Determine button label based on current state
+            all_coe_selected = all(c.selected for c in terminal.coe_objects)
+            coe_btn_label = "Deselect All" if all_coe_selected else "Select All"
+            ui.button(
+                coe_btn_label,
+                icon="check_box" if all_coe_selected else "check_box_outline_blank",
+                on_click=toggle_all_coe,
+            ).props("flat dense")
 
         # Build CoE tree data with checkboxes
         coe_tree_data: list[dict[str, Any]] = []
