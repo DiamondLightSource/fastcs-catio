@@ -19,6 +19,9 @@ def to_pascal_case(name: str) -> str:
         'AiInputsChannel{channel}'
         >>> to_pascal_case("Status Word")
         'StatusWord'
+
+    Notes:
+        The above '>>>' are picked up as test cases by doctest. And they pass!
     """
     # Check if name contains {channel} placeholder
     has_channel = "{channel}" in name
