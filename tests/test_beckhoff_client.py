@@ -213,7 +213,7 @@ class TestBeckhoffTerminalInfo:
 
 
 @pytest.mark.asyncio
-async def test_xml_cache_download_and_parse():
+async def test_xml_cache_download_and_parse(tmp_path: Path):
     """Integration test: download XML files and parse terminals.
 
     This test actually downloads files from Beckhoff's server.
@@ -223,17 +223,30 @@ async def test_xml_cache_download_and_parse():
     3. Parsing terminal catalog
     4. Saving to cache
     5. Loading from cache
+
+    Note: Uses a temporary cache directory to avoid overwriting the real cache,
+    but shares the XML files from the standard cache for speed.
     """
-    cache = XmlCache()
+    # Use standard cache for XML files (shared across tests/runs)
+    standard_cache = XmlCache()
+
+    # Ensure XML files are available
+    success = standard_cache.download_and_extract()
+    assert success, "Failed to download/extract XML files"
+
+    # Create a test cache that uses temp dir for terminals_cache.json
+    # but shares the XML files from standard cache
+    test_cache_dir = tmp_path / "test_cache"
+    test_cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Symlink or copy the XML directory to the test cache
+    test_xml_dir = test_cache_dir / "beckhoff_xml"
+    if not test_xml_dir.exists():
+        test_xml_dir.symlink_to(standard_cache.xml_dir, target_is_directory=True)
+
+    cache = XmlCache(cache_dir=test_cache_dir)
 
     try:
-        # Clear any existing cache to test fresh download
-        cache.clear_terminals_cache()
-
-        # Download and extract XML files
-        success = cache.download_and_extract()
-        assert success, "Failed to download/extract XML files"
-
         # Get XML files
         xml_files = cache.get_xml_files()
         assert len(xml_files) > 0, f"No XML files found in {cache.xml_dir}"
@@ -278,7 +291,7 @@ async def test_xml_cache_download_and_parse():
         )
 
         # Load from cache with new instance
-        cache2 = XmlCache()
+        cache2 = XmlCache(cache_dir=test_cache_dir)
         loaded = cache2.load_terminals()
 
         assert loaded is not None, "Failed to load terminals from cache"
@@ -295,3 +308,4 @@ async def test_xml_cache_download_and_parse():
 
     finally:
         cache.close()
+        standard_cache.close()
