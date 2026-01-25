@@ -542,10 +542,11 @@ def show_terminal_details(
                 """,
             )
 
-            # Connect event handlers for each symbol
+            # Connect event handlers for each symbol (skip composite nodes without idx)
             for node in symbol_tree_data:
-                idx = node["symbol_idx"]
-                tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
+                if "symbol_idx" in node:
+                    idx = node["symbol_idx"]
+                    tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
 
     # Display Runtime Symbols section
     _show_runtime_symbols(app, terminal_id, terminal)

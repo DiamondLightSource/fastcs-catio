@@ -30,8 +30,6 @@ terminal_types:
     symbol_nodes:
       - name_template: ID
         index_group: 61472
-        size: 2
-        ads_type: 65
         type_name: ID_TYPE
         channels: 1
         access: Read-only

@@ -12,8 +12,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Output {channel}
         index_group: 61488
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read/Write
@@ -29,8 +27,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Output {channel}
         index_group: 61488
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 8
         access: Read/Write
@@ -46,8 +42,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Output {channel}
         index_group: 61488
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read/Write
@@ -63,8 +57,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Output {channel}
         index_group: 61488
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read/Write
@@ -80,8 +72,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Output {channel}
         index_group: 61488
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 16
         access: Read/Write
@@ -97,8 +87,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Output {channel}
         index_group: 61488
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read/Write
@@ -114,8 +102,6 @@ terminal_types:
     symbol_nodes:
       - name_template: PWM output {channel}
         index_group: 61488
-        size: 2
-        ads_type: 18
         type_name: UINT
         channels: 2
         access: Read/Write

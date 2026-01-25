@@ -238,16 +238,27 @@ def group_symbols_by_composite(
     # Group symbols by matching member patterns
     grouped_primitives: list[SymbolNode] = []
     ungrouped: list[SymbolNode] = []
+    matched_members: set[str] = set()
 
     for symbol in terminal.symbol_nodes:
         matched = False
-        for _member_name, patterns in mapping.member_patterns.items():
+        for member_name, patterns in mapping.member_patterns.items():
             if _symbol_matches_member(symbol, patterns):
                 grouped_primitives.append(symbol)
+                matched_members.add(member_name)
                 matched = True
                 break
         if not matched:
             ungrouped.append(symbol)
+
+    # Only create a composite if ALL member patterns were matched
+    # This prevents partial matches on terminals with different structures
+    # (e.g., oversampling terminals that have "Value" but not "Status")
+    if matched_members != set(mapping.member_patterns.keys()):
+        return GroupedSymbols(
+            composite_symbols=[],
+            ungrouped_symbols=list(terminal.symbol_nodes),
+        )
 
     # If we grouped any symbols, create a composite symbol
     composite_symbols: list[CompositeSymbol] = []

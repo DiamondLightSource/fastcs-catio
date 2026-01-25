@@ -30,8 +30,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Undervoltage {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 2
         access: Read-only
@@ -47,16 +45,12 @@ terminal_types:
     symbol_nodes:
       - name_template: Power OK
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: PowerOk
       - name_template: Overload
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 1
         access: Read-only
@@ -72,16 +66,12 @@ terminal_types:
     symbol_nodes:
       - name_template: Power OK
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: PowerOk
       - name_template: Overload
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 1
         access: Read-only

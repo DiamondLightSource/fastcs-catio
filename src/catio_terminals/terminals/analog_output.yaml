@@ -12,8 +12,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Analog output {channel}
         index_group: 61488
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 4
         access: Read/Write
@@ -29,8 +27,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Analog output {channel}
         index_group: 61488
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 4
         access: Read/Write
@@ -46,8 +42,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Analog output {channel}
         index_group: 61488
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 4
         access: Read/Write

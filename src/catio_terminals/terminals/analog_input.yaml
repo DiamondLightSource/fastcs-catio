@@ -12,56 +12,42 @@ terminal_types:
     symbol_nodes:
       - name_template: Limit {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: BIT2
         channels: 8
         access: Read-only
         fastcs_name: Limit{channel}
       - name_template: Underrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: Underrange{channel}
       - name_template: Overrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: Overrange{channel}
       - name_template: Error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: Error{channel}
       - name_template: TxPDO State {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: TxpdoState{channel}
       - name_template: TxPDO Toggle {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: TxpdoToggle{channel}
       - name_template: Value {channel}
         index_group: 61472
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 8
         access: Read-only
@@ -77,56 +63,42 @@ terminal_types:
     symbol_nodes:
       - name_template: Limit {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: BIT2
         channels: 8
         access: Read-only
         fastcs_name: Limit{channel}
       - name_template: Underrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: Underrange{channel}
       - name_template: Overrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: Overrange{channel}
       - name_template: Error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: Error{channel}
       - name_template: TxPDO State {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: TxpdoState{channel}
       - name_template: TxPDO Toggle {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: TxpdoToggle{channel}
       - name_template: Value {channel}
         index_group: 61472
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 8
         access: Read-only
@@ -142,72 +114,54 @@ terminal_types:
     symbol_nodes:
       - name_template: Status__Limit {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: BIT2
         channels: 8
         access: Read-only
         fastcs_name: StatusLimit{channel}
       - name_template: Status__Underrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusUnderrange{channel}
       - name_template: Status__Overrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusOverrange{channel}
       - name_template: Status__Error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusError{channel}
       - name_template: Status__ {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: UNKNOWN
         channels: 8
         access: Read-only
         fastcs_name: Status{channel}
       - name_template: Status__Sync error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusSyncError{channel}
       - name_template: Status__TxPDO State {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusTxpdoState{channel}
       - name_template: Status__TxPDO Toggle {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusTxpdoToggle{channel}
       - name_template: Value {channel}
         index_group: 61472
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 8
         access: Read-only
@@ -223,72 +177,54 @@ terminal_types:
     symbol_nodes:
       - name_template: Status__Limit {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: BIT2
         channels: 8
         access: Read-only
         fastcs_name: StatusLimit{channel}
       - name_template: Status__Underrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusUnderrange{channel}
       - name_template: Status__Overrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusOverrange{channel}
       - name_template: Status__Error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusError{channel}
       - name_template: Status__ {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: UNKNOWN
         channels: 8
         access: Read-only
         fastcs_name: Status{channel}
       - name_template: Status__Sync error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusSyncError{channel}
       - name_template: Status__TxPDO State {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusTxpdoState{channel}
       - name_template: Status__TxPDO Toggle {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
         fastcs_name: StatusTxpdoToggle{channel}
       - name_template: Value {channel}
         index_group: 61472
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 8
         access: Read-only
@@ -304,56 +240,42 @@ terminal_types:
     symbol_nodes:
       - name_template: Limit {channel}
         index_group: 61472
-        size: 1
-        ads_type: 65
         type_name: BIT2
         channels: 4
         access: Read-only
         fastcs_name: Limit{channel}
       - name_template: Underrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: Underrange{channel}
       - name_template: Overrange {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: Overrange{channel}
       - name_template: Error {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: Error{channel}
       - name_template: TxPDO State {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: TxpdoState{channel}
       - name_template: TxPDO Toggle {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: TxpdoToggle{channel}
       - name_template: Value {channel}
         index_group: 61472
-        size: 4
-        ads_type: 3
         type_name: DINT
         channels: 2
         access: Read-only
@@ -369,40 +291,30 @@ terminal_types:
     symbol_nodes:
       - name_template: Ch1 CycleCount
         index_group: 61472
-        size: 2
-        ads_type: 18
         type_name: UINT
         channels: 1
         access: Read-only
         fastcs_name: Ch1Cyclecount
       - name_template: Ch1 Value
         index_group: 61472
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 1
         access: Read-only
         fastcs_name: Ch1Value
       - name_template: Ch2 CycleCount
         index_group: 61472
-        size: 2
-        ads_type: 18
         type_name: UINT
         channels: 1
         access: Read-only
         fastcs_name: Ch2Cyclecount
       - name_template: Ch2 Value
         index_group: 61472
-        size: 2
-        ads_type: 2
         type_name: INT
         channels: 1
         access: Read-only
         fastcs_name: Ch2Value
       - name_template: StartTimeNextLatch
         index_group: 61472
-        size: 4
-        ads_type: 19
         type_name: UDINT
         channels: 1
         access: Read-only

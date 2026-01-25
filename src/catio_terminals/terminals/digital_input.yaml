@@ -30,8 +30,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Input {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 8
         access: Read-only
@@ -47,8 +45,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Input {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 8
         access: Read-only
@@ -64,8 +60,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Input {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
@@ -81,8 +75,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Input {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 16
         access: Read-only
@@ -98,8 +90,6 @@ terminal_types:
     symbol_nodes:
       - name_template: Input {channel}
         index_group: 61472
-        size: 1
-        ads_type: 33
         type_name: BOOL
         channels: 4
         access: Read-only
