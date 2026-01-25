@@ -362,3 +362,101 @@ class TerminalConfig(BaseModel):
         """
         if terminal_id in self.terminal_types:
             del self.terminal_types[terminal_id]
+
+
+# ============================================================
+# Composite Type Models
+# ============================================================
+
+
+class CompositeTypeMember(BaseModel):
+    """A member field within a composite type.
+
+    Composite types (BIGTYPE, ads_type=65) contain multiple primitive
+    fields that map to individual FastCS attributes.
+    """
+
+    name: str = Field(description="Member name (e.g., 'Status', 'Value')")
+    offset: int = Field(description="Byte offset within the composite type")
+    type_name: str = Field(description="Primitive type (e.g., UINT, INT, DINT)")
+    size: int = Field(description="Size in bytes")
+    fastcs_attr: str = Field(description="FastCS attribute name")
+    access: str = Field(default="read-only", description="Access type")
+    description: str | None = Field(default=None, description="Member description")
+    array_size: int | None = Field(default=None, description="Array size if array")
+
+
+class CompositeType(BaseModel):
+    """A composite type definition (TwinCAT BIGTYPE structure).
+
+    These are structured types that contain multiple primitive members.
+    They are referenced by type_name in terminal YAML files.
+    """
+
+    description: str = Field(description="Type description")
+    ads_type: int = Field(default=65, description="ADS data type ID (65 = BIGTYPE)")
+    size: int = Field(description="Total size in bytes")
+    members: list[CompositeTypeMember] = Field(
+        default_factory=list, description="List of member fields"
+    )
+    array_size: int | None = Field(
+        default=None, description="Array size if this is an array type"
+    )
+
+
+class CompositeTypesConfig(BaseModel):
+    """Configuration for composite type definitions."""
+
+    composite_types: dict[str, CompositeType] = Field(
+        default_factory=dict, description="Dictionary of composite types by type name"
+    )
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "CompositeTypesConfig":
+        """Load composite types configuration from YAML file.
+
+        Args:
+            path: Path to YAML file
+
+        Returns:
+            CompositeTypesConfig instance
+        """
+        import yaml
+
+        with path.open() as f:
+            data = yaml.safe_load(f)
+        return cls.model_validate(data)
+
+    def get_type(self, type_name: str) -> CompositeType | None:
+        """Get a composite type by name.
+
+        Args:
+            type_name: The TwinCAT type name (e.g., "AI Standard Channel 1_TYPE")
+
+        Returns:
+            CompositeType if found, None otherwise
+        """
+        return self.composite_types.get(type_name)
+
+    def is_composite(self, type_name: str) -> bool:
+        """Check if a type name is a composite type.
+
+        Args:
+            type_name: The type name to check
+
+        Returns:
+            True if the type is defined in composite_types
+        """
+        return type_name in self.composite_types
+
+    @classmethod
+    def get_default(cls) -> "CompositeTypesConfig":
+        """Load the default composite types from the package.
+
+        Returns:
+            CompositeTypesConfig instance with default types
+        """
+        default_path = Path(__file__).parent / "config" / "composite_types.yaml"
+        if default_path.exists():
+            return cls.from_yaml(default_path)
+        return cls()
