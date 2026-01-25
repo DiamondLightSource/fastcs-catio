@@ -343,11 +343,16 @@ def run(file_path: Path | None = None) -> None:
                                 if search_term:
                                     plural = "s" if filtered_count != 1 else ""
                                     delete_all_button.tooltip(
-                                        f"Delete {filtered_count} "
-                                        f"Filtered Terminal{plural}"
+                                        f"Delete {filtered_count} terminal{plural} "
+                                        "(filtered results only)"
                                     )
                                 else:
-                                    delete_all_button.tooltip("Delete All Terminals")
+                                    assert editor.config is not None
+                                    total_count = len(editor.config.terminal_types)
+                                    plural = "s" if total_count != 1 else ""
+                                    delete_all_button.tooltip(
+                                        f"Delete all {total_count} terminal{plural}"
+                                    )
 
                         search_input.on("update:model-value", filter_tree)
 
@@ -368,7 +373,7 @@ def run(file_path: Path | None = None) -> None:
                             with ui.row().classes("items-center gap-2"):
                                 editor.details_header_label = ui.label(
                                     "Details"
-                                ).classes("text-h6")
+                                ).classes("text-h4")
                                 editor.details_product_link = (
                                     ui.link("", target="")
                                     .props("target=_blank")
