@@ -233,9 +233,21 @@ def run(file_path: Path | None = None) -> None:
                     )
 
                     ui.button(
+                        "Save As",
+                        icon="save_as",
+                        on_click=lambda: ui_dialogs.show_save_as_dialog(editor),
+                    )
+
+                    ui.button(
                         "Close",
                         icon="close",
                         on_click=lambda: ui_dialogs.show_close_editor_dialog(editor),
+                    )
+
+                    ui.button(
+                        "Exit",
+                        icon="exit_to_app",
+                        on_click=lambda: ui_dialogs.show_exit_dialog(editor),
                     ).props("color=negative")
 
                     ui.button(

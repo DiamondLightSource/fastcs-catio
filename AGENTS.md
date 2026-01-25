@@ -35,6 +35,15 @@ When using the `run_in_terminal` tool:
 - **ALWAYS** use `terminal_last_command` tool afterward to retrieve the actual output if the `run_in_terminal` result appears empty or truncated
 - Check the exit code in the context to determine if the command succeeded before assuming failure
 
+**CRITICAL: Avoid repeating commands**
+
+- The `<context>` block at the start of each user message contains terminal state including:
+  - `Last Command`: The command that was run
+  - `Exit Code`: Whether it succeeded (0) or failed
+- **BEFORE** running a command, check if the context already shows it ran successfully
+- **NEVER** re-run a command that the context shows already completed with exit code 0
+- If you need the output and the context doesn't show it, use `terminal_last_command` once - do not re-run the command
+
 ## Code Style and Formatting
 
 - **MUST** use meaningful, descriptive variable and function names

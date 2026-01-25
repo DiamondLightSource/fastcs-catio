@@ -781,3 +781,123 @@ async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
         app.config = None
         app.current_file = None
         ui.navigate.to("/")
+
+
+async def show_save_as_dialog(app: "TerminalEditorApp") -> None:
+    """Show save as dialog to save configuration to a new file.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    if not app.config:
+        ui.notify("No file loaded", type="warning")
+        return
+
+    with ui.dialog() as dialog, ui.card().classes("w-[500px]"):
+        ui.label("Save As").classes("text-h6")
+
+        # Default to current directory or current file's directory
+        default_dir = str(Path.cwd())
+        if app.current_file:
+            default_dir = str(app.current_file.parent)
+            default_name = app.current_file.name
+        else:
+            default_name = "terminals.yaml"
+
+        ui.label("Directory:").classes("text-caption text-gray-600 mt-2")
+        dir_input = ui.input(value=default_dir).classes("w-full")
+
+        ui.label("Filename:").classes("text-caption text-gray-600 mt-2")
+        name_input = ui.input(value=default_name).classes("w-full")
+
+        result: dict[str, str | None] = {"path": None}
+
+        def confirm_save():
+            directory = dir_input.value.strip()
+            filename = name_input.value.strip()
+            if directory and filename:
+                if not filename.endswith(".yaml"):
+                    filename += ".yaml"
+                result["path"] = str(Path(directory) / filename)
+            dialog.close()
+
+        def cancel_save():
+            dialog.close()
+
+        with ui.row().classes("w-full justify-end gap-2 mt-4"):
+            ui.button("Cancel", on_click=cancel_save).props("flat")
+            ui.button("Save", on_click=confirm_save).props("color=primary")
+
+    await dialog
+
+    if result["path"]:
+        try:
+            new_path = Path(result["path"])
+            FileService.save_file(app.config, new_path)
+            app.current_file = new_path
+            app.has_unsaved_changes = False
+            ui.run_javascript("window.hasUnsavedChanges = false;")
+            ui.notify(f"Saved as: {new_path.name}", type="positive")
+            # Refresh to update header with new filename
+            ui.navigate.reload()
+        except Exception as e:
+            logger.exception("Failed to save file")
+            ui.notify(f"Failed to save: {e}", type="negative")
+
+
+async def show_exit_dialog(app: "TerminalEditorApp") -> None:
+    """Show exit confirmation dialog.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    if app.has_unsaved_changes:
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Exit Application").classes("text-h6")
+            ui.label("You have unsaved changes. What would you like to do?").classes(
+                "text-caption"
+            )
+
+            result: dict[str, str] = {"action": "cancel"}
+
+            def save_and_exit():
+                result["action"] = "save"
+                dialog.close()
+
+            def discard_and_exit():
+                result["action"] = "discard"
+                dialog.close()
+
+            def cancel_exit():
+                result["action"] = "cancel"
+                dialog.close()
+
+            with ui.row().classes("w-full justify-end gap-2 mt-4"):
+                ui.button("Cancel", on_click=cancel_exit).props("flat")
+                ui.button("Discard", on_click=discard_and_exit).props("color=negative")
+                ui.button("Save & Exit", on_click=save_and_exit).props("color=primary")
+
+        await dialog
+
+        if result["action"] == "save":
+            await app.save_file()
+            _do_exit(app)
+        elif result["action"] == "discard":
+            _do_exit(app)
+        # If cancel, do nothing
+    else:
+        _do_exit(app)
+
+
+def _do_exit(app: "TerminalEditorApp") -> None:
+    """Perform the actual exit."""
+    ui.run_javascript(
+        """
+        window.open('', '_self').close();
+        window.close();
+        setTimeout(() => {
+            window.location.href = 'about:blank';
+        }, 100);
+        """
+    )
+    app.shutdown()
