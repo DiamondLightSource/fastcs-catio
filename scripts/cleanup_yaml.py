@@ -93,13 +93,16 @@ async def main() -> None:
 
     if args.all:
         # Process all non-analog files
-        terminals_dir = Path("src/fastcs_catio/terminals")
+        terminals_dir = Path("src/catio_terminals/terminals")
         files_to_process = terminals_dir.glob("*.yaml")
 
         for yaml_path in files_to_process:
             if yaml_path.exists():
                 if "original" in yaml_path.name:
                     logger.info(f"Skipping backup file: {yaml_path.name}")
+                    continue
+                if "runtime_symbols" in yaml_path.name:
+                    logger.info(f"Skipping runtime symbols file: {yaml_path.name}")
                     continue
                 await cleanup_yaml_file(yaml_path, beckhoff_client)
             else:

@@ -161,11 +161,11 @@ terminal_types:
 The YAML files created by this tool are designed to work with the fastcs-catio project. Place them in:
 
 ```
-src/fastcs_catio/terminals/
+src/catio_terminals/terminals/
 ```
 
 ## Next Steps
 
-- Explore existing YAML files in `src/fastcs_catio/terminals/`
+- Explore existing YAML files in `src/catio_terminals/terminals/`
 - Try creating configurations for your specific terminals
 - Integrate with your fastcs-catio setup

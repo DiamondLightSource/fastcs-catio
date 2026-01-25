@@ -84,7 +84,7 @@ asyncio.run(main())
 The EtherCAT chain is configured via YAML. The default configuration is in
 `server_config.yaml`, which defines the server settings and device instances.
 Terminal type definitions are stored in separate YAML files in
-`src/fastcs_catio/terminals/`, organized by terminal class.
+`src/catio_terminals/terminals/`, organized by terminal class.
 
 ### Structure
 
@@ -114,7 +114,7 @@ devices:
         position: 1
 ```
 
-Terminal type definition files (`src/fastcs_catio/terminals/*.yaml`):
+Terminal type definition files (`src/catio_terminals/terminals/*.yaml`):
 
 ```yaml
 # Define terminal types and their symbols
@@ -185,7 +185,7 @@ tests/ads_sim/
 ├── server.py            # ADS protocol server
 └── README.md            # This file
 
-src/fastcs_catio/terminals/
+src/catio_terminals/terminals/
 ├── analog_input.yaml    # Analog input terminal types
 ├── analog_output.yaml   # Analog output terminal types
 ├── bus_couplers.yaml    # EtherCAT couplers and extensions
@@ -210,7 +210,7 @@ uv run pyright tests/ads_sim/
 ### Adding New Terminal Types
 
 1. Add the terminal type definition to the appropriate YAML file in
-   `src/fastcs_catio/terminals/` (or create a new one for a new class)
+   `src/catio_terminals/terminals/` (or create a new one for a new class)
 2. Define the `identity` (vendor_id, product_code, revision_number)
 3. Define `symbol_nodes` with appropriate `type_name` values that match
    patterns in `src/fastcs_catio/symbols.py`

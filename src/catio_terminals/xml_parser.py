@@ -323,13 +323,11 @@ def _create_symbol_nodes(
     symbol_nodes = []
 
     for group_key, channel_nums in channel_groups.items():
-        name_pattern, index_group, size, ads_type, data_type, access = group_key
+        name_pattern, index_group, _size, _ads_type, data_type, access = group_key
         symbol_nodes.append(
             SymbolNode(
                 name_template=name_pattern,
                 index_group=index_group,
-                size=size,
-                ads_type=ads_type,
                 type_name=data_type,
                 channels=len(channel_nums),
                 access=access,
@@ -338,15 +336,13 @@ def _create_symbol_nodes(
         )
 
     for dup_key, count in duplicate_tracker.items():
-        name, index_group, size, ads_type, data_type, access = dup_key
+        name, index_group, _size, _ads_type, data_type, access = dup_key
         if count > 1:
             name_pattern = f"{name} {{channel}}"
             symbol_nodes.append(
                 SymbolNode(
                     name_template=name_pattern,
                     index_group=index_group,
-                    size=size,
-                    ads_type=ads_type,
                     type_name=data_type,
                     channels=count,
                     access=access,
@@ -358,8 +354,6 @@ def _create_symbol_nodes(
                 SymbolNode(
                     name_template=name,
                     index_group=index_group,
-                    size=size,
-                    ads_type=ads_type,
                     type_name=data_type,
                     channels=1,
                     access=access,
@@ -619,16 +613,12 @@ def create_default_terminal(
             SymbolNode(
                 name_template=symbol_name,
                 index_group=0xF030,
-                size=2,
-                ads_type=65,
                 type_name=type_name,
                 channels=channel_count,
             ),
             SymbolNode(
                 name_template="WcState^WcState",
                 index_group=0xF021,
-                size=0,
-                ads_type=33,
                 type_name="BIT",
                 channels=1,
             ),

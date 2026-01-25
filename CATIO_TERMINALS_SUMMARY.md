@@ -171,7 +171,7 @@ The current implementation provides a solid foundation. Potential enhancements:
 
 The YAML files created by this tool are designed to work seamlessly with fastcs-catio:
 
-1. **Location**: Save files to `src/fastcs_catio/terminals/`
+1. **Location**: Save files to `src/catio_terminals/terminals/`
 2. **Format**: Compatible with existing YAML structure
 3. **Usage**: Load with fastcs-catio's terminal configuration system
 4. **Validation**: Follows same schema as existing files

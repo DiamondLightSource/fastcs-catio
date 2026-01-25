@@ -1,6 +1,6 @@
 # Terminal Type Definitions
 
-Terminal type definitions in CATio describe Beckhoff EtherCAT I/O terminals and their characteristics. These definitions are stored in YAML files organized by terminal class in `src/fastcs_catio/terminals/`.
+Terminal type definitions in CATio describe Beckhoff EtherCAT I/O terminals and their characteristics. These definitions are stored in YAML files organized by terminal class in `src/catio_terminals/terminals/`.
 
 ## Purpose
 
@@ -176,7 +176,7 @@ Runtime symbols are **not** in the Beckhoff XML terminal description files becau
 
 ### Runtime Symbols Configuration
 
-Runtime symbols are defined in `src/fastcs_catio/terminals/runtime_symbols.yaml` using a schema similar to terminal symbol nodes, with additional filtering capabilities:
+Runtime symbols are defined in `src/catio_terminals/config/runtime_symbols.yaml` using a schema similar to terminal symbol nodes, with additional filtering capabilities:
 
 ```yaml
 runtime_symbols:
@@ -251,5 +251,5 @@ The terminal will be automatically available to the ADS simulator and FastCS int
 
 - [ADS Client Architecture](ads-client.md)
 - [Architecture Overview](architecture-overview.md)
-- Terminal type source files: `src/fastcs_catio/terminals/`
+- Terminal type source files: `src/catio_terminals/terminals/`
 - catio-terminals documentation: `src/catio_terminals/README.md`

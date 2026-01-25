@@ -15,9 +15,7 @@ from catio_terminals.service_file import FileService
 logger = logging.getLogger(__name__)
 
 # Path to runtime symbols YAML file
-RUNTIME_SYMBOLS_PATH = (
-    Path(__file__).parent.parent / "fastcs_catio" / "terminals" / "runtime_symbols.yaml"
-)
+RUNTIME_SYMBOLS_PATH = Path(__file__).parent / "config" / "runtime_symbols.yaml"
 
 # Global editor instance
 _editor_instance: TerminalEditorApp | None = None

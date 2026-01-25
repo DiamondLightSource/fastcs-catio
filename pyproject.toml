@@ -68,7 +68,7 @@ name = "Greg Gay"
 version_file = "src/fastcs_catio/_version.py"
 
 [tool.setuptools.package-data]
-fastcs_catio = ["terminals/*.yaml"]
+catio_terminals = ["config/*.yaml", "terminals/*.yaml"]
 
 [tool.pyright]
 typeCheckingMode = "standard"

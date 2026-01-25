@@ -1,8 +1,11 @@
 """Data models for terminal description YAML files."""
 
 from pathlib import Path
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field, model_validator
+
+from catio_terminals.ads_types import get_type_info
 
 
 class Identity(BaseModel):
@@ -41,15 +44,17 @@ class CoEObject(BaseModel):
 
 
 class SymbolNode(BaseModel):
-    """Symbol node definition."""
+    """Symbol node definition.
+
+    The size and ads_type are computed from type_name using the
+    ADS type mappings in ads_types.py.
+    """
 
     name_template: str = Field(
         description="Name template with optional {channel} placeholder"
     )
     index_group: int = Field(description="ADS index group")
-    size: int = Field(description="Data size in bytes")
-    ads_type: int = Field(description="ADS data type")
-    type_name: str = Field(description="Type name")
+    type_name: str = Field(description="Type name (e.g., INT, BOOL, UINT)")
     channels: int = Field(default=1, description="Number of channels")
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
@@ -59,21 +64,58 @@ class SymbolNode(BaseModel):
         default=True, description="Whether to include in YAML output"
     )
 
+    # Internal storage for values loaded from YAML (not serialized)
+    _size_from_yaml: int | None = None
+    _ads_type_from_yaml: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def capture_legacy_fields(cls, data: Any) -> Any:
+        """Capture size/ads_type from YAML for backwards compatibility."""
+        if isinstance(data, dict):
+            # Store legacy values if present, then remove them
+            if "size" in data:
+                data["_size_from_yaml"] = data.pop("size")
+            if "ads_type" in data:
+                data["_ads_type_from_yaml"] = data.pop("ads_type")
+        return data
+
+    @computed_field
+    @property
+    def size(self) -> int:
+        """Get the data size in bytes (0 for bit types)."""
+        try:
+            return get_type_info(self.type_name)[1]
+        except KeyError:
+            # Fallback for unknown types
+            return 1
+
+    @computed_field
+    @property
+    def ads_type(self) -> int:
+        """Get the ADS data type ID."""
+        try:
+            return int(get_type_info(self.type_name)[0])
+        except KeyError:
+            # Fallback for unknown types (BIGTYPE)
+            return 65
+
 
 class RuntimeSymbol(BaseModel):
     """ADS runtime symbol definition with terminal filtering.
 
     Runtime symbols are added dynamically by the TwinCAT/EtherCAT runtime
     and are not defined in Beckhoff's ESI XML files.
+
+    The size and ads_type are computed from type_name using the
+    ADS type mappings in ads_types.py.
     """
 
     name_template: str = Field(
         description="Name template with optional {channel} placeholder"
     )
     index_group: int = Field(description="ADS index group")
-    size: int = Field(description="Data size in bytes")
-    ads_type: int = Field(description="ADS data type")
-    type_name: str = Field(description="Type name")
+    type_name: str = Field(description="Type name (e.g., BIT, UINT)")
     channels: int = Field(default=1, description="Number of channels")
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
@@ -96,6 +138,39 @@ class RuntimeSymbol(BaseModel):
         default_factory=list,
         description="Exclude terminals in these groups (e.g., Coupler)",
     )
+
+    # Internal storage for values loaded from YAML (not serialized)
+    _size_from_yaml: int | None = None
+    _ads_type_from_yaml: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def capture_legacy_fields(cls, data: Any) -> Any:
+        """Capture size/ads_type from YAML for backwards compatibility."""
+        if isinstance(data, dict):
+            if "size" in data:
+                data["_size_from_yaml"] = data.pop("size")
+            if "ads_type" in data:
+                data["_ads_type_from_yaml"] = data.pop("ads_type")
+        return data
+
+    @computed_field
+    @property
+    def size(self) -> int:
+        """Get the data size in bytes (0 for bit types)."""
+        try:
+            return get_type_info(self.type_name)[1]
+        except KeyError:
+            return 1
+
+    @computed_field
+    @property
+    def ads_type(self) -> int:
+        """Get the ADS data type ID."""
+        try:
+            return int(get_type_info(self.type_name)[0])
+        except KeyError:
+            return 65
 
     def applies_to_terminal(self, terminal_id: str, group_type: str | None) -> bool:
         """Check if this runtime symbol applies to a given terminal.
@@ -135,8 +210,6 @@ class RuntimeSymbol(BaseModel):
         return SymbolNode(
             name_template=self.name_template,
             index_group=self.index_group,
-            size=self.size,
-            ads_type=self.ads_type,
             type_name=self.type_name,
             channels=self.channels,
             access=self.access,
@@ -233,6 +306,9 @@ class TerminalConfig(BaseModel):
 
         from ruamel.yaml import YAML
 
+        # Fields to exclude from symbol_nodes (computed or internal)
+        symbol_exclude_fields = {"selected", "size", "ads_type"}
+
         # Convert to dict, excluding 'selected' field and filtering items
         data = self.model_dump(exclude_none=True)
 
@@ -240,7 +316,7 @@ class TerminalConfig(BaseModel):
         for _terminal_id, terminal_data in data.get("terminal_types", {}).items():
             if "symbol_nodes" in terminal_data:
                 terminal_data["symbol_nodes"] = [
-                    {k: v for k, v in sym.items() if k != "selected"}
+                    {k: v for k, v in sym.items() if k not in symbol_exclude_fields}
                     for sym in terminal_data["symbol_nodes"]
                     if sym.get("selected", True)
                 ]
