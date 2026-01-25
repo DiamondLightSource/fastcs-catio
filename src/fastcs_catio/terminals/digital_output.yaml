@@ -10,22 +10,15 @@ terminal_types:
       product_code: 131346514
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}^Output
-        index_group: 61489
-        size: 0
+      - name_template: Output {channel}
+        index_group: 61488
+        size: 1
         ads_type: 33
-        type_name: BIT
+        type_name: BOOL
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
-      - name_template: WcState^WcState
-        index_group: 61473
-        size: 0
-        ads_type: 33
-        type_name: BIT
-        channels: 1
-        access: Unknown
-        fastcs_name: WcstateWcstate
+        fastcs_name: Output{channel}
+    coe_objects: []
     group_type: DigOut
   EL2008:
     description: 8-channel Digital Output 24V DC 0.5A
@@ -34,22 +27,15 @@ terminal_types:
       product_code: 131608658
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}^Output
-        index_group: 61489
-        size: 0
+      - name_template: Output {channel}
+        index_group: 61488
+        size: 1
         ads_type: 33
-        type_name: BIT
+        type_name: BOOL
         channels: 8
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
-      - name_template: WcState^WcState
-        index_group: 61473
-        size: 0
-        ads_type: 33
-        type_name: BIT
-        channels: 1
-        access: Unknown
-        fastcs_name: WcstateWcstate
+        fastcs_name: Output{channel}
+    coe_objects: []
     group_type: DigOut
   EL2024:
     description: 4-channel Digital Output 24V DC
@@ -58,22 +44,15 @@ terminal_types:
       product_code: 132657234
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}^Output
-        index_group: 61489
-        size: 0
+      - name_template: Output {channel}
+        index_group: 61488
+        size: 1
         ads_type: 33
-        type_name: BIT
+        type_name: BOOL
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
-      - name_template: WcState^WcState
-        index_group: 61473
-        size: 0
-        ads_type: 33
-        type_name: BIT
-        channels: 1
-        access: Unknown
-        fastcs_name: WcstateWcstate
+        fastcs_name: Output{channel}
+    coe_objects: []
     group_type: DigOut
   EL2024-0010:
     description: 4-channel Digital Output 12V DC
@@ -82,22 +61,15 @@ terminal_types:
       product_code: 132657252
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}^Output
-        index_group: 61489
-        size: 0
+      - name_template: Output {channel}
+        index_group: 61488
+        size: 1
         ads_type: 33
-        type_name: BIT
+        type_name: BOOL
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
-      - name_template: WcState^WcState
-        index_group: 61473
-        size: 0
-        ads_type: 33
-        type_name: BIT
-        channels: 1
-        access: Unknown
-        fastcs_name: WcstateWcstate
+        fastcs_name: Output{channel}
+    coe_objects: []
     group_type: DigOut
   EL2809:
     description: 16-channel Digital Output 24V DC 0.5A
@@ -106,22 +78,15 @@ terminal_types:
       product_code: 184102994
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}^Output
-        index_group: 61489
-        size: 0
+      - name_template: Output {channel}
+        index_group: 61488
+        size: 1
         ads_type: 33
-        type_name: BIT
+        type_name: BOOL
         channels: 16
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
-      - name_template: WcState^WcState
-        index_group: 61473
-        size: 0
-        ads_type: 33
-        type_name: BIT
-        channels: 1
-        access: Unknown
-        fastcs_name: WcstateWcstate
+        fastcs_name: Output{channel}
+    coe_objects: []
     group_type: DigOut
   EL2124:
     description: 4-channel Digital Output 5V DC
@@ -130,22 +95,15 @@ terminal_types:
       product_code: 139210834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}^Output
-        index_group: 61489
-        size: 0
+      - name_template: Output {channel}
+        index_group: 61488
+        size: 1
         ads_type: 33
-        type_name: BIT
+        type_name: BOOL
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
-      - name_template: WcState^WcState
-        index_group: 61473
-        size: 0
-        ads_type: 33
-        type_name: BIT
-        channels: 1
-        access: Unknown
-        fastcs_name: WcstateWcstate
+        fastcs_name: Output{channel}
+    coe_objects: []
     group_type: DigOut
   EL2502:
     description: 2Ch. PWM Output, 24V
@@ -154,20 +112,13 @@ terminal_types:
       product_code: 163983442
       revision_number: 1048576
     symbol_nodes:
-      - name_template: PWM output
+      - name_template: PWM output {channel}
         index_group: 61488
         size: 2
         ads_type: 18
         type_name: UINT
-        channels: 1
+        channels: 2
         access: Read/Write
-        fastcs_name: PwmOutput
-      - name_template: PWM output
-        index_group: 61488
-        size: 2
-        ads_type: 18
-        type_name: UINT
-        channels: 1
-        access: Read/Write
-        fastcs_name: PwmOutput
+        fastcs_name: PwmOutput{channel}
+    coe_objects: []
     group_type: DigOut
