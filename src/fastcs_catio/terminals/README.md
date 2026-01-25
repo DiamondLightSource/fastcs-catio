@@ -1,49 +1,40 @@
-# Terminal Type Definitions
+# Terminal Definition Files
 
-This directory contains YAML definitions for Beckhoff EtherCAT I/O terminals organized by functional class.
-
-## Files
-
-- **bus_couplers.yaml** - EtherCAT couplers and extensions (EK1100, EK1110, EK1101)
-- **digital_input.yaml** - Digital input terminals (EL1004, EL1014, EL1008, EL1018, EL1084, EL1809, EL1124)
-- **digital_output.yaml** - Digital output terminals (EL2004, EL2008, EL2024, EL2809, EL2124)
-- **counter.yaml** - Counter and frequency input terminals (EL1502)
-- **analog_input.yaml** - Analog input terminals (EL3004, EL3064, EL3104, EL3124, EL3602, EL3702, ELM3704-0000)
-- **analog_output.yaml** - Analog output terminals (EL4004, EL4034, EL4134)
-- **power_supply.yaml** - Power supply and system terminals (EL9011, EL9100, EL9410, EL9512, EL9505)
-
-## Usage
-
-These terminal definitions are automatically loaded by:
-
-1. **ADS Simulation Server** (`tests.ads_sim`) - Creates accurate symbol tables for testing
-2. **FastCS Integration** (future) - Dynamic generation of FastCS controller classes
+This directory contains YAML files that define Beckhoff EtherCAT terminal types for use with the fastcs-catio project.
 
 ## Documentation
 
-For detailed information about the terminal definition format, symbol node properties, and how to add new terminals, see:
+For complete documentation on terminal definitions, including:
 
-**[Terminal Type Definitions Documentation](../../docs/explanations/terminal-definitions.md)**
+- How to generate and edit terminal files using `catio-terminals`
+- YAML file structure and properties
+- ADS runtime symbols vs XML definitions
+- Adding new terminal types
 
-## Format
+See the main documentation: [Terminal Type Definitions](../../../docs/explanations/terminal-definitions.md)
 
-Each YAML file contains a `terminal_types` dictionary with terminal type definitions:
+## Quick Reference
 
-```yaml
-terminal_types:
-  EL2024:
-    description: "4-channel Digital Output 24V DC"
-    identity:
-      vendor_id: 2
-      product_code: 0x07E83052
-      revision_number: 0x00100000
-    symbol_nodes:
-      - name_template: "Channel {channel}^Output"
-        index_group: 0xF031
-        size: 0
-        ads_type: 33
-        type_name: "BIT"
-        channels: 4
+### File Organization
+
+| File | Terminal Types |
+|------|----------------|
+| `bus_couplers.yaml` | EK1100, EK1110, etc. |
+| `digital_input.yaml` | EL1004, EL1014, EL1084, etc. |
+| `digital_output.yaml` | EL2004, EL2024, EL2809, etc. |
+| `counter.yaml` | EL1502, etc. |
+| `analog_input.yaml` | EL3004, EL3104, EL3602, etc. |
+| `analog_output.yaml` | EL4004, EL4134, etc. |
+| `power_supply.yaml` | EL9410, EL9512, etc. |
+
+### Editing Terminal Files
+
+Use the `catio-terminals` GUI editor:
+
+```bash
+# Update XML cache first
+catio-terminals --update-cache
+
+# Launch editor
+catio-terminals path/to/terminals.yaml
 ```
-
-See the documentation link above for complete details on the structure and properties.

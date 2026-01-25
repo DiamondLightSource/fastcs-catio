@@ -151,6 +151,18 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - [ ] No commented-out code or debug statements
 - [ ] No hardcoded credentials
 
+## Domain Knowledge
+
+This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protocol. Key concepts:
+
+- **Terminal Definitions**: YAML files describing Beckhoff terminal types, their symbols, and CoE objects. See [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) for:
+  - How to generate terminal YAML files using `catio-terminals`
+  - Understanding ADS symbol nodes and index groups
+  - The difference between XML-defined symbols and ADS runtime symbols (e.g., `WcState`)
+  - CoE (CANopen over EtherCAT) object definitions
+
+- **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals --update-cache` to fetch Beckhoff XML definitions, then edit files with the GUI.
+
 ---
 
 **Remember:** Prioritize clarity and maintainability over cleverness.

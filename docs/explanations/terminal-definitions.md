@@ -9,6 +9,52 @@ Terminal type definitions serve two purposes:
 1. **ADS Simulation**: The test ADS simulator uses these definitions to emulate terminal behavior and create accurate symbol tables
 2. **FastCS Integration**: (Future) These definitions will be used to dynamically generate FastCS controller classes for each terminal type
 
+## Generating Terminal Definitions with catio-terminals
+
+The recommended way to create and maintain terminal definition files is using the `catio-terminals` GUI editor. This tool fetches terminal information from Beckhoff's XML descriptions (ESI files) and generates consistent YAML files.
+
+### Installation
+
+```bash
+uv pip install -e ".[terminals]"
+```
+
+### Updating the XML Cache
+
+Before generating terminal definitions, update the local XML cache from Beckhoff's servers:
+
+```bash
+catio-terminals --update-cache
+```
+
+This downloads and parses the latest ESI XML files from Beckhoff, storing them in `~/.cache/catio_terminals/`.
+
+### Creating or Editing Terminal Files
+
+Launch the GUI editor:
+
+```bash
+catio-terminals
+```
+
+Or open an existing file directly:
+
+```bash
+catio-terminals path/to/terminals.yaml
+```
+
+### Workflow
+
+1. **Open or create** a YAML file when prompted
+2. **Add terminals** by clicking "Add Terminal" and searching Beckhoff's catalog
+3. **Select symbols** to include from the available PDO entries shown in the XML
+4. **Save** the file - only selected symbols are written to YAML
+
+The editor merges your YAML selections with the XML definitions, ensuring that:
+- Symbols are derived from Beckhoff's official XML descriptions (TxPdo/RxPdo entries)
+- Any symbols in the YAML that don't exist in the XML are dropped with a warning
+- New symbols from XML updates can be discovered and added
+
 ## File Organization
 
 Terminal definitions are organized by functional class:
@@ -32,22 +78,24 @@ CANopen identity information that uniquely identifies the terminal:
 ```yaml
 identity:
   vendor_id: 2              # Vendor ID (2 = Beckhoff)
-  product_code: 0x07E83052  # Product code
-  revision_number: 0x00100000
+  product_code: 196882514   # Product code (decimal)
+  revision_number: 1048576  # Revision number (decimal)
 ```
 
 ### Symbol Nodes
 
-Symbol nodes define the high-level symbols that appear in the ADS symbol table. The client expands these based on `type_name` patterns (see `src/fastcs_catio/symbols.py` for expansion logic).
+Symbol nodes define the Process Data Objects (PDOs) available on the terminal. These are extracted from the TxPdo (inputs) and RxPdo (outputs) entries in Beckhoff's XML descriptions.
 
 ```yaml
 symbol_nodes:
-  - name_template: "Channel {channel}^Output"
-    index_group: 0xF031  # ADS index group
-    size: 0              # Data size in bytes (0 for bit)
-    ads_type: 33         # ADS data type (33=BIT, 65=BIGTYPE)
-    type_name: "BIT"     # Type pattern for expansion
-    channels: 4          # Number of channels
+  - name_template: "Value {channel}"
+    index_group: 61472       # ADS index group (0xF020 = 61472)
+    size: 2                  # Data size in bytes
+    ads_type: 2              # ADS data type (2=INT, 3=DINT, etc.)
+    type_name: "INT"         # Data type name
+    channels: 4              # Number of channels
+    access: "Read-only"      # Access mode
+    fastcs_name: "Value{channel}"  # PascalCase name for FastCS
 ```
 
 ### Symbol Node Properties
@@ -55,92 +103,95 @@ symbol_nodes:
 | Property | Description |
 |----------|-------------|
 | `name_template` | Name pattern supporting `{channel}` placeholder |
-| `index_group` | ADS index group (see table below) |
-| `size` | Data size in bytes (0 for bit-level access) |
-| `ads_type` | ADS data type (33=BIT, 65=BIGTYPE) |
-| `type_name` | Type pattern used by client for symbol expansion |
+| `index_group` | ADS index group (61472=0xF020 for inputs, 61488=0xF030 for outputs) |
+| `size` | Data size in bytes |
+| `ads_type` | ADS data type code |
+| `type_name` | Data type name (BOOL, INT, DINT, UINT, etc.) |
 | `channels` | Number of channels (for multi-channel terminals) |
+| `access` | Access mode: "Read-only" or "Read/Write" |
+| `fastcs_name` | PascalCase name used for FastCS attribute naming |
 
 ### ADS Index Groups
 
-| Index Group | Name | Purpose |
-|-------------|------|---------|
-| 0xF020 | RWIB | Input bytes (read/write) |
-| 0xF021 | RWIX | Input bits (read/write) |
-| 0xF030 | RWOB | Output bytes (read/write) |
-| 0xF031 | RWOX | Output bits (read/write) |
+| Index Group | Hex | Name | Purpose |
+|-------------|-----|------|---------|
+| 61472 | 0xF020 | RWIB | Input bytes (read/write) |
+| 61473 | 0xF021 | RWIX | Input bits (read/write) |
+| 61488 | 0xF030 | RWOB | Output bytes (read/write) |
+| 61489 | 0xF031 | RWOX | Output bits (read/write) |
 
-## Symbol Naming Convention
+### CoE Objects
 
-Symbols follow the TwinCAT naming convention:
-
-```
-TIID^Device N (EtherCAT)^<terminal_name>^<symbol_name>
-```
-
-Example: `TIID^Device 1 (EtherCAT)^Term 4 (EL2024)^Channel 1^Output`
-
-## Type Name Patterns
-
-The `type_name` field must match expansion patterns defined in `src/fastcs_catio/symbols.py`:
-
-| Type Name | Expansion | Example Terminal |
-|-----------|-----------|------------------|
-| `BIT` | Simple bit value | Digital I/O |
-| `Channel 1_TYPE` | Digital input channel (8 bits) | EL1004, EL1014 |
-| `CNT Inputs_TYPE` | Counter inputs (status + value) | EL1502 |
-| `CNT Outputs_TYPE` | Counter outputs (control + set value) | EL1502 |
-| `AI Standard Channel 1_TYPE` | Analog input (status + value) | EL3004, EL3104 |
-| `AO Output Channel 1_TYPE` | Analog output value | EL4004, EL4134 |
-
-The client expands these type patterns into multiple actual symbols. For example, `Channel 1_TYPE` with 8 channels expands into:
-
-- `Channel 1^Input` (bit 0)
-- `Channel 2^Input` (bit 1)
-- ...
-- `Channel 8^Input` (bit 7)
-
-## Example: Complete Terminal Definition
+CANopen over EtherCAT objects for terminal configuration (optional):
 
 ```yaml
-terminal_types:
-  EL2024:
-    description: "4-channel Digital Output 24V DC"
-    identity:
-      vendor_id: 2
-      product_code: 0x07E83052
-      revision_number: 0x00100000
-    symbol_nodes:
-      # Output channels - individual bit symbols
-      - name_template: "Channel {channel}^Output"
-        index_group: 0xF031  # ADSIGRP_IOIMAGE_RWOX
-        size: 0              # Bit-level access
-        ads_type: 33         # BIT
-        type_name: "BIT"
-        channels: 4
-      # Working counter state
-      - name_template: "WcState^WcState"
-        index_group: 0xF021
-        size: 0
-        ads_type: 33
-        type_name: "BIT"
-        channels: 1
+coe_objects:
+  - index: 0x8000
+    name: "Settings"
+    type_name: "USINT"
+    bit_size: 8
+    access: "rw"
 ```
+
+### Group Type
+
+The terminal's functional group from the XML:
+
+```yaml
+group_type: AnaIn  # AnaIn, AnaOut, DigIn, DigOut, etc.
+```
+
+## ADS Runtime Symbols vs XML Definitions
+
+When introspecting real hardware via ADS, you may see additional symbols that don't appear in the XML definitions, such as `WcState^WcState` or `InputToggle`. These are **ADS runtime symbols** added by the EtherCAT master, not terminal-specific PDO data.
+
+### What are Runtime Symbols?
+
+The `WcState^WcState` and similar symbols come from the **ADS runtime symbol table** when you query actual hardware. These are **EtherCAT Working Counter** status bits that the TwinCAT/ADS runtime adds dynamically to indicate whether each terminal is responding correctly on the EtherCAT bus.
+
+- **WcState** = "Working Counter State" - an EtherCAT diagnostic value indicating if a terminal is communicating properly
+- **InputToggle** - indicates data updates on the EtherCAT cycle
+- These symbols have type `BIT` and are common to all terminals on the bus
+
+### Why aren't they in the XML?
+
+Runtime symbols are **not** in the Beckhoff XML terminal description files because:
+
+1. The XML files describe the **static hardware capabilities** of each terminal type (PDO mappings, CoE objects)
+2. The WcState symbols are **runtime diagnostics** added by the EtherCAT master when it configures the bus
+3. Every terminal gets a WcState automatically at runtime - it's not terminal-specific
+
+### Key Differences
+
+| Source | Contains | Examples |
+|--------|----------|----------|
+| XML (ESI files) | Static terminal capabilities, PDO mappings | `Value {channel}`, `Status__Error {channel}` |
+| ADS Runtime | Dynamic diagnostics from EtherCAT master | `WcState^WcState`, `InputToggle` |
+
+### Handling in catio-terminals
+
+The catio-terminals editor only includes symbols from the XML definitions. When merging YAML files with XML data:
+
+- Symbols defined in XML are shown and can be selected
+- Symbols in YAML that don't exist in XML (like `WcState^WcState`) are **dropped with a warning**
+- This ensures YAML files stay consistent with Beckhoff's official terminal definitions
+
+If you need WcState diagnostics in your application, handle them separately at the EtherCAT master level rather than per-terminal in the YAML files. The symbol expansion logic in `src/fastcs_catio/symbols.py` handles runtime symbol types when reading from actual hardware.
 
 ## Adding New Terminal Types
 
 To add a new terminal type:
 
-1. Identify the appropriate YAML file in `src/fastcs_catio/terminals/` based on terminal class
-2. Add the terminal definition with:
-   - Correct CANopen identity (vendor_id, product_code, revision_number)
-   - Symbol node definitions matching the terminal's I/O structure
-   - Appropriate `type_name` values that match patterns in `symbols.py`
-3. The terminal type will be automatically loaded by the ADS simulator
+1. Launch `catio-terminals` and open the appropriate YAML file
+2. Click "Add Terminal" and search for the terminal ID (e.g., "EL3104")
+3. Select the symbols you want to include from the XML definition
+4. Save the file
+
+The terminal will be automatically available to the ADS simulator and FastCS integration.
 
 ## See Also
 
 - [ADS Client Architecture](ads-client.md)
 - [Architecture Overview](architecture-overview.md)
 - Terminal type source files: `src/fastcs_catio/terminals/`
-- Symbol expansion logic: `src/fastcs_catio/symbols.py`
+- catio-terminals documentation: `src/catio_terminals/README.md`
