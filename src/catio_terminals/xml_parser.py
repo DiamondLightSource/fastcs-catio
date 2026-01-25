@@ -185,7 +185,10 @@ def parse_terminal_catalog(
                     if isinstance(name_elems, list) and name_elems
                     else None
                 )
-                if etree.iselement(first_name_elem) and first_name_elem.text:
+                if (
+                    etree.iselement(first_name_elem)
+                    and first_name_elem.text is not None  # noqa: PLR2004
+                ):
                     name = first_name_elem.text.strip()
                     desc_text = name
                     if desc_text.startswith(terminal_id):
@@ -198,7 +201,10 @@ def parse_terminal_catalog(
                         if isinstance(name_elems, list) and name_elems
                         else None
                     )
-                    if etree.iselement(first_name_elem) and first_name_elem.text:
+                    if (
+                        etree.iselement(first_name_elem)
+                        and first_name_elem.text is not None
+                    ):
                         name = first_name_elem.text.strip()
 
                 terminals.append(

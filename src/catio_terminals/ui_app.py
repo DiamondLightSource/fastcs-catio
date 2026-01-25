@@ -71,8 +71,15 @@ class TerminalEditorApp:
             ui.notify(f"Failed to save: {e}", type="negative")
 
 
-def run() -> None:
-    """Run the terminal editor application."""
+def run(file_path: Path | None = None) -> None:
+    """Run the terminal editor application.
+
+    Args:
+        file_path: Optional path to YAML file to open directly
+    """
+    # Track if we've already auto-loaded the initial file
+    initial_load_done = {"done": False}
+
     # Configure leave site confirmation for unsaved changes
     app.on_connect(
         lambda: ui.run_javascript(
@@ -97,8 +104,22 @@ def run() -> None:
 
         ui.label("CATio Terminal Editor").classes("text-h3 mb-4")
 
-        # Automatically open file selector
-        await ui_dialogs.show_file_selector(editor)
+        # If file_path provided and not yet loaded, open it;
+        # otherwise show file selector
+        if file_path is not None and not initial_load_done["done"]:
+            initial_load_done["done"] = True
+            ui.label(f"Loading {file_path.name}...").classes("text-lg")
+            ui.spinner(size="lg")
+            # Defer file loading to avoid page timeout
+            ui.timer(
+                0.1,
+                lambda: ui_dialogs.open_file_from_cli(editor, str(file_path)),
+                once=True,
+            )
+        else:
+            # Automatically open file selector
+            await ui_dialogs.show_file_selector(editor)
+            await ui_dialogs.show_file_selector(editor)
 
     @ui.page("/editor")
     async def editor_page() -> None:

@@ -201,14 +201,24 @@ async def _create_new_file(
     ui.notify(f"Created new file: {path.name}", type="positive")
 
 
+async def open_file_from_cli(app: "TerminalEditorApp", file_path: str) -> None:
+    """Open an existing YAML file from CLI.
+
+    Args:
+        app: Terminal editor application instance
+        file_path: Path to file
+    """
+    await _open_file(app, None, file_path)
+
+
 async def _open_file(
-    app: "TerminalEditorApp", dialog: ui.dialog, file_path: str
+    app: "TerminalEditorApp", dialog: ui.dialog | None, file_path: str
 ) -> None:
     """Open an existing YAML file.
 
     Args:
         app: Terminal editor application instance
-        dialog: Dialog to close
+        dialog: Dialog to close (None if called from CLI)
         file_path: Path to file
     """
     if not file_path:
@@ -229,7 +239,8 @@ async def _open_file(
         ui.notify("Loading XML data...", type="info")
         await FileService.merge_xml_data(app.config, app.beckhoff_client)
 
-        dialog.close()
+        if dialog is not None:
+            dialog.close()
         await app.build_editor_ui()
         ui.notify(f"Opened: {path.name}", type="positive")
     except Exception as e:
