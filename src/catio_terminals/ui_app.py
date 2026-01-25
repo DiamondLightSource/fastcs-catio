@@ -58,6 +58,7 @@ class TerminalEditorApp:
         self.bulk_add_count: int = 0
         self.runtime_symbols: RuntimeSymbolsConfig | None = None
         self.composite_types: CompositeTypesConfig | None = None
+        self.merged_terminals: set[str] = set()  # Track terminals with XML merged
         self._load_runtime_symbols()
         self._load_composite_types()
 

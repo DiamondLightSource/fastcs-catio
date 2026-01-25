@@ -327,7 +327,25 @@ def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
         # Terminal selected
         terminal = ConfigService.get_terminal(app.config, node_id)
         if terminal:
-            show_terminal_details(app, node_id, terminal)
+            # Check if we need to lazy-load XML data for this terminal
+            if node_id not in app.merged_terminals:
+                # Show loading indicator and load XML
+                ui.label(f"Loading {node_id}...").classes("text-gray-400")
+                ui.spinner(size="sm")
+
+                async def load_and_show():
+                    from catio_terminals.service_file import FileService
+
+                    await FileService.merge_xml_for_terminal(
+                        node_id, terminal, app.beckhoff_client, app.composite_types
+                    )
+                    app.merged_terminals.add(node_id)
+                    # Re-render the details
+                    _on_tree_select(app, node_id)
+
+                ui.timer(0.01, load_and_show, once=True)
+            else:
+                show_terminal_details(app, node_id, terminal)
 
 
 def show_terminal_details(

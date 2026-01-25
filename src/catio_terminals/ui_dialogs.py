@@ -219,12 +219,15 @@ async def load_file_async(app: "TerminalEditorApp", path: Path) -> bool:
         app.config = FileService.open_file(path)
         app.current_file = path
         app.has_unsaved_changes = False
+        app.merged_terminals.clear()  # Reset merged tracking for new file
 
-        # Merge XML data to show all available symbols/CoE objects
-        logger.info(f"Loading XML data for {path.name}...")
-        await FileService.merge_xml_data(
-            app.config, app.beckhoff_client, app.composite_types
-        )
+        # Mark all YAML symbols as selected (they're in the file)
+        for terminal in app.config.terminal_types.values():
+            for sym in terminal.symbol_nodes:
+                sym.selected = True
+            for coe in terminal.coe_objects:
+                coe.selected = True
+
         logger.info(f"Successfully loaded {path.name}")
         return True
     except Exception:
@@ -266,12 +269,14 @@ async def _open_file(
         app.config = FileService.open_file(path)
         app.current_file = path
         app.has_unsaved_changes = False
+        app.merged_terminals.clear()  # Reset merged tracking for new file
 
-        # Merge XML data to show all available symbols/CoE objects
-        ui.notify("Loading XML data...", type="info")
-        await FileService.merge_xml_data(
-            app.config, app.beckhoff_client, app.composite_types
-        )
+        # Mark all YAML symbols as selected (they're in the file)
+        for terminal in app.config.terminal_types.values():
+            for sym in terminal.symbol_nodes:
+                sym.selected = True
+            for coe in terminal.coe_objects:
+                coe.selected = True
 
         if dialog is not None:
             dialog.close()
