@@ -160,8 +160,12 @@ async def show_file_selector(app: "TerminalEditorApp") -> None:
 
         file_path.on("keyup.enter", navigate_to_path)
 
+        async def cancel_and_exit():
+            dialog.close()
+            await show_exit_dialog(app)
+
         with ui.row().classes("w-full justify-end gap-2"):
-            ui.button("Cancel", on_click=dialog.close).props("flat")
+            ui.button("Cancel", on_click=cancel_and_exit).props("flat")
             ui.button(
                 "Create New",
                 on_click=lambda: _create_new_file(app, dialog, file_path.value),
@@ -388,6 +392,59 @@ async def show_delete_all_terminals_dialog(app: "TerminalEditorApp") -> None:
         app.has_unsaved_changes = True
         await app.build_editor_ui()
         ui.notify(f"Deleted {terminal_count} terminals", type="info")
+
+
+async def show_delete_filtered_terminals_dialog(
+    app: "TerminalEditorApp", terminal_ids: list[str]
+) -> None:
+    """Show delete filtered terminals confirmation dialog.
+
+    Args:
+        app: Terminal editor application instance
+        terminal_ids: List of terminal IDs to delete
+    """
+    if not app.config or not terminal_ids:
+        ui.notify("No terminals to delete", type="warning")
+        return
+
+    terminal_count = len(terminal_ids)
+    is_all = terminal_count == len(app.config.terminal_types)
+    action_text = "all" if is_all else "filtered"
+    plural = "s" if terminal_count != 1 else ""
+
+    with ui.dialog() as dialog, ui.card():
+        ui.label(f"Delete {terminal_count} Terminal{plural}?").classes("text-h6")
+        ui.label(
+            f"This will delete {terminal_count} {action_text} "
+            f"terminal{plural}. This action cannot be undone."
+        ).classes("text-caption")
+
+        result = {"confirm": False}
+
+        def confirm_delete():
+            result["confirm"] = True
+            dialog.close()
+
+        def cancel_delete():
+            result["confirm"] = False
+            dialog.close()
+
+        with ui.row().classes("w-full justify-end gap-2"):
+            ui.button("Cancel", on_click=cancel_delete).props("flat")
+            ui.button("Delete", on_click=confirm_delete).props("color=negative")
+
+    await dialog
+
+    if result["confirm"]:
+        for terminal_id in terminal_ids:
+            app.config.terminal_types.pop(terminal_id, None)
+        app.selected_terminal_id = None
+        app.has_unsaved_changes = True
+        await app.build_editor_ui()
+        ui.notify(
+            f"Deleted {terminal_count} terminal{'s' if terminal_count != 1 else ''}",
+            type="info",
+        )
 
 
 async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:

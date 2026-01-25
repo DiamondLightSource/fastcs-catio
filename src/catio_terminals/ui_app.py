@@ -59,6 +59,7 @@ class TerminalEditorApp:
         self.runtime_symbols: RuntimeSymbolsConfig | None = None
         self.composite_types: CompositeTypesConfig | None = None
         self.merged_terminals: set[str] = set()  # Track terminals with XML merged
+        self.filtered_terminal_ids: list[str] = []  # Track currently filtered terminals
         self._load_runtime_symbols()
         self._load_composite_types()
 
@@ -239,8 +240,8 @@ def run(file_path: Path | None = None) -> None:
                     )
 
                     ui.button(
-                        "Close",
-                        icon="close",
+                        "Open",
+                        icon="folder_open",
                         on_click=lambda: ui_dialogs.show_close_editor_dialog(editor),
                     )
 
@@ -284,23 +285,26 @@ def run(file_path: Path | None = None) -> None:
                         terminal_count = (
                             len(editor.config.terminal_types) if editor.config else 0
                         )
+                        # Create label container that will be updated on filter
                         with ui.row().classes(
                             "w-full items-center justify-between mb-2"
                         ):
-                            ui.label(f"Terminal Types ({terminal_count})").classes(
-                                "text-h6"
-                            )
+                            terminal_count_label = ui.label(
+                                f"Terminal Types ({terminal_count})"
+                            ).classes("text-h6")
 
-                            async def delete_all():
-                                await ui_dialogs.show_delete_all_terminals_dialog(
-                                    editor
+                            async def delete_filtered():
+                                await ui_dialogs.show_delete_filtered_terminals_dialog(
+                                    editor, editor.filtered_terminal_ids
                                 )
 
-                            ui.button(
-                                icon="delete_sweep",
-                                on_click=delete_all,
-                            ).props("flat dense color=negative").tooltip(
-                                "Delete All Terminals"
+                            delete_button = (
+                                ui.button(
+                                    icon="delete_sweep",
+                                    on_click=delete_filtered,
+                                )
+                                .props("flat dense color=negative")
+                                .tooltip("Delete All Terminals")
                             )
 
                         # Search filter
@@ -323,8 +327,25 @@ def run(file_path: Path | None = None) -> None:
                                     ]
                                 else:
                                     filtered = list(editor.tree_data.values())
-                                editor.tree_widget._props["nodes"] = filtered
+                                editor.tree_widget._props["nodes"] = filtered  # noqa: SLF001
                                 editor.tree_widget.update()
+                                # Update filtered terminal IDs
+                                editor.filtered_terminal_ids = [
+                                    node["id"] for node in filtered
+                                ]
+                                # Update count label and delete button tooltip
+                                filtered_count = len(filtered)
+                                terminal_count_label.text = (
+                                    f"Terminal Types ({filtered_count})"
+                                )
+                                if search_term:
+                                    plural = "s" if filtered_count != 1 else ""
+                                    delete_button.tooltip(
+                                        f"Delete {filtered_count} "
+                                        f"Filtered Terminal{plural}"
+                                    )
+                                else:
+                                    delete_button.tooltip("Delete All Terminals")
 
                         search_input.on("update:model-value", filter_tree)
 

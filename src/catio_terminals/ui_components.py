@@ -25,6 +25,9 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
     # Build flat list data structure using ConfigService
     app.tree_data = ConfigService.build_tree_data(app.config)
 
+    # Initialize filtered terminal IDs with all terminals
+    app.filtered_terminal_ids = list(app.tree_data.keys())
+
     # Determine which terminal to select
     terminal_to_select = None
     if app.last_added_terminal:
