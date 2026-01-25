@@ -60,6 +60,133 @@ class SymbolNode(BaseModel):
     )
 
 
+class RuntimeSymbol(BaseModel):
+    """ADS runtime symbol definition with terminal filtering.
+
+    Runtime symbols are added dynamically by the TwinCAT/EtherCAT runtime
+    and are not defined in Beckhoff's ESI XML files.
+    """
+
+    name_template: str = Field(
+        description="Name template with optional {channel} placeholder"
+    )
+    index_group: int = Field(description="ADS index group")
+    size: int = Field(description="Data size in bytes")
+    ads_type: int = Field(description="ADS data type")
+    type_name: str = Field(description="Type name")
+    channels: int = Field(default=1, description="Number of channels")
+    access: str | None = Field(default=None, description="Read-only or Read/Write")
+    fastcs_name: str | None = Field(
+        default=None, description="PascalCase name for FastCS"
+    )
+    description: str | None = Field(default=None, description="Symbol description")
+    whitelist: list[str] = Field(
+        default_factory=list,
+        description="Only apply to these terminal IDs (if specified)",
+    )
+    blacklist: list[str] = Field(
+        default_factory=list,
+        description="Exclude from these terminal IDs (if specified)",
+    )
+    group_whitelist: list[str] = Field(
+        default_factory=list,
+        description="Only apply to terminals in these groups (e.g., AnaIn, DigOut)",
+    )
+    group_blacklist: list[str] = Field(
+        default_factory=list,
+        description="Exclude terminals in these groups (e.g., Coupler)",
+    )
+
+    def applies_to_terminal(self, terminal_id: str, group_type: str | None) -> bool:
+        """Check if this runtime symbol applies to a given terminal.
+
+        Args:
+            terminal_id: Terminal ID (e.g., "EL3004")
+            group_type: Terminal group type (e.g., "AnaIn", "Coupler")
+
+        Returns:
+            True if the symbol should be applied to this terminal
+        """
+        # Check terminal ID whitelist first (most specific)
+        if self.whitelist:
+            return terminal_id in self.whitelist
+
+        # Check terminal ID blacklist
+        if terminal_id in self.blacklist:
+            return False
+
+        # Check group whitelist
+        if self.group_whitelist:
+            return group_type in self.group_whitelist if group_type else False
+
+        # Check group blacklist
+        if group_type and group_type in self.group_blacklist:
+            return False
+
+        # Default: apply to all terminals
+        return True
+
+    def to_symbol_node(self) -> SymbolNode:
+        """Convert to a SymbolNode for use in terminal definitions.
+
+        Returns:
+            SymbolNode instance with the same symbol properties
+        """
+        return SymbolNode(
+            name_template=self.name_template,
+            index_group=self.index_group,
+            size=self.size,
+            ads_type=self.ads_type,
+            type_name=self.type_name,
+            channels=self.channels,
+            access=self.access,
+            fastcs_name=self.fastcs_name,
+            selected=True,
+        )
+
+
+class RuntimeSymbolsConfig(BaseModel):
+    """Configuration for ADS runtime symbols."""
+
+    runtime_symbols: list[RuntimeSymbol] = Field(
+        default_factory=list, description="List of runtime symbol definitions"
+    )
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "RuntimeSymbolsConfig":
+        """Load runtime symbols configuration from YAML file.
+
+        Args:
+            path: Path to YAML file
+
+        Returns:
+            RuntimeSymbolsConfig instance
+        """
+        import yaml
+
+        with path.open() as f:
+            data = yaml.safe_load(f)
+        return cls.model_validate(data)
+
+    def get_symbols_for_terminal(
+        self, terminal_id: str, group_type: str | None
+    ) -> list[SymbolNode]:
+        """Get runtime symbols applicable to a terminal.
+
+        Args:
+            terminal_id: Terminal ID (e.g., "EL3004")
+            group_type: Terminal group type (e.g., "AnaIn")
+
+        Returns:
+            List of SymbolNode instances for applicable runtime symbols
+        """
+        return [
+            sym.to_symbol_node()
+            for sym in self.runtime_symbols
+            if sym.applies_to_terminal(terminal_id, group_type)
+        ]
+
+
 class TerminalType(BaseModel):
     """Terminal type definition."""
 

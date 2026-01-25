@@ -27,6 +27,14 @@ All code you write MUST be fully optimized.
   - If a `polars` dataframe will be printed, **NEVER** simultaneously print the number of entries in the dataframe nor the schema as it is redundant.
   - **NEVER** ingest more than 10 rows of a data frame at a time. Only analyze subsets of code to avoid overloading your memory context.
 
+## Terminal Tool Usage
+
+When using the `run_in_terminal` tool:
+
+- The tool result may show only a minimal acknowledgment (e.g., `#` with a timestamp) rather than the actual command output
+- **ALWAYS** use `terminal_last_command` tool afterward to retrieve the actual output if the `run_in_terminal` result appears empty or truncated
+- Check the exit code in the context to determine if the command succeeded before assuming failure
+
 ## Code Style and Formatting
 
 - **MUST** use meaningful, descriptive variable and function names

@@ -153,7 +153,7 @@ The `WcState^WcState` and similar symbols come from the **ADS runtime symbol tab
 
 ### Known Runtime Symbols
 
-TwinCAT adds these standardized diagnostic symbols to every terminal:
+TwinCAT adds these standardized diagnostic symbols to terminals:
 
 | Symbol | Type | Size | Description |
 |--------|------|------|-------------|
@@ -162,7 +162,7 @@ TwinCAT adds these standardized diagnostic symbols to every terminal:
 | `InputToggle` | BIT | 1 bit | Toggles on each EtherCAT cycle to indicate data freshness |
 
 These symbols are:
-- **Standardized** - the same for all terminal types
+- **Mostly standardized** - similar across terminal types, but not all terminals have all symbols
 - **Generated at runtime** - not defined in ESI XML files
 - **Diagnostic in nature** - used for monitoring bus health, not process data
 
@@ -172,36 +172,67 @@ Runtime symbols are **not** in the Beckhoff XML terminal description files becau
 
 1. The XML files describe the **static hardware capabilities** of each terminal type (PDO mappings, CoE objects)
 2. The WcState symbols are **runtime diagnostics** added by the EtherCAT master when it configures the bus
-3. Every terminal gets these symbols automatically at runtime - they're not terminal-specific
+3. These symbols are added dynamically based on bus configuration, not terminal capabilities
+
+### Runtime Symbols Configuration
+
+Runtime symbols are defined in `src/fastcs_catio/terminals/runtime_symbols.yaml` using a schema similar to terminal symbol nodes, with additional filtering capabilities:
+
+```yaml
+runtime_symbols:
+  - name_template: WcState^WcState
+    index_group: 61473  # 0xF021 - RWIX (input bits)
+    size: 0
+    ads_type: 33  # BIT
+    type_name: BIT
+    channels: 1
+    access: Read-only
+    fastcs_name: WcstateWcstate
+    description: Working Counter State - indicates bus communication status
+    # Filtering options:
+    group_blacklist:
+      - Coupler  # Couplers may not have WcState
+```
+
+#### Filtering Options
+
+Each runtime symbol can specify which terminals it applies to:
+
+| Field | Description |
+|-------|-------------|
+| `whitelist` | Only apply to these specific terminal IDs (e.g., `["EL3004", "EL3104"]`) |
+| `blacklist` | Exclude these specific terminal IDs |
+| `group_whitelist` | Only apply to terminals in these groups (e.g., `["AnaIn", "DigIn"]`) |
+| `group_blacklist` | Exclude terminals in these groups (e.g., `["Coupler"]`) |
+
+If no filters are specified, the symbol applies to all terminals. Whitelist takes precedence over blacklist.
 
 ### Data Sources
 
 | Source | Availability | Contains |
 |--------|--------------|----------|
 | XML (ESI files) | Downloadable from Beckhoff, scrapable | Static terminal capabilities, PDO mappings |
-| ADS Runtime Symbols | Hard-coded (documented in Beckhoff InfoSys) | Dynamic diagnostics from EtherCAT master |
+| Runtime Symbols | Defined in `runtime_symbols.yaml` | Dynamic diagnostics from EtherCAT master |
 
 The runtime symbols are documented in Beckhoff InfoSys but the content uses heavy JavaScript rendering that makes it difficult to scrape programmatically. The relevant documentation pages are:
 
 - [TwinCAT I/O Variables](https://infosys.beckhoff.com/content/1033/tc3_io_intro/1257993099.html)
 - [EtherCAT Diagnosis](https://infosys.beckhoff.com/content/1033/ethercatsystem/2469122443.html)
 
-Since these symbols are standardized and stable, catio-terminals includes them as a hard-coded set that can be optionally added to terminal definitions.
-
 ### Key Differences
 
 | Source | Contains | Examples |
 |--------|----------|----------|
 | XML (ESI files) | Static terminal capabilities, PDO mappings | `Value {channel}`, `Status__Error {channel}` |
-| ADS Runtime | Dynamic diagnostics from EtherCAT master | `WcState^WcState`, `InputToggle`, `InfoData^State` |
+| Runtime Symbols | Dynamic diagnostics from EtherCAT master | `WcState^WcState`, `InputToggle`, `InfoData^State` |
 
 ### Handling in catio-terminals
 
 The catio-terminals editor separates XML-defined symbols from runtime symbols:
 
-- **XML symbols**: Shown in the terminal editor, derived from Beckhoff ESI files
-- **Runtime symbols**: Available as an optional set that can be added to any terminal
-- When merging YAML files with XML data, symbols not in XML are dropped with a warning
+- **XML symbols**: Derived from Beckhoff ESI files, shown in the terminal editor
+- **Runtime symbols**: Loaded from `runtime_symbols.yaml`, filtered per terminal based on whitelist/blacklist rules
+- When merging YAML files with XML data, symbols not in XML or runtime symbols are dropped with a warning
 
 The symbol expansion logic in `src/fastcs_catio/symbols.py` handles runtime symbol types when reading from actual hardware.
 
