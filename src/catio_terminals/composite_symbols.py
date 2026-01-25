@@ -279,8 +279,10 @@ def group_symbols_by_composite(
                 access = "Read/Write"
                 break
 
-        # Generate FastCS name from template
-        fastcs_name = mapping.name_template.replace(" ", "").replace("{channel}", "")
+        # Generate FastCS name from template using same utility as primitives
+        from catio_terminals.utils import to_pascal_case
+
+        fastcs_name = to_pascal_case(mapping.name_template)
 
         # Composite is selected if ALL its primitive symbols are selected
         all_primitives_selected = all(s.selected for s in grouped_primitives)
@@ -400,8 +402,10 @@ def convert_primitives_to_composites(
                 access = "Read/Write"
                 break
 
-        # Generate FastCS name from template
-        fastcs_name = mapping.name_template.replace(" ", "").replace("{channel}", "")
+        # Generate FastCS name from template using same utility as primitives
+        from catio_terminals.utils import to_pascal_case
+
+        fastcs_name = to_pascal_case(mapping.name_template)
 
         # Composite is selected if ALL its primitive symbols are selected
         all_primitives_selected = all(s.selected for s in grouped_primitives)

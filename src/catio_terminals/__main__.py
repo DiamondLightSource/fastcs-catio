@@ -7,7 +7,6 @@ from typing import Annotated
 
 import typer
 
-from catio_terminals.ui_app import run
 from catio_terminals.xml_cache import XmlCache
 
 app = typer.Typer(
@@ -27,6 +26,8 @@ def edit(
     ] = None,
 ) -> None:
     """Launch the GUI terminal editor."""
+    from catio_terminals.ui_app import run
+
     run(file_path=file)
 
 
@@ -168,7 +169,10 @@ async def _cleanup_single_yaml(
     print(f"  Loaded {len(config.terminal_types)} terminals")
 
     # Merge with XML data, converting primitives to composites
-    await file_service.merge_xml_data(config, beckhoff_client, composite_types)
+    # prefer_xml=True ensures we get fresh fastcs_name from conversion
+    await file_service.merge_xml_data(
+        config, beckhoff_client, composite_types, prefer_xml=True
+    )
 
     # Select ALL symbols, but no CoE objects
     for terminal_id, terminal in config.terminal_types.items():

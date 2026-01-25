@@ -35,6 +35,7 @@ class FileService:
         config: TerminalConfig,
         beckhoff_client: BeckhoffClient,
         composite_types: CompositeTypesConfig | None = None,
+        prefer_xml: bool = False,
     ) -> None:
         """Merge XML data with YAML config to show all available symbols/CoE.
 
@@ -49,6 +50,7 @@ class FileService:
             config: Configuration to enhance with XML data
             beckhoff_client: Beckhoff client for fetching XML
             composite_types: Composite types configuration for grouping primitives
+            prefer_xml: If True, use XML symbol data instead of YAML when both exist
         """
         logger.info("Merging XML data with YAML configuration")
 
@@ -88,10 +90,15 @@ class FileService:
                 for xml_sym in xml_symbols:
                     xml_symbol_map[xml_sym.name_template] = xml_sym
                     if xml_sym.name_template in yaml_symbol_map:
-                        # Symbol exists in YAML - use YAML version with selected=True
-                        yaml_sym = yaml_symbol_map[xml_sym.name_template]
-                        yaml_sym.selected = True
-                        merged_symbols.append(yaml_sym)
+                        if prefer_xml:
+                            # Use XML version with selected=True
+                            xml_sym.selected = True
+                            merged_symbols.append(xml_sym)
+                        else:
+                            # Use YAML version with selected=True
+                            yaml_sym = yaml_symbol_map[xml_sym.name_template]
+                            yaml_sym.selected = True
+                            merged_symbols.append(yaml_sym)
                     else:
                         # Symbol only in XML - mark as not selected
                         xml_sym.selected = False
