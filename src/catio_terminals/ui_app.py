@@ -60,6 +60,9 @@ class TerminalEditorApp:
         self.composite_types: CompositeTypesConfig | None = None
         self.merged_terminals: set[str] = set()  # Track terminals with XML merged
         self.filtered_terminal_ids: list[str] = []  # Track currently filtered terminals
+        self.details_header_label: ui.label | None = None  # Header label for details
+        self.details_product_link: ui.link | None = None  # Product info link
+        self.delete_terminal_button: ui.button | None = None  # Delete terminal button
         self._load_runtime_symbols()
         self._load_composite_types()
 
@@ -285,7 +288,6 @@ def run(file_path: Path | None = None) -> None:
                         terminal_count = (
                             len(editor.config.terminal_types) if editor.config else 0
                         )
-                        # Create label container that will be updated on filter
                         with ui.row().classes(
                             "w-full items-center justify-between mb-2"
                         ):
@@ -298,7 +300,7 @@ def run(file_path: Path | None = None) -> None:
                                     editor, editor.filtered_terminal_ids
                                 )
 
-                            delete_button = (
+                            delete_all_button = (
                                 ui.button(
                                     icon="delete_sweep",
                                     on_click=delete_filtered,
@@ -340,12 +342,12 @@ def run(file_path: Path | None = None) -> None:
                                 )
                                 if search_term:
                                     plural = "s" if filtered_count != 1 else ""
-                                    delete_button.tooltip(
+                                    delete_all_button.tooltip(
                                         f"Delete {filtered_count} "
                                         f"Filtered Terminal{plural}"
                                     )
                                 else:
-                                    delete_button.tooltip("Delete All Terminals")
+                                    delete_all_button.tooltip("Delete All Terminals")
 
                         search_input.on("update:model-value", filter_tree)
 
@@ -360,7 +362,33 @@ def run(file_path: Path | None = None) -> None:
 
                 with splitter.after:
                     with ui.card().classes("w-full h-full flex flex-col"):
-                        ui.label("Details").classes("text-h6 mb-2")
+                        with ui.row().classes(
+                            "w-full items-center justify-between mb-2"
+                        ):
+                            with ui.row().classes("items-center gap-2"):
+                                editor.details_header_label = ui.label(
+                                    "Details"
+                                ).classes("text-h6")
+                                editor.details_product_link = (
+                                    ui.link("", target="")
+                                    .props("target=_blank")
+                                    .classes("text-blue-400")
+                                )
+                                editor.details_product_link.visible = False
+
+                            async def delete_terminal():
+                                if editor.selected_terminal_id:
+                                    await ui_dialogs.show_delete_terminal_dialog(
+                                        editor, editor.selected_terminal_id
+                                    )
+
+                            delete_terminal_button = ui.button(
+                                "Delete Terminal",
+                                icon="delete",
+                                on_click=delete_terminal,
+                            ).props("flat dense color=negative")
+                            delete_terminal_button.visible = False
+                            editor.delete_terminal_button = delete_terminal_button
                         editor.details_container = (
                             ui.column()
                             .classes("w-full overflow-y-auto pr-2 pb-4")

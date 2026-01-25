@@ -361,7 +361,6 @@ def show_terminal_details(
         terminal_id: Terminal ID
         terminal: Terminal instance
     """
-    from catio_terminals import ui_dialogs
 
     # Get the URL from cached terminals
     product_url = None
@@ -372,13 +371,18 @@ def show_terminal_details(
                 product_url = cached_terminal.url
                 break
 
-    # Display terminal name with product information link
-    with ui.row().classes("items-center mb-4 gap-4"):
-        ui.label(f"Terminal: {terminal_id}").classes("text-h5")
+    # Update header label and link
+    if app.details_header_label:
+        app.details_header_label.text = f"Terminal: {terminal_id}"
+    if app.details_product_link:
         if product_url:
-            ui.link("Product Information", target=product_url).props(
-                "target=_blank"
-            ).classes("text-blue-400")
+            app.details_product_link.text = "Product Information"
+            app.details_product_link._props["href"] = product_url  # noqa: SLF001
+            app.details_product_link.visible = True
+        else:
+            app.details_product_link.visible = False
+    if app.delete_terminal_button:
+        app.delete_terminal_button.visible = True
 
     with ui.card().classes("w-full mb-4"):
         ui.label("Description").classes("text-caption text-gray-600")
@@ -397,13 +401,6 @@ def show_terminal_details(
                 terminal.group_type, terminal.group_type
             )
             ui.label(f"Group Type: {group_label}")
-
-    with ui.row().classes("w-full justify-end mb-2"):
-        ui.button(
-            "Delete Terminal",
-            icon="delete",
-            on_click=lambda: ui_dialogs.show_delete_terminal_dialog(app, terminal_id),
-        ).props("color=negative")
 
     ui.separator().classes("my-4")
 
