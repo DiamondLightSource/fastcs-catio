@@ -9,10 +9,15 @@ from nicegui import app, ui
 
 from catio_terminals import ui_components, ui_dialogs
 from catio_terminals.beckhoff import BeckhoffClient
-from catio_terminals.models import TerminalConfig
+from catio_terminals.models import RuntimeSymbolsConfig, TerminalConfig
 from catio_terminals.service_file import FileService
 
 logger = logging.getLogger(__name__)
+
+# Path to runtime symbols YAML file
+RUNTIME_SYMBOLS_PATH = (
+    Path(__file__).parent.parent / "fastcs_catio" / "terminals" / "runtime_symbols.yaml"
+)
 
 # Global editor instance
 _editor_instance: TerminalEditorApp | None = None
@@ -46,6 +51,26 @@ class TerminalEditorApp:
         self.last_added_terminal: str | None = None
         self.selected_terminal_id: str | None = None
         self.bulk_add_count: int = 0
+        self.runtime_symbols: RuntimeSymbolsConfig | None = None
+        self._load_runtime_symbols()
+
+    def _load_runtime_symbols(self) -> None:
+        """Load runtime symbols configuration."""
+        if RUNTIME_SYMBOLS_PATH.exists():
+            try:
+                self.runtime_symbols = RuntimeSymbolsConfig.from_yaml(
+                    RUNTIME_SYMBOLS_PATH
+                )
+                logger.info(
+                    f"Loaded {len(self.runtime_symbols.runtime_symbols)} "
+                    "runtime symbols"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load runtime symbols: {e}")
+                self.runtime_symbols = None
+        else:
+            logger.warning(f"Runtime symbols file not found: {RUNTIME_SYMBOLS_PATH}")
+            self.runtime_symbols = None
 
     async def build_editor_ui(self) -> None:
         """Build the main editor UI."""

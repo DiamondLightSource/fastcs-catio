@@ -9,7 +9,15 @@ terminal_types:
       vendor_id: 2
       product_code: 262418514
       revision_number: 1048576
-    symbol_nodes: []
+    symbol_nodes:
+      - name_template: Analog output {channel}
+        index_group: 61488
+        size: 2
+        ads_type: 2
+        type_name: INT
+        channels: 4
+        access: Read/Write
+        fastcs_name: AnalogOutput{channel}
     coe_objects: []
     group_type: AnaOut
   EL4034:
@@ -18,7 +26,15 @@ terminal_types:
       vendor_id: 2
       product_code: 264384594
       revision_number: 1048576
-    symbol_nodes: []
+    symbol_nodes:
+      - name_template: Analog output {channel}
+        index_group: 61488
+        size: 2
+        ads_type: 2
+        type_name: INT
+        channels: 4
+        access: Read/Write
+        fastcs_name: AnalogOutput{channel}
     coe_objects: []
     group_type: AnaOut
   EL4134:
@@ -27,6 +43,14 @@ terminal_types:
       vendor_id: 2
       product_code: 270938194
       revision_number: 1048576
-    symbol_nodes: []
+    symbol_nodes:
+      - name_template: Analog output {channel}
+        index_group: 61488
+        size: 2
+        ads_type: 2
+        type_name: INT
+        channels: 4
+        access: Read/Write
+        fastcs_name: AnalogOutput{channel}
     coe_objects: []
     group_type: AnaOut

@@ -308,6 +308,9 @@ def show_terminal_details(
                 idx = node["symbol_idx"]
                 tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
 
+    # Display Runtime Symbols section
+    _show_runtime_symbols(app, terminal_id, terminal)
+
     # Display CoE Objects if available
     if terminal.coe_objects:
         ui.separator().classes("my-4")
@@ -515,6 +518,88 @@ def show_terminal_details(
                 for node in coe_tree_data:
                     idx = int(node["coe_idx"])
                     tree.on(f"toggle-coe-{idx}", make_coe_toggle_handler(idx))
+
+
+def _show_runtime_symbols(
+    app: "TerminalEditorApp", terminal_id: str, terminal: TerminalType
+) -> None:
+    """Show runtime symbols applicable to this terminal.
+
+    Args:
+        app: Terminal editor application instance
+        terminal_id: Terminal ID
+        terminal: Terminal instance
+    """
+    if not app.runtime_symbols:
+        return
+
+    # Get runtime symbols applicable to this terminal
+    runtime_symbols = app.runtime_symbols.get_symbols_for_terminal(
+        terminal_id, terminal.group_type
+    )
+
+    if not runtime_symbols:
+        return
+
+    ui.separator().classes("my-4")
+
+    # Runtime Symbols section header
+    with ui.row().classes("items-center w-full justify-between mb-2"):
+        ui.label(f"Runtime Symbols ({len(runtime_symbols)})").classes("text-h6")
+        ui.label("Read-only - added by EtherCAT master").classes(
+            "text-caption text-grey"
+        )
+
+    # Build runtime symbol tree data (read-only, no checkboxes)
+    runtime_tree_data = []
+    for idx, symbol in enumerate(runtime_symbols):
+        # Determine access type
+        access = TerminalService.get_symbol_access(symbol.index_group)
+
+        # Build symbol properties as children
+        symbol_children = [
+            {
+                "id": f"{terminal_id}_runtime{idx}_access",
+                "label": f"Access: {access}",
+                "icon": "lock" if access == "Read-only" else "edit",
+            },
+            {
+                "id": f"{terminal_id}_runtime{idx}_type",
+                "label": f"Type: {symbol.type_name}",
+                "icon": "code",
+            },
+            {
+                "id": f"{terminal_id}_runtime{idx}_fastcs",
+                "label": f"FastCS Name: {symbol.fastcs_name or symbol.name_template}",
+                "icon": "label",
+            },
+            {
+                "id": f"{terminal_id}_runtime{idx}_size",
+                "label": f"Size: {symbol.size} bytes",
+                "icon": "straighten",
+            },
+            {
+                "id": f"{terminal_id}_runtime{idx}_index",
+                "label": f"Index Group: 0x{symbol.index_group:04X}",
+                "icon": "tag",
+            },
+        ]
+
+        runtime_tree_data.append(
+            {
+                "id": f"{terminal_id}_runtime_{idx}",
+                "label": symbol.name_template,
+                "icon": "monitor_heart",  # Diagnostic icon
+                "children": symbol_children,
+            }
+        )
+
+    with ui.card().classes("w-full bg-blue-grey-9"):
+        ui.tree(
+            runtime_tree_data,
+            label_key="label",
+            node_key="id",
+        ).classes("w-full").props("selected-color=blue-7")
 
 
 def show_symbol_details(
