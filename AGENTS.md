@@ -200,44 +200,18 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 - Mapping between XML elements and terminal YAML fields
 - What information is NOT in XML (composite type names, ADS offsets)
 
-### Composite Types Skill
+### Terminal Definitions Skill
 
 **Activation prompts:**
-- "Load composite types skill"
-- "I need to understand TwinCAT BIGTYPE structures"
+- "Load terminal definitions skill"
+- "Help me edit terminal YAML files"
+- "I need to understand composite types"
 - "Help me with symbol grouping"
 
-**Skill context:** Read [docs/explanations/composite-types.md](docs/explanations/composite-types.md) and [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) for:
-- How TwinCAT generates type names from PDO names (`"AI Standard Channel 1"` -> `"AI Standard Channel 1_TYPE"`)
-- Structure of composite_types.yaml (members, offsets, sizes)
-- Using `CompositeTypesConfig.get_default()` to load definitions
-- Relationship between XML PDO entries and composite type members
-
-### Terminal YAML Skill
-
-**Activation prompts:**
-- "Load terminal YAML skill"
-- "Help me edit terminal definitions"
-- "I need to understand the YAML schema"
-
-**Skill context:** Read [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) for:
-- Terminal YAML structure (identity, symbol_nodes, coe_objects)
-- SymbolNode fields (name_template, type_name, channels, index_group)
-- How computed properties work (size, ads_type derived from type_name)
-- Channel templating with `{channel}` placeholder
-
-### catio-terminals UI Skill
-
-**Activation prompts:**
-- "Load catio-terminals UI skill"
-- "Help me modify the terminal editor GUI"
-- "I need to work on the Qt interface"
-
-**Skill context:** Read the following files:
-- `src/catio_terminals/ui_app.py` - Main application window
-- `src/catio_terminals/ui_components.py` - Tree widgets, tables, dialogs
-- `src/catio_terminals/ui_dialogs.py` - Modal dialogs
-- `src/catio_terminals/service_terminal.py` - Terminal data service layer
+**Skill context:** Read these documents:
+- [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
+- [docs/explanations/composite-types.md](docs/explanations/composite-types.md) - How TwinCAT generates type names from PDO names, BIGTYPE structures
+- [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) - Composite type definitions (members, offsets, sizes)
 
 ---
 
