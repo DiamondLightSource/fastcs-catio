@@ -85,11 +85,13 @@ class FileService:
                         xml_sym.selected = False
                         merged_symbols.append(xml_sym)
 
-                # Add any YAML-only symbols not in XML (shouldn't happen but be safe)
-                for yaml_name, yaml_sym in yaml_symbol_map.items():
+                # Warn about YAML-only symbols not in XML (these are dropped)
+                for yaml_name in yaml_symbol_map:
                     if yaml_name not in xml_symbol_map:
-                        yaml_sym.selected = True
-                        merged_symbols.append(yaml_sym)
+                        logger.warning(
+                            f"Dropping symbol '{yaml_name}' from {terminal_id}: "
+                            "not found in XML"
+                        )
 
                 terminal.symbol_nodes = merged_symbols
 
@@ -113,11 +115,13 @@ class FileService:
                         xml_coe.selected = False
                         merged_coe.append(xml_coe)
 
-                # Add any YAML-only CoE not in XML (shouldn't happen but be safe)
+                # Warn about YAML-only CoE objects not in XML (these are dropped)
                 for yaml_idx, yaml_coe in yaml_coe_map.items():
                     if yaml_idx not in xml_coe_map:
-                        yaml_coe.selected = True
-                        merged_coe.append(yaml_coe)
+                        logger.warning(
+                            f"Dropping CoE object 0x{yaml_idx:04X} '{yaml_coe.name}' "
+                            f"from {terminal_id}: not found in XML"
+                        )
 
                 terminal.coe_objects = merged_coe
 

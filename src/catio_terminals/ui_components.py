@@ -595,6 +595,11 @@ def _mark_changed(app: "TerminalEditorApp", action) -> None:
         app: Terminal editor application instance
         action: Function to execute
     """
-    action()
+    # Set the flag and run JavaScript BEFORE the action, which may clear UI elements
     app.has_unsaved_changes = True
-    ui.run_javascript("window.hasUnsavedChanges = true;")
+    try:
+        ui.run_javascript("window.hasUnsavedChanges = true;")
+    except RuntimeError:
+        # Silently ignore if element context is invalid - the flag is already set
+        pass
+    action()
