@@ -201,6 +201,37 @@ async def _create_new_file(
     ui.notify(f"Created new file: {path.name}", type="positive")
 
 
+async def load_file_async(app: "TerminalEditorApp", path: Path) -> bool:
+    """Load a YAML file asynchronously without UI notifications.
+
+    Args:
+        app: Terminal editor application instance
+        path: Path to file
+
+    Returns:
+        True if file loaded successfully, False otherwise
+    """
+    if not path.exists():
+        logger.error(f"File does not exist: {path}")
+        return False
+
+    try:
+        app.config = FileService.open_file(path)
+        app.current_file = path
+        app.has_unsaved_changes = False
+
+        # Merge XML data to show all available symbols/CoE objects
+        logger.info(f"Loading XML data for {path.name}...")
+        await FileService.merge_xml_data(
+            app.config, app.beckhoff_client, app.composite_types
+        )
+        logger.info(f"Successfully loaded {path.name}")
+        return True
+    except Exception:
+        logger.exception(f"Failed to open file: {path}")
+        return False
+
+
 async def open_file_from_cli(app: "TerminalEditorApp", file_path: str) -> None:
     """Open an existing YAML file from CLI.
 
@@ -208,7 +239,8 @@ async def open_file_from_cli(app: "TerminalEditorApp", file_path: str) -> None:
         app: Terminal editor application instance
         file_path: Path to file
     """
-    await _open_file(app, None, file_path)
+    await load_file_async(app, Path(file_path))
+    ui.navigate.to("/editor")
 
 
 async def _open_file(

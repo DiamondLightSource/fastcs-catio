@@ -131,8 +131,8 @@ def run(file_path: Path | None = None) -> None:
     Args:
         file_path: Optional path to YAML file to open directly
     """
-    # Track if we've already auto-loaded the initial file
-    initial_load_done = {"done": False}
+    # Store pending file path for deferred loading on editor page
+    pending_file: dict[str, Path | None] = {"path": file_path}
 
     # Configure leave site confirmation for unsaved changes
     app.on_connect(
@@ -156,24 +156,14 @@ def run(file_path: Path | None = None) -> None:
 
         editor = get_editor()
 
-        ui.label("CATio Terminal Editor").classes("text-h3 mb-4")
+        # If file_path provided, go directly to editor (loading happens there)
+        if pending_file["path"] is not None:
+            ui.navigate.to("/editor")
+            return
 
-        # If file_path provided and not yet loaded, open it;
-        # otherwise show file selector
-        if file_path is not None and not initial_load_done["done"]:
-            initial_load_done["done"] = True
-            ui.label(f"Loading {file_path.name}...").classes("text-lg")
-            ui.spinner(size="lg")
-            # Defer file loading to avoid page timeout
-            ui.timer(
-                0.1,
-                lambda: ui_dialogs.open_file_from_cli(editor, str(file_path)),
-                once=True,
-            )
-        else:
-            # Automatically open file selector
-            await ui_dialogs.show_file_selector(editor)
-            await ui_dialogs.show_file_selector(editor)
+        ui.label("CATio Terminal Editor").classes("text-h3 mb-4")
+        # Show file selector
+        await ui_dialogs.show_file_selector(editor)
 
     @ui.page("/editor")
     async def editor_page() -> None:
@@ -181,6 +171,30 @@ def run(file_path: Path | None = None) -> None:
         ui.dark_mode().enable()
 
         editor = get_editor()
+
+        # Check if we need to load a pending file from CLI
+        if pending_file["path"] is not None and editor.config is None:
+            file_to_load = pending_file["path"]
+            pending_file["path"] = None  # Clear so we don't reload on refresh
+
+            # Show loading UI while file loads
+            with ui.column().classes("w-full h-screen items-center justify-center"):
+                ui.label(f"Loading {file_to_load.name}...").classes("text-h5")
+                ui.spinner(size="xl")
+
+            # Load file in background then refresh page
+            async def load_and_refresh() -> None:
+                await ui_dialogs.load_file_async(editor, file_to_load)
+                # Refresh page to show editor
+                ui.navigate.reload()
+
+            ui.timer(0.1, load_and_refresh, once=True)
+            return
+
+        # If no config loaded, redirect to index
+        if editor.config is None:
+            ui.navigate.to("/")
+            return
 
         # Add custom CSS
         ui.add_head_html(
