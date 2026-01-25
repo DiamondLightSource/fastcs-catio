@@ -33,7 +33,7 @@ terminal_types:
         type_name: Inputs_TYPE
         channels: 8
         access: Read-only
-        fastcs_name: InputsChannel
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn
   EL1018:
@@ -48,7 +48,7 @@ terminal_types:
         type_name: Inputs_TYPE
         channels: 8
         access: Read-only
-        fastcs_name: InputsChannel
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn
   EL1084:
@@ -63,7 +63,7 @@ terminal_types:
         type_name: Inputs_TYPE
         channels: 4
         access: Read-only
-        fastcs_name: InputsChannel
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn
   EL1809:
@@ -78,7 +78,7 @@ terminal_types:
         type_name: Inputs_TYPE
         channels: 16
         access: Read-only
-        fastcs_name: InputsChannel
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn
   EL1124:
@@ -93,6 +93,6 @@ terminal_types:
         type_name: Inputs_TYPE
         channels: 4
         access: Read-only
-        fastcs_name: InputsChannel
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn

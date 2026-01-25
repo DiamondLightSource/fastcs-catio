@@ -15,7 +15,7 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 4
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut
   EL2008:
@@ -30,7 +30,7 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 8
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut
   EL2024:
@@ -45,7 +45,7 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 4
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut
   EL2024-0010:
@@ -60,7 +60,7 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 4
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut
   EL2809:
@@ -75,7 +75,7 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 16
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut
   EL2124:
@@ -90,7 +90,7 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 4
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut
   EL2502:
@@ -105,6 +105,6 @@ terminal_types:
         type_name: Outputs_TYPE
         channels: 2
         access: Read/Write
-        fastcs_name: OutputsChannel
+        fastcs_name: OutputsChannel{channel}
     coe_objects: []
     group_type: DigOut

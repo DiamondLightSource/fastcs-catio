@@ -30,7 +30,7 @@ terminal_types:
     symbol_nodes:
       - name_template: ID
         index_group: 61472
-        type_name: ID_TYPE
+        type_name: UINT
         channels: 1
         access: Read-only
         fastcs_name: Id
