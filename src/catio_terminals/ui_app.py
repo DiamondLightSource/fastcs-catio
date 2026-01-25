@@ -283,7 +283,7 @@ def run(file_path: Path | None = None) -> None:
                 .style("flex: 1; min-height: 0") as splitter
             ):
                 with splitter.before:
-                    with ui.card().classes("w-full h-full flex flex-col"):
+                    with ui.card().props("flat").classes("w-full h-full flex flex-col"):
                         # Header with count
                         terminal_count = (
                             len(editor.config.terminal_types) if editor.config else 0
@@ -366,7 +366,7 @@ def run(file_path: Path | None = None) -> None:
                             await editor.build_tree_view()
 
                 with splitter.after:
-                    with ui.card().classes("w-full h-full flex flex-col"):
+                    with ui.card().props("flat").classes("w-full h-full flex flex-col"):
                         with ui.row().classes(
                             "w-full items-center justify-between mb-2"
                         ):

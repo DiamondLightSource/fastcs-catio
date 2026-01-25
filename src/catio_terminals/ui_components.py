@@ -23,7 +23,7 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
         return
 
     # Build flat list data structure using ConfigService
-    app.tree_data = ConfigService.build_tree_data(app.config)
+    app.tree_data = ConfigService.build_tree_data(app.config, app.beckhoff_client)
 
     # Initialize filtered terminal IDs with all terminals
     app.filtered_terminal_ids = list(app.tree_data.keys())
@@ -331,22 +331,44 @@ def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
         terminal = ConfigService.get_terminal(app.config, node_id)
         if terminal:
             # Check if we need to lazy-load XML data for this terminal
+            # Only merge if terminal has CoE objects (check cache) and not
+            # already merged
             if node_id not in app.merged_terminals:
-                # Show loading indicator and load XML
-                ui.label(f"Loading {node_id}...").classes("text-gray-400")
-                ui.spinner(size="sm")
-
-                async def load_and_show():
-                    from catio_terminals.service_file import FileService
-
-                    await FileService.merge_xml_for_terminal(
-                        node_id, terminal, app.beckhoff_client, app.composite_types
+                # Check if terminal has CoE in cache
+                has_coe = False
+                cached_terminals = app.beckhoff_client.get_cached_terminals()
+                if cached_terminals:
+                    cached_info = next(
+                        (t for t in cached_terminals if t.terminal_id == node_id),
+                        None,
                     )
-                    app.merged_terminals.add(node_id)
-                    # Re-render the details
-                    _on_tree_select(app, node_id)
+                    if cached_info:
+                        has_coe = cached_info.has_coe
 
-                ui.timer(0.01, load_and_show, once=True)
+                # Only merge XML if terminal has CoE objects
+                if has_coe:
+                    # Show loading indicator and load XML
+                    ui.label(f"Loading {node_id}...").classes("text-gray-400")
+                    ui.spinner(size="sm")
+
+                    async def load_and_show():
+                        from catio_terminals.service_file import FileService
+
+                        await FileService.merge_xml_for_terminal(
+                            node_id,
+                            terminal,
+                            app.beckhoff_client,
+                            app.composite_types,
+                        )
+                        app.merged_terminals.add(node_id)
+                        # Re-render the details
+                        _on_tree_select(app, node_id)
+
+                    ui.timer(0.01, load_and_show, once=True)
+                else:
+                    # No CoE objects, mark as merged and show details directly
+                    app.merged_terminals.add(node_id)
+                    show_terminal_details(app, node_id, terminal)
             else:
                 show_terminal_details(app, node_id, terminal)
 
@@ -407,7 +429,7 @@ def show_terminal_details(
     if app.delete_terminal_button:
         app.delete_terminal_button.visible = True
 
-    with ui.card().classes("w-full mb-4"):
+    with ui.card().props("flat").classes("w-full mb-4"):
         ui.label("Description").classes("text-caption text-gray-600")
         ui.label(terminal.description).classes("mb-2")
 
@@ -463,7 +485,7 @@ def show_terminal_details(
     )
 
     if symbol_tree_data:
-        with ui.card().classes("w-full"):
+        with ui.card().props("flat").classes("w-full"):
             tree = (
                 ui.tree(
                     symbol_tree_data,
@@ -678,7 +700,7 @@ def show_terminal_details(
             )
 
         if coe_tree_data:
-            with ui.card().classes("w-full"):
+            with ui.card().props("flat").classes("w-full"):
                 tree = (
                     ui.tree(
                         coe_tree_data,
@@ -813,7 +835,7 @@ def _show_runtime_symbols(
             }
         )
 
-    with ui.card().classes("w-full bg-blue-grey-9"):
+    with ui.card().props("flat").classes("w-full bg-blue-grey-9"):
         ui.tree(
             runtime_tree_data,
             label_key="label",

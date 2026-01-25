@@ -175,6 +175,13 @@ def parse_terminal_catalog(
                 if revision_str:
                     revision_number = parse_hex_value(revision_str)
 
+                # Check if terminal has CoE objects
+                has_coe = False
+                objects_section = device.find(".//Profile/Dictionary/Objects")
+                if objects_section is not None:
+                    objects = objects_section.findall("Object")
+                    has_coe = len(objects) > 0
+
                 # Extract name (prefer English LcId=1033)
                 name = terminal_id
                 description = f"Terminal {terminal_id}"
@@ -217,6 +224,7 @@ def parse_terminal_catalog(
                         product_code=product_code,
                         revision_number=revision_number,
                         group_type=group_type,
+                        has_coe=has_coe,
                     )
                 )
 

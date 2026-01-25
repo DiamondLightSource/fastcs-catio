@@ -28,6 +28,7 @@ class BeckhoffTerminalInfo:
     product_code: int = 0
     revision_number: int = 0
     group_type: str = "Other"
+    has_coe: bool = False
 
 
 class XmlCache:
