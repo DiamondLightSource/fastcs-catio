@@ -10,7 +10,7 @@ I was using Claude Sonnet 4.5 and sometimes Claude Opus 4.5 inside of a $39/mont
 
 Its very useful to add some fixed context to the project source. I added an [AGENTS.md](AGENTS.md), this one describes how to use python copier template based python projects.
 
-It also describes some domain specific knowledge about EtherCat and some of the more complex details of this repo's source code [here](AGENTS.md#domain-knowledge).
+It also describes some domain specific knowledge about EtherCat and some of the more complex details of this repo's source code in the [domain knowledge section](./AGENTS.md#domain-knowledge).
 
 This is one of the standard places that CoPilot looks for context and works with all the models. It also works for Copilot running in the cloud for PR reviews etc.
 
