@@ -67,6 +67,9 @@ name = "Greg Gay"
 [tool.setuptools_scm]
 version_file = "src/fastcs_catio/_version.py"
 
+[tool.setuptools.package-data]
+fastcs_catio = ["terminals/*.yaml"]
+
 [tool.pyright]
 typeCheckingMode = "standard"
 reportMissingImports = false  # Ignore missing stubs in imported modules

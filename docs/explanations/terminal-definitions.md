@@ -25,11 +25,11 @@ Before generating terminal definitions, update the local XML cache from Beckhoff
 
 ```bash
 # this command is also available in the terminal editor GUI
-# you would only need to run it if the ~/.cache/catio_terminals/ is outdated
+# you would only need to run it if ~/.cache/catio_terminals/ is outdated
 catio-terminals --update-cache
 ```
 
-This downloads and parses the latest ESI XML files from Beckhoff, storing them in `~/.cache/catio_terminals/`.
+This downloads and parses the latest ESI XML files from Beckhoff, storing them in `~/.cache/catio_terminals/terminals_cache.json`.
 
 ### Creating or Editing Terminal Files
 
