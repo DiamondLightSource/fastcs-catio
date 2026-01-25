@@ -70,6 +70,10 @@ class TerminalEditorApp:
             logger.exception("Failed to save file")
             ui.notify(f"Failed to save: {e}", type="negative")
 
+    def shutdown(self) -> None:
+        """Shutdown the application server."""
+        app.shutdown()
+
 
 def run(file_path: Path | None = None) -> None:
     """Run the terminal editor application.

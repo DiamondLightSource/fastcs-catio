@@ -681,9 +681,9 @@ async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
     if app.has_unsaved_changes:
         with ui.dialog() as dialog, ui.card():
             ui.label("Unsaved Changes").classes("text-h6")
-            ui.label(
-                "You have unsaved changes. Do you want to save before closing?"
-            ).classes("text-caption")
+            ui.label("You have unsaved changes. What would you like to do?").classes(
+                "text-caption"
+            )
 
             result = {"action": "cancel"}
 
@@ -693,6 +693,10 @@ async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
 
             def discard_and_close():
                 result["action"] = "discard"
+                dialog.close()
+
+            def exit_app():
+                result["action"] = "exit"
                 dialog.close()
 
             def cancel_close():
@@ -707,6 +711,7 @@ async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
                 ui.button("Save & Close", on_click=save_and_close).props(
                     "color=primary"
                 )
+                ui.button("Exit", on_click=exit_app).props("flat color=warning")
 
         await dialog
 
@@ -721,6 +726,18 @@ async def show_close_editor_dialog(app: "TerminalEditorApp") -> None:
             app.current_file = None
             app.has_unsaved_changes = False
             ui.navigate.to("/")
+        elif result["action"] == "exit":
+            # Try multiple methods to close the browser tab
+            ui.run_javascript(
+                """
+                window.open('', '_self').close();
+                window.close();
+                setTimeout(() => {
+                    window.location.href = 'about:blank';
+                }, 100);
+                """
+            )
+            app.shutdown()
     else:
         app.config = None
         app.current_file = None
