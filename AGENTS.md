@@ -209,8 +209,7 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 - "Help me with symbol grouping"
 
 **Skill context:** Read these documents:
-- [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
-- [docs/explanations/composite-types.md](docs/explanations/composite-types.md) - How TwinCAT generates type names from PDO names, BIGTYPE structures
+- [docs/explanations/terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
 - [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) - Composite type definitions (members, offsets, sizes)
 
 ---
