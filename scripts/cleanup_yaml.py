@@ -51,7 +51,8 @@ async def cleanup_yaml_file(yaml_path: Path, beckhoff_client: BeckhoffClient) ->
     logger.info(f"  Loaded {len(config.terminal_types)} terminals")
 
     # Merge with XML data (this drops non-XML symbols)
-    await FileService.merge_xml_data(config, beckhoff_client)
+    # Note: Not converting to composites - this script preserves primitive format
+    await FileService.merge_xml_data(config, beckhoff_client, None)
 
     # Select ALL symbols from XML, but no CoE objects
     for terminal_id, terminal in config.terminal_types.items():

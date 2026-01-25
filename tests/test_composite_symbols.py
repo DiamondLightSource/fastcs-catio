@@ -6,6 +6,7 @@ from catio_terminals.composite_symbols import (
     COMPOSITE_MAPPINGS,
     CompositeSymbol,
     CompositeSymbolMapping,
+    convert_primitives_to_composites,
     get_composite_view_data,
     group_symbols_by_composite,
 )
@@ -208,3 +209,86 @@ class TestCompositeSymbol:
             assert hasattr(comp, "index_group")
             assert hasattr(comp, "access")
             assert hasattr(comp, "fastcs_name")
+
+
+class TestConvertPrimitivesToComposites:
+    """Test convert_primitives_to_composites function."""
+
+    def test_converts_analog_input_primitives(
+        self, analog_input_terminal: TerminalType, composite_types: CompositeTypesConfig
+    ) -> None:
+        """Test that analog input primitives are converted to composite."""
+        result = convert_primitives_to_composites(
+            analog_input_terminal, composite_types
+        )
+
+        # Should have fewer symbols (primitives grouped into composite)
+        assert len(result) < len(analog_input_terminal.symbol_nodes)
+
+        # First symbol should be the composite type
+        composite_sym = result[0]
+        assert composite_sym.type_name == "AI Standard Channel 1_TYPE"
+        assert "AI" in composite_sym.name_template
+        assert composite_sym.channels == 4
+
+        # WcState should remain as primitive
+        wcstate = [s for s in result if s.name_template == "WcState"]
+        assert len(wcstate) == 1
+        assert wcstate[0].type_name == "UINT"
+
+    def test_converts_digital_output_primitives(
+        self,
+        digital_output_terminal: TerminalType,
+        composite_types: CompositeTypesConfig,
+    ) -> None:
+        """Test that digital output primitives are converted to composite."""
+        result = convert_primitives_to_composites(
+            digital_output_terminal, composite_types
+        )
+
+        # Should have converted to composite
+        assert len(result) == 1
+        composite_sym = result[0]
+        assert composite_sym.type_name == "Outputs_TYPE"
+        assert composite_sym.channels == 4
+
+    def test_no_conversion_without_composite_types(
+        self, analog_input_terminal: TerminalType
+    ) -> None:
+        """Test that no conversion occurs without composite_types config."""
+        result = convert_primitives_to_composites(analog_input_terminal, None)
+
+        # Should return all symbols unchanged
+        assert len(result) == len(analog_input_terminal.symbol_nodes)
+
+    def test_preserves_already_composite_symbols(
+        self, composite_types: CompositeTypesConfig
+    ) -> None:
+        """Test that symbols already using composite types are preserved."""
+        terminal = TerminalType(
+            description="Terminal with composite symbols",
+            identity=Identity(vendor_id=2, product_code=123, revision_number=1),
+            symbol_nodes=[
+                SymbolNode(
+                    name_template="AI Standard Channel {channel}",
+                    index_group=0xF020,
+                    type_name="AI Standard Channel 1_TYPE",  # Already composite
+                    channels=4,
+                ),
+                SymbolNode(
+                    name_template="WcState",
+                    index_group=0xF100,
+                    type_name="UINT",
+                    channels=1,
+                ),
+            ],
+            coe_objects=[],
+            group_type="AnaIn",
+        )
+
+        result = convert_primitives_to_composites(terminal, composite_types)
+
+        # Should have 2 symbols - composite should be preserved, not re-grouped
+        assert len(result) == 2
+        assert result[0].type_name == "AI Standard Channel 1_TYPE"
+        assert result[1].type_name == "UINT"

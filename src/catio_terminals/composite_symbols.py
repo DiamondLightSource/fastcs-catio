@@ -320,3 +320,105 @@ def get_composite_view_data(
     """
     result = group_symbols_by_composite(terminal, composite_types)
     return result.composite_symbols, result.ungrouped_symbols
+
+
+def convert_primitives_to_composites(
+    terminal: TerminalType,
+    composite_types: CompositeTypesConfig | None,
+) -> list[SymbolNode]:
+    """Convert primitive symbols to composite symbols in-place.
+
+    Groups primitive symbols that belong together into a single composite symbol
+    using the type name from composite_types.yaml. Ungrouped primitives are kept as-is.
+
+    This function should be called once at load time (after parsing XML or loading YAML)
+    to ensure the symbol_nodes list contains both composite and primitive symbols
+    in a unified format.
+
+    Args:
+        terminal: Terminal type containing primitive symbol nodes
+        composite_types: Composite types configuration
+
+    Returns:
+        New list of symbol nodes with grouped primitives converted to composites
+    """
+    if not composite_types:
+        return list(terminal.symbol_nodes)
+
+    # Find the mapping for this terminal type
+    mapping = _find_mapping_for_terminal(terminal.group_type)
+
+    if not mapping:
+        return list(terminal.symbol_nodes)
+
+    # Get the composite type definition
+    composite_type = composite_types.get_type(mapping.type_name)
+    if not composite_type:
+        return list(terminal.symbol_nodes)
+
+    # Group symbols by matching member patterns
+    grouped_primitives: list[SymbolNode] = []
+    ungrouped: list[SymbolNode] = []
+    matched_members: set[str] = set()
+
+    for symbol in terminal.symbol_nodes:
+        # Skip symbols that are already composite types
+        if composite_types.is_composite(symbol.type_name):
+            ungrouped.append(symbol)
+            continue
+
+        matched = False
+        for member_name, patterns in mapping.member_patterns.items():
+            if _symbol_matches_member(symbol, patterns):
+                grouped_primitives.append(symbol)
+                matched_members.add(member_name)
+                matched = True
+                break
+        if not matched:
+            ungrouped.append(symbol)
+
+    # Only create a composite if ALL member patterns were matched
+    # This prevents partial matches on terminals with different structures
+    if matched_members != set(mapping.member_patterns.keys()):
+        return list(terminal.symbol_nodes)
+
+    # Build the result list: composite symbol first, then ungrouped
+    result: list[SymbolNode] = []
+
+    if grouped_primitives:
+        # Determine channel count from grouped symbols
+        channels = _get_channel_count(grouped_primitives)
+
+        # Determine index group (use the most common one)
+        index_groups = [s.index_group for s in grouped_primitives]
+        index_group = max(set(index_groups), key=index_groups.count)
+
+        # Determine access (Read-only if any are read-only)
+        access = "Read-only"
+        for sym in grouped_primitives:
+            if sym.access and "write" in sym.access.lower():
+                access = "Read/Write"
+                break
+
+        # Generate FastCS name from template
+        fastcs_name = mapping.name_template.replace(" ", "").replace("{channel}", "")
+
+        # Composite is selected if ALL its primitive symbols are selected
+        all_primitives_selected = all(s.selected for s in grouped_primitives)
+
+        # Create composite SymbolNode using the composite type name
+        composite_symbol = SymbolNode(
+            name_template=mapping.name_template,
+            index_group=index_group,
+            type_name=mapping.type_name,  # Use composite type name
+            channels=channels,
+            access=access,
+            fastcs_name=fastcs_name,
+            selected=all_primitives_selected,
+        )
+        result.append(composite_symbol)
+
+    # Add ungrouped symbols
+    result.extend(ungrouped)
+
+    return result

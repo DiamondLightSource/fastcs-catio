@@ -4,8 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
-from catio_terminals.composite_symbols import CompositeSymbol, get_composite_view_data
-from catio_terminals.models import SymbolNode, TerminalType
+from catio_terminals.models import CompositeTypesConfig, SymbolNode, TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
 from catio_terminals.utils import to_pascal_case
@@ -99,124 +98,154 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
 def _build_merged_symbol_tree_data(
     terminal_id: str,
     terminal: TerminalType,
-    composite_symbols: list[CompositeSymbol],
-    ungrouped_symbols: list[SymbolNode],
+    composite_types: CompositeTypesConfig | None,
 ) -> list[dict[str, Any]]:
-    """Build merged symbol tree with composites and ungrouped primitives.
+    """Build symbol tree with both composite and primitive symbols.
+
+    Symbols with a composite type_name are rendered with member details.
+    Primitive symbols are rendered with their basic properties.
 
     Args:
         terminal_id: Terminal ID for generating unique node IDs
         terminal: Terminal instance containing symbol_nodes
-        composite_symbols: List of composite symbols
-        ungrouped_symbols: List of ungrouped primitive symbols
+        composite_types: Composite types configuration for looking up members
 
     Returns:
         List of tree node dictionaries for ui.tree
     """
     symbol_tree_data: list[dict[str, Any]] = []
 
-    # Add composite symbols first
-    for comp_idx, comp_sym in enumerate(composite_symbols):
-        symbol_tree_data.append(
-            _build_composite_symbol_node(terminal_id, comp_idx, comp_sym)
-        )
+    for idx, symbol in enumerate(terminal.symbol_nodes):
+        # Check if this symbol has a composite type
+        composite_type = None
+        if composite_types is not None:
+            composite_type = composite_types.get_type(symbol.type_name)
 
-    # Add ungrouped primitive symbols
-    for idx, symbol in enumerate(ungrouped_symbols):
-        # Find the original index in terminal.symbol_nodes for checkbox binding
-        original_idx = terminal.symbol_nodes.index(symbol)
-        access = TerminalService.get_symbol_access(symbol.index_group)
-        pascal_name = to_pascal_case(symbol.name_template)
-
-        symbol_children = [
-            {
-                "id": f"{terminal_id}_ungrouped{idx}_access",
-                "label": f"Access: {access}",
-                "icon": "lock" if access == "Read-only" else "edit",
-            },
-            {
-                "id": f"{terminal_id}_ungrouped{idx}_type",
-                "label": f"Type: {symbol.type_name}",
-                "icon": "code",
-            },
-            {
-                "id": f"{terminal_id}_ungrouped{idx}_fastcs",
-                "label": f"FastCS Name: {pascal_name}",
-                "icon": "label",
-            },
-            {
-                "id": f"{terminal_id}_ungrouped{idx}_channels",
-                "label": f"Channels: {symbol.channels}",
-                "icon": "numbers",
-            },
-            {
-                "id": f"{terminal_id}_ungrouped{idx}_size",
-                "label": f"Size: {symbol.size} bytes",
-                "icon": "straighten",
-            },
-            {
-                "id": f"{terminal_id}_ungrouped{idx}_index",
-                "label": f"Index Group: 0x{symbol.index_group:04X}",
-                "icon": "tag",
-            },
-        ]
-
-        symbol_tree_data.append(
-            {
-                "id": f"{terminal_id}_ungrouped_{idx}",
-                "label": symbol.name_template,
-                "icon": "data_object",
-                "children": symbol_children,
-                "symbol_idx": original_idx,
-                "selected": symbol.selected,
-            }
-        )
+        if composite_type is not None:
+            # Build composite symbol node with member details
+            symbol_tree_data.append(
+                _build_composite_symbol_node(terminal_id, idx, symbol, composite_type)
+            )
+        else:
+            # Build primitive symbol node
+            symbol_tree_data.append(
+                _build_primitive_symbol_node(terminal_id, idx, symbol)
+            )
 
     return symbol_tree_data
 
 
+def _build_primitive_symbol_node(
+    terminal_id: str,
+    symbol_idx: int,
+    symbol: SymbolNode,
+) -> dict[str, Any]:
+    """Build a tree node for a primitive symbol.
+
+    Args:
+        terminal_id: Terminal ID for generating unique node IDs
+        symbol_idx: Index of the symbol in terminal.symbol_nodes
+        symbol: SymbolNode instance
+
+    Returns:
+        Tree node dictionary for ui.tree
+    """
+    access = TerminalService.get_symbol_access(symbol.index_group)
+    pascal_name = to_pascal_case(symbol.name_template)
+
+    symbol_children = [
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_access",
+            "label": f"Access: {access}",
+            "icon": "lock" if access == "Read-only" else "edit",
+        },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_type",
+            "label": f"Type: {symbol.type_name}",
+            "icon": "code",
+        },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_fastcs",
+            "label": f"FastCS Name: {pascal_name}",
+            "icon": "label",
+        },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_channels",
+            "label": f"Channels: {symbol.channels}",
+            "icon": "numbers",
+        },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_size",
+            "label": f"Size: {symbol.size} bytes",
+            "icon": "straighten",
+        },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_index",
+            "label": f"Index Group: 0x{symbol.index_group:04X}",
+            "icon": "tag",
+        },
+    ]
+
+    return {
+        "id": f"{terminal_id}_symbol_{symbol_idx}",
+        "label": symbol.name_template,
+        "icon": "data_object",
+        "children": symbol_children,
+        "symbol_idx": symbol_idx,
+        "selected": symbol.selected,
+    }
+
+
 def _build_composite_symbol_node(
     terminal_id: str,
-    comp_idx: int,
-    comp_sym: CompositeSymbol,
+    symbol_idx: int,
+    symbol: SymbolNode,
+    composite_type,
 ) -> dict[str, Any]:
     """Build a tree node for a composite symbol.
 
     Args:
         terminal_id: Terminal ID for generating unique node IDs
-        comp_idx: Index of the composite symbol
-        comp_sym: CompositeSymbol instance
+        symbol_idx: Index of the symbol in terminal.symbol_nodes
+        symbol: SymbolNode instance with composite type_name
+        composite_type: CompositeType definition from composite_types.yaml
 
     Returns:
         Tree node dictionary for ui.tree
     """
+    from catio_terminals.models import CompositeType
+
+    # Handle case where composite_type is None
+    if not isinstance(composite_type, CompositeType):
+        return _build_primitive_symbol_node(terminal_id, symbol_idx, symbol)
+
     # Build member children
     member_children: list[dict[str, Any]] = []
-    for member_idx, member in enumerate(comp_sym.composite_type.members):
+    for member_idx, member in enumerate(composite_type.members):
         member_access = "Read-only" if member.access == "read-only" else "Read/Write"
         member_children.append(
             {
-                "id": f"{terminal_id}_comp{comp_idx}_member{member_idx}",
+                "id": f"{terminal_id}_sym{symbol_idx}_member{member_idx}",
                 "label": f"{member.name} ({member.type_name})",
                 "icon": "lock" if member.access == "read-only" else "edit",
                 "children": [
                     {
-                        "id": f"{terminal_id}_comp{comp_idx}_m{member_idx}_offset",
+                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_offset",
                         "label": f"Offset: {member.offset} bytes",
                         "icon": "straighten",
                     },
                     {
-                        "id": f"{terminal_id}_comp{comp_idx}_m{member_idx}_size",
+                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_size",
                         "label": f"Size: {member.size} bytes",
                         "icon": "straighten",
                     },
                     {
-                        "id": f"{terminal_id}_comp{comp_idx}_m{member_idx}_access",
+                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_access",
                         "label": f"Access: {member_access}",
                         "icon": "lock" if member.access == "read-only" else "edit",
                     },
                     {
-                        "id": f"{terminal_id}_comp{comp_idx}_m{member_idx}_fastcs",
+                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_fastcs",
                         "label": f"FastCS Attr: {member.fastcs_attr}",
                         "icon": "label",
                     },
@@ -224,73 +253,58 @@ def _build_composite_symbol_node(
             }
         )
 
-    # Build grouped primitives children
-    primitives_children: list[dict[str, Any]] = []
-    for prim_idx, prim in enumerate(comp_sym.primitive_symbols):
-        primitives_children.append(
-            {
-                "id": f"{terminal_id}_comp{comp_idx}_prim{prim_idx}",
-                "label": f"{prim.name_template} ({prim.type_name})",
-                "icon": "data_object",
-            }
-        )
+    access = symbol.access or TerminalService.get_symbol_access(symbol.index_group)
+    fastcs_name = symbol.fastcs_name or to_pascal_case(symbol.name_template)
 
     # Build composite type properties
     type_info_children: list[dict[str, Any]] = [
         {
-            "id": f"{terminal_id}_comp{comp_idx}_type",
-            "label": f"Type: {comp_sym.type_name}",
+            "id": f"{terminal_id}_sym{symbol_idx}_type",
+            "label": f"Type: {symbol.type_name}",
             "icon": "category",
         },
         {
-            "id": f"{terminal_id}_comp{comp_idx}_size",
-            "label": f"Total Size: {comp_sym.composite_type.size} bytes",
+            "id": f"{terminal_id}_sym{symbol_idx}_size",
+            "label": f"Total Size: {composite_type.size} bytes",
             "icon": "straighten",
         },
         {
-            "id": f"{terminal_id}_comp{comp_idx}_access",
-            "label": f"Access: {comp_sym.access}",
-            "icon": "lock" if comp_sym.access == "Read-only" else "edit",
+            "id": f"{terminal_id}_sym{symbol_idx}_access",
+            "label": f"Access: {access}",
+            "icon": "lock" if access == "Read-only" else "edit",
         },
         {
-            "id": f"{terminal_id}_comp{comp_idx}_fastcs",
-            "label": f"FastCS Name: {comp_sym.fastcs_name}",
+            "id": f"{terminal_id}_sym{symbol_idx}_fastcs",
+            "label": f"FastCS Name: {fastcs_name}",
             "icon": "label",
         },
         {
-            "id": f"{terminal_id}_comp{comp_idx}_channels",
-            "label": f"Channels: {comp_sym.channels}",
+            "id": f"{terminal_id}_sym{symbol_idx}_channels",
+            "label": f"Channels: {symbol.channels}",
             "icon": "numbers",
         },
         {
-            "id": f"{terminal_id}_comp{comp_idx}_index",
-            "label": f"Index Group: 0x{comp_sym.index_group:04X}",
+            "id": f"{terminal_id}_sym{symbol_idx}_index",
+            "label": f"Index Group: 0x{symbol.index_group:04X}",
             "icon": "tag",
         },
     ]
 
-    # Create container nodes
+    # Create container node for members
     members_node = {
-        "id": f"{terminal_id}_comp{comp_idx}_members",
-        "label": f"Members ({len(comp_sym.composite_type.members)})",
+        "id": f"{terminal_id}_sym{symbol_idx}_members",
+        "label": f"Members ({len(composite_type.members)})",
         "icon": "list",
         "children": member_children,
     }
 
-    primitives_node = {
-        "id": f"{terminal_id}_comp{comp_idx}_primitives",
-        "label": f"Grouped Primitives ({len(comp_sym.primitive_symbols)})",
-        "icon": "folder",
-        "children": primitives_children,
-    }
-
     return {
-        "id": f"{terminal_id}_composite_{comp_idx}",
-        "label": f"{comp_sym.name_template} (Composite)",
+        "id": f"{terminal_id}_symbol_{symbol_idx}",
+        "label": f"{symbol.name_template} (Composite)",
         "icon": "view_module",
-        "children": type_info_children + [members_node, primitives_node],
-        "composite_idx": comp_idx,
-        "selected": comp_sym.selected,
+        "children": type_info_children + [members_node],
+        "symbol_idx": symbol_idx,
+        "selected": symbol.selected,
     }
 
 
@@ -372,49 +386,29 @@ def show_terminal_details(
 
     ui.separator().classes("my-4")
 
-    # Get merged view data - composites + ungrouped primitives
-    composite_symbols, ungrouped_symbols = get_composite_view_data(
-        terminal, app.composite_types
-    )
-    total_symbols = len(composite_symbols) + len(ungrouped_symbols)
-
     # Symbols section with Select All button
+    total_symbols = len(terminal.symbol_nodes)
+
     with ui.row().classes("items-center w-full justify-between mb-2"):
         ui.label(f"Symbols ({total_symbols})").classes("text-h6")
 
         with ui.row().classes("gap-2"):
 
             def toggle_all_symbols():
-                # Toggle all composite symbols
-                all_comp_selected = all(c.selected for c in composite_symbols)
-                all_ungrouped_selected = all(s.selected for s in ungrouped_symbols)
-                all_selected = all_comp_selected and all_ungrouped_selected
+                all_selected = all(s.selected for s in terminal.symbol_nodes)
                 new_value = not all_selected
 
-                # Update composite symbols and their primitives
-                for comp in composite_symbols:
-                    comp.selected = new_value
-                    for prim in comp.primitive_symbols:
-                        prim.selected = new_value
-
-                # Update ungrouped symbols
-                for symbol in ungrouped_symbols:
+                for symbol in terminal.symbol_nodes:
                     symbol.selected = new_value
 
                 _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
 
             # Determine button label based on current state
-            all_comp_selected = (
-                all(c.selected for c in composite_symbols)
-                if composite_symbols
+            all_symbols_selected = (
+                all(s.selected for s in terminal.symbol_nodes)
+                if terminal.symbol_nodes
                 else True
             )
-            all_ungrouped_selected = (
-                all(s.selected for s in ungrouped_symbols)
-                if ungrouped_symbols
-                else True
-            )
-            all_symbols_selected = all_comp_selected and all_ungrouped_selected
             symbol_btn_label = "Deselect All" if all_symbols_selected else "Select All"
             ui.button(
                 symbol_btn_label,
@@ -422,9 +416,9 @@ def show_terminal_details(
                 on_click=toggle_all_symbols,
             ).props("flat dense")
 
-    # Build merged symbol tree data
+    # Build symbol tree data (handles both composite and primitive symbols)
     symbol_tree_data = _build_merged_symbol_tree_data(
-        terminal_id, terminal, composite_symbols, ungrouped_symbols
+        terminal_id, terminal, app.composite_types
     )
 
     if symbol_tree_data:
@@ -439,8 +433,11 @@ def show_terminal_details(
                 .props("selected-color=blue-7")
             )
 
-            def make_primitive_toggle_handler(symbol_idx: int):
-                """Handler for toggling a primitive symbol."""
+            def make_symbol_toggle_handler(symbol_idx: int):
+                """Handler for toggling a symbol.
+
+                Works for both primitives and composites.
+                """
 
                 def toggle(e):
                     new_value = (
@@ -455,46 +452,20 @@ def show_terminal_details(
 
                 return toggle
 
-            def make_composite_toggle_handler(comp_idx: int):
-                """Handler for toggling a composite symbol."""
-
-                def toggle(e):
-                    new_value = (
-                        e.args
-                        if isinstance(e.args, bool)
-                        else e.args[0]
-                        if e.args
-                        else False
-                    )
-                    # Update the composite symbol
-                    composite_symbols[comp_idx].selected = new_value
-                    # Also update all its primitive symbols
-                    for prim in composite_symbols[comp_idx].primitive_symbols:
-                        prim.selected = new_value
-                    _mark_changed(app, lambda: None)
-
-                return toggle
-
             # Add custom slot to include checkbox for selectable items
             tree.add_slot(
                 "default-header",
                 r"""
                 <div class="row items-center">
                     <q-checkbox
-                        v-if="props.node.symbol_idx !== undefined
-                            || props.node.composite_idx !== undefined"
+                        v-if="props.node.symbol_idx !== undefined"
                         :model-value="props.node.selected"
                         @click.stop="() => {}"
                         @update:model-value="(val) => {
                             props.node.selected = val;
-                            const idx = props.node.composite_idx;
-                            if (idx !== undefined) {
-                                $parent.$emit('toggle-composite-' + idx, val);
-                            } else {
-                                $parent.$emit(
-                                    'toggle-symbol-' + props.node.symbol_idx, val
-                                );
-                            }
+                            $parent.$emit(
+                                'toggle-symbol-' + props.node.symbol_idx, val
+                            );
                         }"
                         dense
                         class="q-mr-xs"
@@ -509,16 +480,11 @@ def show_terminal_details(
                 """,
             )
 
-            # Connect event handlers for symbols
+            # Connect event handlers for all symbols
             for node in symbol_tree_data:
-                if "composite_idx" in node:
-                    idx = node["composite_idx"]
-                    tree.on(
-                        f"toggle-composite-{idx}", make_composite_toggle_handler(idx)
-                    )
-                elif "symbol_idx" in node:
+                if "symbol_idx" in node:
                     idx = node["symbol_idx"]
-                    tree.on(f"toggle-symbol-{idx}", make_primitive_toggle_handler(idx))
+                    tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
 
     # Display Runtime Symbols section
     _show_runtime_symbols(app, terminal_id, terminal)

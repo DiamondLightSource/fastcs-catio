@@ -5,7 +5,8 @@ import logging
 from pathlib import Path
 
 from catio_terminals.beckhoff import BeckhoffClient
-from catio_terminals.models import TerminalConfig
+from catio_terminals.composite_symbols import convert_primitives_to_composites
+from catio_terminals.models import CompositeTypesConfig, TerminalConfig
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,9 @@ class FileService:
 
     @staticmethod
     async def merge_xml_data(
-        config: TerminalConfig, beckhoff_client: BeckhoffClient
+        config: TerminalConfig,
+        beckhoff_client: BeckhoffClient,
+        composite_types: CompositeTypesConfig | None = None,
     ) -> None:
         """Merge XML data with YAML config to show all available symbols/CoE.
 
@@ -39,9 +42,13 @@ class FileService:
         all symbols and CoE objects, marking those in YAML as selected=True
         and those only in XML as selected=False.
 
+        The merge process converts XML primitives to composites before merging,
+        so both YAML and XML symbols use the same composite type names.
+
         Args:
             config: Configuration to enhance with XML data
             beckhoff_client: Beckhoff client for fetching XML
+            composite_types: Composite types configuration for grouping primitives
         """
         logger.info("Merging XML data with YAML configuration")
 
@@ -63,6 +70,11 @@ class FileService:
                 # Yield control after parsing
                 await asyncio.sleep(0)
 
+                # Convert XML primitives to composites (same as YAML format)
+                xml_symbols = convert_primitives_to_composites(
+                    xml_terminal, composite_types
+                )
+
                 # Merge symbols: Create lookup of YAML symbols by name template
                 yaml_symbol_map = {
                     sym.name_template: sym for sym in terminal.symbol_nodes
@@ -72,8 +84,8 @@ class FileService:
                 merged_symbols = []
                 xml_symbol_map = {}
 
-                # Add all XML symbols
-                for xml_sym in xml_terminal.symbol_nodes:
+                # Add all XML symbols (now in composite format)
+                for xml_sym in xml_symbols:
                     xml_symbol_map[xml_sym.name_template] = xml_sym
                     if xml_sym.name_template in yaml_symbol_map:
                         # Symbol exists in YAML - use YAML version with selected=True

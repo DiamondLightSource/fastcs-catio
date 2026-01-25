@@ -237,7 +237,9 @@ async def _open_file(
 
         # Merge XML data to show all available symbols/CoE objects
         ui.notify("Loading XML data...", type="info")
-        await FileService.merge_xml_data(app.config, app.beckhoff_client)
+        await FileService.merge_xml_data(
+            app.config, app.beckhoff_client, app.composite_types
+        )
 
         if dialog is not None:
             dialog.close()
@@ -553,7 +555,7 @@ async def _add_terminal_from_beckhoff(
 
     # Use TerminalService to handle the logic
     await TerminalService.add_terminal_from_beckhoff(
-        app.config, terminal_info, app.beckhoff_client
+        app.config, terminal_info, app.beckhoff_client, app.composite_types
     )
 
     app.has_unsaved_changes = True

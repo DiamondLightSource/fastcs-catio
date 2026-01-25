@@ -4,7 +4,12 @@ import asyncio
 import logging
 
 from catio_terminals.beckhoff import BeckhoffClient, BeckhoffTerminalInfo
-from catio_terminals.models import TerminalConfig, TerminalType
+from catio_terminals.composite_symbols import convert_primitives_to_composites
+from catio_terminals.models import (
+    CompositeTypesConfig,
+    TerminalConfig,
+    TerminalType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +72,7 @@ class TerminalService:
         config: TerminalConfig,
         terminal_info: BeckhoffTerminalInfo,
         beckhoff_client: BeckhoffClient,
+        composite_types: CompositeTypesConfig | None = None,
     ) -> TerminalType:
         """Add terminal from Beckhoff information.
 
@@ -74,6 +80,7 @@ class TerminalService:
             config: Configuration to add terminal to
             terminal_info: BeckhoffTerminalInfo instance
             beckhoff_client: Beckhoff client for fetching XML
+            composite_types: Composite types configuration for grouping primitives
 
         Returns:
             The added TerminalType
@@ -103,6 +110,11 @@ class TerminalService:
                 terminal_info.description,
                 terminal_info.group_type,
             )
+
+        # Convert primitive symbols to composite symbols at load time
+        terminal.symbol_nodes = convert_primitives_to_composites(
+            terminal, composite_types
+        )
 
         config.add_terminal(terminal_info.terminal_id, terminal)
         return terminal
