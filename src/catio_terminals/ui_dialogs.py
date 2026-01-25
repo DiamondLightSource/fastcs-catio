@@ -347,6 +347,49 @@ async def show_delete_terminal_dialog(
         ui.notify(f"Deleted terminal: {terminal_id}", type="info")
 
 
+async def show_delete_all_terminals_dialog(app: "TerminalEditorApp") -> None:
+    """Show delete all terminals confirmation dialog.
+
+    Args:
+        app: Terminal editor application instance
+    """
+    if not app.config or not app.config.terminal_types:
+        ui.notify("No terminals to delete", type="warning")
+        return
+
+    terminal_count = len(app.config.terminal_types)
+
+    with ui.dialog() as dialog, ui.card():
+        ui.label("Delete All Terminals?").classes("text-h6")
+        ui.label(
+            f"This will delete all {terminal_count} terminals. "
+            "This action cannot be undone."
+        ).classes("text-caption")
+
+        result = {"confirm": False}
+
+        def confirm_delete():
+            result["confirm"] = True
+            dialog.close()
+
+        def cancel_delete():
+            result["confirm"] = False
+            dialog.close()
+
+        with ui.row().classes("w-full justify-end gap-2"):
+            ui.button("Cancel", on_click=cancel_delete).props("flat")
+            ui.button("Delete All", on_click=confirm_delete).props("color=negative")
+
+    await dialog
+
+    if result["confirm"]:
+        app.config.terminal_types.clear()
+        app.selected_terminal_id = None
+        app.has_unsaved_changes = True
+        await app.build_editor_ui()
+        ui.notify(f"Deleted {terminal_count} terminals", type="info")
+
+
 async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
     """Show dialog to add a new terminal.
 

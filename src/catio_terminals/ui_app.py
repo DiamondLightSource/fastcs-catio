@@ -280,7 +280,54 @@ def run(file_path: Path | None = None) -> None:
             ):
                 with splitter.before:
                     with ui.card().classes("w-full h-full flex flex-col"):
-                        ui.label("Terminal Types").classes("text-h6 mb-2")
+                        # Header with count
+                        terminal_count = (
+                            len(editor.config.terminal_types) if editor.config else 0
+                        )
+                        with ui.row().classes(
+                            "w-full items-center justify-between mb-2"
+                        ):
+                            ui.label(f"Terminal Types ({terminal_count})").classes(
+                                "text-h6"
+                            )
+
+                            async def delete_all():
+                                await ui_dialogs.show_delete_all_terminals_dialog(
+                                    editor
+                                )
+
+                            ui.button(
+                                icon="delete_sweep",
+                                on_click=delete_all,
+                            ).props("flat dense color=negative").tooltip(
+                                "Delete All Terminals"
+                            )
+
+                        # Search filter
+                        search_input = (
+                            ui.input(
+                                placeholder="Filter terminals...",
+                            )
+                            .classes("w-full mb-2")
+                            .props("dense clearable")
+                        )
+
+                        def filter_tree(e):
+                            search_term = e.args.lower() if e.args else ""
+                            if editor.tree_widget and editor.tree_data:
+                                if search_term:
+                                    filtered = [
+                                        node
+                                        for node in editor.tree_data.values()
+                                        if search_term in node["label"].lower()
+                                    ]
+                                else:
+                                    filtered = list(editor.tree_data.values())
+                                editor.tree_widget._props["nodes"] = filtered
+                                editor.tree_widget.update()
+
+                        search_input.on("update:model-value", filter_tree)
+
                         editor.tree_container = (
                             ui.column()
                             .classes("w-full overflow-y-auto pr-2 pb-4")
