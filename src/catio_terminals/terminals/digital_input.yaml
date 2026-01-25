@@ -28,12 +28,12 @@ terminal_types:
       product_code: 66072658
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Input {channel}
+      - name_template: Inputs Channel {channel}
         index_group: 61472
-        type_name: BOOL
+        type_name: Inputs_TYPE
         channels: 8
         access: Read-only
-        fastcs_name: Input{channel}
+        fastcs_name: InputsChannel
     coe_objects: []
     group_type: DigIn
   EL1018:
@@ -43,12 +43,12 @@ terminal_types:
       product_code: 66728018
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Input {channel}
+      - name_template: Inputs Channel {channel}
         index_group: 61472
-        type_name: BOOL
+        type_name: Inputs_TYPE
         channels: 8
         access: Read-only
-        fastcs_name: Input{channel}
+        fastcs_name: InputsChannel
     coe_objects: []
     group_type: DigIn
   EL1084:
@@ -58,12 +58,12 @@ terminal_types:
       product_code: 71053394
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Input {channel}
+      - name_template: Inputs Channel {channel}
         index_group: 61472
-        type_name: BOOL
+        type_name: Inputs_TYPE
         channels: 4
         access: Read-only
-        fastcs_name: Input{channel}
+        fastcs_name: InputsChannel
     coe_objects: []
     group_type: DigIn
   EL1809:
@@ -73,12 +73,12 @@ terminal_types:
       product_code: 118566994
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Input {channel}
+      - name_template: Inputs Channel {channel}
         index_group: 61472
-        type_name: BOOL
+        type_name: Inputs_TYPE
         channels: 16
         access: Read-only
-        fastcs_name: Input{channel}
+        fastcs_name: InputsChannel
     coe_objects: []
     group_type: DigIn
   EL1124:
@@ -88,11 +88,11 @@ terminal_types:
       product_code: 73674834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Input {channel}
+      - name_template: Inputs Channel {channel}
         index_group: 61472
-        type_name: BOOL
+        type_name: Inputs_TYPE
         channels: 4
         access: Read-only
-        fastcs_name: Input{channel}
+        fastcs_name: InputsChannel
     coe_objects: []
     group_type: DigIn
