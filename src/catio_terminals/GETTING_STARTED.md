@@ -9,7 +9,11 @@
 
 2. **Launch the application:**
    ```bash
+   # Open GUI without a file
    catio-terminals
+
+   # Or open GUI with a specific file
+   catio-terminals edit path/to/terminals.yaml
    ```
 
    Or:

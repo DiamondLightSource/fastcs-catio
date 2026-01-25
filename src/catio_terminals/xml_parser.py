@@ -200,6 +200,9 @@ def parse_terminal_catalog(
                     desc_text = name
                     if desc_text.startswith(terminal_id):
                         desc_text = desc_text[len(terminal_id) :].strip()
+                        # Remove leading pipe separator if present
+                        if desc_text.startswith("|"):
+                            desc_text = desc_text[1:].strip()
                     description = desc_text if desc_text else name
                 else:
                     name_elems = device.xpath(".//Name")
@@ -550,6 +553,9 @@ def parse_terminal_details(
                 desc_text = name_elem.text.strip()
                 if desc_text.startswith(terminal_id):
                     desc_text = desc_text[len(terminal_id) :].strip()
+                    # Remove leading pipe separator if present
+                    if desc_text.startswith("|"):
+                        desc_text = desc_text[1:].strip()
                 description = desc_text if desc_text else name_elem.text
                 break
             elif name_elem.text:

@@ -34,7 +34,11 @@ uv pip install nicegui pydantic pyyaml httpx
 Launch the terminal editor:
 
 ```bash
-catio-terminals
+# Open GUI without a file (choose Open or Create New at startup)
+catio-terminals edit
+
+# Open GUI with a specific file
+catio-terminals edit path/to/terminals.yaml
 ```
 
 Or run as a Python module:

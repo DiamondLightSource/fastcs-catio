@@ -182,7 +182,7 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
   - `Beckhoff EL31xx.xml` contains EL3104, EL3124, etc.
   - `Beckhoff EL32xx.xml` contains EL3202, EL3204, etc.
   - Cached at `~/.cache/catio_terminals/beckhoff_xml/`
-  - Use `catio-terminals --update-cache` to download/refresh
+  - Use `catio-terminals update-cache` to download/refresh
 
 - **Composite Types**: TwinCAT BIGTYPE structures (ads_type=65) that group primitive fields:
   - Defined in `src/catio_terminals/config/composite_types.yaml`
@@ -190,7 +190,7 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
   - Used by simulator for accurate symbol table responses
   - Used by FastCS generator to create controller attributes
 
-- **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals --update-cache` to fetch Beckhoff XML definitions, then edit files with the GUI.
+- **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals update-cache` to fetch Beckhoff XML definitions, then use `catio-terminals edit [filename]` to edit files with the GUI.
 
 ## Agent Skills
 

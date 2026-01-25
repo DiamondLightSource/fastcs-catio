@@ -246,7 +246,7 @@ uv pip install -e ".[terminals]"
 ### Update XML Cache
 
 ```bash
-catio-terminals --update-cache
+catio-terminals update-cache
 ```
 
 Downloads Beckhoff's ESI XML files to `~/.cache/catio_terminals/`.

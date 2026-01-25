@@ -33,10 +33,13 @@ Use the `catio-terminals` GUI editor:
 
 ```bash
 # Update XML cache first
-catio-terminals --update-cache
+catio-terminals update-cache
 
-# Launch editor
-catio-terminals path/to/terminals.yaml
+# Launch editor with a file
+catio-terminals edit path/to/terminals.yaml
+
+# Or launch without a file and use Open/Create New
+catio-terminals
 ```
 
 ---

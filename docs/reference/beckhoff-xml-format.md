@@ -24,7 +24,7 @@ The `catio-terminals` tool caches downloaded XML files at:
 ~/.cache/catio_terminals/beckhoff_xml/
 ```
 
-Use `catio-terminals --update-cache` to download or refresh the cache.
+Use `catio-terminals update-cache` to download or refresh the cache.
 
 ## XML Schema Overview
 
