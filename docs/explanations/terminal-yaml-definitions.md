@@ -112,7 +112,7 @@ The `size` and `ads_type` fields are computed from `type_name`:
 # You write:
 - name_template: "Value {channel}"
   type_name: INT
-  
+
 # The system computes:
 #   size: 2 (bytes)
 #   ads_type: 2 (ADS type code for INT)
@@ -130,7 +130,7 @@ Beckhoff's ESI XML defines PDO entries as individual primitives, but TwinCAT gro
 
 **XML defines:**
 - `Status__Underrange` (BOOL)
-- `Status__Overrange` (BOOL)  
+- `Status__Overrange` (BOOL)
 - `Value` (INT)
 
 **TwinCAT groups as:**

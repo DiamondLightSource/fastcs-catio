@@ -16,7 +16,7 @@ It also describes some domain specific knowledge about EtherCat and some of the 
 
 I found it useful to get the agent to write a document for the feature first and then implement around that.
 
-e.g. when discussing composite types
+e.g. when implementing Beckhoff ADS Composite Types
 
 1. how does the EtherCat Master generate composite types from the set of primitive types each terminal provides?
 1. document the details you have just described in the reference section
@@ -49,7 +49,7 @@ I asked Opus to take a look at the file and suggest a refactor. The results were
 
 ## Just Ask
 
-Whatever question you can think of its likely to have an OK answer. Whenever you are struggling, just ask the agent.
+Whatever question you can think of Claude is likely to have an OK answer. Whenever you are struggling, just ask the agent.
 
 e.g.:
 
