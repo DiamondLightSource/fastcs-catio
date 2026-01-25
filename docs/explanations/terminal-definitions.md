@@ -24,6 +24,8 @@ uv pip install -e ".[terminals]"
 Before generating terminal definitions, update the local XML cache from Beckhoff's servers:
 
 ```bash
+# this command is also available in the terminal editor GUI
+# you would only need to run it if the ~/.cache/catio_terminals/ is outdated
 catio-terminals --update-cache
 ```
 
@@ -149,9 +151,20 @@ When introspecting real hardware via ADS, you may see additional symbols that do
 
 The `WcState^WcState` and similar symbols come from the **ADS runtime symbol table** when you query actual hardware. These are **EtherCAT Working Counter** status bits that the TwinCAT/ADS runtime adds dynamically to indicate whether each terminal is responding correctly on the EtherCAT bus.
 
-- **WcState** = "Working Counter State" - an EtherCAT diagnostic value indicating if a terminal is communicating properly
-- **InputToggle** - indicates data updates on the EtherCAT cycle
-- These symbols have type `BIT` and are common to all terminals on the bus
+### Known Runtime Symbols
+
+TwinCAT adds these standardized diagnostic symbols to every terminal:
+
+| Symbol | Type | Size | Description |
+|--------|------|------|-------------|
+| `WcState^WcState` | BIT | 1 bit | Working Counter State - indicates if terminal is communicating properly on the EtherCAT bus |
+| `InfoData^State` | UINT16 | 2 bytes | Device state information (EtherCAT state machine) |
+| `InputToggle` | BIT | 1 bit | Toggles on each EtherCAT cycle to indicate data freshness |
+
+These symbols are:
+- **Standardized** - the same for all terminal types
+- **Generated at runtime** - not defined in ESI XML files
+- **Diagnostic in nature** - used for monitoring bus health, not process data
 
 ### Why aren't they in the XML?
 
@@ -159,24 +172,38 @@ Runtime symbols are **not** in the Beckhoff XML terminal description files becau
 
 1. The XML files describe the **static hardware capabilities** of each terminal type (PDO mappings, CoE objects)
 2. The WcState symbols are **runtime diagnostics** added by the EtherCAT master when it configures the bus
-3. Every terminal gets a WcState automatically at runtime - it's not terminal-specific
+3. Every terminal gets these symbols automatically at runtime - they're not terminal-specific
+
+### Data Sources
+
+| Source | Availability | Contains |
+|--------|--------------|----------|
+| XML (ESI files) | Downloadable from Beckhoff, scrapable | Static terminal capabilities, PDO mappings |
+| ADS Runtime Symbols | Hard-coded (documented in Beckhoff InfoSys) | Dynamic diagnostics from EtherCAT master |
+
+The runtime symbols are documented in Beckhoff InfoSys but the content uses heavy JavaScript rendering that makes it difficult to scrape programmatically. The relevant documentation pages are:
+
+- [TwinCAT I/O Variables](https://infosys.beckhoff.com/content/1033/tc3_io_intro/1257993099.html)
+- [EtherCAT Diagnosis](https://infosys.beckhoff.com/content/1033/ethercatsystem/2469122443.html)
+
+Since these symbols are standardized and stable, catio-terminals includes them as a hard-coded set that can be optionally added to terminal definitions.
 
 ### Key Differences
 
 | Source | Contains | Examples |
 |--------|----------|----------|
 | XML (ESI files) | Static terminal capabilities, PDO mappings | `Value {channel}`, `Status__Error {channel}` |
-| ADS Runtime | Dynamic diagnostics from EtherCAT master | `WcState^WcState`, `InputToggle` |
+| ADS Runtime | Dynamic diagnostics from EtherCAT master | `WcState^WcState`, `InputToggle`, `InfoData^State` |
 
 ### Handling in catio-terminals
 
-The catio-terminals editor only includes symbols from the XML definitions. When merging YAML files with XML data:
+The catio-terminals editor separates XML-defined symbols from runtime symbols:
 
-- Symbols defined in XML are shown and can be selected
-- Symbols in YAML that don't exist in XML (like `WcState^WcState`) are **dropped with a warning**
-- This ensures YAML files stay consistent with Beckhoff's official terminal definitions
+- **XML symbols**: Shown in the terminal editor, derived from Beckhoff ESI files
+- **Runtime symbols**: Available as an optional set that can be added to any terminal
+- When merging YAML files with XML data, symbols not in XML are dropped with a warning
 
-If you need WcState diagnostics in your application, handle them separately at the EtherCAT master level rather than per-terminal in the YAML files. The symbol expansion logic in `src/fastcs_catio/symbols.py` handles runtime symbol types when reading from actual hardware.
+The symbol expansion logic in `src/fastcs_catio/symbols.py` handles runtime symbol types when reading from actual hardware.
 
 ## Adding New Terminal Types
 
