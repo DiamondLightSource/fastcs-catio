@@ -10,6 +10,7 @@ explanations/fastcs-epics-ioc.md
 explanations/ads-client.md
 explanations/api-decoupling.md
 explanations/terminal-definitions.md
+explanations/composite-types.md
 
 explanations/*
 ```

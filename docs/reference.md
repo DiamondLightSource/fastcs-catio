@@ -7,6 +7,7 @@ Technical reference material including APIs and release notes.
 :glob:
 
 API <_api/fastcs_catio>
+reference/beckhoff-xml-format
 genindex
 Release Notes <https://github.com/DiamondLightSource/fastcs-catio/releases>
 ```

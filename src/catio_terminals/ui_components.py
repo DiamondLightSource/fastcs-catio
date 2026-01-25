@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
-from catio_terminals.models import TerminalType
+from catio_terminals.models import CompositeTypesConfig, TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
 from catio_terminals.utils import to_pascal_case
@@ -93,6 +93,179 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
             app.tree_widget.props(f"selected={terminal_to_select}")
             # Trigger the selection to show details (deferred to let UI initialize)
             ui.timer(0.01, lambda: _on_tree_select(app, terminal_to_select), once=True)
+
+
+def _build_symbol_tree_data(
+    terminal_id: str,
+    terminal: TerminalType,
+    composite_types: CompositeTypesConfig | None,
+) -> list[dict[str, Any]]:
+    """Build symbol tree data with composite type grouping.
+
+    If a symbol's type_name matches a composite type, group its members
+    under the composite type node. Otherwise, display as a flat symbol.
+
+    Args:
+        terminal_id: Terminal ID for generating unique node IDs
+        terminal: Terminal instance containing symbol_nodes
+        composite_types: Composite types configuration (or None)
+
+    Returns:
+        List of tree node dictionaries for ui.tree
+    """
+    symbol_tree_data: list[dict[str, Any]] = []
+
+    for idx, symbol in enumerate(terminal.symbol_nodes):
+        # Check if this symbol has a composite type
+        composite_type = None
+        if composite_types:
+            composite_type = composite_types.get_type(symbol.type_name)
+
+        if composite_type:
+            # Build composite type node with members as children
+            member_children: list[dict[str, Any]] = []
+            for member_idx, member in enumerate(composite_type.members):
+                member_access = (
+                    "Read-only" if member.access == "read-only" else "Read/Write"
+                )
+                member_children.append(
+                    {
+                        "id": f"{terminal_id}_sym{idx}_member{member_idx}",
+                        "label": f"{member.name} ({member.type_name})",
+                        "icon": "lock" if member.access == "read-only" else "edit",
+                        "children": [
+                            {
+                                "id": f"{terminal_id}_sym{idx}_m{member_idx}_offset",
+                                "label": f"Offset: {member.offset} bytes",
+                                "icon": "straighten",
+                            },
+                            {
+                                "id": f"{terminal_id}_sym{idx}_m{member_idx}_size",
+                                "label": f"Size: {member.size} bytes",
+                                "icon": "straighten",
+                            },
+                            {
+                                "id": f"{terminal_id}_sym{idx}_m{member_idx}_access",
+                                "label": f"Access: {member_access}",
+                                "icon": (
+                                    "lock" if member.access == "read-only" else "edit"
+                                ),
+                            },
+                            {
+                                "id": f"{terminal_id}_sym{idx}_m{member_idx}_fastcs",
+                                "label": f"FastCS Attr: {member.fastcs_attr}",
+                                "icon": "label",
+                            },
+                        ],
+                    }
+                )
+
+            # Build composite type properties
+            access = TerminalService.get_symbol_access(symbol.index_group)
+            pascal_name = to_pascal_case(symbol.name_template)
+
+            # Type info and properties as first children
+            type_info_children: list[dict[str, Any]] = [
+                {
+                    "id": f"{terminal_id}_sym{idx}_type",
+                    "label": f"Type: {symbol.type_name}",
+                    "icon": "category",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_size",
+                    "label": f"Total Size: {composite_type.size} bytes",
+                    "icon": "straighten",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_access",
+                    "label": f"Access: {access}",
+                    "icon": "lock" if access == "Read-only" else "edit",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_fastcs",
+                    "label": f"FastCS Name: {pascal_name}",
+                    "icon": "label",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_channels",
+                    "label": f"Channels: {symbol.channels}",
+                    "icon": "numbers",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_index",
+                    "label": f"Index Group: 0x{symbol.index_group:04X}",
+                    "icon": "tag",
+                },
+            ]
+
+            # Create a members container node
+            members_node = {
+                "id": f"{terminal_id}_sym{idx}_members",
+                "label": f"Members ({len(composite_type.members)})",
+                "icon": "list",
+                "children": member_children,
+            }
+
+            symbol_tree_data.append(
+                {
+                    "id": f"{terminal_id}_symbol_{idx}",
+                    "label": f"{symbol.name_template} (Composite)",
+                    "icon": "view_module",  # Different icon for composite
+                    "children": type_info_children + [members_node],
+                    "symbol_idx": idx,
+                    "selected": symbol.selected,
+                }
+            )
+        else:
+            # Build flat symbol node (non-composite)
+            access = TerminalService.get_symbol_access(symbol.index_group)
+            pascal_name = to_pascal_case(symbol.name_template)
+
+            symbol_children = [
+                {
+                    "id": f"{terminal_id}_sym{idx}_access",
+                    "label": f"Access: {access}",
+                    "icon": "lock" if access == "Read-only" else "edit",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_type",
+                    "label": f"Type: {symbol.type_name}",
+                    "icon": "code",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_fastcs",
+                    "label": f"FastCS Name: {pascal_name}",
+                    "icon": "label",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_channels",
+                    "label": f"Channels: {symbol.channels}",
+                    "icon": "numbers",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_size",
+                    "label": f"Size: {symbol.size} bytes",
+                    "icon": "straighten",
+                },
+                {
+                    "id": f"{terminal_id}_sym{idx}_index",
+                    "label": f"Index Group: 0x{symbol.index_group:04X}",
+                    "icon": "tag",
+                },
+            ]
+
+            symbol_tree_data.append(
+                {
+                    "id": f"{terminal_id}_symbol_{idx}",
+                    "label": symbol.name_template,
+                    "icon": "data_object",
+                    "children": symbol_children,
+                    "symbol_idx": idx,
+                    "selected": symbol.selected,
+                }
+            )
+
+    return symbol_tree_data
 
 
 def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
@@ -193,59 +366,10 @@ def show_terminal_details(
             on_click=toggle_all_symbols,
         ).props("flat dense")
 
-    # Build symbol tree data with checkboxes
-    symbol_tree_data = []
-    for idx, symbol in enumerate(terminal.symbol_nodes):
-        # Determine access type
-        access = TerminalService.get_symbol_access(symbol.index_group)
-
-        # Convert to PascalCase for FastCS
-        pascal_name = to_pascal_case(symbol.name_template)
-
-        # Build symbol properties as children
-        symbol_children = [
-            {
-                "id": f"{terminal_id}_sym{idx}_access",
-                "label": f"Access: {access}",
-                "icon": "lock" if access == "Read-only" else "edit",
-            },
-            {
-                "id": f"{terminal_id}_sym{idx}_type",
-                "label": f"Type: {symbol.type_name}",
-                "icon": "code",
-            },
-            {
-                "id": f"{terminal_id}_sym{idx}_fastcs",
-                "label": f"FastCS Name: {pascal_name}",
-                "icon": "label",
-            },
-            {
-                "id": f"{terminal_id}_sym{idx}_channels",
-                "label": f"Channels: {symbol.channels}",
-                "icon": "numbers",
-            },
-            {
-                "id": f"{terminal_id}_sym{idx}_size",
-                "label": f"Size: {symbol.size} bytes",
-                "icon": "straighten",
-            },
-            {
-                "id": f"{terminal_id}_sym{idx}_index",
-                "label": f"Index Group: 0x{symbol.index_group:04X}",
-                "icon": "tag",
-            },
-        ]
-
-        symbol_tree_data.append(
-            {
-                "id": f"{terminal_id}_symbol_{idx}",
-                "label": symbol.name_template,
-                "icon": "data_object",
-                "children": symbol_children,
-                "symbol_idx": idx,
-                "selected": symbol.selected,
-            }
-        )
+    # Build symbol tree data with composite type grouping
+    symbol_tree_data = _build_symbol_tree_data(
+        terminal_id, terminal, app.composite_types
+    )
 
     if symbol_tree_data:
         with ui.card().classes("w-full"):

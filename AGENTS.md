@@ -169,7 +169,75 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
   - The difference between XML-defined symbols and ADS runtime symbols (e.g., `WcState`)
   - CoE (CANopen over EtherCAT) object definitions
 
+- **Beckhoff XML Files**: ESI (EtherCAT Slave Information) XML files from Beckhoff group terminals by series:
+  - `Beckhoff EL31xx.xml` contains EL3104, EL3124, etc.
+  - `Beckhoff EL32xx.xml` contains EL3202, EL3204, etc.
+  - Cached at `~/.cache/catio_terminals/beckhoff_xml/`
+  - Use `catio-terminals --update-cache` to download/refresh
+
+- **Composite Types**: TwinCAT BIGTYPE structures (ads_type=65) that group primitive fields:
+  - Defined in `src/catio_terminals/config/composite_types.yaml`
+  - Example: `"AI Standard Channel 1_TYPE"` contains Status (UINT) + Value (INT)
+  - Used by simulator for accurate symbol table responses
+  - Used by FastCS generator to create controller attributes
+
 - **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals --update-cache` to fetch Beckhoff XML definitions, then edit files with the GUI.
+
+## Agent Skills
+
+Skills are specialized knowledge that can be loaded on demand. Use these prompts to activate a skill:
+
+### Beckhoff XML Format Skill
+
+**Activation prompts:**
+- "Load Beckhoff XML skill"
+- "I need to work with ESI XML files"
+- "Help me understand the Beckhoff XML format"
+
+**Skill context:** Read [docs/reference/beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) for:
+- XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.)
+- ESI schema structure (Device, TxPdo, RxPdo, Entry, CoE objects)
+- Mapping between XML elements and terminal YAML fields
+- What information is NOT in XML (composite type names, ADS offsets)
+
+### Composite Types Skill
+
+**Activation prompts:**
+- "Load composite types skill"
+- "I need to understand TwinCAT BIGTYPE structures"
+- "Help me with symbol grouping"
+
+**Skill context:** Read [docs/explanations/composite-types.md](docs/explanations/composite-types.md) and [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) for:
+- How TwinCAT generates type names from PDO names (`"AI Standard Channel 1"` -> `"AI Standard Channel 1_TYPE"`)
+- Structure of composite_types.yaml (members, offsets, sizes)
+- Using `CompositeTypesConfig.get_default()` to load definitions
+- Relationship between XML PDO entries and composite type members
+
+### Terminal YAML Skill
+
+**Activation prompts:**
+- "Load terminal YAML skill"
+- "Help me edit terminal definitions"
+- "I need to understand the YAML schema"
+
+**Skill context:** Read [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) for:
+- Terminal YAML structure (identity, symbol_nodes, coe_objects)
+- SymbolNode fields (name_template, type_name, channels, index_group)
+- How computed properties work (size, ads_type derived from type_name)
+- Channel templating with `{channel}` placeholder
+
+### catio-terminals UI Skill
+
+**Activation prompts:**
+- "Load catio-terminals UI skill"
+- "Help me modify the terminal editor GUI"
+- "I need to work on the Qt interface"
+
+**Skill context:** Read the following files:
+- `src/catio_terminals/ui_app.py` - Main application window
+- `src/catio_terminals/ui_components.py` - Tree widgets, tables, dialogs
+- `src/catio_terminals/ui_dialogs.py` - Modal dialogs
+- `src/catio_terminals/service_terminal.py` - Terminal data service layer
 
 ---
 
