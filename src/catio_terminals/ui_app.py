@@ -58,7 +58,6 @@ class TerminalEditorApp:
         self.bulk_add_count: int = 0
         self.runtime_symbols: RuntimeSymbolsConfig | None = None
         self.composite_types: CompositeTypesConfig | None = None
-        self.show_composite_view: bool = True  # Toggle for composite/primitive view
         self._load_runtime_symbols()
         self._load_composite_types()
 

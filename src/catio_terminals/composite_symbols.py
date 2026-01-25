@@ -119,6 +119,7 @@ class CompositeSymbol:
         fastcs_name: PascalCase name for FastCS
         composite_type: The CompositeType definition
         primitive_symbols: List of primitive symbols grouped into this composite
+        selected: Whether this composite symbol is selected for YAML output
     """
 
     name_template: str
@@ -129,6 +130,7 @@ class CompositeSymbol:
     fastcs_name: str
     composite_type: CompositeType
     primitive_symbols: list[SymbolNode] = field(default_factory=list)
+    selected: bool = True  # Default to selected for new terminals
 
 
 @dataclass
@@ -280,6 +282,9 @@ def group_symbols_by_composite(
         # Generate FastCS name from template
         fastcs_name = mapping.name_template.replace(" ", "").replace("{channel}", "")
 
+        # Composite is selected if ALL its primitive symbols are selected
+        all_primitives_selected = all(s.selected for s in grouped_primitives)
+
         composite_symbols.append(
             CompositeSymbol(
                 name_template=mapping.name_template,
@@ -290,6 +295,7 @@ def group_symbols_by_composite(
                 fastcs_name=fastcs_name,
                 composite_type=composite_type,
                 primitive_symbols=grouped_primitives,
+                selected=all_primitives_selected,
             )
         )
 
