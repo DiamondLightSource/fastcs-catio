@@ -8,6 +8,8 @@ Technical reference material including APIs and release notes.
 
 API <_api/fastcs_catio>
 reference/beckhoff-xml-format
+reference/ads-symbols-and-coe
+reference/ethercat-composite-types
 genindex
 Release Notes <https://github.com/DiamondLightSource/fastcs-catio/releases>
 ```
