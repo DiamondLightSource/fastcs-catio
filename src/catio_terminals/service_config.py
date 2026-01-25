@@ -18,7 +18,7 @@ class ConfigService:
         """
         tree_data: dict[str, dict] = {}
         if config.terminal_types:
-            for terminal_id, terminal in config.terminal_types.items():
+            for terminal_id, terminal in sorted(config.terminal_types.items()):
                 # Use cleaned description, fall back to terminal_id
                 description = (
                     terminal.description.replace("\n", " ").strip()
