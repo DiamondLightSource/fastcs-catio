@@ -698,6 +698,8 @@ async def _add_terminal_from_beckhoff(
     app.has_unsaved_changes = True
     # Store the last added terminal for scrolling
     app.last_added_terminal = terminal_info.terminal_id
+    # Mark as already merged since it was just created from XML
+    app.merged_terminals.add(terminal_info.terminal_id)
     # Rebuild the tree view without navigating (which would close the dialog)
     if rebuild_tree:
         await app.build_tree_view()

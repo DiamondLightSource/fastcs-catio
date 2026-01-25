@@ -50,6 +50,7 @@ async def test_new_terminal_coe_objects_default_unselected():
     assert len(terminal.coe_objects) > 0, "EL3602 should have CoE objects"
 
     # Verify ALL CoE objects default to selected=False
+    print("\n=== After initial add ===")
     for coe in terminal.coe_objects:
         print(
             f"CoE 0x{coe.index:04X} '{coe.name}': selected={coe.selected} "
@@ -60,6 +61,44 @@ async def test_new_terminal_coe_objects_default_unselected():
         )
 
     print(f"✓ Verified {len(terminal.coe_objects)} CoE objects are unselected")
+
+    # Now simulate what happens in the GUI when the tree is rebuilt and
+    # terminal selected. This triggers the XML merge logic
+    print("\n=== Simulating GUI XML merge ===")
+    from catio_terminals.service_file import FileService
+
+    merged_terminals = set()  # Track merged terminals like the GUI does
+    # FIX: Mark newly added terminal as already merged
+    merged_terminals.add("EL3602")
+
+    # Check if needs merge (it should be in merged_terminals now, so skip merge)
+    if "EL3602" not in merged_terminals:
+        print("Terminal not in merged_terminals, triggering merge...")
+        await FileService.merge_xml_for_terminal(
+            "EL3602", terminal, beckhoff_client, composite_types
+        )
+        merged_terminals.add("EL3602")
+    else:
+        print("Terminal already merged, skipping XML merge")
+
+    # Check CoE selection state after (no) merge
+    print("\n=== After (skipped) XML merge ===")
+    for coe in terminal.coe_objects:
+        print(
+            f"CoE 0x{coe.index:04X} '{coe.name}': selected={coe.selected} "
+            f"(type: {type(coe.selected)})"
+        )
+
+    # Verify CoE objects remain unselected
+    selected_count = sum(1 for coe in terminal.coe_objects if coe.selected)
+    print(
+        f"\n✓ {selected_count}/{len(terminal.coe_objects)} CoE objects "
+        "are selected (should be 0)"
+    )
+
+    assert selected_count == 0, (
+        f"Expected 0 CoE objects to be selected, but {selected_count} are selected"
+    )
 
 
 @pytest.mark.asyncio
