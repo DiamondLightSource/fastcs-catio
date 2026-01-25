@@ -46,12 +46,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannel{channel}
-      - name_template: Status__ {channel}
-        index_group: 61472
-        type_name: UNKNOWN
-        channels: 8
-        access: Read-only
-        fastcs_name: Status{channel}
     coe_objects: []
     group_type: AnaIn
   EL3124:
@@ -67,12 +61,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannel{channel}
-      - name_template: Status__ {channel}
-        index_group: 61472
-        type_name: UNKNOWN
-        channels: 8
-        access: Read-only
-        fastcs_name: Status{channel}
     coe_objects: []
     group_type: AnaIn
   EL3602:

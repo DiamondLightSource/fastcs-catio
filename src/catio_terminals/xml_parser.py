@@ -290,6 +290,11 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
 
             index_str = entry.findtext("Index", "0")
             index = parse_hex_value(index_str)
+
+            # Skip padding/reserved entries (Index=#x0 indicates filler bits)
+            if index == 0:
+                continue
+
             bit_len = int(entry.findtext("BitLen", "0"))
             data_type = entry.findtext("DataType", "UNKNOWN")
 
