@@ -28,7 +28,7 @@ terminal_types:
       product_code: 65810514
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel} Input
+      - name_template: Channel {channel}.Input
         index_group: 61472
         type_name: BOOL
         channels: 4
@@ -43,7 +43,7 @@ terminal_types:
       product_code: 66465874
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel} Input
+      - name_template: Channel {channel}.Input
         index_group: 61472
         type_name: BOOL
         channels: 4
@@ -58,7 +58,7 @@ terminal_types:
       product_code: 71053394
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel} Input
+      - name_template: Channel {channel}.Input
         index_group: 61472
         type_name: BOOL
         channels: 4
@@ -73,7 +73,7 @@ terminal_types:
       product_code: 132657234
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel} Output
+      - name_template: Channel {channel}.Output
         index_group: 61488
         type_name: BOOL
         channels: 4
@@ -88,151 +88,151 @@ terminal_types:
       product_code: 98447442
       revision_number: 1245184
     symbol_nodes:
-      - name_template: CNT Inputs Channel {channel} Output functions enabled
+      - name_template: CNT Inputs Channel {channel}.Output functions enabled
         index_group: 61472
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelOutputFunctionsEnabled{channel}
-      - name_template: CNT Inputs Channel {channel} Status of output
+      - name_template: CNT Inputs Channel {channel}.Status of output
         index_group: 61472
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelStatusOfOutput{channel}
-      - name_template: CNT Inputs Channel {channel} Set counter done
+      - name_template: CNT Inputs Channel {channel}.Set counter done
         index_group: 61472
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelSetCounterDone{channel}
-      - name_template: CNT Inputs Channel {channel} Counter inhibited
+      - name_template: CNT Inputs Channel {channel}.Counter inhibited
         index_group: 61472
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelCounterInhibited{channel}
-      - name_template: CNT Inputs Channel {channel} Status of input clock
+      - name_template: CNT Inputs Channel {channel}.Status of input clock
         index_group: 61472
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelStatusOfInputClock{channel}
-      - name_template: CNT Inputs Channel {channel} TxPDO Toggle
+      - name_template: CNT Inputs Channel {channel}.TxPDO Toggle
         index_group: 61472
         type_name: BOOL
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelTxpdoToggle{channel}
-      - name_template: CNT Inputs Channel {channel} Counter value
+      - name_template: CNT Inputs Channel {channel}.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelCounterValue{channel}
-      - name_template: CNT Outputs Channel {channel} Enable output functions
+      - name_template: CNT Outputs Channel {channel}.Enable output functions
         index_group: 61488
         type_name: BOOL
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelEnableOutputFunctions{channel}
-      - name_template: CNT Outputs Channel {channel} Set output
+      - name_template: CNT Outputs Channel {channel}.Set output
         index_group: 61488
         type_name: BOOL
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelSetOutput{channel}
-      - name_template: CNT Outputs Channel {channel} Set counter
+      - name_template: CNT Outputs Channel {channel}.Set counter
         index_group: 61488
         type_name: BOOL
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelSetCounter{channel}
-      - name_template: CNT Outputs Channel {channel} Inhibit counter
+      - name_template: CNT Outputs Channel {channel}.Inhibit counter
         index_group: 61488
         type_name: BOOL
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelInhibitCounter{channel}
-      - name_template: CNT Outputs Channel {channel} Set counter value
+      - name_template: CNT Outputs Channel {channel}.Set counter value
         index_group: 61488
         type_name: UDINT
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelSetCounterValue{channel}
-      - name_template: CNT Inputs Output functions enabled
+      - name_template: CNT Inputs.Output functions enabled
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsOutputFunctionsEnabled
-      - name_template: CNT Inputs Status of output
+      - name_template: CNT Inputs.Status of output
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsStatusOfOutput
-      - name_template: CNT Inputs Set counter done
+      - name_template: CNT Inputs.Set counter done
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsSetCounterDone
-      - name_template: CNT Inputs Counter inhibited
+      - name_template: CNT Inputs.Counter inhibited
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsCounterInhibited
-      - name_template: CNT Inputs Status of input UD
+      - name_template: CNT Inputs.Status of input UD
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsStatusOfInputUd
-      - name_template: CNT Inputs Status of input clock
+      - name_template: CNT Inputs.Status of input clock
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsStatusOfInputClock
-      - name_template: CNT Inputs TxPDO Toggle
+      - name_template: CNT Inputs.TxPDO Toggle
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: CntInputsTxpdoToggle
-      - name_template: CNT Inputs Counter value
+      - name_template: CNT Inputs.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read-only
         fastcs_name: CntInputsCounterValue
-      - name_template: CNT Outputs Enable output functions
+      - name_template: CNT Outputs.Enable output functions
         index_group: 61488
         type_name: BOOL
         channels: 1
         access: Read/Write
         fastcs_name: CntOutputsEnableOutputFunctions
-      - name_template: CNT Outputs Set output
+      - name_template: CNT Outputs.Set output
         index_group: 61488
         type_name: BOOL
         channels: 1
         access: Read/Write
         fastcs_name: CntOutputsSetOutput
-      - name_template: CNT Outputs Set counter
+      - name_template: CNT Outputs.Set counter
         index_group: 61488
         type_name: BOOL
         channels: 1
         access: Read/Write
         fastcs_name: CntOutputsSetCounter
-      - name_template: CNT Outputs Inhibit counter
+      - name_template: CNT Outputs.Inhibit counter
         index_group: 61488
         type_name: BOOL
         channels: 1
         access: Read/Write
         fastcs_name: CntOutputsInhibitCounter
-      - name_template: CNT Outputs Set counter value
+      - name_template: CNT Outputs.Set counter value
         index_group: 61488
         type_name: UDINT
         channels: 1
@@ -247,13 +247,13 @@ terminal_types:
       product_code: 616706130
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Us Undervoltage
+      - name_template: Status Us.Undervoltage
         index_group: 61472
         type_name: BOOL
         channels: 1
         access: Read-only
         fastcs_name: StatusUsUndervoltage
-      - name_template: Status Up Undervoltage
+      - name_template: Status Up.Undervoltage
         index_group: 61472
         type_name: BOOL
         channels: 1
