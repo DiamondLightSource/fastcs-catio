@@ -11,7 +11,7 @@ from catio_terminals.service_terminal import TerminalService
 
 
 @pytest.mark.asyncio
-async def test_new_terminal_coe_objects_default_unselected():
+async def test_new_terminal_coe_objects_default_unselected(beckhoff_xml_cache):
     """Test that CoE objects are unselected when adding a new terminal.
 
     This test:
