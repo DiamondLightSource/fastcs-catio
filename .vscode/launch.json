@@ -8,7 +8,7 @@
             "name": "CATio IOC",
             "type": "debugpy",
             "request": "launch",
-            "module": "catio",
+            "module": "fastcs_catio",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
