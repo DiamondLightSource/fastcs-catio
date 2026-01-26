@@ -7,6 +7,7 @@ from catio_terminals.beckhoff import BeckhoffClient, BeckhoffTerminalInfo
 from catio_terminals.composite_symbols import convert_primitives_to_composites
 from catio_terminals.models import (
     CompositeTypesConfig,
+    Identity,
     TerminalConfig,
     TerminalType,
 )
@@ -88,11 +89,16 @@ class TerminalService:
             The added TerminalType
         """
         if lazy_load:
-            # Create minimal terminal - XML will be loaded on-demand
-            terminal = beckhoff_client.create_default_terminal(
-                terminal_info.terminal_id,
-                terminal_info.description,
-                terminal_info.group_type,
+            # Create minimal terminal with no symbols - XML will be loaded on-demand
+            terminal = TerminalType(
+                description=terminal_info.description,
+                identity=Identity(
+                    vendor_id=2,  # Beckhoff
+                    product_code=terminal_info.product_code or 0,
+                    revision_number=terminal_info.revision_number or 0x00100000,
+                ),
+                symbol_nodes=[],  # Empty - will be populated from XML on first view
+                group_type=terminal_info.group_type,
             )
             logger.info(
                 f"Created minimal terminal {terminal_info.terminal_id} (lazy load)"
