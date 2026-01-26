@@ -268,11 +268,6 @@ class TerminalType(BaseModel):
     symbol_nodes: list[SymbolNode] = Field(
         default_factory=list, description="List of symbol nodes"
     )
-    primitive_symbol_nodes: list[SymbolNode] = Field(
-        default_factory=list,
-        description="Original primitive symbols (before composite conversion)",
-        exclude=True,
-    )
     coe_objects: list[CoEObject] = Field(
         default_factory=list, description="CoE object dictionary"
     )
@@ -409,37 +404,11 @@ class CompositeType(BaseModel):
     )
 
 
-class CompositeSymbolMapping(BaseModel):
-    """Mapping between a composite type and the terminal group types it applies to.
-
-    Defines which composite type to use when grouping primitive symbols from XML
-    into composite symbols that TwinCAT would generate at runtime.
-    """
-
-    type_name: str = Field(
-        description="The composite type name (e.g., 'AI Standard Channel 1_TYPE')"
-    )
-    name_template: str = Field(
-        description="Symbol name template (e.g., 'AI Standard Channel {channel}')"
-    )
-    group_types: list[str] = Field(
-        description="Terminal group types this mapping applies to (e.g., ['AnaIn'])"
-    )
-    member_patterns: dict[str, list[str]] = Field(
-        default_factory=dict,
-        description="Patterns to match primitive symbols to composite members",
-    )
-
-
 class CompositeTypesConfig(BaseModel):
     """Configuration for composite type definitions."""
 
     composite_types: dict[str, CompositeType] = Field(
         default_factory=dict, description="Dictionary of composite types by type name"
-    )
-    composite_mappings: list[CompositeSymbolMapping] = Field(
-        default_factory=list,
-        description="Mappings from composite types to terminal groups",
     )
 
     @classmethod
@@ -479,14 +448,6 @@ class CompositeTypesConfig(BaseModel):
             True if the type is defined in composite_types
         """
         return type_name in self.composite_types
-
-    def get_mappings(self) -> list[CompositeSymbolMapping]:
-        """Get all composite symbol mappings.
-
-        Returns:
-            List of CompositeSymbolMapping instances
-        """
-        return self.composite_mappings
 
     @classmethod
     def get_default(cls) -> "CompositeTypesConfig":

@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from catio_terminals.beckhoff import BeckhoffClient
-from catio_terminals.composite_symbols import convert_primitives_to_composites
-from catio_terminals.models import CompositeTypesConfig, TerminalConfig
+from catio_terminals.models import TerminalConfig
 
 if TYPE_CHECKING:
     from catio_terminals.models import TerminalType
@@ -38,7 +37,6 @@ class FileService:
     async def merge_xml_data(
         config: TerminalConfig,
         beckhoff_client: BeckhoffClient,
-        composite_types: CompositeTypesConfig | None = None,
         prefer_xml: bool = False,
     ) -> None:
         """Merge XML data with YAML config to show all available symbols/CoE.
@@ -50,7 +48,6 @@ class FileService:
         Args:
             config: Configuration to enhance with XML data
             beckhoff_client: Beckhoff client for fetching XML
-            composite_types: Composite types configuration for grouping primitives
             prefer_xml: If True, use XML symbol data instead of YAML when both exist
         """
         logger.info("Merging XML data with YAML configuration")
@@ -60,7 +57,6 @@ class FileService:
                 terminal_id,
                 terminal,
                 beckhoff_client,
-                composite_types,
                 prefer_xml=prefer_xml,
             )
             if not success:
@@ -77,19 +73,18 @@ class FileService:
         terminal_id: str,
         terminal: "TerminalType",
         beckhoff_client: BeckhoffClient,
-        composite_types: CompositeTypesConfig | None = None,
         prefer_xml: bool = False,
     ) -> bool:
         """Merge XML data for a single terminal.
 
-        Fetches the XML definition for one terminal and merges symbols and CoE
-        objects, marking those in YAML as selected=True and XML-only as False.
+        Fetches the XML definition for one terminal and merges primitive symbols
+        and CoE objects, marking those in YAML as selected=True and XML-only
+        as selected=False.
 
         Args:
             terminal_id: Terminal ID (e.g., "EL3004")
             terminal: Terminal instance to merge into
             beckhoff_client: Beckhoff client for fetching XML
-            composite_types: Composite types configuration for grouping primitives
             prefer_xml: If True, use XML symbol data instead of YAML when both exist
 
         Returns:
@@ -104,28 +99,20 @@ class FileService:
             return False
 
         try:
-            # Parse XML to get full terminal definition
+            # Parse XML to get full terminal definition (primitive symbols)
             xml_terminal = beckhoff_client.parse_terminal_xml(
                 xml_content, terminal_id, terminal.group_type
             )
 
-            # Convert XML primitives to composites (same as YAML format)
-            xml_symbols = convert_primitives_to_composites(
-                xml_terminal, composite_types
-            )
-
-            # Store primitive symbols for diagnostic view
-            terminal.primitive_symbol_nodes = xml_terminal.primitive_symbol_nodes
-
             # Merge symbols: Create lookup of YAML symbols by name template
             yaml_symbol_map = {sym.name_template: sym for sym in terminal.symbol_nodes}
 
-            # Build merged symbol list
+            # Build merged symbol list from XML primitive symbols
             merged_symbols = []
             xml_symbol_map = {}
 
-            # Add all XML symbols (now in composite format)
-            for xml_sym in xml_symbols:
+            # Add all XML symbols (primitive symbols directly from XML)
+            for xml_sym in xml_terminal.symbol_nodes:
                 xml_symbol_map[xml_sym.name_template] = xml_sym
                 if xml_sym.name_template in yaml_symbol_map:
                     if prefer_xml:

@@ -630,7 +630,6 @@ async def _add_terminal_from_beckhoff(
         app.config,
         terminal_info,
         app.beckhoff_client,
-        app.composite_types,
         lazy_load=True,
     )
 

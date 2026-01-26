@@ -289,11 +289,47 @@ terminal_types:
       product_code: 236662866
       revision_number: 1049606
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: Status__Limit {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: StatusLimit{channel}
+      - name_template: AI Inputs Status__Underrange
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: AiInputsStatusUnderrange
+      - name_template: AI Inputs Status__Overrange
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: AiInputsStatusOverrange
+      - name_template: AI Inputs Status__Error
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: AiInputsStatusError
+      - name_template: AI Inputs Status__TxPDO State
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: AiInputsStatusTxpdoState
+      - name_template: AI Inputs Status__TxPDO Toggle
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: AiInputsStatusTxpdoToggle
+      - name_template: AI Inputs Value
+        index_group: 61472
+        type_name: DINT
+        channels: 1
+        access: Read-only
+        fastcs_name: AiInputsValue
     coe_objects: []
     group_type: AnaIn

@@ -104,14 +104,10 @@ def clean_yaml(
 async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
     """Async implementation of clean-yaml command."""
     from catio_terminals.beckhoff import BeckhoffClient
-    from catio_terminals.models import CompositeTypesConfig
     from catio_terminals.service_file import FileService
 
     # Initialize Beckhoff client
     beckhoff_client = BeckhoffClient()
-
-    # Load composite types configuration for grouping primitives
-    composite_types = CompositeTypesConfig.get_default()
 
     # Ensure XML cache is available
     if not beckhoff_client.get_cached_terminals():
@@ -137,15 +133,13 @@ async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
             if "runtime_symbols" in yaml_path.name:
                 print(f"Skipping runtime symbols file: {yaml_path.name}")
                 continue
-            await _cleanup_single_yaml(
-                yaml_path, beckhoff_client, FileService, composite_types
-            )
+            await _cleanup_single_yaml(yaml_path, beckhoff_client, FileService)
 
     elif file is not None:
         if not file.exists():
             print(f"File not found: {file}", file=sys.stderr)
             raise typer.Exit(code=1)
-        await _cleanup_single_yaml(file, beckhoff_client, FileService, composite_types)
+        await _cleanup_single_yaml(file, beckhoff_client, FileService)
 
     else:
         print("Please provide a file or use --all to process all files.")
@@ -156,11 +150,10 @@ async def _cleanup_single_yaml(
     yaml_path: Path,
     beckhoff_client,
     file_service,
-    composite_types,
 ) -> None:
     """Clean up a single YAML file.
 
-    Converts primitive symbols to composite symbols where applicable.
+    Reloads symbols from XML and marks all as selected.
     """
     print(f"Processing: {yaml_path.name}")
 
@@ -168,11 +161,9 @@ async def _cleanup_single_yaml(
     config = file_service.open_file(yaml_path)
     print(f"  Loaded {len(config.terminal_types)} terminals")
 
-    # Merge with XML data, converting primitives to composites
-    # prefer_xml=True ensures we get fresh fastcs_name from conversion
-    await file_service.merge_xml_data(
-        config, beckhoff_client, composite_types, prefer_xml=True
-    )
+    # Merge with XML data (primitive symbols)
+    # prefer_xml=True ensures we get fresh data from XML
+    await file_service.merge_xml_data(config, beckhoff_client, prefer_xml=True)
 
     # Select ALL symbols, but no CoE objects
     for terminal_id, terminal in config.terminal_types.items():

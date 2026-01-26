@@ -10,7 +10,6 @@ from nicegui import app, ui
 from catio_terminals import ui_components, ui_dialogs
 from catio_terminals.beckhoff import BeckhoffClient
 from catio_terminals.models import (
-    CompositeTypesConfig,
     RuntimeSymbolsConfig,
     TerminalConfig,
 )
@@ -20,9 +19,6 @@ logger = logging.getLogger(__name__)
 
 # Path to runtime symbols YAML file
 RUNTIME_SYMBOLS_PATH = Path(__file__).parent / "config" / "runtime_symbols.yaml"
-
-# Path to composite types YAML file
-COMPOSITE_TYPES_PATH = Path(__file__).parent / "config" / "composite_types.yaml"
 
 # Global editor instance
 _editor_instance: TerminalEditorApp | None = None
@@ -57,17 +53,12 @@ class TerminalEditorApp:
         self.selected_terminal_id: str | None = None
         self.bulk_add_count: int = 0
         self.runtime_symbols: RuntimeSymbolsConfig | None = None
-        self.composite_types: CompositeTypesConfig | None = None
         self.merged_terminals: set[str] = set()  # Track terminals with XML merged
         self.filtered_terminal_ids: list[str] = []  # Track currently filtered terminals
         self.details_header_label: ui.label | None = None  # Header label for details
         self.details_product_link: ui.link | None = None  # Product info link
         self.delete_terminal_button: ui.button | None = None  # Delete terminal button
-        self.show_primitive_symbols: bool = (
-            False  # Toggle for primitive vs composite view
-        )
         self._load_runtime_symbols()
-        self._load_composite_types()
 
     def _load_runtime_symbols(self) -> None:
         """Load runtime symbols configuration."""
@@ -86,24 +77,6 @@ class TerminalEditorApp:
         else:
             logger.warning(f"Runtime symbols file not found: {RUNTIME_SYMBOLS_PATH}")
             self.runtime_symbols = None
-
-    def _load_composite_types(self) -> None:
-        """Load composite types configuration."""
-        if COMPOSITE_TYPES_PATH.exists():
-            try:
-                self.composite_types = CompositeTypesConfig.from_yaml(
-                    COMPOSITE_TYPES_PATH
-                )
-                logger.info(
-                    f"Loaded {len(self.composite_types.composite_types)} "
-                    "composite types"
-                )
-            except Exception as e:
-                logger.warning(f"Failed to load composite types: {e}")
-                self.composite_types = None
-        else:
-            logger.warning(f"Composite types file not found: {COMPOSITE_TYPES_PATH}")
-            self.composite_types = None
 
     async def build_editor_ui(self) -> None:
         """Build the main editor UI."""

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
-from catio_terminals.models import CompositeTypesConfig, SymbolNode, TerminalType
+from catio_terminals.models import SymbolNode, TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
 from catio_terminals.utils import to_pascal_case
@@ -98,43 +98,15 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
             ui.timer(0.01, lambda: _on_tree_select(app, terminal_to_select), once=True)
 
 
-def _build_primitive_symbol_tree_data(
+def _build_symbol_tree_data(
     terminal_id: str,
     terminal: TerminalType,
 ) -> list[dict[str, Any]]:
-    """Build symbol tree showing only primitive symbols.
-
-    Uses the primitive_symbol_nodes list to show symbols before composite conversion.
-
-    Args:
-        terminal_id: Terminal ID for generating unique node IDs
-        terminal: Terminal instance containing primitive_symbol_nodes
-
-    Returns:
-        List of tree node dictionaries for ui.tree
-    """
-    symbol_tree_data: list[dict[str, Any]] = []
-
-    for idx, symbol in enumerate(terminal.primitive_symbol_nodes):
-        symbol_tree_data.append(_build_primitive_symbol_node(terminal_id, idx, symbol))
-
-    return symbol_tree_data
-
-
-def _build_merged_symbol_tree_data(
-    terminal_id: str,
-    terminal: TerminalType,
-    composite_types: CompositeTypesConfig | None,
-) -> list[dict[str, Any]]:
-    """Build symbol tree with both composite and primitive symbols.
-
-    Symbols with a composite type_name are rendered with member details.
-    Primitive symbols are rendered with their basic properties.
+    """Build symbol tree showing primitive symbols with checkboxes.
 
     Args:
         terminal_id: Terminal ID for generating unique node IDs
         terminal: Terminal instance containing symbol_nodes
-        composite_types: Composite types configuration for looking up members
 
     Returns:
         List of tree node dictionaries for ui.tree
@@ -142,26 +114,12 @@ def _build_merged_symbol_tree_data(
     symbol_tree_data: list[dict[str, Any]] = []
 
     for idx, symbol in enumerate(terminal.symbol_nodes):
-        # Check if this symbol has a composite type
-        composite_type = None
-        if composite_types is not None:
-            composite_type = composite_types.get_type(symbol.type_name)
-
-        if composite_type is not None:
-            # Build composite symbol node with member details
-            symbol_tree_data.append(
-                _build_composite_symbol_node(terminal_id, idx, symbol, composite_type)
-            )
-        else:
-            # Build primitive symbol node
-            symbol_tree_data.append(
-                _build_primitive_symbol_node(terminal_id, idx, symbol)
-            )
+        symbol_tree_data.append(_build_symbol_node(terminal_id, idx, symbol))
 
     return symbol_tree_data
 
 
-def _build_primitive_symbol_node(
+def _build_symbol_node(
     terminal_id: str,
     symbol_idx: int,
     symbol: SymbolNode,
@@ -222,118 +180,6 @@ def _build_primitive_symbol_node(
     }
 
 
-def _build_composite_symbol_node(
-    terminal_id: str,
-    symbol_idx: int,
-    symbol: SymbolNode,
-    composite_type,
-) -> dict[str, Any]:
-    """Build a tree node for a composite symbol.
-
-    Args:
-        terminal_id: Terminal ID for generating unique node IDs
-        symbol_idx: Index of the symbol in terminal.symbol_nodes
-        symbol: SymbolNode instance with composite type_name
-        composite_type: CompositeType definition from composite_types.yaml
-
-    Returns:
-        Tree node dictionary for ui.tree
-    """
-    from catio_terminals.models import CompositeType
-
-    # Handle case where composite_type is None
-    if not isinstance(composite_type, CompositeType):
-        return _build_primitive_symbol_node(terminal_id, symbol_idx, symbol)
-
-    # Build member children
-    member_children: list[dict[str, Any]] = []
-    for member_idx, member in enumerate(composite_type.members):
-        member_access = "Read-only" if member.access == "read-only" else "Read/Write"
-        member_children.append(
-            {
-                "id": f"{terminal_id}_sym{symbol_idx}_member{member_idx}",
-                "label": f"{member.name} ({member.type_name})",
-                "icon": "lock" if member.access == "read-only" else "edit",
-                "children": [
-                    {
-                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_offset",
-                        "label": f"Offset: {member.offset} bytes",
-                        "icon": "straighten",
-                    },
-                    {
-                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_size",
-                        "label": f"Size: {member.size} bytes",
-                        "icon": "straighten",
-                    },
-                    {
-                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_access",
-                        "label": f"Access: {member_access}",
-                        "icon": "lock" if member.access == "read-only" else "edit",
-                    },
-                    {
-                        "id": f"{terminal_id}_sym{symbol_idx}_m{member_idx}_fastcs",
-                        "label": f"FastCS Attr: {member.fastcs_attr}",
-                        "icon": "label",
-                    },
-                ],
-            }
-        )
-
-    access = symbol.access or TerminalService.get_symbol_access(symbol.index_group)
-    fastcs_name = symbol.fastcs_name or to_pascal_case(symbol.name_template)
-
-    # Build composite type properties
-    type_info_children: list[dict[str, Any]] = [
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_type",
-            "label": f"Type: {symbol.type_name}",
-            "icon": "category",
-        },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_size",
-            "label": f"Total Size: {composite_type.size} bytes",
-            "icon": "straighten",
-        },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_access",
-            "label": f"Access: {access}",
-            "icon": "lock" if access == "Read-only" else "edit",
-        },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_fastcs",
-            "label": f"FastCS Name: {fastcs_name}",
-            "icon": "label",
-        },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_channels",
-            "label": f"Channels: {symbol.channels}",
-            "icon": "numbers",
-        },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_index",
-            "label": f"Index Group: 0x{symbol.index_group:04X}",
-            "icon": "tag",
-        },
-    ]
-
-    # Create container node for members
-    members_node = {
-        "id": f"{terminal_id}_sym{symbol_idx}_members",
-        "label": f"Members ({len(composite_type.members)})",
-        "icon": "list",
-        "children": member_children,
-    }
-
-    return {
-        "id": f"{terminal_id}_symbol_{symbol_idx}",
-        "label": f"{symbol.name_template} (Composite)",
-        "icon": "view_module",
-        "children": type_info_children + [members_node],
-        "symbol_idx": symbol_idx,
-        "selected": symbol.selected,
-    }
-
-
 def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
     """Handle tree node selection.
 
@@ -366,7 +212,6 @@ def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
                         node_id,
                         terminal,
                         app.beckhoff_client,
-                        app.composite_types,
                     )
                     app.merged_terminals.add(node_id)
                     # Re-render the details
@@ -453,19 +298,13 @@ def show_terminal_details(
 
     ui.separator().classes("my-4")
 
-    # Symbols section with View Toggle and Select All buttons
+    # Symbols section with Select All button
     total_symbols = len(terminal.symbol_nodes)
-    total_primitives = len(terminal.primitive_symbol_nodes)
 
     with ui.row().classes("items-center w-full justify-between mb-2"):
         ui.label(f"Symbols ({total_symbols})").classes("text-h6")
 
         with ui.row().classes("gap-2"):
-
-            def toggle_view_mode():
-                """Toggle between primitive and composite symbol views."""
-                app.show_primitive_symbols = not app.show_primitive_symbols
-                _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
 
             def toggle_all_symbols():
                 all_selected = all(s.selected for s in terminal.symbol_nodes)
@@ -475,18 +314,6 @@ def show_terminal_details(
                     symbol.selected = new_value
 
                 _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
-
-            # Add view toggle button (only if primitives exist)
-            if total_primitives > 0:
-                view_label = (
-                    "Show Composite" if app.show_primitive_symbols else "Show Primitive"
-                )
-                view_icon = "account_tree" if app.show_primitive_symbols else "list"
-                ui.button(
-                    view_label,
-                    icon=view_icon,
-                    on_click=toggle_view_mode,
-                ).props("flat dense color=blue-grey")
 
             # Determine button label based on current state
             all_symbols_selected = (
@@ -501,13 +328,8 @@ def show_terminal_details(
                 on_click=toggle_all_symbols,
             ).props("flat dense")
 
-    # Build symbol tree data based on view mode
-    if app.show_primitive_symbols and total_primitives > 0:
-        symbol_tree_data = _build_primitive_symbol_tree_data(terminal_id, terminal)
-    else:
-        symbol_tree_data = _build_merged_symbol_tree_data(
-            terminal_id, terminal, app.composite_types
-        )
+    # Build symbol tree data (primitive symbols with checkboxes)
+    symbol_tree_data = _build_symbol_tree_data(terminal_id, terminal)
 
     if symbol_tree_data:
         with ui.card().props("flat").classes("w-full"):
@@ -522,10 +344,7 @@ def show_terminal_details(
             )
 
             def make_symbol_toggle_handler(symbol_idx: int):
-                """Handler for toggling a symbol.
-
-                Works for both primitives and composites.
-                """
+                """Handler for toggling a symbol."""
 
                 def toggle(e):
                     new_value = (
@@ -540,57 +359,39 @@ def show_terminal_details(
 
                 return toggle
 
-            # Add custom slot to include checkbox for selectable items
-            # Checkboxes only enabled in composite view
-            if app.show_primitive_symbols:
-                # Primitive view - no checkboxes, just labels
-                tree.add_slot(
-                    "default-header",
-                    r"""
-                    <div class="row items-center">
-                        <q-icon
-                            :name="props.node.icon || 'folder'"
-                            size="xs"
-                            class="q-mr-xs"
-                        />
-                        <span>{{ props.node.label }}</span>
-                    </div>
-                    """,
-                )
-            else:
-                # Composite view - with checkboxes
-                tree.add_slot(
-                    "default-header",
-                    r"""
-                    <div class="row items-center">
-                        <q-checkbox
-                            v-if="props.node.symbol_idx !== undefined"
-                            :model-value="props.node.selected"
-                            @click.stop="() => {}"
-                            @update:model-value="(val) => {
-                                props.node.selected = val;
-                                $parent.$emit(
-                                    'toggle-symbol-' + props.node.symbol_idx, val
-                                );
-                            }"
-                            dense
-                            class="q-mr-xs"
-                        />
-                        <q-icon
-                            :name="props.node.icon || 'folder'"
-                            size="xs"
-                            class="q-mr-xs"
-                        />
-                        <span>{{ props.node.label }}</span>
-                    </div>
-                    """,
-                )
+            # Add custom slot to include checkbox for symbols
+            tree.add_slot(
+                "default-header",
+                r"""
+                <div class="row items-center">
+                    <q-checkbox
+                        v-if="props.node.symbol_idx !== undefined"
+                        :model-value="props.node.selected"
+                        @click.stop="() => {}"
+                        @update:model-value="(val) => {
+                            props.node.selected = val;
+                            $parent.$emit(
+                                'toggle-symbol-' + props.node.symbol_idx, val
+                            );
+                        }"
+                        dense
+                        class="q-mr-xs"
+                    />
+                    <q-icon
+                        :name="props.node.icon || 'folder'"
+                        size="xs"
+                        class="q-mr-xs"
+                    />
+                    <span>{{ props.node.label }}</span>
+                </div>
+                """,
+            )
 
-                # Connect event handlers for all symbols (only in composite view)
-                for node in symbol_tree_data:
-                    if "symbol_idx" in node:
-                        idx = node["symbol_idx"]
-                        tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
+            # Connect event handlers for all symbols
+            for node in symbol_tree_data:
+                if "symbol_idx" in node:
+                    idx = node["symbol_idx"]
+                    tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
 
     # Display Runtime Symbols section
     _show_runtime_symbols(app, terminal_id, terminal)
