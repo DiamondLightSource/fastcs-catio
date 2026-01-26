@@ -268,6 +268,11 @@ class TerminalType(BaseModel):
     symbol_nodes: list[SymbolNode] = Field(
         default_factory=list, description="List of symbol nodes"
     )
+    primitive_symbol_nodes: list[SymbolNode] = Field(
+        default_factory=list,
+        description="Original primitive symbols (before composite conversion)",
+        exclude=True,
+    )
     coe_objects: list[CoEObject] = Field(
         default_factory=list, description="CoE object dictionary"
     )

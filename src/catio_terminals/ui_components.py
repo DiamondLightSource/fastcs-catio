@@ -98,6 +98,29 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
             ui.timer(0.01, lambda: _on_tree_select(app, terminal_to_select), once=True)
 
 
+def _build_primitive_symbol_tree_data(
+    terminal_id: str,
+    terminal: TerminalType,
+) -> list[dict[str, Any]]:
+    """Build symbol tree showing only primitive symbols.
+
+    Uses the primitive_symbol_nodes list to show symbols before composite conversion.
+
+    Args:
+        terminal_id: Terminal ID for generating unique node IDs
+        terminal: Terminal instance containing primitive_symbol_nodes
+
+    Returns:
+        List of tree node dictionaries for ui.tree
+    """
+    symbol_tree_data: list[dict[str, Any]] = []
+
+    for idx, symbol in enumerate(terminal.primitive_symbol_nodes):
+        symbol_tree_data.append(_build_primitive_symbol_node(terminal_id, idx, symbol))
+
+    return symbol_tree_data
+
+
 def _build_merged_symbol_tree_data(
     terminal_id: str,
     terminal: TerminalType,
@@ -497,38 +520,56 @@ def show_terminal_details(
                 return toggle
 
             # Add custom slot to include checkbox for selectable items
-            tree.add_slot(
-                "default-header",
-                r"""
-                <div class="row items-center">
-                    <q-checkbox
-                        v-if="props.node.symbol_idx !== undefined"
-                        :model-value="props.node.selected"
-                        @click.stop="() => {}"
-                        @update:model-value="(val) => {
-                            props.node.selected = val;
-                            $parent.$emit(
-                                'toggle-symbol-' + props.node.symbol_idx, val
-                            );
-                        }"
-                        dense
-                        class="q-mr-xs"
-                    />
-                    <q-icon
-                        :name="props.node.icon || 'folder'"
-                        size="xs"
-                        class="q-mr-xs"
-                    />
-                    <span>{{ props.node.label }}</span>
-                </div>
-                """,
-            )
+            # Checkboxes only enabled in composite view
+            if app.show_primitive_symbols:
+                # Primitive view - no checkboxes, just labels
+                tree.add_slot(
+                    "default-header",
+                    r"""
+                    <div class="row items-center">
+                        <q-icon
+                            :name="props.node.icon || 'folder'"
+                            size="xs"
+                            class="q-mr-xs"
+                        />
+                        <span>{{ props.node.label }}</span>
+                    </div>
+                    """,
+                )
+            else:
+                # Composite view - with checkboxes
+                tree.add_slot(
+                    "default-header",
+                    r"""
+                    <div class="row items-center">
+                        <q-checkbox
+                            v-if="props.node.symbol_idx !== undefined"
+                            :model-value="props.node.selected"
+                            @click.stop="() => {}"
+                            @update:model-value="(val) => {
+                                props.node.selected = val;
+                                $parent.$emit(
+                                    'toggle-symbol-' + props.node.symbol_idx, val
+                                );
+                            }"
+                            dense
+                            class="q-mr-xs"
+                        />
+                        <q-icon
+                            :name="props.node.icon || 'folder'"
+                            size="xs"
+                            class="q-mr-xs"
+                        />
+                        <span>{{ props.node.label }}</span>
+                    </div>
+                    """,
+                )
 
-            # Connect event handlers for all symbols
-            for node in symbol_tree_data:
-                if "symbol_idx" in node:
-                    idx = node["symbol_idx"]
-                    tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
+                # Connect event handlers for all symbols (only in composite view)
+                for node in symbol_tree_data:
+                    if "symbol_idx" in node:
+                        idx = node["symbol_idx"]
+                        tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
 
     # Display Runtime Symbols section
     _show_runtime_symbols(app, terminal_id, terminal)

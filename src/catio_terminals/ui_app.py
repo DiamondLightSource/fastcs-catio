@@ -63,6 +63,9 @@ class TerminalEditorApp:
         self.details_header_label: ui.label | None = None  # Header label for details
         self.details_product_link: ui.link | None = None  # Product info link
         self.delete_terminal_button: ui.button | None = None  # Delete terminal button
+        self.show_primitive_symbols: bool = (
+            False  # Toggle for primitive vs composite view
+        )
         self._load_runtime_symbols()
         self._load_composite_types()
 

@@ -337,6 +337,9 @@ def convert_primitives_to_composites(
     to ensure the symbol_nodes list contains both composite and primitive symbols
     in a unified format.
 
+    Stores the original primitive symbols in terminal.primitive_symbol_nodes for
+    diagnostic purposes.
+
     Args:
         terminal: Terminal type containing primitive symbol nodes
         composite_types: Composite types configuration
@@ -344,6 +347,11 @@ def convert_primitives_to_composites(
     Returns:
         New list of symbol nodes with grouped primitives converted to composites
     """
+    # Store original primitive symbols for diagnostics
+    import copy
+
+    terminal.primitive_symbol_nodes = copy.deepcopy(terminal.symbol_nodes)
+
     if not composite_types:
         return list(terminal.symbol_nodes)
 

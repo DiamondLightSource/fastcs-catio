@@ -37,9 +37,9 @@ async def test_new_terminal_coe_objects_default_unselected():
     terminal_info = next((t for t in terminals if t.terminal_id == "EL3602"), None)
     assert terminal_info is not None, "Could not find EL3602 in search results"
 
-    # Add terminal from Beckhoff
+    # Add terminal from Beckhoff (eager load to get CoE objects immediately)
     terminal = await TerminalService.add_terminal_from_beckhoff(
-        config, terminal_info, beckhoff_client, composite_types
+        config, terminal_info, beckhoff_client, composite_types, lazy_load=False
     )
 
     # Verify terminal was added
@@ -116,9 +116,9 @@ async def test_new_terminal_coe_selection_yaml_roundtrip(beckhoff_xml_cache):
     terminal_info = next((t for t in terminals if t.terminal_id == "EL3602"), None)
     assert terminal_info is not None
 
-    # Add terminal
+    # Add terminal (eager load to get CoE objects for testing)
     await TerminalService.add_terminal_from_beckhoff(
-        config, terminal_info, beckhoff_client, composite_types
+        config, terminal_info, beckhoff_client, composite_types, lazy_load=False
     )
 
     # Save to temp file

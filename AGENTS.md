@@ -44,6 +44,12 @@ When using the `run_in_terminal` tool:
 - **NEVER** re-run a command that the context shows already completed with exit code 0
 - If you need the output and the context doesn't show it, use `terminal_last_command` once - do not re-run the command
 
+**Common mistake to avoid:**
+- ❌ Run command → Get minimal output → Try to run same command again
+- ✅ Run command → Get minimal output → Check context for exit code → Use `terminal_last_command` to get full output
+- The `run_in_terminal` tool often returns minimal acknowledgment, but the command still executed successfully
+- Always check the context in the next turn - if Exit Code: 0, the command succeeded; just get the output with `terminal_last_command`
+
 ## Code Style and Formatting
 
 - **MUST** use meaningful, descriptive variable and function names
