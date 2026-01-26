@@ -690,16 +690,19 @@ async def _add_terminal_from_beckhoff(
     if not app.config:
         return
 
-    # Use TerminalService to handle the logic
+    # Use TerminalService to handle the logic with lazy loading enabled
     await TerminalService.add_terminal_from_beckhoff(
-        app.config, terminal_info, app.beckhoff_client, app.composite_types
+        app.config,
+        terminal_info,
+        app.beckhoff_client,
+        app.composite_types,
+        lazy_load=True,
     )
 
     app.has_unsaved_changes = True
     # Store the last added terminal for scrolling
     app.last_added_terminal = terminal_info.terminal_id
-    # Mark as already merged since it was just created from XML
-    app.merged_terminals.add(terminal_info.terminal_id)
+    # Don't mark as merged - let lazy loading handle XML merge when terminal is viewed
     # Rebuild the tree view without navigating (which would close the dialog)
     if rebuild_tree:
         await app.build_tree_view()
