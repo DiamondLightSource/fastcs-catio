@@ -280,6 +280,9 @@ def _extract_channel_pattern(name: str) -> tuple[str, int] | None:
 def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
     """Process PDO entries and group by channel pattern.
 
+    Uses PDO name (not Entry name) to determine channel patterns, matching
+    how TwinCAT generates symbol names at runtime.
+
     Args:
         device: lxml Device element
         pdo_type: "TxPdo" or "RxPdo"
@@ -294,9 +297,12 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
     is_output = pdo_type == "RxPdo"
 
     for pdo in device.findall(f".//{pdo_type}"):
+        # Use PDO name for pattern matching (TwinCAT uses this for composite types)
+        pdo_name = pdo.findtext("Name", "")
+
         for entry in pdo.findall("Entry"):
-            name = entry.findtext("Name", "")
-            if not name:
+            entry_name = entry.findtext("Name", "")
+            if not entry_name:
                 continue
 
             index_str = entry.findtext("Index", "0")
@@ -317,7 +323,27 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
             size = (bit_len + 7) // 8
             ads_type = get_ads_type(data_type)
 
-            channel_info = _extract_channel_pattern(name)
+            # Try PDO name first (e.g., "Channel 1" for EL1004)
+            # This matches how TwinCAT creates composite symbol names
+            channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
+
+            # Fall back to entry name if PDO name has no pattern
+            if not channel_info:
+                channel_info = _extract_channel_pattern(entry_name)
+
+            # Build the name by combining PDO and Entry names when both exist
+            if pdo_name and entry_name and pdo_name != entry_name:
+                # Combine: "Channel 1" + "Input" -> use PDO pattern
+                if channel_info:
+                    # PDO has pattern, use it
+                    name = pdo_name
+                else:
+                    # Neither has pattern, combine them
+                    name = f"{pdo_name} {entry_name}"
+            elif pdo_name:
+                name = pdo_name
+            else:
+                name = entry_name
 
             if channel_info:
                 pattern, channel_num = channel_info

@@ -10,12 +10,30 @@ terminal_types:
       product_code: 196882514
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Standard AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 20
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 8
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Compact AI {channel}
+        index_group: 61472
+        type_name: INT
+        channels: 4
+        access: Read-only
+        fastcs_name: AiCompactAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3064:
@@ -25,12 +43,30 @@ terminal_types:
       product_code: 200814674
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Standard AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 20
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 8
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Compact AI {channel}
+        index_group: 61472
+        type_name: INT
+        channels: 4
+        access: Read-only
+        fastcs_name: AiCompactAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3104:
@@ -40,12 +76,30 @@ terminal_types:
       product_code: 203436114
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Standard AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 24
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 8
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Compact AI {channel}
+        index_group: 61472
+        type_name: INT
+        channels: 4
+        access: Read-only
+        fastcs_name: AiCompactAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3124:
@@ -55,12 +109,30 @@ terminal_types:
       product_code: 204746834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Standard AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 24
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 8
+        access: Read-only
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Standard AI {channel}
+        index_group: 61472
+        type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiStandardAi{channel}
+      - name_template: AI Compact AI {channel}
+        index_group: 61472
+        type_name: INT
+        channels: 4
+        access: Read-only
+        fastcs_name: AiCompactAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3602:
@@ -70,12 +142,24 @@ terminal_types:
       product_code: 236073042
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Inputs AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 10
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 4
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiInputsAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3702:
@@ -91,30 +175,30 @@ terminal_types:
         channels: 1
         access: Read-only
         fastcs_name: Ch1Cyclecount
-      - name_template: Ch1 Value
+      - name_template: Ch1 Sample Ch1 Value
         index_group: 61472
         type_name: INT
         channels: 1
         access: Read-only
-        fastcs_name: Ch1Value
+        fastcs_name: Ch1SampleCh1Value
       - name_template: Ch2 CycleCount
         index_group: 61472
         type_name: UINT
         channels: 1
         access: Read-only
         fastcs_name: Ch2Cyclecount
-      - name_template: Ch2 Value
+      - name_template: Ch2 Sample Ch2 Value
         index_group: 61472
         type_name: INT
         channels: 1
         access: Read-only
-        fastcs_name: Ch2Value
-      - name_template: StartTimeNextLatch
+        fastcs_name: Ch2SampleCh2Value
+      - name_template: NextSync1Time StartTimeNextLatch
         index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read-only
-        fastcs_name: Starttimenextlatch
+        fastcs_name: Nextsync1timeStarttimenextlatch
     coe_objects: []
     group_type: AnaIn
   EL3602-0002:
@@ -124,12 +208,24 @@ terminal_types:
       product_code: 236073042
       revision_number: 1048578
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Inputs AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 10
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 4
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiInputsAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3602-0010:
@@ -139,12 +235,24 @@ terminal_types:
       product_code: 236073042
       revision_number: 1048586
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Inputs AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 10
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 4
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiInputsAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3602-0020:
@@ -154,12 +262,24 @@ terminal_types:
       product_code: 236073042
       revision_number: 1179668
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
+      - name_template: AI Inputs AI {channel}
         index_group: 61472
-        type_name: AI Standard Channel 1_TYPE
+        type_name: BOOL
+        channels: 10
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: BIT2
+        channels: 4
+        access: Read-only
+        fastcs_name: AiInputsAi{channel}
+      - name_template: AI Inputs AI {channel}
+        index_group: 61472
+        type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: AiInputsAi{channel}
     coe_objects: []
     group_type: AnaIn
   EL3611-1030:
