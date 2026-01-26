@@ -331,44 +331,25 @@ def _on_tree_select(app: "TerminalEditorApp", node_id: str) -> None:
         terminal = ConfigService.get_terminal(app.config, node_id)
         if terminal:
             # Check if we need to lazy-load XML data for this terminal
-            # Only merge if terminal has CoE objects (check cache) and not
-            # already merged
             if node_id not in app.merged_terminals:
-                # Check if terminal has CoE in cache
-                has_coe = False
-                cached_terminals = app.beckhoff_client.get_cached_terminals()
-                if cached_terminals:
-                    cached_info = next(
-                        (t for t in cached_terminals if t.terminal_id == node_id),
-                        None,
+                # Show loading indicator and load XML
+                ui.label(f"Loading {node_id}...").classes("text-gray-400")
+                ui.spinner(size="sm")
+
+                async def load_and_show():
+                    from catio_terminals.service_file import FileService
+
+                    await FileService.merge_xml_for_terminal(
+                        node_id,
+                        terminal,
+                        app.beckhoff_client,
+                        app.composite_types,
                     )
-                    if cached_info:
-                        has_coe = cached_info.has_coe
-
-                # Only merge XML if terminal has CoE objects
-                if has_coe:
-                    # Show loading indicator and load XML
-                    ui.label(f"Loading {node_id}...").classes("text-gray-400")
-                    ui.spinner(size="sm")
-
-                    async def load_and_show():
-                        from catio_terminals.service_file import FileService
-
-                        await FileService.merge_xml_for_terminal(
-                            node_id,
-                            terminal,
-                            app.beckhoff_client,
-                            app.composite_types,
-                        )
-                        app.merged_terminals.add(node_id)
-                        # Re-render the details
-                        _on_tree_select(app, node_id)
-
-                    ui.timer(0.01, load_and_show, once=True)
-                else:
-                    # No CoE objects, mark as merged and show details directly
                     app.merged_terminals.add(node_id)
-                    show_terminal_details(app, node_id, terminal)
+                    # Re-render the details
+                    _on_tree_select(app, node_id)
+
+                ui.timer(0.01, load_and_show, once=True)
             else:
                 show_terminal_details(app, node_id, terminal)
 
