@@ -4,7 +4,8 @@ import inspect
 import logging
 import re
 import socket
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -193,3 +194,71 @@ def check_ndarray(
         and obj.dtype == expected_dtype
         and obj.shape == expected_shape
     )
+
+
+def check_coe_indices_format(index: str, subindex: str) -> tuple[str, str]:
+    """
+    Check the format of CoE indices and remove '0x' prefix if present.
+
+    :param index: CoE index as a string
+    :param subindex: CoE subindex as a string
+
+    :returns: tuple of formatted index and subindex
+    """
+    index = index.removeprefix("0x") if index.startswith("0x") else index
+    subindex = subindex.removeprefix("0x") if subindex.startswith("0x") else subindex
+    assert len(index) == 4 and len(subindex) == 4, (
+        f"Wrong format provided for the CoE indices: {index},{subindex}"
+    )
+    return index, subindex
+
+
+def get_all_attributes(instance: object) -> list[Any]:
+    """
+    Get a list of all attributes of an instance, including inherited ones.
+    Also recursively retrieves attributes from iterable attributes.
+
+    :param instance: the instance to inspect
+
+    :returns: a list of attribute values
+    """
+    assert not inspect.isclass(instance), "Expected an instance, got a class."
+    attributes = {}
+
+    # Get attributes from parent classes
+    attributes.update(get_parent_class_attributes(instance.__class__))
+    # Get attributes from the instance itself
+    attributes.update(vars(instance))
+
+    # Recursively collect all attribute values
+    all_attributes = []
+    for v in attributes.values():
+        if isinstance(v, Iterable):
+            for item in v:
+                all_attributes.extend(get_all_attributes(item))
+        else:
+            all_attributes.append(v)
+
+    return all_attributes
+
+
+def get_parent_class_attributes(cls: type) -> dict[str, object]:
+    """
+    Get a dictionary of all attributes of parent classes, including inherited ones.
+    It will ignore any special/magic attributes (those starting with '__'), \
+        functions and methods.
+
+    :param cls: the class to inspect
+
+    :returns: a dictionary of attribute names and their values
+    """
+    attributes: dict[str, object] = {}
+    for base in cls.__bases__:
+        attributes.update(get_parent_class_attributes(base))
+    attributes.update(cls.__dict__)
+
+    return {
+        k: v
+        for k, v in attributes.items()
+        if not (k.startswith("__") or inspect.isfunction(v) or inspect.ismethod(v))
+    }

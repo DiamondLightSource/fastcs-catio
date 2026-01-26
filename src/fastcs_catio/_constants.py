@@ -262,7 +262,7 @@ class IndexGroup(np.uint32, Flag, boundary=EJECT):  # type: ignore[misc]
     """IO link data channel, used to access the Can-over-EtherCAT (CoE) parameters"""
 
 
-class CoEIndex(np.uint32, Enum):
+class CoEIndexRange(np.uint32, Enum):
     """
     Specification of the CAN-over-EtherCAT (CoE) parameter ranges
     https://infosys.beckhoff.com/english.php?content=../content/1033/ethercatsystem/2469073803.html&id=274367601078044781

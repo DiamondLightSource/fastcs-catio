@@ -21,7 +21,7 @@ import numpy.typing as npt
 from ._constants import (
     TWINCAT_STRING_ENCODING,
     AdsState,
-    CoEIndex,
+    CoEIndexRange,
     CommandId,
     DeviceStateMachine,
     DeviceType,
@@ -82,6 +82,7 @@ from .messages import (
 from .symbols import symbol_lookup
 from .utils import (
     bytes_to_string,
+    check_coe_indices_format,
     get_local_netid_str,
     get_localhost_ip,
     get_localhost_name,
@@ -1072,7 +1073,7 @@ class AsyncioADSClient:
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             types: Sequence[str] = []
             for n in range(slave_count):
-                coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
+                coe_index = hex(CoEIndexRange.ADS_COE_OPERATIONAL_PARAMS + n)
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_type(coe_index),
                     netid=netid,
@@ -1100,7 +1101,7 @@ class AsyncioADSClient:
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             names: Sequence[str] = []
             for n in range(slave_count):
-                coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
+                coe_index = hex(CoEIndexRange.ADS_COE_OPERATIONAL_PARAMS + n)
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_name(coe_index),
                     netid=netid,
@@ -2851,90 +2852,79 @@ class AsyncioADSClient:
     # ### DEVICE CoE SETTINGS ----------------------------------------
     # #################################################################
 
-    async def set_io_coe_parameter(
-        self,
-        device: IODevice | IOSlave,
-        index: str,
-        subindex: str,
-        value: Any,
-        timeout: int = 5,
-    ) -> bool:
-        """
-        Set a CAN-over-EtherCAT parameter to a given value.
-
-        :param device: the Master EtherCAT device or one of its slave terminal
-        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY0000)
-        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x000000YY)
-        :param value: the value to assign to the CoE parameter
-        :param timeout: timeout value in seconds
-
-        :returns: true if the CoE write operation was successful
-        """
+    def get_coe_ams_address(self, device: IODevice | IOSlave) -> AmsAddress:
+        """"""
         if isinstance(device, IODevice):
-            netid = self.__target_ams_net_id
-            port = ADS_MASTER_PORT
+            return AmsAddress.from_string(
+                ":".join([self.__target_ams_net_id.to_string(), str(ADS_MASTER_PORT)])
+            )
         elif isinstance(device, IOSlave):
-            netid = self._ecdevices[self.master_device_id].netid
-            port = (int)(device.address)
-
-        try:
-            val = np.array(value)
-            dtype = val.dtype
-
-            async with asyncio.timeout(timeout):
-                # Read existing value
-                response = await self._ads_command(
-                    AdsReadRequest.read_coe_value(index, subindex, dtype),
-                    netid=netid,
-                    port=port,
+            return AmsAddress.from_string(
+                ":".join(
+                    [
+                        self._ecdevices[self.master_device_id].netid.to_string(),
+                        str(device.address),
+                    ]
                 )
-                logging.debug(
-                    f"Converting byte stream '{response.data.hex(' ')}' to {dtype}."
-                )
-                old_value = np.frombuffer(response.data, dtype)
-
-                # Write new value
-                response = await self._ads_command(
-                    AdsWriteRequest.write_coe_value(
-                        index,
-                        subindex,
-                        val.tobytes(),
-                    ),
-                    netid=netid,
-                    port=port,
-                )
-
-                # Read new value
-                response = await self._ads_command(
-                    AdsReadRequest.read_coe_value(index, subindex, dtype),
-                    netid=netid,
-                    port=port,
-                )
-                logging.debug(
-                    f"Converting byte stream '{response.data.hex(' ')}' to {dtype}."
-                )
-                new_value = np.frombuffer(response.data, dtype)
-
-                logging.info(
-                    f"{device.name}: CoE parameter at index '{index}:{subindex}' was "
-                    + f"changed from value {old_value} to value {new_value}."
-                )
-
-                return True
-
-        except ValueError:
-            logging.error(
-                "Write Type Error: wrong value type provided for CoE parameter "
-                + f"at index '{index}:{subindex}' for device {device.name}."
             )
 
-        except TimeoutError:
-            logging.error(
-                f"{device.name}:Timeout: CoE parameter at index "
-                + f"'{index}:{subindex}' couldn't be modified."
-            )
+    async def read_io_coe_parameter(
+        self, address: AmsAddress, index: str, subindex: str, dtype: npt.DTypeLike
+    ) -> npt.NDArray[Any]:
+        """
+        Read the value of a CANopen-over-EtherCAT parameter.
 
-        return False
+        :param address: the AMS address of the EtherCAT master device \
+            or one of its slave terminals
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param dtype: the data type of the CoE parameter
+
+        :returns: the value of the CoE parameter
+        """
+        index, subindex = check_coe_indices_format(index, subindex)
+        response = await self._ads_command(
+            AdsReadRequest.read_coe_value(index, subindex, dtype),
+            netid=address.net_id,
+            port=address.port,
+        )
+        # Adjust dtype for byte string types of variable length
+        if (
+            np.dtype(dtype).kind == "S"
+            and len(response.data) != np.dtype(dtype).itemsize
+        ):
+            dtype = f"S{len(response.data)}"
+
+        result = np.frombuffer(response.data, dtype)
+        # logging.debug(
+        #     f"CoE parameter at index '{index}:{subindex}' has value: {result}."
+        # )
+        return result
+
+    async def write_io_coe_parameter(
+        self, address: AmsAddress, index: str, subindex: str, value: npt.NDArray[Any]
+    ) -> ErrorCode:
+        """
+        Write a given value to a CANopen-over-EtherCAT parameter.
+
+        :param address: the AMS address of the EtherCAT master device \
+            or one of its slave terminals
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param value: the value to assign to the CoE parameter
+
+        :returns: the NO_ERROR ADS code resulting from the write operation
+        """
+        index, subindex = check_coe_indices_format(index, subindex)
+        response = await self._ads_command(
+            AdsWriteRequest.write_coe_value(index, subindex, value.tobytes()),
+            netid=address.net_id,
+            port=address.port,
+        )
+        logging.info(
+            f"CoE parameter at index '{index}:{subindex}' was changed to value {value}."
+        )
+        return response.result
 
     # #################################################################
     # ### UTILITY METHODS (FOR TESTING) -------------------------------
@@ -3082,6 +3072,32 @@ class AsyncioADSClient:
                     )
         else:
             raise KeyError(f"{identifier} is already registered in the I/O map.")
+
+    def get_io_ams_address(self, io: IOServer | IODevice | IOSlave) -> AmsAddress:
+        """
+        Get the AMS address of a given I/O object (server, device or terminal).
+
+        :param io: the I/O object (server, device or terminal)
+
+        :returns: the AMS address of the given I/O object
+        """
+        if isinstance(io, IOServer):
+            return AmsAddress.from_string(
+                ":".join([self.__target_ams_net_id.to_string(), str(IO_SERVER_PORT)])
+            )
+        elif isinstance(io, IODevice):
+            return AmsAddress.from_string(
+                ":".join([self.__target_ams_net_id.to_string(), str(ADS_MASTER_PORT)])
+            )
+        elif isinstance(io, IOSlave):
+            return AmsAddress.from_string(
+                ":".join(
+                    [
+                        self._ecdevices[self.master_device_id].netid.to_string(),
+                        str(io.address),
+                    ]
+                )
+            )
 
     @_check_system
     async def get_device_framecounters_attr(
@@ -3385,4 +3401,52 @@ class AsyncioADSClient:
             raise KeyError(
                 "No EtherCAT object registered against "
                 + f"controller id {controller_id}."
+            )
+
+    async def get_coe_param(
+        self, address: AmsAddress, index: str, subindex: str, dtype: npt.DTypeLike
+    ) -> Any:
+        """
+        Read a CoE parameter.
+
+        :param address: the AMS address of the target device
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param dtype: the data type of the CoE parameter
+
+        :returns: the value of the CoE parameter
+        """
+        response = await self.read_io_coe_parameter(address, index, subindex, dtype)
+        result = (
+            response[0].item()
+            if isinstance(response, np.ndarray) and response.size == 1
+            else response
+        )
+        return result
+
+    async def set_coe_param(
+        self,
+        address: AmsAddress,
+        index: str,
+        subindex: str,
+        dtype: npt.DTypeLike,
+        value: Any,
+    ) -> None:
+        """
+        Write a CoE parameter.
+
+        :param address: the AMS address of the target device
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param dtype: the data type of the CoE parameter
+        :param value: the value to assign to the CoE parameter
+        """
+        try:
+            val = np.array(value, dtype=dtype)
+            await self.write_io_coe_parameter(address, index, subindex, val)
+
+        except ValueError:
+            logging.error(
+                "Write Type Error: wrong value type provided for CoE parameter "
+                + f"at index '{index}:{subindex}'."
             )

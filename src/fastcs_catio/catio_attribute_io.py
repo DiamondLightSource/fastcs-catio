@@ -8,6 +8,7 @@ from fastcs.logging import bind_logger
 from fastcs.tracer import Tracer
 from fastcs.util import ONCE
 
+from fastcs_catio._types import AmsAddress
 from fastcs_catio.catio_connection import CATioConnection, CATioFastCSRequest
 
 tracer = Tracer(name=__name__)
@@ -266,6 +267,190 @@ class CATioControllerSymbolAttributeIO(
 
         self.log_event(
             "Get query for ADS Symbol attribute",
+            topic=attr,
+            query=self.query,
+            response=self._value,
+        )
+
+
+@dataclass
+class CATioControllerCoEAttributeIORef(AttributeIORef):
+    """Reference to a CATio controller CoE attribute IO."""
+
+    name: str
+    """Name of the attribute in the CATio API"""
+    _: KW_ONLY  # Additional keyword-only arguments
+    address: AmsAddress
+    """Ams address of the controller for CoE communication"""
+    index: str
+    """Index of the CoE parameter associated with the attribute"""
+    subindex: str
+    """Subindex of the CoE parameter associated with the attribute"""
+    dtype: np.dtype
+    """Data type of the CoE parameter associated with the attribute"""
+    update_period: float | None = ONCE
+    """Update period for the FastCS attribute"""
+
+
+class CATioControllerCoEAttributeIO(
+    AttributeIO[AnyT, CATioControllerCoEAttributeIORef]
+):
+    """Attribute IO for CATio controller CANopen-over-EtherCAT (CoE) attributes."""
+
+    query = "COE_PARAM"
+
+    def __init__(
+        self,
+        connection: CATioConnection,
+        subsystem: str,
+    ):
+        super().__init__()
+        self._connection: CATioConnection = connection
+        """Client connection to the CATio controller."""
+        self.subsystem: str = subsystem
+        """Subsystem name for the CATio controller."""
+        self._value: dict[str, Any] = {}
+        """Cached value of the controller attributes."""
+
+    async def send(
+        self,
+        attr: AttrW[DType_T, CATioControllerCoEAttributeIORef]
+        | AttrRW[DType_T, CATioControllerCoEAttributeIORef],
+        value: DType_T,
+    ) -> None:
+        """
+        Send a new value to the CoE attribute.
+
+        :param attr: The attribute to send the value to.
+        :param value: The value to send.
+        """
+        logger.debug(
+            f"{self.subsystem}:: CoE Write handler has been called for "
+            f"{attr.group} -> {attr.name}."
+        )
+
+        await self._connection.send_command(
+            CATioFastCSRequest(
+                command=self.query,
+                address=attr.io_ref.address,
+                index=attr.io_ref.index,
+                subindex=attr.io_ref.subindex,
+                dtype=attr.io_ref.dtype,
+                value=value,
+            )
+        )
+
+        if isinstance(attr, AttrRW):
+            await attr.update(value)
+
+        self.log_event(
+            "Set command for CoE attribute",
+            topic=attr,
+            query=self.query,
+            new_value=value,
+        )
+
+    async def initialise_attribute_value(
+        self, attr: AttrR[AnyT, CATioControllerCoEAttributeIORef], response: Any
+    ) -> None:
+        """
+        Initialise the attribute value at the start of the IOC.
+
+        :param attr: The attribute to be initialised.
+        :param response: The polled response from the controller.
+        """
+        if isinstance(response, np.ndarray):
+            assert isinstance(attr.datatype, Waveform)
+        self._value[attr.name] = attr.dtype(response)
+        await attr.update(self._value[attr.name])
+        logger.debug(
+            f"CoE attribute '{attr.name}' of type {attr.datatype} was initialised "
+            f"to value {response}."
+        )
+
+    async def compare_and_update_attribute_value(
+        self, attr: AttrR[AnyT, CATioControllerCoEAttributeIORef], response: Any
+    ) -> None:
+        """
+        Compare the current attribute value with the polled response; update if needed.
+
+        :param attr: The attribute to be updated.
+        :param response: The polled response from the controller.
+        """
+        # Handle numpy arrays (waveforms) separately
+        if isinstance(response, np.ndarray):
+            assert isinstance(attr.datatype, Waveform)
+            assert isinstance(self._value[attr.name], np.ndarray)
+            if not np.array_equal(response, self._value[attr.name]):
+                self._value[attr.name] = attr.dtype(response)
+                await attr.update(self._value[attr.name])
+                logger.debug(
+                    f"CoE Waveform attribute '{attr.name}' was updated to {response}."
+                )
+            else:
+                logger.debug(
+                    f"Current value of CoE attribute '{attr.name}' "
+                    f"is unchanged: {self._value}"
+                )
+        # Handle simple data types
+        else:
+            new_value = attr.dtype(response)
+            if new_value != self._value:
+                self._value[attr.name] = new_value
+                await attr.update(self._value[attr.name])
+                logger.debug(
+                    f"CoE Attribute '{attr.name}' was updated to value {new_value}"
+                )
+            else:
+                logger.debug(
+                    f"Current value of CoE attribute '{attr.name}' "
+                    f"is unchanged: {self._value}"
+                )
+
+    async def update(self, attr: AttrR[AnyT, CATioControllerCoEAttributeIORef]) -> None:
+        """
+        Poll the CoE attribute value and update it if it has changed.
+
+        :param attr: The attribute to be updated.
+        """
+        logger.debug(
+            f"{self.subsystem}:: CoE Read handler has been called for "
+            f"{attr.group} -> {attr.name}."
+        )
+
+        # Get the current value of the CoE attribute
+        response = await self._connection.send_query(
+            CATioFastCSRequest(
+                command=self.query,
+                address=attr.io_ref.address,
+                index=attr.io_ref.index,
+                subindex=attr.io_ref.subindex,
+                dtype=attr.io_ref.dtype,
+            )
+        )
+        # Convert byte responses to string if required
+        if attr.io_ref.dtype.kind == "S" and isinstance(response, bytes):
+            response = response.decode("utf-8")
+
+        logger.debug(f"Initial value of CoE parameter {attr.io_ref.name}: {response}")
+
+        if response is not None:
+            if self._value.get(attr.name) is None:
+                # Initialise the attribute value at the start of the IOC.
+                logger.debug(
+                    f"CoE Attribute '{attr.name}' hasn't been initialised yet."
+                )
+                await self.initialise_attribute_value(attr, response)
+
+            else:
+                # Update the attribute value if it has changed.
+                logger.debug(
+                    f"Checking if value of CoE Attribute '{attr.name}' needs updating."
+                )
+                await self.compare_and_update_attribute_value(attr, response)
+
+        self.log_event(
+            "Get query for CoE attribute",
             topic=attr,
             query=self.query,
             response=self._value,

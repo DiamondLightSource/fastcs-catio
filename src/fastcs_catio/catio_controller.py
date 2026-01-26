@@ -20,9 +20,11 @@ from fastcs.util import ONCE
 from numpy.lib import recfunctions as rfn
 
 from fastcs_catio._constants import DeviceType
+from fastcs_catio._types import AmsAddress
 from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
+    CATioControllerCoEAttributeIO,
     CATioControllerSymbolAttributeIO,
 )
 from fastcs_catio.client import RemoteRoute, get_remote_address
@@ -76,6 +78,8 @@ class CATioController(Controller, Tracer):
         """Unique identifier for the controller instance."""
         self._io: IOServer | IODevice | IOSlave | None = None
         """The I/O object referenced by the CATio controller."""
+        self._ams_address: AmsAddress | None = None
+        """The AmsAdress associated with the CATio controller."""
         self.name: str = name
         """Name of the I/O controller."""
         self.ecat_name = ecat_name
@@ -112,6 +116,10 @@ class CATioController(Controller, Tracer):
                     self._identifier,
                     self.ads_name_map,
                 ),
+                CATioControllerCoEAttributeIO(
+                    self.connection,
+                    self.group,
+                ),
             ],
         )
 
@@ -125,6 +133,11 @@ class CATioController(Controller, Tracer):
         """The I/O object referenced by the CATio controller."""
         return self._io
 
+    @property
+    def ams_address(self) -> AmsAddress | None:
+        """The AmsAddress associated with the CATio controler."""
+        return self._ams_address
+
     async def _get_io_from_map(self) -> IOServer | IODevice | IOSlave:
         """
         Get the I/O object associated with the controller from the CATio client \
@@ -136,6 +149,16 @@ class CATioController(Controller, Tracer):
             CATioFastCSRequest(
                 "IO_FROM_MAP", self._identifier, self.group, self.ecat_name
             )
+        )
+
+    async def _get_io_ams_address(self) -> AmsAddress:
+        """
+        Get the AMS address associated with the controller.
+
+        :returns: the AmsAddress object associated with the controller.
+        """
+        return await self.connection.send_query(
+            CATioFastCSRequest("IO_AMS_ADDRESS", self.io)
         )
 
     async def create_tcp_connection(
@@ -165,11 +188,17 @@ class CATioController(Controller, Tracer):
 
         # Get the I/O object associated with the controller
         self._io = await self._get_io_from_map()
-        assert self._io is not None, (
+        assert self.io is not None, (
             "The I/O object associated with the controller must be defined."
         )
+        # Get the ams address associated with the controller
+        self._ams_address = await self._get_io_ams_address()
+        assert self.ams_address is not None, (
+            "The AmsAddress associated with the CATio controller must be defined."
+        )
+
         # Get the current configuration of the controller
-        await self.read_configuration()
+        await self.read_configuration(self.connection, self.ams_address, self.io.name)
 
         # Create the controller attributes
         await self.get_io_attributes()
@@ -178,13 +207,25 @@ class CATioController(Controller, Tracer):
             + "was successful."
         )
 
-    async def read_configuration(self) -> None:
+    async def read_configuration(
+        self, connection: CATioConnection, ams_address: AmsAddress, io_name: str
+    ) -> None:
         """
         Get the current configuration of the controller from the CATio client.
-        This includes updating any relevant internal state variables.
+        If overriden, this base class will be used to initialise relevant controller \
+            settings from CANopen-over-EtherCAT (CoE) parameters; \
+                otherwise controller configuration is absent.
+        For instance, root server and various I/O terminals have no CoE parameters.
+
+        :param connection: the CATio client connection to use.
+        :param ams_address: the AmsAddress of the controller.
+        :param io_name: the name of the I/O object type associated with the controller.
         """
         # Currently no specific configuration is needed at the base controller level
         # e.g. the server won't have any specific configuration
+        logger.debug(
+            f"No CoE parameters available for {io_name}, configuration skipped."
+        )
         pass
 
     async def get_generic_attributes(self) -> None:
