@@ -107,6 +107,10 @@ class FileService:
             # Merge symbols: Create lookup of YAML symbols by name template
             yaml_symbol_map = {sym.name_template: sym for sym in terminal.symbol_nodes}
 
+            # Determine if this is a new terminal (no YAML symbols)
+            # New terminals should have all symbols selected by default
+            is_new_terminal = len(yaml_symbol_map) == 0
+
             # Build merged symbol list from XML primitive symbols
             merged_symbols = []
             xml_symbol_map = {}
@@ -125,8 +129,8 @@ class FileService:
                         yaml_sym.selected = True
                         merged_symbols.append(yaml_sym)
                 else:
-                    # Symbol only in XML - mark as not selected
-                    xml_sym.selected = False
+                    # Symbol only in XML - select for new terminals, not for existing
+                    xml_sym.selected = is_new_terminal
                     merged_symbols.append(xml_sym)
 
             # Warn about YAML-only symbols not in XML (these are dropped)
@@ -141,6 +145,7 @@ class FileService:
 
             # Merge CoE objects
             yaml_coe_map = {coe.index: coe for coe in terminal.coe_objects}
+            # CoE objects default unselected even for new terminals (too many)
             merged_coe = []
             xml_coe_map = {}
 

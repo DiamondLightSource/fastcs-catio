@@ -8,7 +8,6 @@ import pytest
 from catio_terminals.models import (
     CompositeType,
     CompositeTypeMember,
-    CompositeTypesConfig,
     Identity,
     SymbolNode,
     TerminalConfig,
@@ -157,30 +156,6 @@ def test_composite_type_model():
     assert composite.size == 4
     assert len(composite.members) == 1
     assert composite.members[0].name == "Status"
-
-
-def test_composite_types_config_load_default():
-    """Test loading default composite types configuration."""
-    config = CompositeTypesConfig.get_default()
-
-    # Should have multiple types loaded
-    assert len(config.composite_types) > 0
-
-    # Check a known type exists
-    assert config.is_composite("AI Standard Channel 1_TYPE")
-    assert not config.is_composite("INT")  # Primitive type
-
-    # Get and verify the type
-    ai_type = config.get_type("AI Standard Channel 1_TYPE")
-    assert ai_type is not None
-    assert ai_type.ads_type == 65
-    assert ai_type.size == 4
-    assert len(ai_type.members) == 2
-
-    # Check members
-    member_names = [m.name for m in ai_type.members]
-    assert "Status" in member_names
-    assert "Value" in member_names
 
 
 if __name__ == "__main__":

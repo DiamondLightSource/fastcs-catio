@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import pytest
 
 from catio_terminals.beckhoff import BeckhoffClient
-from catio_terminals.models import CompositeTypesConfig, TerminalConfig
+from catio_terminals.models import TerminalConfig
 from catio_terminals.service_terminal import TerminalService
 
 
@@ -26,9 +26,8 @@ async def test_new_terminal_coe_objects_default_unselected(beckhoff_xml_cache):
     # Create empty config
     config = TerminalConfig()
 
-    # Create Beckhoff client and composite types
+    # Create Beckhoff client
     beckhoff_client = BeckhoffClient()
-    composite_types = CompositeTypesConfig.get_default()
 
     # Get terminal info for EL3602
     terminals = await beckhoff_client.search_terminals("EL3602")
@@ -39,7 +38,7 @@ async def test_new_terminal_coe_objects_default_unselected(beckhoff_xml_cache):
 
     # Add terminal from Beckhoff (eager load to get CoE objects immediately)
     terminal = await TerminalService.add_terminal_from_beckhoff(
-        config, terminal_info, beckhoff_client, composite_types, lazy_load=False
+        config, terminal_info, beckhoff_client, lazy_load=False
     )
 
     # Verify terminal was added
@@ -74,9 +73,7 @@ async def test_new_terminal_coe_objects_default_unselected(beckhoff_xml_cache):
     # Check if needs merge (it should be in merged_terminals now, so skip merge)
     if "EL3602" not in merged_terminals:
         print("Terminal not in merged_terminals, triggering merge...")
-        await FileService.merge_xml_for_terminal(
-            "EL3602", terminal, beckhoff_client, composite_types
-        )
+        await FileService.merge_xml_for_terminal("EL3602", terminal, beckhoff_client)
         merged_terminals.add("EL3602")
     else:
         print("Terminal already merged, skipping XML merge")
@@ -107,9 +104,8 @@ async def test_new_terminal_coe_selection_yaml_roundtrip(beckhoff_xml_cache):
     # Create empty config
     config = TerminalConfig()
 
-    # Create Beckhoff client and composite types
+    # Create Beckhoff client
     beckhoff_client = BeckhoffClient()
-    composite_types = CompositeTypesConfig.get_default()
 
     # Get terminal info for EL3602
     terminals = await beckhoff_client.search_terminals("EL3602")
@@ -118,7 +114,7 @@ async def test_new_terminal_coe_selection_yaml_roundtrip(beckhoff_xml_cache):
 
     # Add terminal (eager load to get CoE objects for testing)
     await TerminalService.add_terminal_from_beckhoff(
-        config, terminal_info, beckhoff_client, composite_types, lazy_load=False
+        config, terminal_info, beckhoff_client, lazy_load=False
     )
 
     # Save to temp file
@@ -143,6 +139,54 @@ async def test_new_terminal_coe_selection_yaml_roundtrip(beckhoff_xml_cache):
         print("✓ Verified unselected CoE objects are not saved to YAML")
     finally:
         temp_path.unlink()
+
+
+@pytest.mark.asyncio
+async def test_new_terminal_symbols_default_selected_via_lazy_load(beckhoff_xml_cache):
+    """Test symbols default to selected when adding a new terminal via lazy load.
+
+    When a terminal is lazy-loaded (the default in the UI), symbols are populated
+    via merge_xml_for_terminal. For new terminals (empty yaml_symbol_map), all
+    symbols should default to selected=True.
+    """
+    from catio_terminals.service_file import FileService
+
+    # Create empty config
+    config = TerminalConfig()
+    beckhoff_client = BeckhoffClient()
+
+    # Get terminal info for EL3004 (4-channel analog input)
+    terminals = await beckhoff_client.search_terminals("EL3004")
+    terminal_info = next((t for t in terminals if t.terminal_id == "EL3004"), None)
+    assert terminal_info is not None, "Could not find EL3004 in search results"
+
+    # Add terminal with lazy_load=True (default, no symbols yet)
+    terminal = await TerminalService.add_terminal_from_beckhoff(
+        config, terminal_info, beckhoff_client, lazy_load=True
+    )
+
+    # Verify terminal has no symbols initially (lazy loaded)
+    assert len(terminal.symbol_nodes) == 0, (
+        "Lazy-loaded terminal should start with no symbols"
+    )
+
+    # Now simulate what happens when user clicks on terminal in the GUI
+    # This triggers merge_xml_for_terminal which populates symbols
+    await FileService.merge_xml_for_terminal("EL3004", terminal, beckhoff_client)
+
+    # Verify symbols were populated
+    assert len(terminal.symbol_nodes) > 0, "EL3004 should have symbols after merge"
+
+    # Verify ALL symbols default to selected=True for new terminals
+    print("\n=== Symbols after lazy-load merge ===")
+    for sym in terminal.symbol_nodes:
+        print(f"Symbol '{sym.name_template}': selected={sym.selected}")
+        assert sym.selected is True, (
+            f"Symbol '{sym.name_template}' should be selected by default "
+            "for new terminals"
+        )
+
+    print(f"✓ Verified {len(terminal.symbol_nodes)} symbols default to selected")
 
 
 if __name__ == "__main__":
