@@ -8,6 +8,9 @@
 #   - blacklist: Exclude from these terminal types (if specified)
 #   - group_whitelist: Only apply to terminals in these groups
 #   - group_blacklist: Exclude terminals in these groups
+
+# NOTE for the group names use the keys in GROUP_TYPE_LABELS in
+#   src/catio_terminals/config/terminal_groups.yaml (not the full labels)
 #
 # If no whitelist/blacklist is specified, the symbol applies to all terminals.
 # Whitelist takes precedence over blacklist.
@@ -32,7 +35,7 @@ runtime_symbols:
       communication issue.
     # Couplers may not have WcState - exclude them
     group_blacklist:
-      - Coupler
+      - CpBk # Bus Couplers
 
   # InfoData State - device state from EtherCAT state machine
   - name_template: InfoData^State
@@ -45,6 +48,12 @@ runtime_symbols:
       Device state information from the EtherCAT state machine.
       Values: 1=Init, 2=Pre-Op, 3=Bootstrap, 4=Safe-Op, 8=Op
     # May not apply to all terminal types - TBD based on testing
+    group_whitelist:
+      - DigIn
+      - DigOut
+      - AnaIn
+      - AnaOut
+      - Measuring
 
   # Input Toggle - indicates data freshness
   - name_template: InputToggle
@@ -60,4 +69,4 @@ runtime_symbols:
     group_whitelist:
       - DigIn
       - AnaIn
-      - Counter
+      - Measuring
