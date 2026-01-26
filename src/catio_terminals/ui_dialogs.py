@@ -60,118 +60,53 @@ GROUP_TYPE_LABELS = {
 
 
 async def show_file_selector(app: "TerminalEditorApp") -> None:
-    """Show file selector dialog.
+    """Show simple file path input dialog.
 
     Args:
         app: Terminal editor application instance
     """
-    with ui.dialog() as dialog, ui.card().classes("w-[800px] max-h-[600px]"):
+    with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
         ui.label("Select Terminal YAML File").classes("text-lg font-bold mb-4")
 
-        # Folder browser with local state
-        current_dir = {"path": Path.cwd()}
-
-        ui.label("Browse Folders:").classes("text-caption text-gray-600 mt-2")
-
-        # Current directory display
-        dir_label = ui.label(f"Current: {current_dir['path']}").classes(
-            "text-sm text-blue-300 mb-2"
+        ui.label("Enter or paste the file path:").classes(
+            "text-caption text-gray-400 mb-2"
         )
 
-        # Folder navigation
-        folder_container = ui.column().classes(
-            "w-full max-h-48 overflow-y-auto border border-gray-600 rounded p-2"
+        # Simple file path input with autocomplete
+        file_path = (
+            ui.input(
+                label="File Path",
+                placeholder=f"{Path.cwd()}/terminals.yaml",
+                autocomplete=[
+                    str(p)
+                    for p in Path.cwd().rglob("*.yaml")
+                    if not any(part.startswith(".") for part in p.parts)
+                ][:50],  # Limit to 50 files for performance
+            )
+            .classes("w-full")
+            .props("clearable")
         )
 
-        def update_folder_view():
-            """Update the folder view with current directory contents."""
-            folder_container.clear()
-            dir_label.text = f"Current: {current_dir['path']}"
+        # Set initial value to cwd
+        file_path.value = str(Path.cwd()) + "/"
 
-            with folder_container:
-                # Parent directory button
-                if current_dir["path"].parent != current_dir["path"]:
-                    with ui.row().classes(
-                        "w-full hover:bg-gray-700 cursor-pointer p-1"
-                    ):
-                        ui.icon("folder").classes("text-yellow-500")
-
-                        def go_up():
-                            current_dir["path"] = current_dir["path"].parent
-                            update_folder_view()
-
-                        ui.label("..").on("click", go_up)
-
-                # List directories and YAML files
-                try:
-                    items = sorted(current_dir["path"].iterdir())
-                    for item in items:
-                        if item.is_dir():
-                            with ui.row().classes(
-                                "w-full hover:bg-gray-700 cursor-pointer p-1"
-                            ):
-                                ui.icon("folder").classes("text-yellow-500")
-
-                                def go_into(target=item):
-                                    current_dir["path"] = target
-                                    update_folder_view()
-
-                                ui.label(item.name).on("click", go_into)
-                        elif item.suffix in [".yaml", ".yml"]:
-                            with ui.row().classes(
-                                "w-full hover:bg-gray-700 cursor-pointer p-1"
-                            ):
-                                ui.icon("description").classes("text-blue-400")
-
-                                def select_file(target=item):
-                                    file_path.set_value(str(target))
-
-                                ui.label(item.name).on("click", select_file)
-                except PermissionError:
-                    ui.label("Permission denied").classes("text-red-400")
-
-        update_folder_view()
-
-        def navigate_to_path():
-            """Navigate to the path typed in the file_path input."""
-            path_str = file_path.value.strip()
-            if path_str:
-                try:
-                    new_path = Path(path_str)
-                    if new_path.is_dir():
-                        current_dir["path"] = new_path
-                        update_folder_view()
-                    elif new_path.parent.is_dir():
-                        # If it's a file path, navigate to its parent directory
-                        current_dir["path"] = new_path.parent
-                        update_folder_view()
-                except (ValueError, OSError):
-                    # Invalid path, keep current directory
-                    pass
-
-        file_path = ui.input(
-            label="File Path",
-            placeholder="/path/to/terminals.yaml (press Enter to navigate)",
-            validation={
-                "File must end with .yaml": lambda v: v.endswith(".yaml")
-                or v.endswith(".yml")
-            },
-        ).classes("w-full mt-4")
-
-        file_path.on("keyup.enter", navigate_to_path)
+        # Handle Enter key to trigger Open
+        file_path.on("keydown.enter", lambda: _open_file(app, dialog, file_path.value))
 
         async def cancel_and_exit():
             dialog.close()
             await show_exit_dialog(app)
 
-        with ui.row().classes("w-full justify-end gap-2"):
+        with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Cancel", on_click=cancel_and_exit).props("flat")
             ui.button(
                 "Create New",
+                icon="note_add",
                 on_click=lambda: _create_new_file(app, dialog, file_path.value),
             ).props("flat color=secondary")
             ui.button(
                 "Open",
+                icon="folder_open",
                 on_click=lambda: _open_file(app, dialog, file_path.value),
             ).props("color=primary")
 
@@ -898,40 +833,45 @@ async def show_save_as_dialog(app: "TerminalEditorApp") -> None:
         ui.notify("No file loaded", type="warning")
         return
 
-    with ui.dialog() as dialog, ui.card().classes("w-[500px]"):
-        ui.label("Save As").classes("text-h6")
+    # Default path
+    default_path = str(Path.cwd() / "terminals.yaml")
+    if app.current_file:
+        default_path = str(app.current_file)
 
-        # Default to current directory or current file's directory
-        default_dir = str(Path.cwd())
-        if app.current_file:
-            default_dir = str(app.current_file.parent)
-            default_name = app.current_file.name
-        else:
-            default_name = "terminals.yaml"
+    with ui.dialog() as dialog, ui.card().classes("w-[600px]"):
+        ui.label("Save As").classes("text-h6 mb-4")
 
-        ui.label("Directory:").classes("text-caption text-gray-600 mt-2")
-        dir_input = ui.input(value=default_dir).classes("w-full")
+        ui.label("Enter the file path:").classes("text-caption text-gray-400 mb-2")
 
-        ui.label("Filename:").classes("text-caption text-gray-600 mt-2")
-        name_input = ui.input(value=default_name).classes("w-full")
+        file_path = (
+            ui.input(
+                label="File Path",
+                value=default_path,
+            )
+            .classes("w-full")
+            .props("clearable")
+        )
 
         result: dict[str, str | None] = {"path": None}
 
         def confirm_save():
-            directory = dir_input.value.strip()
-            filename = name_input.value.strip()
-            if directory and filename:
-                if not filename.endswith(".yaml"):
-                    filename += ".yaml"
-                result["path"] = str(Path(directory) / filename)
+            path_str = file_path.value.strip()
+            if path_str:
+                # Ensure .yaml extension
+                if not path_str.endswith((".yaml", ".yml")):
+                    path_str += ".yaml"
+                result["path"] = path_str
             dialog.close()
+
+        # Handle Enter key to trigger Save
+        file_path.on("keydown.enter", lambda: confirm_save())
 
         def cancel_save():
             dialog.close()
 
         with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Cancel", on_click=cancel_save).props("flat")
-            ui.button("Save", on_click=confirm_save).props("color=primary")
+            ui.button("Save", icon="save", on_click=confirm_save).props("color=primary")
 
     await dialog
 

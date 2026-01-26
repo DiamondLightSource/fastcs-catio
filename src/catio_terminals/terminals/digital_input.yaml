@@ -9,7 +9,13 @@ terminal_types:
       vendor_id: 2
       product_code: 65810514
       revision_number: 1048576
-    symbol_nodes: []
+    symbol_nodes:
+      - name_template: Inputs Channel {channel}
+        index_group: 61472
+        type_name: Inputs_TYPE
+        channels: 4
+        access: Read-only
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn
   EL1014:
@@ -18,7 +24,13 @@ terminal_types:
       vendor_id: 2
       product_code: 66465874
       revision_number: 1048576
-    symbol_nodes: []
+    symbol_nodes:
+      - name_template: Inputs Channel {channel}
+        index_group: 61472
+        type_name: Inputs_TYPE
+        channels: 4
+        access: Read-only
+        fastcs_name: InputsChannel{channel}
     coe_objects: []
     group_type: DigIn
   EL1008:
