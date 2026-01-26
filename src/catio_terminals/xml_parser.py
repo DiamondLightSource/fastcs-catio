@@ -20,14 +20,12 @@ logger = logging.getLogger(__name__)
 
 # Pre-compiled regex patterns
 TERMINAL_ID_PATTERN = re.compile(r"([A-Z]{2,3}\d{4})", re.IGNORECASE)
+# Captures: (prefix)(keyword)(channel_num)(suffix)
 CHANNEL_KEYWORD_PATTERN = re.compile(
-    r"(.*?)\s*(?:Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
+    r"(.*?)\s*(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)\s+(\d+)(.*)",
     re.IGNORECASE,
 )
 CHANNEL_NUMBER_PATTERN = re.compile(r"(.+?)\s+(\d+)$")
-KEYWORD_EXTRACT_PATTERN = re.compile(
-    r"(Channel|Ch\.?|Input|Output|AI|AO|DI|DO)", re.IGNORECASE
-)
 
 # ADS type mapping
 ADS_TYPE_MAP = {
@@ -248,33 +246,32 @@ def _extract_channel_pattern(name: str) -> tuple[str, int] | None:
     Returns:
         Tuple of (pattern_template, channel_number) or None if no pattern found
     """
-    channel_match = CHANNEL_KEYWORD_PATTERN.search(name)
-    if not channel_match:
-        channel_match = CHANNEL_NUMBER_PATTERN.search(name)
+    keyword_match = CHANNEL_KEYWORD_PATTERN.search(name)
+    if keyword_match:
+        # Groups: (prefix, keyword, channel_num, suffix)
+        prefix = keyword_match.group(1).strip()
+        keyword = keyword_match.group(2)
+        channel_num = int(keyword_match.group(3))
+        suffix = keyword_match.group(4).strip()
 
-    if not channel_match:
-        return None
+        # Build pattern: "prefix keyword {channel} suffix"
+        parts = []
+        if prefix:
+            parts.append(prefix)
+        parts.append(f"{keyword} {{channel}}")
+        if suffix:
+            parts.append(suffix)
+        pattern = " ".join(parts)
+        return pattern, channel_num
 
-    prefix = channel_match.group(1).strip()
-    channel_num = int(channel_match.group(2))
-    suffix = channel_match.group(3).strip() if len(channel_match.groups()) > 2 else ""
+    # Fall back to simple "name number" pattern
+    number_match = CHANNEL_NUMBER_PATTERN.search(name)
+    if number_match:
+        prefix = number_match.group(1).strip()
+        channel_num = int(number_match.group(2))
+        return f"{prefix} {{channel}}", channel_num
 
-    # Create pattern template
-    if CHANNEL_KEYWORD_PATTERN.search(name):
-        keyword_match = KEYWORD_EXTRACT_PATTERN.search(name)
-        keyword = keyword_match.group(1) if keyword_match else "Channel"
-        if prefix and suffix:
-            pattern = f"{prefix} {keyword} {{channel}} {suffix}"
-        elif prefix:
-            pattern = f"{prefix} {keyword} {{channel}}"
-        elif suffix:
-            pattern = f"{keyword} {{channel}} {suffix}"
-        else:
-            pattern = f"{keyword} {{channel}}"
-    else:
-        pattern = f"{prefix} {{channel}}"
-
-    return pattern, channel_num
+    return None
 
 
 def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
@@ -325,25 +322,31 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
 
             # Try PDO name first (e.g., "Channel 1" for EL1004)
             # This matches how TwinCAT creates composite symbol names
-            channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
+            pdo_channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
 
-            # Fall back to entry name if PDO name has no pattern
-            if not channel_info:
-                channel_info = _extract_channel_pattern(entry_name)
-
-            # Build the name by combining PDO and Entry names when both exist
+            # Build the symbol name
             if pdo_name and entry_name and pdo_name != entry_name:
-                # Combine: "Channel 1" + "Input" -> use PDO pattern
-                if channel_info:
-                    # PDO has pattern, use it
-                    name = pdo_name
+                if pdo_channel_info:
+                    # PDO has channel pattern - include entry name for distinction
+                    # e.g., "CNT Inputs Channel 1" + "Counter value"
+                    #    -> "CNT Inputs Channel {channel} Counter value"
+                    pdo_pattern, _ = pdo_channel_info
+                    name = f"{pdo_pattern} {entry_name}"
+                    # Re-extract to get the full pattern with entry name
+                    channel_info = (name.replace("{channel}", "1"), 1)
+                    # Actually we need to build the pattern directly
+                    pattern = f"{pdo_pattern} {entry_name}"
+                    channel_info = (pattern, pdo_channel_info[1])
                 else:
                     # Neither has pattern, combine them
                     name = f"{pdo_name} {entry_name}"
+                    channel_info = _extract_channel_pattern(name)
             elif pdo_name:
                 name = pdo_name
+                channel_info = pdo_channel_info
             else:
                 name = entry_name
+                channel_info = _extract_channel_pattern(entry_name)
 
             if channel_info:
                 pattern, channel_num = channel_info
