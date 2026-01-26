@@ -102,7 +102,7 @@ async def test_new_terminal_coe_objects_default_unselected():
 
 
 @pytest.mark.asyncio
-async def test_new_terminal_coe_selection_yaml_roundtrip():
+async def test_new_terminal_coe_selection_yaml_roundtrip(beckhoff_xml_cache):
     """Test that unselected CoE objects are filtered when saving to YAML."""
     # Create empty config
     config = TerminalConfig()
