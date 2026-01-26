@@ -19,91 +19,12 @@ This module provides the mapping between these two representations.
 from dataclasses import dataclass, field
 
 from catio_terminals.models import (
+    CompositeSymbolMapping,
     CompositeType,
     CompositeTypesConfig,
     SymbolNode,
     TerminalType,
 )
-
-
-@dataclass
-class CompositeSymbolMapping:
-    """Mapping between a composite type and the terminal group types it applies to.
-
-    Attributes:
-        type_name: The composite type name (e.g., "AI Standard Channel 1_TYPE")
-        name_template: Symbol name template (e.g., "AI Standard Channel {channel}")
-        group_types: Terminal group types this mapping applies to (e.g., ["AnaIn"])
-        member_patterns: Patterns to match primitive symbols to members
-    """
-
-    type_name: str
-    name_template: str
-    group_types: list[str]
-    member_patterns: dict[str, list[str]] = field(default_factory=dict)
-
-
-# Define mappings from composite types to terminal groups and member patterns
-COMPOSITE_MAPPINGS: list[CompositeSymbolMapping] = [
-    # Analog Input - Standard 16-bit
-    CompositeSymbolMapping(
-        type_name="AI Standard Channel 1_TYPE",
-        name_template="AI Standard Channel {channel}",
-        group_types=["AnaIn"],
-        member_patterns={
-            # Maps composite member name to primitive symbol patterns
-            "Status": ["Underrange", "Overrange", "Limit", "Error", "TxPDO"],
-            "Value": ["Value"],
-        },
-    ),
-    # Analog Input - 24-bit
-    CompositeSymbolMapping(
-        type_name="AI Inputs Channel 1_TYPE",
-        name_template="AI Inputs Channel {channel}",
-        group_types=["AnaIn"],
-        member_patterns={
-            "Status": ["Underrange", "Overrange", "Limit", "Error", "TxPDO"],
-            "Value": ["Value"],
-        },
-    ),
-    # Analog Output
-    CompositeSymbolMapping(
-        type_name="AO Output Channel 1_TYPE",
-        name_template="AO Output Channel {channel}",
-        group_types=["AnaOut"],
-        member_patterns={
-            "AnalogOutput": ["Analog output", "Output"],
-        },
-    ),
-    # Digital Input
-    CompositeSymbolMapping(
-        type_name="Inputs_TYPE",
-        name_template="Inputs Channel {channel}",
-        group_types=["DigIn"],
-        member_patterns={
-            "Inputs": ["Input", "Channel"],
-        },
-    ),
-    # Digital Output
-    CompositeSymbolMapping(
-        type_name="Outputs_TYPE",
-        name_template="Outputs Channel {channel}",
-        group_types=["DigOut"],
-        member_patterns={
-            "Outputs": ["Output", "Channel"],
-        },
-    ),
-    # Counter Input
-    CompositeSymbolMapping(
-        type_name="CNT Inputs_TYPE",
-        name_template="CNT Inputs Channel {channel}",
-        group_types=["Counting"],
-        member_patterns={
-            "Status": ["Status"],
-            "CounterValue": ["Counter", "Value"],
-        },
-    ),
-]
 
 
 @dataclass
@@ -146,11 +67,14 @@ class GroupedSymbols:
     ungrouped_symbols: list[SymbolNode]
 
 
-def _find_mapping_for_terminal(group_type: str | None) -> CompositeSymbolMapping | None:
+def _find_mapping_for_terminal(
+    group_type: str | None, mappings: list[CompositeSymbolMapping]
+) -> CompositeSymbolMapping | None:
     """Find the composite mapping that applies to a terminal group type.
 
     Args:
         group_type: Terminal group type (e.g., "AnaIn", "DigOut")
+        mappings: List of composite symbol mappings
 
     Returns:
         Matching CompositeSymbolMapping or None
@@ -158,7 +82,7 @@ def _find_mapping_for_terminal(group_type: str | None) -> CompositeSymbolMapping
     if not group_type:
         return None
 
-    for mapping in COMPOSITE_MAPPINGS:
+    for mapping in mappings:
         if group_type in mapping.group_types:
             return mapping
     return None
@@ -221,7 +145,8 @@ def group_symbols_by_composite(
         )
 
     # Find the mapping for this terminal type
-    mapping = _find_mapping_for_terminal(terminal.group_type)
+    mappings = composite_types.get_mappings()
+    mapping = _find_mapping_for_terminal(terminal.group_type, mappings)
 
     if not mapping:
         return GroupedSymbols(
@@ -356,7 +281,8 @@ def convert_primitives_to_composites(
         return list(terminal.symbol_nodes)
 
     # Find the mapping for this terminal type
-    mapping = _find_mapping_for_terminal(terminal.group_type)
+    mappings = composite_types.get_mappings()
+    mapping = _find_mapping_for_terminal(terminal.group_type, mappings)
 
     if not mapping:
         return list(terminal.symbol_nodes)

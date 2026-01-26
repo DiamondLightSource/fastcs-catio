@@ -10,6 +10,88 @@
 # Primitive types (BIT, BOOL, INT, UINT, etc.) are not listed here -
 # they map 1:1 to ADS symbols without expansion.
 
+# Composite Symbol Mappings
+# ========================================================
+# Define how to group primitive symbols from XML into composite types.
+# Each mapping specifies:
+# - type_name: The composite type to create
+# - name_template: Symbol name template with {channel} placeholder
+# - group_types: Terminal group types this mapping applies to
+# - member_patterns: Patterns to match primitive symbols to composite members
+
+composite_mappings:
+  # Analog Input - Standard 16-bit
+  - type_name: AI Standard Channel 1_TYPE
+    name_template: "AI Standard Channel {channel}"
+    group_types:
+      - AnaIn
+    member_patterns:
+      Status:
+        - Underrange
+        - Overrange
+        - Limit
+        - Error
+        - TxPDO
+      Value:
+        - Value
+
+  # Analog Input - 24-bit
+  - type_name: AI Inputs Channel 1_TYPE
+    name_template: "AI Inputs Channel {channel}"
+    group_types:
+      - AnaIn
+    member_patterns:
+      Status:
+        - Underrange
+        - Overrange
+        - Limit
+        - Error
+        - TxPDO
+      Value:
+        - Value
+
+  # Analog Output
+  - type_name: AO Output Channel 1_TYPE
+    name_template: "AO Output Channel {channel}"
+    group_types:
+      - AnaOut
+    member_patterns:
+      AnalogOutput:
+        - Analog output
+        - Output
+
+  # Digital Input
+  - type_name: Inputs_TYPE
+    name_template: "Inputs Channel {channel}"
+    group_types:
+      - DigIn
+    member_patterns:
+      Inputs:
+        - Input
+        - Channel
+
+  # Digital Output
+  - type_name: Outputs_TYPE
+    name_template: "Outputs Channel {channel}"
+    group_types:
+      - DigOut
+    member_patterns:
+      Outputs:
+        - Output
+        - Channel
+
+  # Counter Input
+  - type_name: CNT Inputs_TYPE
+    name_template: "CNT Inputs Channel {channel}"
+    group_types:
+      - Counting
+    member_patterns:
+      Status:
+        - Status
+      CounterValue:
+        - Counter
+        - Value
+
 composite_types:
   # ============================================================
   # Analog Input Types

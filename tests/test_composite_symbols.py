@@ -3,14 +3,13 @@
 import pytest
 
 from catio_terminals.composite_symbols import (
-    COMPOSITE_MAPPINGS,
     CompositeSymbol,
-    CompositeSymbolMapping,
     convert_primitives_to_composites,
     get_composite_view_data,
     group_symbols_by_composite,
 )
 from catio_terminals.models import (
+    CompositeSymbolMapping,
     CompositeTypesConfig,
     Identity,
     SymbolNode,
@@ -105,16 +104,18 @@ class TestCompositeSymbolMapping:
 
 
 class TestCompositeMappings:
-    """Test COMPOSITE_MAPPINGS constant."""
+    """Test composite mappings from YAML configuration."""
 
-    def test_anain_mapping_exists(self) -> None:
+    def test_anain_mapping_exists(self, composite_types: CompositeTypesConfig) -> None:
         """Test that AnaIn mapping is defined."""
-        anain_mappings = [m for m in COMPOSITE_MAPPINGS if "AnaIn" in m.group_types]
+        mappings = composite_types.get_mappings()
+        anain_mappings = [m for m in mappings if "AnaIn" in m.group_types]
         assert len(anain_mappings) > 0
 
-    def test_digout_mapping_exists(self) -> None:
+    def test_digout_mapping_exists(self, composite_types: CompositeTypesConfig) -> None:
         """Test that DigOut mapping is defined."""
-        digout_mappings = [m for m in COMPOSITE_MAPPINGS if "DigOut" in m.group_types]
+        mappings = composite_types.get_mappings()
+        digout_mappings = [m for m in mappings if "DigOut" in m.group_types]
         assert len(digout_mappings) > 0
 
 
