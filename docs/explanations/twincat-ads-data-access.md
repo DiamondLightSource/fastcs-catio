@@ -127,6 +127,115 @@ At runtime, FastCS will:
 3. **YAML filters what we scan** - Only selected symbols from XML end up in YAML
 4. **No hardcoded offsets needed** - We use symbol-based ADS access exclusively
 
+## 3. Limitation: XML Does Not Determine Active PDO Configuration
+
+### The Problem
+
+The ESI XML files define **all possible** PDO configurations for a terminal, but TwinCAT may use a **different configuration** than what we infer from the XML. This means we cannot reliably determine the actual ADS symbol names just from the terminal type.
+
+### Example: EL1502 Counter Terminal
+
+The EL1502 is a 2-channel counter terminal. Its ESI XML defines multiple PDO options:
+
+```xml
+<!-- Per-channel PDOs -->
+<TxPdo>
+  <Name>CNT Inputs Channel 1</Name>
+  <Entry><Name>Output functions enabled</Name>...</Entry>
+  <Entry><Name>Counter value</Name>...</Entry>
+</TxPdo>
+<TxPdo>
+  <Name>CNT Inputs Channel 2</Name>
+  ...
+</TxPdo>
+
+<!-- Combined PDO (no channel number) -->
+<TxPdo>
+  <Name>CNT Inputs</Name>
+  <Entry><Name>Output functions enabled</Name>...</Entry>
+  <Entry><Name>Counter value</Name>...</Entry>
+</TxPdo>
+```
+
+Our XML parser sees "Channel 1" and "Channel 2" PDOs and infers symbols like:
+```
+CNT Inputs Channel {channel}.Output functions enabled
+```
+
+But TwinCAT may be configured to use the **combined PDO**, resulting in actual symbols like:
+```
+Term 92 (EL1502).CNT Inputs.Output functions enabled
+```
+
+### Why This Happens
+
+1. **ESI XML is a capability description** - It lists all PDO configurations the terminal *supports*
+2. **TwinCAT project chooses the configuration** - The actual PDO mapping is determined by the TwinCAT project settings
+3. **Default configurations vary** - Different terminals may default to different PDO variants
+
+### Implications for catio-terminals
+
+This limitation means:
+
+1. **Symbol names from XML may not match TwinCAT** - The symbols we generate may not exist in the actual TwinCAT symbol table
+2. **Per-terminal verification needed** - Users may need to verify/adjust symbol names against their actual TwinCAT configuration
+3. **Future enhancement needed** - A more robust solution would query the actual TwinCAT symbol table at runtime rather than inferring from XML
+
+### Example: EL3702 Oversampling Terminal
+
+The EL3702 is a 2-channel analog input terminal that supports **oversampling** - capturing multiple samples per cycle. The ESI XML reveals extensive configurability:
+
+```xml
+<TxPdo OSFac="20" OSMin="1" OSMax="100" OSIndexInc="16">
+  <Name>AI Inputs Channel 1</Name>
+  <Entry>
+    <Name>Value</Name>
+    <DataType>INT</DataType>
+  </Entry>
+</TxPdo>
+```
+
+The XML attributes indicate:
+- **OSMin="1"** - Minimum 1 sample per cycle
+- **OSMax="100"** - Maximum 100 samples per cycle
+- **OSFac="20"** - Oversampling factor (internal timing)
+
+Additionally, the XML defines multiple **Operation Modes**:
+
+```xml
+<OpMode>
+  <Name>DcSync</Name>
+  <Desc>DC-Synchronous with variable Oversampling</Desc>
+</OpMode>
+<OpMode>
+  <Name>DcSync2</Name>
+  <Desc>DC-Synchronous 2x Oversampling</Desc>
+</OpMode>
+<!-- DcSync3, DcSync4, DcSync5, DcSync8, DcSync10 also defined -->
+```
+
+And TwinCAT-specific vendor extensions:
+
+```xml
+<Oversampling DefaultFactor="10" MinCycleTime="10000"/>
+```
+
+**The problem**: Our XML parser only sees the template PDO with a single `Value` entry. But at runtime, TwinCAT will create symbols based on the configured sample count:
+
+| Configuration | Actual Symbols Created |
+|---------------|----------------------|
+| 1x (no oversampling) | `Term 60 (EL3702).AI Inputs Channel 1.Value` |
+| 10x oversampling | `Term 60 (EL3702).AI Inputs Channel 1.Samples[0..9]` (or similar) |
+| 100x oversampling | 100 sample values per channel |
+
+The XML defines **capabilities** (1-100 samples), but the TwinCAT project determines **actual configuration**.
+
+### Workarounds
+
+1. **Manual verification** - Compare generated YAML against TwinCAT's symbol browser
+2. **Runtime symbol discovery** - Query TwinCAT's symbol table to discover actual symbols
+3. **User override** - Allow users to manually edit symbol names in the YAML files
+
 ## Common Index Groups for EtherCAT I/O
 
 | Index Group | Hex      | Description |
