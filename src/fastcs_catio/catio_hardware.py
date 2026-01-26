@@ -9,19 +9,28 @@
 
 
 import numpy as np
-from fastcs.attributes import AttrR
+from fastcs.attributes import AttrR, AttrRW
 from fastcs.datatypes import Int, Waveform
 from fastcs.logging import bind_logger
 from fastcs.tracer import Tracer
+from fastcs.util import ONCE
 
+from fastcs_catio.catio_attribute_io import (
+    CATioControllerSymbolAttributeIORef,
+)
 from fastcs_catio.catio_controller import (
     CATioDeviceController,
     CATioTerminalController,
 )
-from fastcs_catio.devices import ELM_OVERSAMPLING_FACTOR, OVERSAMPLING_FACTOR
+from fastcs_catio.symbols import ELM_OVERSAMPLING_FACTOR, OVERSAMPLING_FACTOR
 
 tracer = Tracer(name=__name__)
 logger = bind_logger(logger_name=__name__)
+
+
+# ============================================================================
+# Classes specific to the defined I/O devices/terminals
+# ============================================================================
 
 
 class EtherCATMasterController(CATioDeviceController):
@@ -55,9 +64,9 @@ class EtherCATMasterController(CATioDeviceController):
             "InputsSlaveCount",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("inputs_slave_count"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Number of slaves reached in last cycle",
             ),
         )
@@ -65,19 +74,19 @@ class EtherCATMasterController(CATioDeviceController):
             "InputsDevState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("inputs_device_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="EtherCAT device input cycle frame status",
             ),
         )
         self.add_attribute(
             "OutputsDevCtrl",
-            AttrR(
+            AttrRW(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("outputs_device_control"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="EtherCAT device output control value",
             ),
         )
@@ -86,9 +95,11 @@ class EtherCATMasterController(CATioDeviceController):
                 f"InFrm{i}State",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(
+                        f"inputs_frame{i}_status"
+                    ),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description="Cyclic Ethernet input frame status",
                 ),
             )
@@ -96,9 +107,11 @@ class EtherCATMasterController(CATioDeviceController):
                 f"InFrm{i}WcState",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(
+                        f"inputs_frame{i}_wcounter"
+                    ),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description="Inputs accumulated working counter",
                 ),
             )
@@ -106,39 +119,50 @@ class EtherCATMasterController(CATioDeviceController):
                 f"InFrm{i}InpToggle",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(
+                        f"inputs_frame{i}_update"
+                    ),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description="EtherCAT cyclic frame update indicator",
                 ),
             )
             self.add_attribute(
                 f"OutFrm{i}Ctrl",
-                AttrR(
+                AttrRW(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(
+                        f"outputs_frame{i}_control"
+                    ),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description="EtherCAT output frame control value",
                 ),
             )
             self.add_attribute(
                 f"OutFrm{i}WcCtrl",
-                AttrR(
+                AttrRW(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(
+                        f"outputs_frame{i}_wcounter"
+                    ),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description="Outputs accumulated working counter",
                 ),
             )
 
-            # Map the FastCS attribute name to the symbol name used by ADS
+            # Map the FastCS channel attribute name to the symbol name used by ADS
             self.ads_name_map[f"InFrm{i}State"] = f"Inputs.Frm{i}State"
             self.ads_name_map[f"InFrm{i}WcState"] = f"Inputs.Frm{i}WcState"
             self.ads_name_map[f"InFrm{i}InpToggle"] = f"Inputs.Frm{i}InputToggle"
             self.ads_name_map[f"OutFrm{i}Ctrl"] = f"Outputs.Frm{i}Ctrl"
             self.ads_name_map[f"OutFrm{i}WcCtrl"] = f"Outputs.Frm{i}WcCtrl"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["InputsSlaveCount"] = "Inputs.SlaveCount"
+        self.ads_name_map["InputsDevState"] = "Inputs.DevState"
+        self.ads_name_map["OutputsDevCtrl"] = "Outputs.DevCtrl"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -180,12 +204,15 @@ class EK1101Controller(CATioTerminalController):
             "ID",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("ID"),
                 group=self.attr_group_name,
-                initial_value=1,
+                initial_value=None,
                 description="Unique ID for the group of components",
             ),
         )
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["ID"] = "ID"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -233,9 +260,9 @@ class EL1004Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -243,9 +270,9 @@ class EL1004Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated digital value",
             ),
         )
@@ -255,14 +282,18 @@ class EL1004Controller(CATioTerminalController):
                 f"DICh{i}Value",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital input value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"DICh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -289,9 +320,9 @@ class EL1014Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -299,9 +330,9 @@ class EL1014Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated digital value",
             ),
         )
@@ -311,21 +342,25 @@ class EL1014Controller(CATioTerminalController):
                 f"DICh{i}Value",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital input value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"DICh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 
 
 class EL1124Controller(CATioTerminalController):
-    """A sub-controller for an EL1124 EtherCAT digital output terminal."""
+    """A sub-controller for an EL1124 EtherCAT digital input terminal."""
 
     io_function: str = "4-channel digital input, 5V DC, 0.05us filter"
     """Function description of the I/O controller."""
@@ -345,9 +380,9 @@ class EL1124Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -355,9 +390,9 @@ class EL1124Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated digital value",
             ),
         )
@@ -367,14 +402,18 @@ class EL1124Controller(CATioTerminalController):
                 f"DICh{i}Value",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital input value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"DICh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -401,9 +440,9 @@ class EL1084Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -411,9 +450,9 @@ class EL1084Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated digital value",
             ),
         )
@@ -423,14 +462,18 @@ class EL1084Controller(CATioTerminalController):
                 f"DICh{i}Value",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital input value",
                 ),
             )
             # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DICh{i}Value"] = f"Channel{i}"
+            self.ads_name_map[f"DICh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -457,9 +500,9 @@ class EL1502Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -467,9 +510,9 @@ class EL1502Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated digital value",
             ),
         )
@@ -477,9 +520,9 @@ class EL1502Controller(CATioTerminalController):
             "CNTInputStatus",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_counter_status"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Input channel counter status",
             ),
         )
@@ -487,33 +530,35 @@ class EL1502Controller(CATioTerminalController):
             "CNTInputValue",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_counter_value"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Input channel counter value",
             ),
         )
         self.add_attribute(
             "CNTOutputStatus",
-            AttrR(
+            AttrRW(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("output_counter_status"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Output channel counter status",
             ),
         )
         self.add_attribute(
             "CNTOutputValue",
-            AttrR(
+            AttrRW(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("output_counter_value"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Output channel counter set value",
             ),
         )
-        # Map the FastCS attribute names to the symbol names used by ADS
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
         self.ads_name_map["CNTInputStatus"] = "CNTInputs.Countervalue"
         self.ads_name_map["CNTInputValue"] = "CNTOutputs.Setcountervalue"
         self.ads_name_map["CNTOutputStatus"] = "CNTInputs.Countervalue"
@@ -544,9 +589,9 @@ class EL2024Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -554,16 +599,19 @@ class EL2024Controller(CATioTerminalController):
         for i in range(1, self.num_channels + 1):
             self.add_attribute(
                 f"DOCh{i}Value",
-                AttrR(
+                AttrRW(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital output value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"DOCh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -590,9 +638,9 @@ class EL2024v0010Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -600,16 +648,19 @@ class EL2024v0010Controller(CATioTerminalController):
         for i in range(1, self.num_channels + 1):
             self.add_attribute(
                 f"DOCh{i}Value",
-                AttrR(
+                AttrRW(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital output value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"DOCh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -636,9 +687,9 @@ class EL2124Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -646,16 +697,19 @@ class EL2124Controller(CATioTerminalController):
         for i in range(1, self.num_channels + 1):
             self.add_attribute(
                 f"DOCh{i}Value",
-                AttrR(
+                AttrRW(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} digital output value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"DOCh{i}Value"] = f"Channel{i}"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"DOCh{i}Value"] = f"Channel {i}"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -688,9 +742,9 @@ class EL3104Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -698,9 +752,9 @@ class EL3104Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated analog value",
             ),
         )
@@ -710,9 +764,9 @@ class EL3104Controller(CATioTerminalController):
                 f"AICh{i}Status",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_status"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} voltage status",
                 ),
             )
@@ -720,15 +774,19 @@ class EL3104Controller(CATioTerminalController):
                 f"AICh{i}Value",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} analog input value",
                 ),
             )
-            # Map the FastCS attribute names to the symbol names used by ADS
-            self.ads_name_map[f"AICh{i}Status"] = f"AIStandardChannel{i}.Status"
-            self.ads_name_map[f"AICh{i}Value"] = f"AIStandardChannel{i}.Value"
+            # Map the FastCS channel attribute names to the symbol names used by ADS
+            self.ads_name_map[f"AICh{i}Status"] = f"AI Standard Channel {i}.Status"
+            self.ads_name_map[f"AICh{i}Value"] = f"AI Standard Channel {i}.Value"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -755,9 +813,9 @@ class EL3602Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -765,9 +823,9 @@ class EL3602Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Availability of an updated analog value",
             ),
         )
@@ -777,9 +835,9 @@ class EL3602Controller(CATioTerminalController):
                 f"AICh{i}Status",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_status"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} voltage status",
                 ),
             )
@@ -787,15 +845,19 @@ class EL3602Controller(CATioTerminalController):
                 f"AICh{i}Value",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} analog input value",
                 ),
             )
-            # Map the FastCS attribute names to the symbol names used by ADS
-            self.ads_name_map[f"AICh{i}Status"] = f"AIInputsChannel{i}"
-            self.ads_name_map[f"AICh{i}Value"] = f"AIInputsChannel{i}.Value"
+            # Map the FastCS channel attribute names to the symbol names used by ADS
+            self.ads_name_map[f"AICh{i}Status"] = f"AI Inputs Channel {i}"
+            self.ads_name_map[f"AICh{i}Value"] = f"AI Inputs Channel {i}.Value"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -822,14 +884,34 @@ class EL3702Controller(CATioTerminalController):
         await super().get_io_attributes()
 
         # Get the attributes specific to this type of terminal
+        self.add_attribute(
+            "WcState",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
+                group=self.attr_group_name,
+                initial_value=None,
+                description="Slave working counter state value",
+            ),
+        )
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
+                group=self.attr_group_name,
+                initial_value=None,
+                description="Availability of an updated analog value",
+            ),
+        )
         for i in range(1, self.operating_channels + 1):
             self.add_attribute(
                 f"AICh{i}CycleCount",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_cycle"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Record transfer counter for channel#{i}",
                 ),
             )
@@ -838,9 +920,9 @@ class EL3702Controller(CATioTerminalController):
                     f"AICh{i}ValueOvsmpl",
                     AttrR(
                         datatype=Int(),
-                        io_ref=None,
+                        io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                         group=self.attr_group_name,
-                        initial_value=0,
+                        initial_value=None,
                         description=f"Analog sample value(s) for channel#{i}",
                     ),
                 )
@@ -851,7 +933,7 @@ class EL3702Controller(CATioTerminalController):
                         datatype=Waveform(
                             array_dtype=np.int16, shape=(self.oversampling_factor,)
                         ),
-                        io_ref=None,
+                        io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                         group=self.attr_group_name,
                         initial_value=np.zeros(
                             (self.oversampling_factor,), dtype=np.int16
@@ -859,9 +941,13 @@ class EL3702Controller(CATioTerminalController):
                         description=f"Analog sample value(s) for channel#{i}",
                     ),
                 )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"AICh{i}CycleCount"] = f"Ch{i}CycleCount"
-            self.ads_name_map[f"AICh{i}ValueOvsmpl"] = f"Ch{i}Sample0"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"AICh{i}CycleCount"] = f"Ch{i} CycleCount"
+            self.ads_name_map[f"AICh{i}ValueOvsmpl"] = f"Ch{i} Sample 0"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -888,25 +974,28 @@ class EL4134Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
         for i in range(1, self.num_channels + 1):
             self.add_attribute(
                 f"AOCh{i}Value",
-                AttrR(
+                AttrRW(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} analog output value",
                 ),
             )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"AOCh{i}Value"] = f"AOOutputChannel{i}.Analogoutput"
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"AOCh{i}Value"] = f"AO Output Channel {i}.Analog output"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -931,9 +1020,9 @@ class EL9410Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -941,9 +1030,9 @@ class EL9410Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Counter for valid telegram received",
             ),
         )
@@ -951,9 +1040,9 @@ class EL9410Controller(CATioTerminalController):
             "StatusUp",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("contacts_status"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Power contacts voltage diagnostic status",
             ),
         )
@@ -961,12 +1050,18 @@ class EL9410Controller(CATioTerminalController):
             "StatusUs",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("ebus_status"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="E-bus supply voltage diagnostic status",
             ),
         )
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
+        self.ads_name_map["StatusUp"] = "Status Up"
+        self.ads_name_map["StatusUs"] = "Status Us"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -991,9 +1086,9 @@ class EL9505Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -1001,9 +1096,9 @@ class EL9505Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Counter for valid telegram received",
             ),
         )
@@ -1011,12 +1106,17 @@ class EL9505Controller(CATioTerminalController):
             "StatusUo",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("output_status"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Output voltage status",
             ),
         )
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
+        self.ads_name_map["StatusUo"] = "Status Uo"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -1041,9 +1141,9 @@ class EL9512Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
             ),
         )
@@ -1051,9 +1151,9 @@ class EL9512Controller(CATioTerminalController):
             "InputToggle",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Counter for valid telegram received",
             ),
         )
@@ -1061,12 +1161,17 @@ class EL9512Controller(CATioTerminalController):
             "StatusUo",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("output_status"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Output voltage status",
             ),
         )
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
+        self.ads_name_map["StatusUo"] = "Status Uo"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
@@ -1096,10 +1201,30 @@ class ELM3704v0000Controller(CATioTerminalController):
             "WcState",
             AttrR(
                 datatype=Int(),
-                io_ref=None,
+                io_ref=CATioControllerSymbolAttributeIORef("wcounter_state"),
                 group=self.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description="Slave working counter state value",
+            ),
+        )
+        self.add_attribute(
+            "InputToggle",
+            AttrR(
+                datatype=Int(),
+                io_ref=CATioControllerSymbolAttributeIORef("input_toggle"),
+                group=self.attr_group_name,
+                initial_value=None,
+                description="Availability of an updated digital value",
+            ),
+        )
+        self.add_attribute(
+            "AICh1LatchTime",
+            AttrR(
+                datatype=Waveform(array_dtype=np.uint32, shape=(2,)),
+                io_ref=CATioControllerSymbolAttributeIORef("channel1_latch"),
+                group=self.attr_group_name,
+                initial_value=np.zeros((2,), dtype=np.uint32),
+                description="Latch time for next channel samples",
             ),
         )
         for i in range(1, self.num_channels + 1):
@@ -1107,20 +1232,10 @@ class ELM3704v0000Controller(CATioTerminalController):
                 f"AICh{i}Status",
                 AttrR(
                     datatype=Int(),
-                    io_ref=None,
+                    io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_status"),
                     group=self.attr_group_name,
-                    initial_value=0,
+                    initial_value=None,
                     description=f"Channel#{i} Process Analog Input status",
-                ),
-            )
-            self.add_attribute(
-                f"AICh{i}LatchTime",
-                AttrR(
-                    datatype=Waveform(array_dtype=np.uint32, shape=(2,)),
-                    io_ref=None,
-                    group=self.attr_group_name,
-                    initial_value=np.zeros((2,), dtype=np.uint32),
-                    description=f"Latch time for next channel#{i} samples",
                 ),
             )
             if self.oversampling_factor == 1:
@@ -1128,9 +1243,9 @@ class ELM3704v0000Controller(CATioTerminalController):
                     f"AICh{i}ValueOvsmpl",
                     AttrR(
                         datatype=Int(),
-                        io_ref=None,
+                        io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                         group=self.attr_group_name,
-                        initial_value=0,
+                        initial_value=None,
                         description=f"ELM3704 terminal channel#{i} value",
                     ),
                 )
@@ -1141,7 +1256,7 @@ class ELM3704v0000Controller(CATioTerminalController):
                         datatype=Waveform(
                             array_dtype=np.int32, shape=(self.oversampling_factor,)
                         ),
-                        io_ref=None,
+                        io_ref=CATioControllerSymbolAttributeIORef(f"channel{i}_value"),
                         group=self.attr_group_name,
                         initial_value=np.zeros(
                             (self.oversampling_factor,), dtype=np.int32
@@ -1149,14 +1264,18 @@ class ELM3704v0000Controller(CATioTerminalController):
                         description=f"ELM3704 terminal channel#{i} value",
                     ),
                 )
-            # Map the FastCS attribute name to the symbol name used by ADS
-            self.ads_name_map[f"AICh{i}Status"] = f"PAIStatusChannel{i}.Status"
-            self.ads_name_map[f"AICh{i}LatchTime"] = (
-                f"PAITimestampChannel{i}.StartTimeNextLatch"
-            )
+            # Map the FastCS channel attribute name to the symbol name used by ADS
+            self.ads_name_map[f"AICh{i}Status"] = f"PAI Status Channel {i}.Status"
             self.ads_name_map[f"AICh{i}ValueOvsmpl"] = (
-                f"PAISamples{self.oversampling_factor}Channel{i}.Samples"
+                f"PAI Samples {self.oversampling_factor} Channel {i}.Samples"
             )
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["WcState"] = "WcState.WcState"
+        self.ads_name_map["InputToggle"] = "WcState.InputToggle"
+        self.ads_name_map["AICh1LatchTime"] = (
+            "PAI Timestamp Channel 1.StartTimeNextLatch"
+        )
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")

@@ -2768,7 +2768,13 @@ class AsyncioADSClient:
                                 streams_dtype, buffer
                             )
                         )
-                        logging.debug("Notification stream added to the queue.")
+                        assert streams_dtype.fields
+                        logging.debug(
+                            f"Notification stream added to the queue: "
+                            f"qsize={self.__notification_queue.qsize()}, "
+                            f"streams_nb={self.__num_notif_streams}, "
+                            f"notifs_fields={len(streams_dtype.fields)}"
+                        )
 
             except AssertionError as err:
                 logging.error(f"Notification flushing error: {err}")
@@ -2782,6 +2788,13 @@ class AsyncioADSClient:
                     self.__buffer = None
                     self.__notification_queue.put_nowait(
                         await self._get_notifications_from_buffer(streams_dtype, buffer)
+                    )
+                    assert streams_dtype.fields
+                    logging.debug(
+                        f"Final notification stream added to the queue: "
+                        f"qsize={self.__notification_queue.qsize()}, "
+                        f"streams_nb={self.__num_notif_streams}, "
+                        f"notifs_fields={len(streams_dtype.fields)}"
                     )
                 logging.info("...periodic flushing of notifications has ended.")
                 break
@@ -2818,6 +2831,7 @@ class AsyncioADSClient:
             received within the specified period
         """
         try:
+            logging.debug("Attempting to read notification queue...")
             async with asyncio.timeout(timeout):
                 notifs = await self.__notification_queue.get()
                 self.__notification_queue.task_done()
@@ -3294,3 +3308,81 @@ class AsyncioADSClient:
                 )
         else:
             raise ValueError("Missing information about controller identification.")
+
+    async def get_symbol_param(
+        self, controller_id: int, symbol_name: str, dtype: npt.DTypeLike
+    ) -> Any:
+        """
+        Read a value from a given ADS symbol.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_name: the name of the ADS symbol to read from
+        :param dtype: the data type of the ADS symbol
+
+        :returns: the value of the ADS symbol
+        """
+        # Currently have to find symbol within the list of symbols which are
+        # registered with the EtherCAT (Master) device
+        # Each Device/Slave doesn't have its own symbols attributes
+        # TO DO: add symbol list to each Device/Slave
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            full_symbol_name = ".".join([ctlr.name, symbol_name])
+            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            if symbol is not None:
+                _, response = await self.read_ads_symbol(symbol)
+                result = (
+                    response[0].item()
+                    if isinstance(response, np.ndarray) and response.size == 1
+                    else response
+                )
+                return result
+            else:
+                logging.debug(
+                    f"No match for controller {controller_id} and "
+                    f"ADS  Symbol '{symbol_name}'"
+                )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
+
+    async def set_symbol_param(
+        self, controller_id: int, symbol_name: str, dtype: npt.DTypeLike, value: Any
+    ) -> None:
+        """
+        Write a value to a given ADS symbol.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_name: the name of the ADS symbol to write to
+        :param dtype: the data type of the ADS symbol
+        :param value: the value to assign to the ADS symbol
+        """
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            full_symbol_name = ".".join([ctlr.name, symbol_name])
+            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            if symbol is not None:
+                status = await self.write_ads_symbol(symbol, value)
+                if not status:
+                    logging.warning(
+                        f"Write failed for controller {controller_id} and "
+                        f"ADS Symbol '{symbol_name}'"
+                    )
+            else:
+                logging.debug(
+                    f"No match for controller {controller_id} and "
+                    f"ADS  Symbol '{symbol_name}'"
+                )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )

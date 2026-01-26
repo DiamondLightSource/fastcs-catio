@@ -23,6 +23,7 @@ from fastcs_catio._constants import DeviceType
 from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
+    CATioControllerSymbolAttributeIO,
 )
 from fastcs_catio.client import RemoteRoute, get_remote_address
 from fastcs_catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
@@ -104,6 +105,12 @@ class CATioController(Controller, Tracer):
                     self.connection,
                     self.group,
                     self._identifier,
+                ),
+                CATioControllerSymbolAttributeIO(
+                    self.connection,
+                    self.group,
+                    self._identifier,
+                    self.ads_name_map,
                 ),
             ],
         )
@@ -727,14 +734,10 @@ class CATioServerController(CATioController):
             for name in filtered_diff.dtype.names:
                 # Remove the '.value' from the notification name
                 attr_name = name.rsplit(".", 1)[0]
-                ############### Assertion not valid until all terminal attributes have
-                ############### been defined;
-                ############### use if statement instead
                 assert attr_name in self.attribute_map.keys(), (
                     f"No reference to {attr_name} in the CATio attribute map; "
                     + "implementation of terminal attributes may be missing."
                 )
-                ############### if attr_name in self.attribute_map.keys():
                 notif_attribute = self.attribute_map[attr_name]
 
                 # Extract the new value from the notification field

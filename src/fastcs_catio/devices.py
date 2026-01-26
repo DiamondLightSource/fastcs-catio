@@ -17,13 +17,6 @@ from .messages import DeviceFrames, IOIdentity, SlaveCRC, SlaveState
 
 ChainLocation = namedtuple("ChainLocation", ["node", "position"])
 
-STD_UPDATE_POLL_PERIOD: float = 2.0
-FAST_UPDATE_POLL_PERIOD: float = 0.2
-NOTIF_UPDATE_POLL_PERIOD: float = 1.0
-
-OVERSAMPLING_FACTOR = 100
-ELM_OVERSAMPLING_FACTOR = 50
-
 
 # ===================================================================
 # ===== EtherCAT OBJECTS
