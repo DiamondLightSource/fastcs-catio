@@ -114,6 +114,9 @@ class FileService:
                 xml_terminal, composite_types
             )
 
+            # Store primitive symbols for diagnostic view
+            terminal.primitive_symbol_nodes = xml_terminal.primitive_symbol_nodes
+
             # Merge symbols: Create lookup of YAML symbols by name template
             yaml_symbol_map = {sym.name_template: sym for sym in terminal.symbol_nodes}
 

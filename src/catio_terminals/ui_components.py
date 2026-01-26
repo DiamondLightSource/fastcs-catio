@@ -453,13 +453,19 @@ def show_terminal_details(
 
     ui.separator().classes("my-4")
 
-    # Symbols section with Select All button
+    # Symbols section with View Toggle and Select All buttons
     total_symbols = len(terminal.symbol_nodes)
+    total_primitives = len(terminal.primitive_symbol_nodes)
 
     with ui.row().classes("items-center w-full justify-between mb-2"):
         ui.label(f"Symbols ({total_symbols})").classes("text-h6")
 
         with ui.row().classes("gap-2"):
+
+            def toggle_view_mode():
+                """Toggle between primitive and composite symbol views."""
+                app.show_primitive_symbols = not app.show_primitive_symbols
+                _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
 
             def toggle_all_symbols():
                 all_selected = all(s.selected for s in terminal.symbol_nodes)
@@ -469,6 +475,18 @@ def show_terminal_details(
                     symbol.selected = new_value
 
                 _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
+
+            # Add view toggle button (only if primitives exist)
+            if total_primitives > 0:
+                view_label = (
+                    "Show Composite" if app.show_primitive_symbols else "Show Primitive"
+                )
+                view_icon = "account_tree" if app.show_primitive_symbols else "list"
+                ui.button(
+                    view_label,
+                    icon=view_icon,
+                    on_click=toggle_view_mode,
+                ).props("flat dense color=blue-grey")
 
             # Determine button label based on current state
             all_symbols_selected = (
@@ -483,10 +501,13 @@ def show_terminal_details(
                 on_click=toggle_all_symbols,
             ).props("flat dense")
 
-    # Build symbol tree data (handles both composite and primitive symbols)
-    symbol_tree_data = _build_merged_symbol_tree_data(
-        terminal_id, terminal, app.composite_types
-    )
+    # Build symbol tree data based on view mode
+    if app.show_primitive_symbols and total_primitives > 0:
+        symbol_tree_data = _build_primitive_symbol_tree_data(terminal_id, terminal)
+    else:
+        symbol_tree_data = _build_merged_symbol_tree_data(
+            terminal_id, terminal, app.composite_types
+        )
 
     if symbol_tree_data:
         with ui.card().props("flat").classes("w-full"):
