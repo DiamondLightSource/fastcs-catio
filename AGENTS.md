@@ -202,30 +202,29 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
 
 Skills are specialized knowledge that can be loaded on demand. Use these prompts to activate a skill:
 
-### Beckhoff XML Format Skill
+### Beckhoff XML Skill
 
 **Activation prompts:**
 - "Load Beckhoff XML skill"
 - "I need to work with ESI XML files"
 - "Help me understand the Beckhoff XML format"
-
-**Skill context:** Read [docs/reference/beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) for:
-- XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.)
-- ESI schema structure (Device, TxPdo, RxPdo, Entry, CoE objects)
-- Mapping between XML elements and terminal YAML fields
-- What information is NOT in XML (composite type names, ADS offsets)
-
-### Terminal Definitions Skill
-
-**Activation prompts:**
-- "Load terminal definitions skill"
 - "Help me edit terminal YAML files"
 - "I need to understand composite types"
-- "Help me with symbol grouping"
+- "Extract terminal data from XML"
+- "Help me create a terminal YAML from XML"
 
 **Skill context:** Read these documents:
+- [docs/reference/beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) - ESI XML schema (Device, TxPdo, RxPdo, Entry, CoE objects), XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.), what information is NOT in XML (composite type names, ADS offsets)
 - [docs/explanations/terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
 - [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) - Composite type definitions (members, offsets, sizes)
+- XML files cached at `~/.cache/catio_terminals/beckhoff_xml/` - Actual Beckhoff ESI files grouped by series
+
+**Key mappings from XML to YAML:**
+- `Type@ProductCode` → `identity.product_code`
+- `Type@RevisionNo` → `identity.revision_number`
+- `TxPdo/Entry` → `symbol_nodes[]` (inputs)
+- `RxPdo/Entry` → `symbol_nodes[]` (outputs)
+- `Profile/Dictionary/Objects` → `coe_objects[]`
 
 ---
 
