@@ -1,0 +1,208 @@
+# Terminal Configuration
+# ========================================================
+# Terminal types used by tests/ads_sim/server_config.yaml
+# Generated from src/catio_terminals/terminals/*.yaml
+
+terminal_types:
+  # ============================================================
+  # Bus Couplers
+  # ============================================================
+  EK1100:
+    description: EtherCAT Coupler
+    identity:
+      vendor_id: 2
+      product_code: 72100946
+      revision_number: 1114112
+    symbol_nodes: []
+    coe_objects: []
+    group_type: CpBk
+
+  EK1110:
+    description: EtherCAT Extension
+    identity:
+      vendor_id: 2
+      product_code: 72755282
+      revision_number: 1245184
+    symbol_nodes: []
+    coe_objects: []
+    group_type: CpBk
+
+  # ============================================================
+  # Digital Inputs
+  # ============================================================
+  EL1004:
+    description: 4-channel Digital Input 24V DC
+    identity:
+      vendor_id: 2
+      product_code: 65810514
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61472
+        type_name: BOOL
+        channels: 4
+        access: Read-only
+        fastcs_name: Channel{channel}
+    coe_objects: []
+    group_type: DigIn
+
+  EL1014:
+    description: 4-channel Digital Input 24V DC
+    identity:
+      vendor_id: 2
+      product_code: 66465874
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61472
+        type_name: BOOL
+        channels: 4
+        access: Read-only
+        fastcs_name: Channel{channel}
+    coe_objects: []
+    group_type: DigIn
+
+  EL1084:
+    description: 8-channel Digital Input 24V DC Neg Switching
+    identity:
+      vendor_id: 2
+      product_code: 71053394
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61472
+        type_name: BOOL
+        channels: 4
+        access: Read-only
+        fastcs_name: Channel{channel}
+    coe_objects: []
+    group_type: DigIn
+
+  # ============================================================
+  # Digital Outputs
+  # ============================================================
+  EL2024:
+    description: 4-channel Digital Output 24V DC
+    identity:
+      vendor_id: 2
+      product_code: 132657234
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61488
+        type_name: BOOL
+        channels: 4
+        access: Read/Write
+        fastcs_name: Channel{channel}
+    coe_objects: []
+    group_type: DigOut
+
+  # ============================================================
+  # Counters
+  # ============================================================
+  EL1502:
+    description: 2-channel Up/Down Counter 24V DC
+    identity:
+      vendor_id: 2
+      product_code: 98447442
+      revision_number: 1245184
+    symbol_nodes:
+      - name_template: CNT Inputs Input {channel}
+        index_group: 61472
+        type_name: BOOL
+        channels: 12
+        access: Read-only
+        fastcs_name: CntInputsInput{channel}
+      - name_template: CNT Inputs Input {channel}
+        index_group: 61472
+        type_name: UDINT
+        channels: 2
+        access: Read-only
+        fastcs_name: CntInputsInput{channel}
+      - name_template: CNT Outputs Output {channel}
+        index_group: 61488
+        type_name: BOOL
+        channels: 8
+        access: Read/Write
+        fastcs_name: CntOutputsOutput{channel}
+      - name_template: CNT Outputs Output {channel}
+        index_group: 61488
+        type_name: UDINT
+        channels: 2
+        access: Read/Write
+        fastcs_name: CntOutputsOutput{channel}
+      - name_template: CNT Inputs Output functions enabled
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsOutputFunctionsEnabled
+      - name_template: CNT Inputs Status of output
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsStatusOfOutput
+      - name_template: CNT Inputs Set counter done
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsSetCounterDone
+      - name_template: CNT Inputs Counter inhibited
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsCounterInhibited
+      - name_template: CNT Inputs Status of input UD
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsStatusOfInputUd
+      - name_template: CNT Inputs Status of input clock
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsStatusOfInputClock
+      - name_template: CNT Inputs TxPDO Toggle
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsTxpdoToggle
+      - name_template: CNT Inputs Counter value
+        index_group: 61472
+        type_name: UDINT
+        channels: 1
+        access: Read-only
+        fastcs_name: CntInputsCounterValue
+    coe_objects: []
+    group_type: Counting
+
+  # ============================================================
+  # Power Supply
+  # ============================================================
+  EL9410:
+    description: E-Bus Power Supply
+    identity:
+      vendor_id: 2
+      product_code: 616706130
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Status Us Undervoltage
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: StatusUsUndervoltage
+      - name_template: Status Up Undervoltage
+        index_group: 61472
+        type_name: BOOL
+        channels: 1
+        access: Read-only
+        fastcs_name: StatusUpUndervoltage
+    coe_objects: []
+    group_type: PowerSupply
