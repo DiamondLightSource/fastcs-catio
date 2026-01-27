@@ -53,3 +53,37 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=False,
         help="Use an externally launched simulator instead of launching one",
     )
+
+
+################################################################################
+# The remaining fixtures are for the new YAML based approach ###################
+################################################################################
+
+
+@pytest.fixture(scope="session")
+async def beckhoff_xml_cache() -> list[Any]:
+    """Session-scoped fixture that downloads and parses Beckhoff XML files.
+
+    This fixture runs once per test session and ensures the XML cache is
+    populated with terminal definitions for use by other tests. If the cache
+    already exists, it skips downloading/parsing and returns cached data.
+
+    Returns:
+        List of BeckhoffTerminalInfo objects parsed from XML files
+    """
+    from catio_terminals.beckhoff import BeckhoffClient
+
+    client = BeckhoffClient()
+    try:
+        # Check if cache already exists
+        if client.terminals_cache_file.exists():
+            # Load from existing cache
+            cached = client.get_cached_terminals()
+            if cached:
+                return cached
+
+        # Download and parse all XML files into the cache
+        terminals = await client.fetch_and_parse_xml()
+        return terminals
+    finally:
+        client.close()

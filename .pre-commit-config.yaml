@@ -31,7 +31,8 @@ repos:
         entry: uv sync
         files: ^(uv\.lock|pyproject\.toml)$
 
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.28.0
-    hooks:
-      - id: gitleaks
+  # TODO restore this when gitleaks site is back up
+  # - repo: https://github.com/gitleaks/gitleaks
+  #   rev: v8.28.0
+  #   hooks:
+  #     - id: gitleaks

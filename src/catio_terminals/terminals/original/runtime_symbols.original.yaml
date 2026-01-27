@@ -1,0 +1,67 @@
+# ADS Runtime Symbols
+# ========================================================
+# These symbols are added dynamically by the TwinCAT/EtherCAT runtime
+# and are not defined in Beckhoff's ESI XML files.
+#
+# Each symbol can specify:
+#   - whitelist: Only apply to these terminal types (if specified)
+#   - blacklist: Exclude from these terminal types (if specified)
+#   - group_whitelist: Only apply to terminals in these groups
+#   - group_blacklist: Exclude terminals in these groups
+#
+# If no whitelist/blacklist is specified, the symbol applies to all terminals.
+# Whitelist takes precedence over blacklist.
+#
+# References:
+#   - https://infosys.beckhoff.com/content/1033/tc3_io_intro/1257993099.html
+#   - https://infosys.beckhoff.com/content/1033/ethercatsystem/2469122443.html
+
+runtime_symbols:
+  # Working Counter State - indicates if terminal is communicating on EtherCAT bus
+  - name_template: WcState^WcState
+    index_group: 61473 # 0xF021 - RWIX (input bits)
+    size: 0
+    ads_type: 33 # BIT
+    type_name: BIT
+    channels: 1
+    access: Read-only
+    fastcs_name: WcstateWcstate
+    description: >
+      Working Counter State - EtherCAT diagnostic indicating if the terminal
+      is communicating properly on the bus. A non-zero value indicates a
+      communication issue.
+    # Couplers may not have WcState - exclude them
+    group_blacklist:
+      - Coupler
+
+  # InfoData State - device state from EtherCAT state machine
+  - name_template: InfoData^State
+    index_group: 61472 # 0xF020 - RWIB (input bytes)
+    size: 2
+    ads_type: 18 # UINT16
+    type_name: UINT
+    channels: 1
+    access: Read-only
+    fastcs_name: InfodataState
+    description: >
+      Device state information from the EtherCAT state machine.
+      Values: 1=Init, 2=Pre-Op, 3=Bootstrap, 4=Safe-Op, 8=Op
+    # May not apply to all terminal types - TBD based on testing
+
+  # Input Toggle - indicates data freshness
+  - name_template: InputToggle
+    index_group: 61473 # 0xF021 - RWIX (input bits)
+    size: 0
+    ads_type: 33 # BIT
+    type_name: BIT
+    channels: 1
+    access: Read-only
+    fastcs_name: Inputtoggle
+    description: >
+      Toggles on each EtherCAT cycle to indicate that input data has been
+      updated. Can be used to detect stale data.
+    # Typically only on terminals with inputs
+    group_whitelist:
+      - DigIn
+      - AnaIn
+      - Counter

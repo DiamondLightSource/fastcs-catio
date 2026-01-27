@@ -3,7 +3,7 @@
 #
 # This file defines the server configuration and device instances.
 # Terminal type definitions are loaded from separate YAML files in
-# src/fastcs_catio/terminals/
+# src/catio_terminals/terminals/
 #
 # Device configuration references terminal types by name (e.g., "EL2024").
 # The EtherCATChain class will load terminal type definitions from
