@@ -23,7 +23,7 @@
 
 runtime_symbols:
   # Working Counter State - indicates if terminal is communicating on EtherCAT bus
-  - name_template: WcState^WcState
+  - name_template: WcState.WcState
     index_group: 61473 # 0xF021 - RWIX (input bits)
     type_name: BIT
     channels: 1
@@ -37,8 +37,24 @@ runtime_symbols:
     group_blacklist:
       - CpBk # Bus Couplers
 
+  # Input Toggle - indicates data freshness
+  - name_template: WcState.InputToggle
+    index_group: 61473 # 0xF021 - RWIX (input bits)
+    type_name: BIT
+    channels: 1
+    access: Read-only
+    fastcs_name: Inputtoggle
+    description: >
+      Toggles on each EtherCAT cycle to indicate that input data has been
+      updated. Can be used to detect stale data.
+    # Typically only on terminals with inputs
+    group_whitelist:
+      - DigIn
+      - AnaIn
+      - Measuring
+
   # InfoData State - device state from EtherCAT state machine
-  - name_template: InfoData^State
+  - name_template: InfoData.State
     index_group: 61472 # 0xF020 - RWIB (input bytes)
     type_name: UINT
     channels: 1
@@ -53,20 +69,4 @@ runtime_symbols:
       - DigOut
       - AnaIn
       - AnaOut
-      - Measuring
-
-  # Input Toggle - indicates data freshness
-  - name_template: InputToggle
-    index_group: 61473 # 0xF021 - RWIX (input bits)
-    type_name: BIT
-    channels: 1
-    access: Read-only
-    fastcs_name: Inputtoggle
-    description: >
-      Toggles on each EtherCAT cycle to indicate that input data has been
-      updated. Can be used to detect stale data.
-    # Typically only on terminals with inputs
-    group_whitelist:
-      - DigIn
-      - AnaIn
       - Measuring
