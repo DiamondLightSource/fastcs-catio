@@ -465,6 +465,14 @@ devices:
       - type: "EL1502"
         name: "Term 102 (EL1502)"
         node: 3
+        position: 11
+      - type: "EL1502"
+        name: "Term 103 (EL1502)"
+        node: 3
+        position: 12
+      - type: "EL1502"
+        name: "Term 104 (EL1502)"
+        node: 3
         position: 13
       - type: "EL1502"
         name: "Term 105 (EL1502)"
