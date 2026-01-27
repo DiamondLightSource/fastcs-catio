@@ -29,7 +29,7 @@ The terminals are categorized by type, with notes on which require runtime disco
 | EL1014 | 4Ch Digital Input 24V, 10us | Static | Fixed 4 BOOL inputs |
 | EL1084 | 4Ch Digital Input 24V, 3ms, negative | Static | Fixed 4 BOOL inputs |
 | EL1124 | 4Ch Digital Input 5V, 10us | Static | Fixed 4 BOOL inputs |
-| EL1502 | 2Ch Up/Down Counter 24V, 100kHz | **Dynamic** | Multiple PDO configurations (per-channel vs combined) |
+| EL1502 | 2Ch Up/Down Counter 24V, 100kHz | **Dynamic Type 1** | Multiple PDO configurations (per-channel vs combined) |
 | EL2024 | 4Ch Digital Output 24V, 2A | Static | Fixed 4 BOOL outputs |
 | EL2024-0010 | 4Ch Digital Output 24V, 2A (variant) | Static | Fixed 4 BOOL outputs |
 | EL2124 | 4Ch Digital Output 5V, 20mA | Static | Fixed 4 BOOL outputs |
@@ -37,32 +37,32 @@ The terminals are categorized by type, with notes on which require runtime disco
 | EL2595 | 1Ch LED Constant Current | Static | Status + multi-field control outputs |
 | EL2612 | 2Ch Relay Output CO | Static | Fixed 2 BOOL relay outputs |
 | EL2624 | 4Ch Relay Output NO | Static | Fixed 4 BOOL relay outputs |
-| EL3104 | 4Ch Analog Input +/-10V Diff | **Dynamic** | Standard vs Compact PDO selection |
-| EL3124 | 4Ch Analog Input 4-20mA Diff | **Dynamic** | Standard vs Compact PDO selection |
+| EL3104 | 4Ch Analog Input +/-10V Diff | **Dynamic Type 2** | Standard vs Compact PDO selection |
+| EL3124 | 4Ch Analog Input 4-20mA Diff | **Dynamic Type 2** | Standard vs Compact PDO selection |
 | EL3202 | 2Ch Analog Input PT100 (RTD) | Static | Fixed RTD Inputs per channel |
 | EL3202-0010 | 2Ch Analog Input PT100 (RTD, variant) | Static | Fixed RTD Inputs per channel |
 | EL3314 | 4Ch Analog Input Thermocouple | Static | Fixed TC Inputs + optional CJ compensation outputs |
-| EL3356-0010 | 1Ch Resistor Bridge, 16bit High Precision | **Dynamic** | Multiple PDO formats (INT32, Real, Standard, Compact) |
+| EL3356-0010 | 1Ch Resistor Bridge, 16bit High Precision | **Dynamic Type 3** | Multiple PDO formats (INT32, Real, Standard, Compact) |
 | EL3602 | 2Ch Analog Input +/-10V Diff, 24bit | Static | Fixed AI Inputs per channel |
-| EL3702 | 2Ch Analog Input +/-10V Oversample | **Dynamic** | 1-100 samples per channel |
+| EL3702 | 2Ch Analog Input +/-10V Oversample | **Dynamic Type 4** | 1-100 samples per channel |
 | EL4134 | 4Ch Analog Output +/-10V, 16bit | Static | Fixed AO Output per channel |
-| EL4732 | 2Ch Analog Output +/-10V Oversample | **Dynamic** | Configurable sample count |
+| EL4732 | 2Ch Analog Output +/-10V Oversample | **Dynamic Type 4** | Configurable sample count |
 | EL9410 | E-Bus Power Supply (Diagnostics) | Static | Fixed 2 status BOOLs (Us, Up undervoltage) |
 | EL9505 | Power Supply Terminal 5V | Static | Fixed status (Power OK, Overload) |
 | EL9510 | Power Supply Terminal 10V | Static | Fixed status (Power OK, Overload) |
 | EL9512 | Power Supply Terminal 12V | Static | Fixed status (Power OK, Overload) |
-| ELM3704-0000 | 4Ch Universal Analog Input, 24bit | **Dynamic** | Oversampling (1-100), data format (INT16/INT32/REAL), per-channel config |
+| ELM3704-0000 | 4Ch Universal Analog Input, 24bit | **Dynamic Type 4** | Oversampling (1-100), data format (INT16/INT32/REAL), per-channel config |
 | EP2338-0002 | 8Ch Digital I/O 24V, 0.5A | Static | Fixed 8 inputs + 8 outputs |
 | EP2624-0002 | 4Ch Relay Output NO | Static | Fixed 4 BOOL relay outputs |
-| EP3174-0002 | 4Ch Analog Input configurable | **Dynamic** | Standard vs Compact PDO selection |
+| EP3174-0002 | 4Ch Analog Input configurable | **Dynamic Type 2** | Standard vs Compact PDO selection |
 | EP3204-0002 | 4Ch Analog Input PT100 (RTD) | Static | Fixed RTD Inputs per channel |
 | EP3314-0002 | 4Ch Analog Input Thermocouple | Static | Fixed TC Inputs + optional CJ compensation outputs |
 | EP4174-0002 | 4Ch Analog Output configurable | Static | Fixed AO Outputs per channel |
-| EP4374-0002 | 2Ch AI + 2Ch AO configurable | **Dynamic** | Standard vs Compact PDO selection for inputs |
+| EP4374-0002 | 2Ch AI + 2Ch AO configurable | **Dynamic Type 2** | Standard vs Compact PDO selection for inputs |
 
 ## Terminals Requiring Runtime Discovery
 
-### Counter Terminals (EL1502, EL2502)
+### Type 1: Counter Terminals with Configuration Variants (EL1502)
 
 #### EL1502 - Up/Down Counter
 
@@ -86,7 +86,7 @@ has_per_channel = any("Channel 1" in s.name for s in el1502_symbols)
 has_combined = any("CNT Inputs.Counter value" in s.name for s in el1502_symbols)
 ```
 
-### Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)
+### Type 2: Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)
 
 **Problem:** These analog input terminals offer two PDO formats per channel:
 
@@ -113,7 +113,7 @@ elif has_compact:
     print("Using Compact PDO format (value only)")
 ```
 
-### Resistor Bridge Terminal (EL3356-0010)
+### Type 3: Multi-Format Terminals (EL3356-0010)
 
 **Problem:** The EL3356-0010 offers multiple PDO formats for measurement data:
 
@@ -143,7 +143,7 @@ has_timestamp = any("Timestamp" in s.name for s in el3356_symbols)
 has_control = any("RMB Control" in s.name for s in el3356_symbols)
 ```
 
-### Oversampling Terminals (EL3702, EL4732, ELM3704-0000)
+### Type 4: Oversampling Terminals (EL3702, EL4732, ELM3704-0000)
 
 #### EL3702 - 2Ch Oversampling Analog Input
 
@@ -289,19 +289,19 @@ async with CatioClient(target_ip="192.168.1.100") as client:
    - Use XML-derived YAML definitions directly
    - PDO structure is fixed and predictable
 
-2. **For Standard/Compact selectable terminals** (EL3104, EL3124, EP3174-0002, EP4374-0002):
-   - Query symbol table at startup to determine which format is active
-   - YAML should define both formats; reconcile with actual symbols
-
-3. **For multi-format terminals** (EL3356-0010):
-   - Query symbol table to determine active value format (INT32, Real, Standard, Compact)
-   - Check for optional features (Timestamp, Control)
-
-4. **For counter terminals with configuration variants** (EL1502):
+2. **For Type 1 counter terminals with configuration variants** (EL1502):
    - Query symbol table to determine per-channel vs combined configuration
    - YAML includes both; only one will be active
 
-5. **For oversampling terminals** (EL3702, EL4732, ELM3704-0000):
+3. **For Type 2 Standard/Compact selectable terminals** (EL3104, EL3124, EP3174-0002, EP4374-0002):
+   - Query symbol table at startup to determine which format is active
+   - YAML should define both formats; reconcile with actual symbols
+
+4. **For Type 3 multi-format terminals** (EL3356-0010):
+   - Query symbol table to determine active value format (INT32, Real, Standard, Compact)
+   - Check for optional features (Timestamp, Control)
+
+5. **For Type 4 oversampling terminals** (EL3702, EL4732, ELM3704-0000):
    - Always query symbol table - sample count is runtime-configurable
    - ELM3704 additionally requires checking data format per channel
    - Use symbol naming patterns to extract configuration
