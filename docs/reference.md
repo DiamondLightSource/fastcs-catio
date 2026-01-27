@@ -7,6 +7,7 @@ Technical reference material including APIs and release notes.
 :glob:
 
 API <_api/fastcs_catio>
+reference/DLS_terminals
 reference/beckhoff-xml-format
 reference/ads-symbols-and-coe
 reference/ethercat-composite-types

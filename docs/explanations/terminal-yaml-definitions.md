@@ -2,6 +2,8 @@
 
 This document explains how to define Beckhoff EtherCAT terminals in YAML for use with the ADS simulator and FastCS controller generation.
 
+These YAML files can be created and edited using the `catio-terminals` GUI tool (see [Using catio-terminals](#using-catio-terminals) below).
+
 For background on the underlying Beckhoff technologies, see:
 - [ADS Symbols and CoE Objects](../reference/ads-symbols-and-coe.md) - What symbols and CoE objects are
 - [EtherCAT Composite Types](../reference/ethercat-composite-types.md) - How the EtherCAT Master generates composite types
