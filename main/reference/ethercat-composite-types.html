@@ -1,0 +1,1225 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>EtherCAT Composite Types &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=dcddec71"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/ethercat-composite-types';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Index" href="../genindex.html" />
+    <link rel="prev" title="ADS Symbols and CoE Objects" href="ads-symbols-and-coe.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../_api/fastcs_catio.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DLS_terminals.html">DLS Terminal Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beckhoff-xml-format.html">Beckhoff ESI XML File Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">EtherCAT Composite Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">EtherCAT Composite Types</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="ethercat-composite-types">
+<h1>EtherCAT Composite Types<a class="headerlink" href="#ethercat-composite-types" title="Link to this heading">#</a></h1>
+<p>This document describes how the TwinCAT EtherCAT Master generates composite data types for terminal process data, and which types are created for different terminal categories.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>When TwinCAT compiles an EtherCAT configuration, it creates <strong>composite types</strong> (structured data types) for each terminal’s process data. These types group related fields into single addressable units.</p>
+<p>The EtherCAT Master generates these types automatically based on the PDO (Process Data Object) definitions in each terminal’s ESI XML file.</p>
+</section>
+<section id="type-generation-process">
+<h2>Type Generation Process<a class="headerlink" href="#type-generation-process" title="Link to this heading">#</a></h2>
+<section id="from-xml-pdo-to-composite-type">
+<h3>From XML PDO to Composite Type<a class="headerlink" href="#from-xml-pdo-to-composite-type" title="Link to this heading">#</a></h3>
+<p>The ESI XML defines PDOs with individual entries:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Index&gt;</span>#x1a02<span class="nt">&lt;/Index&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Name&gt;</span>AI<span class="w"> </span>Standard<span class="w"> </span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Name&gt;</span>Status<span class="nt">&lt;/Name&gt;</span>
+<span class="w">        </span><span class="nt">&lt;DataType&gt;</span>UINT<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">        </span><span class="nt">&lt;BitLen&gt;</span>16<span class="nt">&lt;/BitLen&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Name&gt;</span>Value<span class="nt">&lt;/Name&gt;</span>
+<span class="w">        </span><span class="nt">&lt;DataType&gt;</span>INT<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">        </span><span class="nt">&lt;BitLen&gt;</span>16<span class="nt">&lt;/BitLen&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+<p>TwinCAT generates a composite type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Type</span> <span class="n">Name</span><span class="p">:</span> <span class="s2">&quot;AI Standard Channel 1_TYPE&quot;</span>
+<span class="n">ADS</span> <span class="n">Type</span><span class="p">:</span> <span class="mi">65</span> <span class="p">(</span><span class="n">BIGTYPE</span><span class="p">)</span>
+<span class="n">Size</span><span class="p">:</span> <span class="mi">4</span> <span class="nb">bytes</span>
+<span class="n">Members</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">Status</span> <span class="p">(</span><span class="n">UINT</span><span class="p">,</span> <span class="n">offset</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="nb">bytes</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">Value</span> <span class="p">(</span><span class="n">INT</span><span class="p">,</span> <span class="n">offset</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span> <span class="nb">bytes</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="naming-convention">
+<h3>Naming Convention<a class="headerlink" href="#naming-convention" title="Link to this heading">#</a></h3>
+<p>TwinCAT constructs type names by appending <code class="docutils literal notranslate"><span class="pre">_TYPE</span></code> to the PDO name:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>PDO Name</p></th>
+<th class="head"><p>Generated Type Name</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs_TYPE</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AO</span> <span class="pre">Output</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AO</span> <span class="pre">Output</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Inputs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Inputs_TYPE</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Note:</strong> The type name always uses the first channel’s name (e.g., “Channel 1”), even when the same type is used for all channels.</p>
+</section>
+<section id="channel-replication">
+<h3>Channel Replication<a class="headerlink" href="#channel-replication" title="Link to this heading">#</a></h3>
+<p>For multi-channel terminals, TwinCAT creates:</p>
+<ul class="simple">
+<li><p><strong>One type definition</strong> shared across channels</p></li>
+<li><p><strong>Multiple symbol instances</strong> using that type</p></li>
+</ul>
+<p>Example for EL3104 (4-channel analog input):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Type</span><span class="p">:</span> <span class="s2">&quot;AI Standard Channel 1_TYPE&quot;</span> <span class="p">(</span><span class="n">defined</span> <span class="n">once</span><span class="p">)</span>
+
+<span class="n">Symbols</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">1</span> <span class="p">(</span><span class="n">uses</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">1</span><span class="n">_TYPE</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">2</span> <span class="p">(</span><span class="n">uses</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">1</span><span class="n">_TYPE</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">3</span> <span class="p">(</span><span class="n">uses</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">1</span><span class="n">_TYPE</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">4</span> <span class="p">(</span><span class="n">uses</span> <span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">1</span><span class="n">_TYPE</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="composite-types-by-terminal-category">
+<h2>Composite Types by Terminal Category<a class="headerlink" href="#composite-types-by-terminal-category" title="Link to this heading">#</a></h2>
+<section id="analog-input-terminals-el31xx-el32xx-el33xx">
+<h3>Analog Input Terminals (EL31xx, EL32xx, EL33xx)<a class="headerlink" href="#analog-input-terminals-el31xx-el32xx-el33xx" title="Link to this heading">#</a></h3>
+<p><strong>Standard Analog Input (EL3004, EL3104, etc.)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">N</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Status word (underrange, overrange, error flags)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Value</p></td>
+<td><p>INT</p></td>
+<td><p>2</p></td>
+<td><p>Signed 16-bit analog value</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 4 bytes</p>
+<p><strong>High-Resolution Analog Input (EL3602, EL3612)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">N</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Status word</p></td>
+</tr>
+<tr class="row-odd"><td><p>Value</p></td>
+<td><p>DINT</p></td>
+<td><p>2</p></td>
+<td><p>Signed 32-bit analog value (24-bit resolution)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 6 bytes</p>
+<p><strong>Thermocouple/RTD Input (EL3202, EL3204, EL3314)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">RTD</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">N</span></code> or <code class="docutils literal notranslate"><span class="pre">TC</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">N</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Status word</p></td>
+</tr>
+<tr class="row-odd"><td><p>Value</p></td>
+<td><p>INT</p></td>
+<td><p>2</p></td>
+<td><p>Temperature value (scaled)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 4 bytes</p>
+</section>
+<section id="analog-output-terminals-el4xxx">
+<h3>Analog Output Terminals (EL4xxx)<a class="headerlink" href="#analog-output-terminals-el4xxx" title="Link to this heading">#</a></h3>
+<p><strong>Standard Analog Output (EL4002, EL4004, EL4102)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">AO</span> <span class="pre">Output</span> <span class="pre">Channel</span> <span class="pre">N</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AnalogOutput</p></td>
+<td><p>INT</p></td>
+<td><p>0</p></td>
+<td><p>Signed 16-bit output value</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 2 bytes</p>
+<p><strong>Some terminals include status feedback:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AnalogOutput</p></td>
+<td><p>INT</p></td>
+<td><p>0</p></td>
+<td><p>Output value</p></td>
+</tr>
+<tr class="row-odd"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>2</p></td>
+<td><p>Output status</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 4 bytes</p>
+</section>
+<section id="digital-input-terminals-el1xxx">
+<h3>Digital Input Terminals (EL1xxx)<a class="headerlink" href="#digital-input-terminals-el1xxx" title="Link to this heading">#</a></h3>
+<p><strong>Simple Digital Input (EL1004, EL1008)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">N^Input</span></code> or <code class="docutils literal notranslate"><span class="pre">Inputs</span></code></p>
+<p>For single-bit access:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>BOOL</p></td>
+<td><p>0 (bit N)</p></td>
+<td><p>Single digital input state</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For grouped access (all channels in one word):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Inputs</p></td>
+<td><p>BYTE/UINT</p></td>
+<td><p>0</p></td>
+<td><p>Packed digital inputs</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="digital-output-terminals-el2xxx">
+<h3>Digital Output Terminals (EL2xxx)<a class="headerlink" href="#digital-output-terminals-el2xxx" title="Link to this heading">#</a></h3>
+<p><strong>Simple Digital Output (EL2004, EL2008)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">N^Output</span></code> or <code class="docutils literal notranslate"><span class="pre">Outputs</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Output</p></td>
+<td><p>BOOL</p></td>
+<td><p>0 (bit N)</p></td>
+<td><p>Single digital output state</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For grouped access:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Outputs</p></td>
+<td><p>BYTE/UINT</p></td>
+<td><p>0</p></td>
+<td><p>Packed digital outputs</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="counter-encoder-terminals-el5xxx">
+<h3>Counter/Encoder Terminals (EL5xxx)<a class="headerlink" href="#counter-encoder-terminals-el5xxx" title="Link to this heading">#</a></h3>
+<p><strong>Incremental Encoder (EL5101)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">ENC</span> <span class="pre">Status</span></code> (input) and <code class="docutils literal notranslate"><span class="pre">ENC</span> <span class="pre">Control</span></code> (output)</p>
+<p><strong>ENC Status (Input):</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Encoder status flags</p></td>
+</tr>
+<tr class="row-odd"><td><p>CounterValue</p></td>
+<td><p>UDINT</p></td>
+<td><p>2</p></td>
+<td><p>32-bit counter value</p></td>
+</tr>
+<tr class="row-even"><td><p>LatchValue</p></td>
+<td><p>UDINT</p></td>
+<td><p>6</p></td>
+<td><p>Latched counter value</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 10 bytes</p>
+<p><strong>ENC Control (Output):</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Control</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Control word</p></td>
+</tr>
+<tr class="row-odd"><td><p>SetCounterValue</p></td>
+<td><p>UDINT</p></td>
+<td><p>2</p></td>
+<td><p>Value to set counter</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 6 bytes</p>
+<p><strong>Up/Down Counter (EL1502, EL1512)</strong></p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span></code> (input) and <code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Outputs</span></code> (output)</p>
+<p><strong>CNT Inputs:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Counter status</p></td>
+</tr>
+<tr class="row-odd"><td><p>CounterValue</p></td>
+<td><p>UDINT</p></td>
+<td><p>2</p></td>
+<td><p>Current counter value</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 6 bytes</p>
+<p><strong>CNT Outputs:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Control</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Counter control</p></td>
+</tr>
+<tr class="row-odd"><td><p>SetCounterValue</p></td>
+<td><p>UDINT</p></td>
+<td><p>2</p></td>
+<td><p>Preset value</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 6 bytes</p>
+</section>
+<section id="oversampling-terminals-el3702-el4732">
+<h3>Oversampling Terminals (EL3702, EL4732)<a class="headerlink" href="#oversampling-terminals-el3702-el4732" title="Link to this heading">#</a></h3>
+<p><strong>Oversampling Analog Input (EL3702)</strong></p>
+<p>These terminals produce arrays of samples per cycle:</p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">Ch1</span> <span class="pre">CycleCount</span></code> and <code class="docutils literal notranslate"><span class="pre">Ch1</span> <span class="pre">Samples</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>CycleCount</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Number of samples this cycle</p></td>
+</tr>
+<tr class="row-odd"><td><p>Samples</p></td>
+<td><p>ARRAY[0..99] OF INT</p></td>
+<td><p>2</p></td>
+<td><p>Array of oversampled values</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 202 bytes (2 + 100*2)</p>
+</section>
+<section id="communication-terminals-el6xxx">
+<h3>Communication Terminals (EL6xxx)<a class="headerlink" href="#communication-terminals-el6xxx" title="Link to this heading">#</a></h3>
+<p><strong>Serial Interface (EL6001, EL6021)</strong></p>
+<p>PDO structure varies by protocol mode. Common pattern:</p>
+<p><strong>Input:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Communication status</p></td>
+</tr>
+<tr class="row-odd"><td><p>DataLength</p></td>
+<td><p>UINT</p></td>
+<td><p>2</p></td>
+<td><p>Received data length</p></td>
+</tr>
+<tr class="row-even"><td><p>Data</p></td>
+<td><p>ARRAY OF BYTE</p></td>
+<td><p>4</p></td>
+<td><p>Received data buffer</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Output:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Control</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Communication control</p></td>
+</tr>
+<tr class="row-odd"><td><p>DataLength</p></td>
+<td><p>UINT</p></td>
+<td><p>2</p></td>
+<td><p>Send data length</p></td>
+</tr>
+<tr class="row-even"><td><p>Data</p></td>
+<td><p>ARRAY OF BYTE</p></td>
+<td><p>4</p></td>
+<td><p>Send data buffer</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="special-types">
+<h2>Special Types<a class="headerlink" href="#special-types" title="Link to this heading">#</a></h2>
+<section id="working-counter-state">
+<h3>Working Counter State<a class="headerlink" href="#working-counter-state" title="Link to this heading">#</a></h3>
+<p>All terminals include a diagnostic symbol:</p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">WcState^WcState</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>WcState</p></td>
+<td><p>BOOL</p></td>
+<td><p>0</p></td>
+<td><p>Working counter valid (communication OK)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>This is typically a single bit, not a composite type.</p>
+</section>
+<section id="infodata-optional">
+<h3>InfoData (Optional)<a class="headerlink" href="#infodata-optional" title="Link to this heading">#</a></h3>
+<p>Some terminals provide extended diagnostic information:</p>
+<p>PDO: <code class="docutils literal notranslate"><span class="pre">InfoData^State</span></code> and <code class="docutils literal notranslate"><span class="pre">InfoData^TxPdoState</span></code></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Offset</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>State</p></td>
+<td><p>UINT</p></td>
+<td><p>0</p></td>
+<td><p>Terminal state</p></td>
+</tr>
+<tr class="row-odd"><td><p>AdsAddr</p></td>
+<td><p>UINT</p></td>
+<td><p>2</p></td>
+<td><p>ADS address</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="type-inheritance-and-variants">
+<h2>Type Inheritance and Variants<a class="headerlink" href="#type-inheritance-and-variants" title="Link to this heading">#</a></h2>
+<section id="pdo-selection">
+<h3>PDO Selection<a class="headerlink" href="#pdo-selection" title="Link to this heading">#</a></h3>
+<p>Many terminals offer multiple PDO mappings (Standard, Compact, Complete). The composite type depends on which PDO mapping is selected:</p>
+<p><strong>EL3104 PDO Options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span></code> - Status + Value (4 bytes)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Compact</span></code> - Value only (2 bytes)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Complete</span></code> - Full status word + Value (4 bytes)</p></li>
+</ul>
+<p>The generated type name changes accordingly:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Compact</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></li>
+</ul>
+</section>
+<section id="revision-specific-types">
+<h3>Revision-Specific Types<a class="headerlink" href="#revision-specific-types" title="Link to this heading">#</a></h3>
+<p>Different terminal revisions may have different PDO structures. TwinCAT generates appropriate types based on the specific revision detected.</p>
+</section>
+</section>
+<section id="summary-table">
+<h2>Summary Table<a class="headerlink" href="#summary-table" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Terminal Category</p></th>
+<th class="head"><p>Common Type Names</p></th>
+<th class="head"><p>Typical Size</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Analog Input (16-bit)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
+<td><p>4 bytes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Analog Input (24-bit)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
+<td><p>6 bytes</p></td>
+</tr>
+<tr class="row-even"><td><p>Analog Output</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AO</span> <span class="pre">Output</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
+<td><p>2-4 bytes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Digital Input</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Inputs_TYPE</span></code> or individual bits</p></td>
+<td><p>1-2 bytes</p></td>
+</tr>
+<tr class="row-even"><td><p>Digital Output</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Outputs_TYPE</span></code> or individual bits</p></td>
+<td><p>1-2 bytes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Counter/Encoder Input</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">ENC</span> <span class="pre">Status_TYPE</span></code></p></td>
+<td><p>6-10 bytes</p></td>
+</tr>
+<tr class="row-even"><td><p>Counter/Encoder Output</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Outputs_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">ENC</span> <span class="pre">Control_TYPE</span></code></p></td>
+<td><p>6 bytes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="ads-symbols-and-coe.html"><span class="std std-doc">ADS Symbols and CoE</span></a> - How to discover symbols</p></li>
+<li><p><a class="reference internal" href="beckhoff-xml-format.html"><span class="std std-doc">Beckhoff XML Format</span></a> - ESI XML structure</p></li>
+<li><p><a class="reference internal" href="../explanations/composite-types.html"><span class="std std-doc">Composite Types Implementation</span></a> - How we model these types</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="ads-symbols-and-coe.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">ADS Symbols and CoE Objects</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../genindex.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Index</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#type-generation-process">Type Generation Process</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-xml-pdo-to-composite-type">From XML PDO to Composite Type</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#naming-convention">Naming Convention</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#channel-replication">Channel Replication</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#composite-types-by-terminal-category">Composite Types by Terminal Category</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analog-input-terminals-el31xx-el32xx-el33xx">Analog Input Terminals (EL31xx, EL32xx, EL33xx)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analog-output-terminals-el4xxx">Analog Output Terminals (EL4xxx)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#digital-input-terminals-el1xxx">Digital Input Terminals (EL1xxx)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#digital-output-terminals-el2xxx">Digital Output Terminals (EL2xxx)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#counter-encoder-terminals-el5xxx">Counter/Encoder Terminals (EL5xxx)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#oversampling-terminals-el3702-el4732">Oversampling Terminals (EL3702, EL4732)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#communication-terminals-el6xxx">Communication Terminals (EL6xxx)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#special-types">Special Types</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#working-counter-state">Working Counter State</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#infodata-optional">InfoData (Optional)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#type-inheritance-and-variants">Type Inheritance and Variants</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pdo-selection">PDO Selection</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#revision-specific-types">Revision-Specific Types</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary-table">Summary Table</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#related-documentation">Related Documentation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/reference/ethercat-composite-types.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/ethercat-composite-types.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,901 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Useful Notes on ADS and TwinCAT &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=dcddec71"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/useful_notes_ads_twincat';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Architectural Decision Records" href="decisions.html" />
+    <link rel="prev" title="Composite Types in TwinCAT" href="composite-types.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="architecture-overview.html">CATio Architecture Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Useful Notes on ADS and TwinCAT</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../explanations.html" class="nav-link">Explanations</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Useful Notes on ADS and TwinCAT</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="useful-notes-on-ads-and-twincat">
+<h1>Useful Notes on ADS and TwinCAT<a class="headerlink" href="#useful-notes-on-ads-and-twincat" title="Link to this heading">#</a></h1>
+<p>This document collects important insights about the ADS (Automation Device Specification) protocol and TwinCAT systems, particularly as they relate to terminal configuration.</p>
+<section id="two-ways-ads-accesses-data">
+<h2>1. Two Ways ADS Accesses Data<a class="headerlink" href="#two-ways-ads-accesses-data" title="Link to this heading">#</a></h2>
+<section id="by-symbol-name">
+<h3>1.1 By Symbol Name<a class="headerlink" href="#by-symbol-name" title="Link to this heading">#</a></h3>
+<p>ADS can read/write data using symbolic names that match entries in TwinCAT’s symbol table. There are two ways to address symbols:</p>
+<section id="full-name-using-caret-separator">
+<h4>Full Name (using caret <code class="docutils literal notranslate"><span class="pre">^</span></code> separator)<a class="headerlink" href="#full-name-using-caret-separator" title="Link to this heading">#</a></h4>
+<p>The complete path from the TwinCAT I/O tree root:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TIID</span><span class="o">^</span><span class="n">Device</span> <span class="mi">1</span> <span class="p">(</span><span class="n">EtherCAT</span><span class="p">)</span><span class="o">^</span><span class="n">Term</span> <span class="mi">53</span> <span class="p">(</span><span class="n">EK1100</span><span class="p">)</span><span class="o">^</span><span class="n">Term</span> <span class="mi">55</span> <span class="p">(</span><span class="n">EL1014</span><span class="p">)</span><span class="o">^</span><span class="n">Channel</span> <span class="mi">1</span><span class="o">^</span><span class="n">Input</span>
+</pre></div>
+</div>
+<p>This includes the full hierarchy: <code class="docutils literal notranslate"><span class="pre">TIID</span></code> (TwinCAT I/O ID) → EtherCAT device → parent coupler → terminal → PDO → Entry.</p>
+</section>
+<section id="symbol-info-using-port-and-dot-separator">
+<h4>Symbol Info (using port and dot <code class="docutils literal notranslate"><span class="pre">.</span></code> separator)<a class="headerlink" href="#symbol-info-using-port-and-dot-separator" title="Link to this heading">#</a></h4>
+<p>A shorter form using the AMS port number and a dot-separated path from the terminal:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Port</span><span class="p">:</span> <span class="mi">27905</span><span class="p">,</span> <span class="s1">&#39;Term 55 (EL1014).Channel 1.Input&#39;</span>
+</pre></div>
+</div>
+<p>This form uses:</p>
+<ul class="simple">
+<li><p><strong>Port number</strong>: Identifies the EtherCAT master/device</p></li>
+<li><p><strong>Terminal name</strong>: e.g., <code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">55</span> <span class="pre">(EL1014)</span></code></p></li>
+<li><p><strong>PDO name</strong>: e.g., <code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">1</span></code></p></li>
+<li><p><strong>Entry name</strong>: e.g., <code class="docutils literal notranslate"><span class="pre">Input</span></code></p></li>
+</ul>
+<p><strong>Requirements:</strong></p>
+<ul class="simple">
+<li><p>The symbol name must <strong>exactly match</strong> what TwinCAT has in its symbol table</p></li>
+<li><p>TwinCAT generates these names based on the project configuration</p></li>
+</ul>
+<p><strong>Advantages:</strong></p>
+<ul class="simple">
+<li><p>Self-documenting code</p></li>
+<li><p>Easier to understand and maintain</p></li>
+<li><p>Symbol table provides type information</p></li>
+</ul>
+<p><strong>Disadvantages:</strong></p>
+<ul class="simple">
+<li><p>Requires symbol table to be available</p></li>
+<li><p>Names must match exactly - no flexibility</p></li>
+<li><p>Symbol table lookup adds overhead</p></li>
+</ul>
+</section>
+</section>
+<section id="by-index-group-offset">
+<h3>1.2 By Index Group + Offset<a class="headerlink" href="#by-index-group-offset" title="Link to this heading">#</a></h3>
+<p>ADS can also access data directly using numeric addresses:</p>
+<ul class="simple">
+<li><p><strong>Index Group</strong>: Identifies the memory region (e.g., <code class="docutils literal notranslate"><span class="pre">0xF020</span></code> for inputs, <code class="docutils literal notranslate"><span class="pre">0xF030</span></code> for outputs)</p></li>
+<li><p><strong>Index Offset</strong>: Byte offset within that region</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Read 2 bytes from input area at offset 0</span>
+<span class="n">client</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">index_group</span><span class="o">=</span><span class="mh">0xF020</span><span class="p">,</span> <span class="n">index_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Advantages:</strong></p>
+<ul class="simple">
+<li><p>No symbol table required</p></li>
+<li><p>Direct memory access - faster</p></li>
+<li><p>Works even without TwinCAT project symbols</p></li>
+</ul>
+<p><strong>Disadvantages:</strong></p>
+<ul class="simple">
+<li><p>Harder to understand (magic numbers)</p></li>
+<li><p>Must know exact memory layout</p></li>
+<li><p>No automatic type checking</p></li>
+</ul>
+</section>
+</section>
+<section id="constructing-ads-symbol-names-from-esi-xml">
+<h2>2. Constructing ADS Symbol Names from ESI XML<a class="headerlink" href="#constructing-ads-symbol-names-from-esi-xml" title="Link to this heading">#</a></h2>
+<p>The Beckhoff ESI (EtherCAT Slave Information) XML files contain PDO (Process Data Object) definitions that can be used to construct valid ADS symbol names.</p>
+<section id="xml-structure">
+<h3>XML Structure<a class="headerlink" href="#xml-structure" title="Link to this heading">#</a></h3>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Name&gt;</span>Input<span class="nt">&lt;/Name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;DataType&gt;</span>BOOL<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="symbol-name-construction">
+<h3>Symbol Name Construction<a class="headerlink" href="#symbol-name-construction" title="Link to this heading">#</a></h3>
+<p>The ADS symbol name (Symbol Info form) can be constructed as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">terminal_name</span><span class="p">}</span><span class="o">.</span><span class="p">{</span><span class="n">PDO_name</span><span class="p">}</span><span class="o">.</span><span class="p">{</span><span class="n">Entry_name</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p><strong>terminal_name</strong>: Discovered at runtime from the EtherCAT chain (e.g., <code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">55</span> <span class="pre">(EL1014)</span></code>)</p></li>
+<li><p><strong>PDO_name</strong>: From XML <code class="docutils literal notranslate"><span class="pre">&lt;TxPdo&gt;&lt;Name&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;RxPdo&gt;&lt;Name&gt;</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">1</span></code>)</p></li>
+<li><p><strong>Entry_name</strong>: From XML <code class="docutils literal notranslate"><span class="pre">&lt;Entry&gt;&lt;Name&gt;</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">Input</span></code>)</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Term</span> <span class="mi">55</span> <span class="p">(</span><span class="n">EL1014</span><span class="p">)</span><span class="o">.</span><span class="n">Channel</span> <span class="mf">1.</span><span class="n">Input</span>
+</pre></div>
+</div>
+</section>
+<section id="what-catio-terminals-stores">
+<h3>What catio-terminals Stores<a class="headerlink" href="#what-catio-terminals-stores" title="Link to this heading">#</a></h3>
+<p>The terminal YAML files store the <strong>suffix</strong> portion (PDO name + Entry name) that gets combined with the runtime-discovered terminal name:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># The name_template stores: {PDO_name}.{Entry_name}</span>
+<span class="c1"># with {channel} placeholder for multi-channel terminals</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Channel {channel}.Input</span>
+<span class="w">  </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BOOL</span>
+<span class="w">  </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+</pre></div>
+</div>
+<p>At runtime, FastCS will:</p>
+<ol class="arabic simple">
+<li><p>Discover the EtherCAT chain and terminal names</p></li>
+<li><p>Combine terminal name with the <code class="docutils literal notranslate"><span class="pre">name_template</span></code> to form the full symbol</p></li>
+<li><p>Use the AMS port to address the correct EtherCAT master</p></li>
+</ol>
+</section>
+<section id="why-this-approach-works">
+<h3>Why This Approach Works<a class="headerlink" href="#why-this-approach-works" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>XML provides the suffix</strong> - PDO name and Entry name are exactly what TwinCAT uses</p></li>
+<li><p><strong>Runtime provides the prefix</strong> - Terminal name comes from discovering the chain</p></li>
+<li><p><strong>YAML filters what we scan</strong> - Only selected symbols from XML end up in YAML</p></li>
+<li><p><strong>No hardcoded offsets needed</strong> - We use symbol-based ADS access exclusively</p></li>
+</ol>
+</section>
+</section>
+<section id="limitation-xml-does-not-determine-active-pdo-configuration">
+<h2>3. Limitation: XML Does Not Determine Active PDO Configuration<a class="headerlink" href="#limitation-xml-does-not-determine-active-pdo-configuration" title="Link to this heading">#</a></h2>
+<section id="the-problem">
+<h3>The Problem<a class="headerlink" href="#the-problem" title="Link to this heading">#</a></h3>
+<p>The ESI XML files define <strong>all possible</strong> PDO configurations for a terminal, but TwinCAT may use a <strong>different configuration</strong> than what we infer from the XML. This means we cannot reliably determine the actual ADS symbol names just from the terminal type.</p>
+</section>
+<section id="example-el1502-counter-terminal">
+<h3>Example: EL1502 Counter Terminal<a class="headerlink" href="#example-el1502-counter-terminal" title="Link to this heading">#</a></h3>
+<p>The EL1502 is a 2-channel counter terminal. Its ESI XML defines multiple PDO options:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cm">&lt;!-- Per-channel PDOs --&gt;</span>
+<span class="nt">&lt;TxPdo&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="w"> </span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;&lt;Name&gt;</span>Output<span class="w"> </span>functions<span class="w"> </span>enabled<span class="nt">&lt;/Name&gt;</span>...<span class="nt">&lt;/Entry&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;&lt;Name&gt;</span>Counter<span class="w"> </span>value<span class="nt">&lt;/Name&gt;</span>...<span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+<span class="nt">&lt;TxPdo&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="w"> </span>Channel<span class="w"> </span>2<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span>...
+<span class="nt">&lt;/TxPdo&gt;</span>
+
+<span class="cm">&lt;!-- Combined PDO (no channel number) --&gt;</span>
+<span class="nt">&lt;TxPdo&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;&lt;Name&gt;</span>Output<span class="w"> </span>functions<span class="w"> </span>enabled<span class="nt">&lt;/Name&gt;</span>...<span class="nt">&lt;/Entry&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;&lt;Name&gt;</span>Counter<span class="w"> </span>value<span class="nt">&lt;/Name&gt;</span>...<span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+<p>Our XML parser sees “Channel 1” and “Channel 2” PDOs and infers symbols like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CNT</span> <span class="n">Inputs</span> <span class="n">Channel</span> <span class="p">{</span><span class="n">channel</span><span class="p">}</span><span class="o">.</span><span class="n">Output</span> <span class="n">functions</span> <span class="n">enabled</span>
+</pre></div>
+</div>
+<p>But TwinCAT may be configured to use the <strong>combined PDO</strong>, resulting in actual symbols like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Term</span> <span class="mi">92</span> <span class="p">(</span><span class="n">EL1502</span><span class="p">)</span><span class="o">.</span><span class="n">CNT</span> <span class="n">Inputs</span><span class="o">.</span><span class="n">Output</span> <span class="n">functions</span> <span class="n">enabled</span>
+</pre></div>
+</div>
+</section>
+<section id="why-this-happens">
+<h3>Why This Happens<a class="headerlink" href="#why-this-happens" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>ESI XML is a capability description</strong> - It lists all PDO configurations the terminal <em>supports</em></p></li>
+<li><p><strong>TwinCAT project chooses the configuration</strong> - The actual PDO mapping is determined by the TwinCAT project settings</p></li>
+<li><p><strong>Default configurations vary</strong> - Different terminals may default to different PDO variants</p></li>
+</ol>
+</section>
+<section id="implications-for-catio-terminals">
+<h3>Implications for catio-terminals<a class="headerlink" href="#implications-for-catio-terminals" title="Link to this heading">#</a></h3>
+<p>This limitation means:</p>
+<ol class="arabic simple">
+<li><p><strong>Symbol names from XML may not match TwinCAT</strong> - The symbols we generate may not exist in the actual TwinCAT symbol table</p></li>
+<li><p><strong>Per-terminal verification needed</strong> - Users may need to verify/adjust symbol names against their actual TwinCAT configuration</p></li>
+<li><p><strong>Future enhancement needed</strong> - A more robust solution would query the actual TwinCAT symbol table at runtime rather than inferring from XML</p></li>
+</ol>
+</section>
+<section id="example-el3702-oversampling-terminal">
+<h3>Example: EL3702 Oversampling Terminal<a class="headerlink" href="#example-el3702-oversampling-terminal" title="Link to this heading">#</a></h3>
+<p>The EL3702 is a 2-channel analog input terminal that supports <strong>oversampling</strong> - capturing multiple samples per cycle. The ESI XML reveals extensive configurability:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">OSFac=</span><span class="s">&quot;20&quot;</span><span class="w"> </span><span class="na">OSMin=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">OSMax=</span><span class="s">&quot;100&quot;</span><span class="w"> </span><span class="na">OSIndexInc=</span><span class="s">&quot;16&quot;</span><span class="nt">&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>AI<span class="w"> </span>Inputs<span class="w"> </span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Name&gt;</span>Value<span class="nt">&lt;/Name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;DataType&gt;</span>INT<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+<p>The XML attributes indicate:</p>
+<ul class="simple">
+<li><p><strong>OSMin=”1”</strong> - Minimum 1 sample per cycle</p></li>
+<li><p><strong>OSMax=”100”</strong> - Maximum 100 samples per cycle</p></li>
+<li><p><strong>OSFac=”20”</strong> - Oversampling factor (internal timing)</p></li>
+</ul>
+<p>Additionally, the XML defines multiple <strong>Operation Modes</strong>:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;OpMode&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>DcSync<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Desc&gt;</span>DC-Synchronous<span class="w"> </span>with<span class="w"> </span>variable<span class="w"> </span>Oversampling<span class="nt">&lt;/Desc&gt;</span>
+<span class="nt">&lt;/OpMode&gt;</span>
+<span class="nt">&lt;OpMode&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>DcSync2<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Desc&gt;</span>DC-Synchronous<span class="w"> </span>2x<span class="w"> </span>Oversampling<span class="nt">&lt;/Desc&gt;</span>
+<span class="nt">&lt;/OpMode&gt;</span>
+<span class="cm">&lt;!-- DcSync3, DcSync4, DcSync5, DcSync8, DcSync10 also defined --&gt;</span>
+</pre></div>
+</div>
+<p>And TwinCAT-specific vendor extensions:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Oversampling</span><span class="w"> </span><span class="na">DefaultFactor=</span><span class="s">&quot;10&quot;</span><span class="w"> </span><span class="na">MinCycleTime=</span><span class="s">&quot;10000&quot;</span><span class="nt">/&gt;</span>
+</pre></div>
+</div>
+<p><strong>The problem</strong>: Our XML parser only sees the template PDO with a single <code class="docutils literal notranslate"><span class="pre">Value</span></code> entry. But at runtime, TwinCAT will create symbols based on the configured sample count:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>Actual Symbols Created</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1x (no oversampling)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">60</span> <span class="pre">(EL3702).AI</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">1.Value</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>10x oversampling</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">60</span> <span class="pre">(EL3702).AI</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">1.Samples[0..9]</span></code> (or similar)</p></td>
+</tr>
+<tr class="row-even"><td><p>100x oversampling</p></td>
+<td><p>100 sample values per channel</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The XML defines <strong>capabilities</strong> (1-100 samples), but the TwinCAT project determines <strong>actual configuration</strong>.</p>
+</section>
+<section id="workarounds">
+<h3>Workarounds<a class="headerlink" href="#workarounds" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Manual verification</strong> - Compare generated YAML against TwinCAT’s symbol browser</p></li>
+<li><p><strong>Runtime symbol discovery</strong> - Query TwinCAT’s symbol table to discover actual symbols</p></li>
+<li><p><strong>User override</strong> - Allow users to manually edit symbol names in the YAML files</p></li>
+</ol>
+</section>
+</section>
+<section id="common-index-groups-for-ethercat-i-o">
+<h2>Common Index Groups for EtherCAT I/O<a class="headerlink" href="#common-index-groups-for-ethercat-i-o" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Index Group</p></th>
+<th class="head"><p>Hex</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>61472</p></td>
+<td><p>0xF020</p></td>
+<td><p>Input process data (bytes)</p></td>
+</tr>
+<tr class="row-odd"><td><p>61473</p></td>
+<td><p>0xF021</p></td>
+<td><p>Input process data (bits)</p></td>
+</tr>
+<tr class="row-even"><td><p>61488</p></td>
+<td><p>0xF030</p></td>
+<td><p>Output process data (bytes)</p></td>
+</tr>
+<tr class="row-odd"><td><p>61489</p></td>
+<td><p>0xF031</p></td>
+<td><p>Output process data (bits)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/index.html">Beckhoff ADS Protocol Documentation</a></p></li>
+<li><p><a class="reference external" href="https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adssamples_python/index.html">TwinCAT Symbol Access</a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="composite-types.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Composite Types in TwinCAT</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="decisions.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Architectural Decision Records</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-ways-ads-accesses-data">1. Two Ways ADS Accesses Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#by-symbol-name">1.1 By Symbol Name</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#full-name-using-caret-separator">Full Name (using caret <code class="docutils literal notranslate"><span class="pre">^</span></code> separator)</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-info-using-port-and-dot-separator">Symbol Info (using port and dot <code class="docutils literal notranslate"><span class="pre">.</span></code> separator)</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#by-index-group-offset">1.2 By Index Group + Offset</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constructing-ads-symbol-names-from-esi-xml">2. Constructing ADS Symbol Names from ESI XML</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xml-structure">XML Structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-name-construction">Symbol Name Construction</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-catio-terminals-stores">What catio-terminals Stores</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-this-approach-works">Why This Approach Works</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitation-xml-does-not-determine-active-pdo-configuration">3. Limitation: XML Does Not Determine Active PDO Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-problem">The Problem</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-el1502-counter-terminal">Example: EL1502 Counter Terminal</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-this-happens">Why This Happens</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#implications-for-catio-terminals">Implications for catio-terminals</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-el3702-oversampling-terminal">Example: EL3702 Oversampling Terminal</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workarounds">Workarounds</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-index-groups-for-ethercat-i-o">Common Index Groups for EtherCAT I/O</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/explanations/useful_notes_ads_twincat.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/explanations/useful_notes_ads_twincat.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

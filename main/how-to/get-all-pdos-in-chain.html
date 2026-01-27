@@ -1,0 +1,1157 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=dcddec71"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'how-to/get-all-pdos-in-chain';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Run in a container" href="run-container.html" />
+    <link rel="prev" title="Contribute to the project" href="contribute.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribute to the project</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">How to Get All PDOs in an EtherCAT Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run-container.html">Run in a container</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../how-to.html" class="nav-link">How-to Guides</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">How to Get All PDOs in an EtherCAT Chain</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="how-to-get-all-pdos-in-an-ethercat-chain">
+<h1>How to Get All PDOs in an EtherCAT Chain<a class="headerlink" href="#how-to-get-all-pdos-in-an-ethercat-chain" title="Link to this heading">#</a></h1>
+<p>This guide explains how to discover the actual PDO (Process Data Object) configuration of terminals at runtime, which is necessary when the ESI XML cannot reliably predict the symbol structure.</p>
+<p>The original intention of the YAML based terminal type descriptions created using <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> (see <a class="reference internal" href="../explanations/terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a>) was to provide a complete mapping of all PDOs for each terminal type, generating this information from the Beckhoff ESI XML files.</p>
+<p>However, some terminals have dynamic PDO configurations that depend on project settings in TwinCAT, making it impossible to determine the exact PDO layout from XML alone. This document outlines the extent of the problem by highlighting those terminals used at Diamond Light Source that require runtime discovery.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>Some EtherCAT terminals have <strong>dynamic PDO configurations</strong> that depend on:</p>
+<ul class="simple">
+<li><p>TwinCAT project settings</p></li>
+<li><p>Selected operation mode</p></li>
+<li><p>Oversampling factor</p></li>
+<li><p>PDO assignment choices</p></li>
+</ul>
+<p>For these terminals, you must query the TwinCAT symbol table at runtime rather than relying solely on XML-derived definitions.</p>
+</section>
+<section id="terminals-in-the-test-configuration">
+<h2>Terminals in the Test Configuration<a class="headerlink" href="#terminals-in-the-test-configuration" title="Link to this heading">#</a></h2>
+<p>The terminals listed here are the complete set used at DLS at the time of writing (see <a class="reference internal" href="../reference/DLS_terminals.html"><span class="std std-doc">DLS Terminals Reference</span></a> for details).</p>
+<p>The terminals are categorized by type, with notes on which require runtime discovery.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Terminal</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>PDO Type</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>EK1100</p></td>
+<td><p>EtherCAT Coupler</p></td>
+<td><p>None</p></td>
+<td><p>Bus coupler, no process data</p></td>
+</tr>
+<tr class="row-odd"><td><p>EK1122</p></td>
+<td><p>2 Port EtherCAT Junction</p></td>
+<td><p>None</p></td>
+<td><p>Junction module, no process data</p></td>
+</tr>
+<tr class="row-even"><td><p>EL1014</p></td>
+<td><p>4Ch Digital Input 24V, 10us</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL inputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL1084</p></td>
+<td><p>4Ch Digital Input 24V, 3ms, negative</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL inputs</p></td>
+</tr>
+<tr class="row-even"><td><p>EL1124</p></td>
+<td><p>4Ch Digital Input 5V, 10us</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL inputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL1502</p></td>
+<td><p>2Ch Up/Down Counter 24V, 100kHz</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Multiple PDO configurations (per-channel vs combined)</p></td>
+</tr>
+<tr class="row-even"><td><p>EL2024</p></td>
+<td><p>4Ch Digital Output 24V, 2A</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL outputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL2024-0010</p></td>
+<td><p>4Ch Digital Output 24V, 2A (variant)</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL outputs</p></td>
+</tr>
+<tr class="row-even"><td><p>EL2124</p></td>
+<td><p>4Ch Digital Output 5V, 20mA</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL outputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL2502</p></td>
+<td><p>2Ch PWM Output 24V</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 2 UINT PWM outputs</p></td>
+</tr>
+<tr class="row-even"><td><p>EL2595</p></td>
+<td><p>1Ch LED Constant Current</p></td>
+<td><p>Static</p></td>
+<td><p>Status + multi-field control outputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL2612</p></td>
+<td><p>2Ch Relay Output CO</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 2 BOOL relay outputs</p></td>
+</tr>
+<tr class="row-even"><td><p>EL2624</p></td>
+<td><p>4Ch Relay Output NO</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL relay outputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3104</p></td>
+<td><p>4Ch Analog Input +/-10V Diff</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Standard vs Compact PDO selection</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3124</p></td>
+<td><p>4Ch Analog Input 4-20mA Diff</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Standard vs Compact PDO selection</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3202</p></td>
+<td><p>2Ch Analog Input PT100 (RTD)</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed RTD Inputs per channel</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3202-0010</p></td>
+<td><p>2Ch Analog Input PT100 (RTD, variant)</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed RTD Inputs per channel</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3314</p></td>
+<td><p>4Ch Analog Input Thermocouple</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed TC Inputs + optional CJ compensation outputs</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3356-0010</p></td>
+<td><p>1Ch Resistor Bridge, 16bit High Precision</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Multiple PDO formats (INT32, Real, Standard, Compact)</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3602</p></td>
+<td><p>2Ch Analog Input +/-10V Diff, 24bit</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed AI Inputs per channel</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3702</p></td>
+<td><p>2Ch Analog Input +/-10V Oversample</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>1-100 samples per channel</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL4134</p></td>
+<td><p>4Ch Analog Output +/-10V, 16bit</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed AO Output per channel</p></td>
+</tr>
+<tr class="row-even"><td><p>EL4732</p></td>
+<td><p>2Ch Analog Output +/-10V Oversample</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Configurable sample count</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL9410</p></td>
+<td><p>E-Bus Power Supply (Diagnostics)</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 2 status BOOLs (Us, Up undervoltage)</p></td>
+</tr>
+<tr class="row-even"><td><p>EL9505</p></td>
+<td><p>Power Supply Terminal 5V</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed status (Power OK, Overload)</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL9510</p></td>
+<td><p>Power Supply Terminal 10V</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed status (Power OK, Overload)</p></td>
+</tr>
+<tr class="row-even"><td><p>EL9512</p></td>
+<td><p>Power Supply Terminal 12V</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed status (Power OK, Overload)</p></td>
+</tr>
+<tr class="row-odd"><td><p>ELM3704-0000</p></td>
+<td><p>4Ch Universal Analog Input, 24bit</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Oversampling (1-100), data format (INT16/INT32/REAL), per-channel config</p></td>
+</tr>
+<tr class="row-even"><td><p>EP2338-0002</p></td>
+<td><p>8Ch Digital I/O 24V, 0.5A</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 8 inputs + 8 outputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EP2624-0002</p></td>
+<td><p>4Ch Relay Output NO</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed 4 BOOL relay outputs</p></td>
+</tr>
+<tr class="row-even"><td><p>EP3174-0002</p></td>
+<td><p>4Ch Analog Input configurable</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Standard vs Compact PDO selection</p></td>
+</tr>
+<tr class="row-odd"><td><p>EP3204-0002</p></td>
+<td><p>4Ch Analog Input PT100 (RTD)</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed RTD Inputs per channel</p></td>
+</tr>
+<tr class="row-even"><td><p>EP3314-0002</p></td>
+<td><p>4Ch Analog Input Thermocouple</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed TC Inputs + optional CJ compensation outputs</p></td>
+</tr>
+<tr class="row-odd"><td><p>EP4174-0002</p></td>
+<td><p>4Ch Analog Output configurable</p></td>
+<td><p>Static</p></td>
+<td><p>Fixed AO Outputs per channel</p></td>
+</tr>
+<tr class="row-even"><td><p>EP4374-0002</p></td>
+<td><p>2Ch AI + 2Ch AO configurable</p></td>
+<td><p><strong>Dynamic</strong></p></td>
+<td><p>Standard vs Compact PDO selection for inputs</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="terminals-requiring-runtime-discovery">
+<h2>Terminals Requiring Runtime Discovery<a class="headerlink" href="#terminals-requiring-runtime-discovery" title="Link to this heading">#</a></h2>
+<section id="counter-terminals-el1502-el2502">
+<h3>Counter Terminals (EL1502, EL2502)<a class="headerlink" href="#counter-terminals-el1502-el2502" title="Link to this heading">#</a></h3>
+<section id="el1502-up-down-counter">
+<h4>EL1502 - Up/Down Counter<a class="headerlink" href="#el1502-up-down-counter" title="Link to this heading">#</a></h4>
+<p><strong>Problem:</strong> The ESI XML defines multiple PDO configurations:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>PDO Names</p></th>
+<th class="head"><p>Symbol Pattern</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Per-channel</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">{n}.Counter</span> <span class="pre">value</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Combined</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs.Counter</span> <span class="pre">value</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The YAML file includes <strong>both</strong> configurations, but only one will be active in TwinCAT.</p>
+<p><strong>Runtime Discovery:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for an EL1502</span>
+<span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+<span class="n">el1502_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;EL1502&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<span class="c1"># Check which configuration is active</span>
+<span class="n">has_per_channel</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Channel 1&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el1502_symbols</span><span class="p">)</span>
+<span class="n">has_combined</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;CNT Inputs.Counter value&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el1502_symbols</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002">
+<h3>Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)<a class="headerlink" href="#analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> These analog input terminals offer two PDO formats per channel:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Format</p></th>
+<th class="head"><p>PDO Name Pattern</p></th>
+<th class="head"><p>Contents</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Standard</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>Status word (underrange, overrange, limits, error) + Value</p></td>
+</tr>
+<tr class="row-odd"><td><p>Compact</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Compact</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>Value only (no status)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The TwinCAT project selects one format per channel. Both are defined in XML as optional.</p>
+<p><strong>Runtime Discovery:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for analog input terminals</span>
+<span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+<span class="n">ai_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;AI&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<span class="c1"># Determine which format is active</span>
+<span class="n">has_standard</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Standard&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ai_symbols</span><span class="p">)</span>
+<span class="n">has_compact</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Compact&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ai_symbols</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">has_standard</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using Standard PDO format (status + value)&quot;</span><span class="p">)</span>
+<span class="k">elif</span> <span class="n">has_compact</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using Compact PDO format (value only)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="resistor-bridge-terminal-el3356-0010">
+<h3>Resistor Bridge Terminal (EL3356-0010)<a class="headerlink" href="#resistor-bridge-terminal-el3356-0010" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> The EL3356-0010 offers multiple PDO formats for measurement data:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Format</p></th>
+<th class="head"><p>PDO Name</p></th>
+<th class="head"><p>Data Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>INT32</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Value</span> <span class="pre">(INT32)</span></code></p></td>
+<td><p>DINT (32-bit signed)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Real</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Value</span> <span class="pre">(Real)</span></code></p></td>
+<td><p>REAL (32-bit float)</p></td>
+</tr>
+<tr class="row-even"><td><p>Standard Ch1/Ch2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>Status + DINT value</p></td>
+</tr>
+<tr class="row-odd"><td><p>Compact Ch1/Ch2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Compact</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>DINT value only</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Additionally, it has optional <code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Status</span></code>, <code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Timestamp</span></code>, and <code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Control</span></code> PDOs.</p>
+<p><strong>Runtime Discovery:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for EL3356</span>
+<span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+<span class="n">el3356_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;EL3356&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<span class="c1"># Determine which value format is active</span>
+<span class="n">has_int32</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;RMB Value (INT32)&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
+<span class="n">has_real</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;RMB Value (Real)&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
+<span class="n">has_standard</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;AI Standard&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
+<span class="n">has_compact</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;AI Compact&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
+
+<span class="c1"># Check for optional features</span>
+<span class="n">has_timestamp</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Timestamp&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
+<span class="n">has_control</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;RMB Control&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="oversampling-terminals-el3702-el4732-elm3704-0000">
+<h3>Oversampling Terminals (EL3702, EL4732, ELM3704-0000)<a class="headerlink" href="#oversampling-terminals-el3702-el4732-elm3704-0000" title="Link to this heading">#</a></h3>
+<section id="el3702-2ch-oversampling-analog-input">
+<h4>EL3702 - 2Ch Oversampling Analog Input<a class="headerlink" href="#el3702-2ch-oversampling-analog-input" title="Link to this heading">#</a></h4>
+<p><strong>Problem:</strong> The number of samples per channel is configurable (1-100). The XML only shows a template with one sample.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Oversampling</p></th>
+<th class="head"><p>Samples per Channel</p></th>
+<th class="head"><p>Total Symbols</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1x (default)</p></td>
+<td><p>1</p></td>
+<td><p>2 values</p></td>
+</tr>
+<tr class="row-odd"><td><p>10x</p></td>
+<td><p>10</p></td>
+<td><p>20 values</p></td>
+</tr>
+<tr class="row-even"><td><p>100x</p></td>
+<td><p>100</p></td>
+<td><p>200 values</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Runtime Discovery:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for an EL3702</span>
+<span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+<span class="n">el3702_ch1</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span>
+              <span class="k">if</span> <span class="s2">&quot;EL3702&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Ch1&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Value&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<span class="n">oversampling_factor</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">el3702_ch1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EL3702 configured for </span><span class="si">{</span><span class="n">oversampling_factor</span><span class="si">}</span><span class="s2">x oversampling&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="el4732-2ch-oversampling-analog-output">
+<h4>EL4732 - 2Ch Oversampling Analog Output<a class="headerlink" href="#el4732-2ch-oversampling-analog-output" title="Link to this heading">#</a></h4>
+<p><strong>Problem:</strong> Similar to EL3702, the sample count is configurable. The output PDO contains arrays of values.</p>
+<p><strong>Runtime Discovery:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for an EL4732</span>
+<span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+<span class="n">el4732_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;EL4732&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Value&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<span class="c1"># Count array elements to determine oversampling factor</span>
+<span class="n">sample_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">el4732_symbols</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EL4732 configured for </span><span class="si">{</span><span class="n">sample_count</span><span class="si">}</span><span class="s2"> samples per cycle&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="elm3704-0000-4ch-universal-analog-input-with-oversampling">
+<h4>ELM3704-0000 - 4Ch Universal Analog Input with Oversampling<a class="headerlink" href="#elm3704-0000-4ch-universal-analog-input-with-oversampling" title="Link to this heading">#</a></h4>
+<p><strong>Problem:</strong> This is the most complex terminal. Each of the 4 channels can be independently configured with:</p>
+<ol class="arabic simple">
+<li><p><strong>Data format</strong>: INT16, INT32 (DINT), or REAL32</p></li>
+<li><p><strong>Oversampling factor</strong>: 1, 2, 4, 5, 8, 10, 16, 20, 25, 32, 40, 50, 64, 80, or 100 samples</p></li>
+<li><p><strong>Optional PDOs</strong>: Status, Timestamp, Control, Cold Junction Temperature</p></li>
+</ol>
+<p>The XML defines 192 TxPDOs (48 per channel) covering all combinations!</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>PDO Pattern</p></th>
+<th class="head"><p>Example</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Status</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Status</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p>Status byte per channel</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Samples</span> <span class="pre">{count}</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Samples</span> <span class="pre">10</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p>DINT array with count samples</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Samples16</span> <span class="pre">{count}</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Samples16</span> <span class="pre">10</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p>INT array with count samples</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">SamplesR32</span> <span class="pre">{count}</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">SamplesR32</span> <span class="pre">10</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p>REAL array with count samples</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Timestamp</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PAI</span> <span class="pre">Timestamp</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></td>
+<td><p>64-bit timestamp</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Runtime Discovery:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for ELM3704</span>
+<span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+<span class="n">elm3704_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;ELM3704&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+    <span class="n">ch_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">elm3704_symbols</span> <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;Channel </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+    <span class="c1"># Determine data format</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;SamplesR32&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ch_symbols</span><span class="p">):</span>
+        <span class="n">data_format</span> <span class="o">=</span> <span class="s2">&quot;REAL32&quot;</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Samples16&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ch_symbols</span><span class="p">):</span>
+        <span class="n">data_format</span> <span class="o">=</span> <span class="s2">&quot;INT16&quot;</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Samples &quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ch_symbols</span><span class="p">):</span>  <span class="c1"># Note space to avoid Samples16</span>
+        <span class="n">data_format</span> <span class="o">=</span> <span class="s2">&quot;INT32&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_format</span> <span class="o">=</span> <span class="s2">&quot;Unknown&quot;</span>
+
+    <span class="c1"># Determine oversampling factor from PDO name</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ch_symbols</span><span class="p">:</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Samples\d* (\d+) Channel&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">oversample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">oversample</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Channel </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">data_format</span><span class="si">}</span><span class="s2"> format, </span><span class="si">{</span><span class="n">oversample</span><span class="si">}</span><span class="s2">x oversampling&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="how-to-query-all-pdos-at-runtime">
+<h2>How to Query All PDOs at Runtime<a class="headerlink" href="#how-to-query-all-pdos-at-runtime" title="Link to this heading">#</a></h2>
+<section id="step-1-get-symbol-table-info">
+<h3>Step 1: Get Symbol Table Info<a class="headerlink" href="#step-1-get-symbol-table-info" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fastcs_catio.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatioClient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastcs_catio._constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">IndexGroup</span>
+
+<span class="c1"># Request symbol table metadata</span>
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">_ads_command</span><span class="p">(</span>
+    <span class="n">AdsReadRequest</span><span class="p">(</span>
+        <span class="n">index_group</span><span class="o">=</span><span class="n">IndexGroup</span><span class="o">.</span><span class="n">ADSIGRP_SYM_UPLOADINFO2</span><span class="p">,</span>  <span class="c1"># 0xF00F</span>
+        <span class="n">index_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">read_length</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">symbol_count</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># Parse from response</span>
+<span class="n">table_length</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># Parse from response</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-download-full-symbol-table">
+<h3>Step 2: Download Full Symbol Table<a class="headerlink" href="#step-2-download-full-symbol-table" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fetch all symbol definitions</span>
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">_ads_command</span><span class="p">(</span>
+    <span class="n">AdsReadRequest</span><span class="p">(</span>
+        <span class="n">index_group</span><span class="o">=</span><span class="n">IndexGroup</span><span class="o">.</span><span class="n">ADSIGRP_SYM_UPLOAD</span><span class="p">,</span>  <span class="c1"># 0xF00B</span>
+        <span class="n">index_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">read_length</span><span class="o">=</span><span class="n">table_length</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1"># Parse symbol entries from response.data</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-use-the-high-level-api">
+<h3>Step 3: Use the High-Level API<a class="headerlink" href="#step-3-use-the-high-level-api" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">CatioClient</span></code> provides a simpler interface:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">with</span> <span class="n">CatioClient</span><span class="p">(</span><span class="n">target_ip</span><span class="o">=</span><span class="s2">&quot;192.168.1.100&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+    <span class="c1"># Discover EtherCAT devices</span>
+    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_ethercat_devices</span><span class="p">()</span>
+
+    <span class="c1"># Get all symbols from the symbol table</span>
+    <span class="n">all_symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+
+    <span class="c1"># Symbols are keyed by device ID</span>
+    <span class="k">for</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">symbols</span> <span class="ow">in</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">type_name</span><span class="si">}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">index_group</span><span class="si">:</span><span class="s2">#x</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">index_offset</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="recommendations">
+<h2>Recommendations<a class="headerlink" href="#recommendations" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>For static terminals</strong> (EK1100, EK1122, EL1014, EL1084, EL1124, EL2024, EL2024-0010, EL2124, EL2502, EL2595, EL2612, EL2624, EL3202, EL3202-0010, EL3314, EL3602, EL4134, EL9410, EL9505, EL9510, EL9512, EP2338-0002, EP2624-0002, EP3204-0002, EP3314-0002, EP4174-0002):</p>
+<ul class="simple">
+<li><p>Use XML-derived YAML definitions directly</p></li>
+<li><p>PDO structure is fixed and predictable</p></li>
+</ul>
+</li>
+<li><p><strong>For Standard/Compact selectable terminals</strong> (EL3104, EL3124, EP3174-0002, EP4374-0002):</p>
+<ul class="simple">
+<li><p>Query symbol table at startup to determine which format is active</p></li>
+<li><p>YAML should define both formats; reconcile with actual symbols</p></li>
+</ul>
+</li>
+<li><p><strong>For multi-format terminals</strong> (EL3356-0010):</p>
+<ul class="simple">
+<li><p>Query symbol table to determine active value format (INT32, Real, Standard, Compact)</p></li>
+<li><p>Check for optional features (Timestamp, Control)</p></li>
+</ul>
+</li>
+<li><p><strong>For counter terminals with configuration variants</strong> (EL1502):</p>
+<ul class="simple">
+<li><p>Query symbol table to determine per-channel vs combined configuration</p></li>
+<li><p>YAML includes both; only one will be active</p></li>
+</ul>
+</li>
+<li><p><strong>For oversampling terminals</strong> (EL3702, EL4732, ELM3704-0000):</p>
+<ul class="simple">
+<li><p>Always query symbol table - sample count is runtime-configurable</p></li>
+<li><p>ELM3704 additionally requires checking data format per channel</p></li>
+<li><p>Use symbol naming patterns to extract configuration</p></li>
+</ul>
+</li>
+<li><p><strong>For unknown terminals</strong>: Always query the symbol table to discover available PDOs</p></li>
+</ol>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../explanations/useful_notes_ads_twincat.html"><span class="std std-doc">Useful Notes on ADS and TwinCAT</span></a> - Details on ADS access methods and XML limitations</p></li>
+<li><p><a class="reference internal" href="../explanations/terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a> - How terminal definitions are structured</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="contribute.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Contribute to the project</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="run-container.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Run in a container</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-in-the-test-configuration">Terminals in the Test Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-requiring-runtime-discovery">Terminals Requiring Runtime Discovery</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#counter-terminals-el1502-el2502">Counter Terminals (EL1502, EL2502)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#el1502-up-down-counter">EL1502 - Up/Down Counter</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002">Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#resistor-bridge-terminal-el3356-0010">Resistor Bridge Terminal (EL3356-0010)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#oversampling-terminals-el3702-el4732-elm3704-0000">Oversampling Terminals (EL3702, EL4732, ELM3704-0000)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#el3702-2ch-oversampling-analog-input">EL3702 - 2Ch Oversampling Analog Input</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#el4732-2ch-oversampling-analog-output">EL4732 - 2Ch Oversampling Analog Output</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#elm3704-0000-4ch-universal-analog-input-with-oversampling">ELM3704-0000 - 4Ch Universal Analog Input with Oversampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-query-all-pdos-at-runtime">How to Query All PDOs at Runtime</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-get-symbol-table-info">Step 1: Get Symbol Table Info</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-download-full-symbol-table">Step 2: Download Full Symbol Table</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-use-the-high-level-api">Step 3: Use the High-Level API</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recommendations">Recommendations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/how-to/get-all-pdos-in-chain.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/how-to/get-all-pdos-in-chain.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

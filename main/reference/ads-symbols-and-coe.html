@@ -1,0 +1,894 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ADS Symbols and CoE Objects &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=dcddec71"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/ads-symbols-and-coe';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="EtherCAT Composite Types" href="ethercat-composite-types.html" />
+    <link rel="prev" title="Beckhoff ESI XML File Format" href="beckhoff-xml-format.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../_api/fastcs_catio.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DLS_terminals.html">DLS Terminal Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beckhoff-xml-format.html">Beckhoff ESI XML File Format</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">ADS Symbols and CoE Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ethercat-composite-types.html">EtherCAT Composite Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">ADS Symbols and CoE Objects</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="ads-symbols-and-coe-objects">
+<h1>ADS Symbols and CoE Objects<a class="headerlink" href="#ads-symbols-and-coe-objects" title="Link to this heading">#</a></h1>
+<p>This document describes how Beckhoff EtherCAT terminals expose data through ADS symbols and CoE (CANopen over EtherCAT) objects, and how to discover them at runtime.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>Beckhoff EtherCAT terminals expose two distinct data interfaces:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Interface</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Access Method</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>ADS Symbols</strong></p></td>
+<td><p>Real-time process data (I/O values)</p></td>
+<td><p>ADS Read/Write by symbol name</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CoE Objects</strong></p></td>
+<td><p>Configuration parameters</p></td>
+<td><p>ADS Read/Write by index/subindex</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="ads-symbols">
+<h2>ADS Symbols<a class="headerlink" href="#ads-symbols" title="Link to this heading">#</a></h2>
+<section id="what-are-ads-symbols">
+<h3>What Are ADS Symbols?<a class="headerlink" href="#what-are-ads-symbols" title="Link to this heading">#</a></h3>
+<p>ADS (Automation Device Specification) symbols represent the live process data of an EtherCAT terminal. Each symbol maps to a memory location containing I/O values that update in real-time during the EtherCAT cycle.</p>
+<p>For an EL3104 analog input terminal, symbols include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1</span></code> - Status and value for channel 1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">2</span></code> - Status and value for channel 2</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WcState^WcState</span></code> - Working counter state (communication health)</p></li>
+</ul>
+</section>
+<section id="symbol-discovery-via-ads">
+<h3>Symbol Discovery via ADS<a class="headerlink" href="#symbol-discovery-via-ads" title="Link to this heading">#</a></h3>
+<p>To discover available symbols, query the ADS symbol table using:</p>
+<p><strong>Index Group:</strong> <code class="docutils literal notranslate"><span class="pre">0xF009</span></code> (ADSIGRP_SYM_INFOBYNAMEEX)
+<strong>Index Offset:</strong> <code class="docutils literal notranslate"><span class="pre">0x0</span></code></p>
+<p>The TwinCAT ADS server returns a symbol table containing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Symbol</span> <span class="n">Entry</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="s2">&quot;Term 3 (EL3104).AI Standard Channel 1&quot;</span>
+  <span class="o">-</span> <span class="n">Index</span> <span class="n">Group</span><span class="p">:</span> <span class="mh">0xF020</span>
+  <span class="o">-</span> <span class="n">Index</span> <span class="n">Offset</span><span class="p">:</span> <span class="mh">0x0</span>
+  <span class="o">-</span> <span class="n">Size</span><span class="p">:</span> <span class="mi">4</span> <span class="nb">bytes</span>
+  <span class="o">-</span> <span class="n">Data</span> <span class="n">Type</span><span class="p">:</span> <span class="s2">&quot;AI Standard Channel 1_TYPE&quot;</span>
+  <span class="o">-</span> <span class="n">ADS</span> <span class="n">Type</span> <span class="n">ID</span><span class="p">:</span> <span class="mi">65</span> <span class="p">(</span><span class="n">BIGTYPE</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="symbol-naming-convention">
+<h3>Symbol Naming Convention<a class="headerlink" href="#symbol-naming-convention" title="Link to this heading">#</a></h3>
+<p>TwinCAT constructs symbol names hierarchically:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">Box</span> <span class="n">Name</span><span class="o">&gt;.&lt;</span><span class="n">PDO</span> <span class="n">Name</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Examples:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">3</span> <span class="pre">(EL3104).AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">5</span> <span class="pre">(EL2004).Channel</span> <span class="pre">1^Output</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">7</span> <span class="pre">(EL5101).ENC</span> <span class="pre">Status^Counter</span> <span class="pre">value</span></code></p></li>
+</ul>
+<p>The box name comes from the TwinCAT project configuration. The PDO name comes from the terminal’s ESI XML definition.</p>
+</section>
+<section id="index-groups-for-terminals">
+<h3>Index Groups for Terminals<a class="headerlink" href="#index-groups-for-terminals" title="Link to this heading">#</a></h3>
+<p>EtherCAT terminals use specific index groups for symbol access:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Index Group</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0xF020</span></code></p></td>
+<td><p>Input process data (TxPDO - terminal to controller)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0xF021</span></code></p></td>
+<td><p>Working counter and diagnostic data</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0xF030</span></code></p></td>
+<td><p>Output process data (RxPDO - controller to terminal)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="reading-symbol-values">
+<h3>Reading Symbol Values<a class="headerlink" href="#reading-symbol-values" title="Link to this heading">#</a></h3>
+<p>To read a symbol value:</p>
+<ol class="arabic simple">
+<li><p><strong>By Name:</strong> Use <code class="docutils literal notranslate"><span class="pre">ADSIGRP_SYM_VALBYHND</span></code> (0xF005) with a handle obtained from <code class="docutils literal notranslate"><span class="pre">ADSIGRP_SYM_HNDBYNAME</span></code> (0xF003)</p></li>
+<li><p><strong>By Index:</strong> Use the symbol’s index group and offset directly</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ADS</span> <span class="n">Read</span> <span class="n">Request</span><span class="p">:</span>
+  <span class="n">Index</span> <span class="n">Group</span><span class="p">:</span> <span class="mh">0xF020</span>
+  <span class="n">Index</span> <span class="n">Offset</span><span class="p">:</span> <span class="mh">0x0</span>
+  <span class="n">Length</span><span class="p">:</span> <span class="mi">4</span> <span class="nb">bytes</span>
+
+<span class="n">Response</span><span class="p">:</span> <span class="p">[</span><span class="n">Status</span> <span class="p">(</span><span class="mi">2</span> <span class="nb">bytes</span><span class="p">)][</span><span class="n">Value</span> <span class="p">(</span><span class="mi">2</span> <span class="nb">bytes</span><span class="p">)]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="coe-objects">
+<h2>CoE Objects<a class="headerlink" href="#coe-objects" title="Link to this heading">#</a></h2>
+<section id="what-are-coe-objects">
+<h3>What Are CoE Objects?<a class="headerlink" href="#what-are-coe-objects" title="Link to this heading">#</a></h3>
+<p>CoE (CANopen over EtherCAT) objects are configuration parameters stored in the terminal’s object dictionary. They follow the CANopen standard (CiA 301) and are accessed via index and subindex.</p>
+<p>Common CoE objects include:</p>
+<ul class="simple">
+<li><p><strong>0x1000</strong> - Device Type</p></li>
+<li><p><strong>0x1008</strong> - Manufacturer Device Name</p></li>
+<li><p><strong>0x1018</strong> - Identity Object</p></li>
+<li><p><strong>0x8000+</strong> - Terminal-specific settings (e.g., filter settings, calibration)</p></li>
+</ul>
+</section>
+<section id="coe-object-structure">
+<h3>CoE Object Structure<a class="headerlink" href="#coe-object-structure" title="Link to this heading">#</a></h3>
+<p>Each CoE object has:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Index</p></td>
+<td><p>16-bit object index (e.g., 0x8000)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SubIndex</p></td>
+<td><p>8-bit subindex within the object</p></td>
+</tr>
+<tr class="row-even"><td><p>Data Type</p></td>
+<td><p>CANopen data type (BOOL, UINT16, etc.)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Access</p></td>
+<td><p>Read-only (ro), Read-write (rw), Write-only (wo)</p></td>
+</tr>
+<tr class="row-even"><td><p>Default</p></td>
+<td><p>Factory default value</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="discovering-coe-objects">
+<h3>Discovering CoE Objects<a class="headerlink" href="#discovering-coe-objects" title="Link to this heading">#</a></h3>
+<p>CoE objects are defined in the terminal’s ESI XML file under the <code class="docutils literal notranslate"><span class="pre">&lt;Profile&gt;&lt;Dictionary&gt;&lt;Objects&gt;</span></code> section. However, you can also discover them at runtime.</p>
+<p><strong>Method 1: SDO Information Service</strong></p>
+<p>Use the CANopen SDO Information protocol to enumerate objects:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Index</span> <span class="mh">0x1000</span> <span class="p">(</span><span class="n">Device</span> <span class="n">Type</span><span class="p">):</span>
+  <span class="n">SubIndex</span> <span class="mi">0</span><span class="p">:</span> <span class="n">UDINT</span> <span class="o">=</span> <span class="mh">0x00001389</span>
+
+<span class="n">Index</span> <span class="mh">0x8000</span> <span class="p">(</span><span class="n">AI</span> <span class="n">Settings</span> <span class="n">Ch</span><span class="mf">.1</span><span class="p">):</span>
+  <span class="n">SubIndex</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">entries</span> <span class="o">=</span> <span class="mi">19</span>
+  <span class="n">SubIndex</span> <span class="mi">1</span><span class="p">:</span> <span class="n">Enable</span> <span class="n">user</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">FALSE</span>
+  <span class="n">SubIndex</span> <span class="mi">2</span><span class="p">:</span> <span class="n">Presentation</span> <span class="o">=</span> <span class="n">Signed</span>
+  <span class="o">...</span>
+</pre></div>
+</div>
+<p><strong>Method 2: ADS CoE Access</strong></p>
+<p>TwinCAT provides ADS access to CoE objects via:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Index Group</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0xF302</span></code></p></td>
+<td><p>CoE object dictionary access</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0xF100</span></code> + Slave Address</p></td>
+<td><p>Direct SDO access</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="reading-coe-objects-via-ads">
+<h3>Reading CoE Objects via ADS<a class="headerlink" href="#reading-coe-objects-via-ads" title="Link to this heading">#</a></h3>
+<p>To read a CoE object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ADS</span> <span class="n">Read</span> <span class="n">Request</span><span class="p">:</span>
+  <span class="n">Net</span> <span class="n">ID</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">AMS</span> <span class="n">Net</span> <span class="n">ID</span><span class="o">&gt;</span>
+  <span class="n">Port</span><span class="p">:</span> <span class="mh">0x1001</span> <span class="p">(</span><span class="n">EtherCAT</span> <span class="n">Master</span><span class="p">)</span>
+  <span class="n">Index</span> <span class="n">Group</span><span class="p">:</span> <span class="mh">0xF302</span>
+  <span class="n">Index</span> <span class="n">Offset</span><span class="p">:</span> <span class="p">(</span><span class="n">SlaveAddr</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">Index</span><span class="p">)</span>
+  <span class="n">SubIndex</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">subindex</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="common-coe-objects-by-terminal-type">
+<h3>Common CoE Objects by Terminal Type<a class="headerlink" href="#common-coe-objects-by-terminal-type" title="Link to this heading">#</a></h3>
+<p><strong>Analog Input (EL31xx):</strong></p>
+<ul class="simple">
+<li><p>0x8000: AI Settings Channel 1</p>
+<ul>
+<li><p>Enable user scale, Presentation, Filter settings</p></li>
+</ul>
+</li>
+<li><p>0x8010: AI Settings Channel 2</p></li>
+<li><p>0x9000: AI Internal data Channel 1</p></li>
+</ul>
+<p><strong>Analog Output (EL4xxx):</strong></p>
+<ul class="simple">
+<li><p>0x8000: AO Settings Channel 1</p>
+<ul>
+<li><p>Output value, Manual control, Watchdog</p></li>
+</ul>
+</li>
+<li><p>0x8010: AO Settings Channel 2</p></li>
+</ul>
+<p><strong>Digital I/O (EL1xxx, EL2xxx):</strong></p>
+<ul class="simple">
+<li><p>0x8000: DI/DO Settings</p>
+<ul>
+<li><p>Filter enable, Invert polarity</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>Encoder (EL5xxx):</strong></p>
+<ul class="simple">
+<li><p>0x8000: ENC Settings</p>
+<ul>
+<li><p>Counter mode, Gate mode, Reference settings</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="runtime-vs-static-discovery">
+<h2>Runtime vs Static Discovery<a class="headerlink" href="#runtime-vs-static-discovery" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p>Symbols</p></th>
+<th class="head"><p>CoE Objects</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Static (XML)</strong></p></td>
+<td><p>PDO entries define structure</p></td>
+<td><p>Full object dictionary in XML</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Runtime</strong></p></td>
+<td><p>Query symbol table via ADS</p></td>
+<td><p>Query via SDO Information</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Naming</strong></p></td>
+<td><p>TwinCAT generates full path</p></td>
+<td><p>Fixed by CANopen standard</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Type Names</strong></p></td>
+<td><p>Generated (e.g., <code class="docutils literal notranslate"><span class="pre">_TYPE</span></code> suffix)</p></td>
+<td><p>Defined in XML DataTypes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="practical-example-el3104">
+<h2>Practical Example: EL3104<a class="headerlink" href="#practical-example-el3104" title="Link to this heading">#</a></h2>
+<p>For an EL3104 4-channel analog input:</p>
+<p><strong>Symbols discovered:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Term</span> <span class="mi">3</span> <span class="p">(</span><span class="n">EL3104</span><span class="p">)</span><span class="o">.</span><span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">1</span>  <span class="p">(</span><span class="mi">4</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">BIGTYPE</span><span class="p">)</span>
+<span class="n">Term</span> <span class="mi">3</span> <span class="p">(</span><span class="n">EL3104</span><span class="p">)</span><span class="o">.</span><span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">2</span>  <span class="p">(</span><span class="mi">4</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">BIGTYPE</span><span class="p">)</span>
+<span class="n">Term</span> <span class="mi">3</span> <span class="p">(</span><span class="n">EL3104</span><span class="p">)</span><span class="o">.</span><span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">3</span>  <span class="p">(</span><span class="mi">4</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">BIGTYPE</span><span class="p">)</span>
+<span class="n">Term</span> <span class="mi">3</span> <span class="p">(</span><span class="n">EL3104</span><span class="p">)</span><span class="o">.</span><span class="n">AI</span> <span class="n">Standard</span> <span class="n">Channel</span> <span class="mi">4</span>  <span class="p">(</span><span class="mi">4</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">BIGTYPE</span><span class="p">)</span>
+<span class="n">Term</span> <span class="mi">3</span> <span class="p">(</span><span class="n">EL3104</span><span class="p">)</span><span class="o">.</span><span class="n">WcState</span><span class="o">^</span><span class="n">WcState</span>        <span class="p">(</span><span class="mi">1</span> <span class="n">bit</span><span class="p">,</span> <span class="n">BOOL</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>CoE objects available:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mh">0x1000</span><span class="p">:</span> <span class="n">Device</span> <span class="n">Type</span> <span class="o">=</span> <span class="mh">0x00001389</span>
+<span class="mh">0x1008</span><span class="p">:</span> <span class="n">Device</span> <span class="n">Name</span> <span class="o">=</span> <span class="s2">&quot;EL3104&quot;</span>
+<span class="mh">0x8000</span><span class="p">:</span> <span class="n">AI</span> <span class="n">Settings</span> <span class="n">Ch</span><span class="mf">.1</span> <span class="p">(</span><span class="mi">19</span> <span class="n">subindices</span><span class="p">)</span>
+<span class="mh">0x8010</span><span class="p">:</span> <span class="n">AI</span> <span class="n">Settings</span> <span class="n">Ch</span><span class="mf">.2</span> <span class="p">(</span><span class="mi">19</span> <span class="n">subindices</span><span class="p">)</span>
+<span class="mh">0x8020</span><span class="p">:</span> <span class="n">AI</span> <span class="n">Settings</span> <span class="n">Ch</span><span class="mf">.3</span> <span class="p">(</span><span class="mi">19</span> <span class="n">subindices</span><span class="p">)</span>
+<span class="mh">0x8030</span><span class="p">:</span> <span class="n">AI</span> <span class="n">Settings</span> <span class="n">Ch</span><span class="mf">.4</span> <span class="p">(</span><span class="mi">19</span> <span class="n">subindices</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="beckhoff-xml-format.html"><span class="std std-doc">Beckhoff XML Format</span></a> - ESI XML structure</p></li>
+<li><p><a class="reference internal" href="../explanations/composite-types.html"><span class="std std-doc">Composite Types</span></a> - How TwinCAT generates type structures</p></li>
+<li><p><a class="reference external" href="https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_ads_intro/index.html">Beckhoff InfoSys: ADS</a></p></li>
+<li><p><a class="reference external" href="https://infosys.beckhoff.com/english.php?content=../content/1033/ethercatsystem/index.html">Beckhoff InfoSys: CoE</a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="beckhoff-xml-format.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Beckhoff ESI XML File Format</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="ethercat-composite-types.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">EtherCAT Composite Types</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ads-symbols">ADS Symbols</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-are-ads-symbols">What Are ADS Symbols?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-discovery-via-ads">Symbol Discovery via ADS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-naming-convention">Symbol Naming Convention</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#index-groups-for-terminals">Index Groups for Terminals</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-symbol-values">Reading Symbol Values</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#coe-objects">CoE Objects</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-are-coe-objects">What Are CoE Objects?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coe-object-structure">CoE Object Structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#discovering-coe-objects">Discovering CoE Objects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-coe-objects-via-ads">Reading CoE Objects via ADS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#common-coe-objects-by-terminal-type">Common CoE Objects by Terminal Type</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-vs-static-discovery">Runtime vs Static Discovery</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#practical-example-el3104">Practical Example: EL3104</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#related-documentation">Related Documentation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/reference/ads-symbols-and-coe.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/ads-symbols-and-coe.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

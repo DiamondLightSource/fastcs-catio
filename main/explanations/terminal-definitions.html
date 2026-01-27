@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Terminal Type Definitions &#8212; fastcs-catio 1.1a4.dev1+gce8efa1ee documentation</title>
+    <title>Terminal Type Definitions &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=aaef3bf6"></script>
+    <script src="../_static/documentation_options.js?v=dcddec71"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -58,8 +58,8 @@
     <link rel="icon" href="../_static/dls-logo.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Architectural Decision Records" href="decisions.html" />
-    <link rel="prev" title="API Decoupling Analysis" href="api-decoupling.html" />
+    <link rel="next" title="Composite Types in TwinCAT" href="composite-types.html" />
+    <link rel="prev" title="Terminal YAML Definitions" href="terminal-yaml-definitions.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="main" />
@@ -401,7 +401,10 @@
 <li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Terminal Type Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="useful_notes_ads_twincat.html">Useful Notes on ADS and TwinCAT</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
@@ -469,7 +472,7 @@
                   
   <section id="terminal-type-definitions">
 <h1>Terminal Type Definitions<a class="headerlink" href="#terminal-type-definitions" title="Link to this heading">#</a></h1>
-<p>Terminal type definitions in CATio describe Beckhoff EtherCAT I/O terminals and their characteristics. These definitions are stored in YAML files organized by terminal class in <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/terminals/</span></code>.</p>
+<p>Terminal type definitions in CATio describe Beckhoff EtherCAT I/O terminals and their characteristics. These definitions are stored in YAML files organized by terminal class in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/</span></code>.</p>
 <section id="purpose">
 <h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">#</a></h2>
 <p>Terminal type definitions serve two purposes:</p>
@@ -477,6 +480,52 @@
 <li><p><strong>ADS Simulation</strong>: The test ADS simulator uses these definitions to emulate terminal behavior and create accurate symbol tables</p></li>
 <li><p><strong>FastCS Integration</strong>: (Future) These definitions will be used to dynamically generate FastCS controller classes for each terminal type</p></li>
 </ol>
+</section>
+<section id="generating-terminal-definitions-with-catio-terminals">
+<h2>Generating Terminal Definitions with catio-terminals<a class="headerlink" href="#generating-terminal-definitions-with-catio-terminals" title="Link to this heading">#</a></h2>
+<p>The recommended way to create and maintain terminal definition files is using the <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> GUI editor. This tool fetches terminal information from Beckhoff’s XML descriptions (ESI files) and generates consistent YAML files.</p>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[terminals]&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="updating-the-xml-cache">
+<h3>Updating the XML Cache<a class="headerlink" href="#updating-the-xml-cache" title="Link to this heading">#</a></h3>
+<p>Before generating terminal definitions, update the local XML cache from Beckhoff’s servers:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># this command is also available in the terminal editor GUI</span>
+<span class="c1"># you would only need to run it if ~/.cache/catio_terminals/ is outdated</span>
+catio-terminals<span class="w"> </span>update-cache
+</pre></div>
+</div>
+<p>This downloads and parses the latest ESI XML files from Beckhoff, storing them in <code class="docutils literal notranslate"><span class="pre">~/.cache/catio_terminals/terminals_cache.json</span></code>.</p>
+</section>
+<section id="creating-or-editing-terminal-files">
+<h3>Creating or Editing Terminal Files<a class="headerlink" href="#creating-or-editing-terminal-files" title="Link to this heading">#</a></h3>
+<p>Launch the GUI editor:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>catio-terminals
+</pre></div>
+</div>
+<p>Or open an existing file directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>catio-terminals<span class="w"> </span>path/to/terminals.yaml
+</pre></div>
+</div>
+</section>
+<section id="workflow">
+<h3>Workflow<a class="headerlink" href="#workflow" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Open or create</strong> a YAML file when prompted</p></li>
+<li><p><strong>Add terminals</strong> by clicking “Add Terminal” and searching Beckhoff’s catalog</p></li>
+<li><p><strong>Select symbols</strong> to include from the available PDO entries shown in the XML</p></li>
+<li><p><strong>Save</strong> the file - only selected symbols are written to YAML</p></li>
+</ol>
+<p>The editor merges your YAML selections with the XML definitions, ensuring that:</p>
+<ul class="simple">
+<li><p>Symbols are derived from Beckhoff’s official XML descriptions (TxPdo/RxPdo entries)</p></li>
+<li><p>Any symbols in the YAML that don’t exist in the XML are dropped with a warning</p></li>
+<li><p>New symbols from XML updates can be discovered and added</p></li>
+</ul>
+</section>
 </section>
 <section id="file-organization">
 <h2>File Organization<a class="headerlink" href="#file-organization" title="Link to this heading">#</a></h2>
@@ -499,21 +548,23 @@
 <p>CANopen identity information that uniquely identifies the terminal:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">identity</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">vendor_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">              </span><span class="c1"># Vendor ID (2 = Beckhoff)</span>
-<span class="w">  </span><span class="nt">product_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x07E83052</span><span class="w">  </span><span class="c1"># Product code</span>
-<span class="w">  </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x00100000</span>
+<span class="w">  </span><span class="nt">product_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">196882514</span><span class="w">   </span><span class="c1"># Product code (decimal)</span>
+<span class="w">  </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1048576</span><span class="w">  </span><span class="c1"># Revision number (decimal)</span>
 </pre></div>
 </div>
 </section>
 <section id="symbol-nodes">
 <h3>Symbol Nodes<a class="headerlink" href="#symbol-nodes" title="Link to this heading">#</a></h3>
-<p>Symbol nodes define the high-level symbols that appear in the ADS symbol table. The client expands these based on <code class="docutils literal notranslate"><span class="pre">type_name</span></code> patterns (see <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code> for expansion logic).</p>
+<p>Symbol nodes define the Process Data Objects (PDOs) available on the terminal. These are extracted from the TxPdo (inputs) and RxPdo (outputs) entries in Beckhoff’s XML descriptions.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">symbol_nodes</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Channel</span><span class="nv"> </span><span class="s">{channel}^Output&quot;</span>
-<span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0xF031</span><span class="w">  </span><span class="c1"># ADS index group</span>
-<span class="w">    </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">              </span><span class="c1"># Data size in bytes (0 for bit)</span>
-<span class="w">    </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">33</span><span class="w">         </span><span class="c1"># ADS data type (33=BIT, 65=BIGTYPE)</span>
-<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;BIT&quot;</span><span class="w">     </span><span class="c1"># Type pattern for expansion</span>
-<span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">          </span><span class="c1"># Number of channels</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Value</span><span class="nv"> </span><span class="s">{channel}&quot;</span>
+<span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61472</span><span class="w">       </span><span class="c1"># ADS index group (0xF020 = 61472)</span>
+<span class="w">    </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">                  </span><span class="c1"># Data size in bytes</span>
+<span class="w">    </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">              </span><span class="c1"># ADS data type (2=INT, 3=DINT, etc.)</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;INT&quot;</span><span class="w">         </span><span class="c1"># Data type name</span>
+<span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">              </span><span class="c1"># Number of channels</span>
+<span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Read-only&quot;</span><span class="w">      </span><span class="c1"># Access mode</span>
+<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Value{channel}&quot;</span><span class="w">  </span><span class="c1"># PascalCase name for FastCS</span>
 </pre></div>
 </div>
 </section>
@@ -530,19 +581,25 @@
 <td><p>Name pattern supporting <code class="docutils literal notranslate"><span class="pre">{channel}</span></code> placeholder</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">index_group</span></code></p></td>
-<td><p>ADS index group (see table below)</p></td>
+<td><p>ADS index group (61472=0xF020 for inputs, 61488=0xF030 for outputs)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">size</span></code></p></td>
-<td><p>Data size in bytes (0 for bit-level access)</p></td>
+<td><p>Data size in bytes</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ads_type</span></code></p></td>
-<td><p>ADS data type (33=BIT, 65=BIGTYPE)</p></td>
+<td><p>ADS data type code</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type_name</span></code></p></td>
-<td><p>Type pattern used by client for symbol expansion</p></td>
+<td><p>Data type name (BOOL, INT, DINT, UINT, etc.)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">channels</span></code></p></td>
 <td><p>Number of channels (for multi-channel terminals)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">access</span></code></p></td>
+<td><p>Access mode: “Read-only” or “Read/Write”</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fastcs_name</span></code></p></td>
+<td><p>PascalCase name used for FastCS attribute naming</p></td>
 </tr>
 </tbody>
 </table>
@@ -553,24 +610,29 @@
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Index Group</p></th>
+<th class="head"><p>Hex</p></th>
 <th class="head"><p>Name</p></th>
 <th class="head"><p>Purpose</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>0xF020</p></td>
+<tr class="row-even"><td><p>61472</p></td>
+<td><p>0xF020</p></td>
 <td><p>RWIB</p></td>
 <td><p>Input bytes (read/write)</p></td>
 </tr>
-<tr class="row-odd"><td><p>0xF021</p></td>
+<tr class="row-odd"><td><p>61473</p></td>
+<td><p>0xF021</p></td>
 <td><p>RWIX</p></td>
 <td><p>Input bits (read/write)</p></td>
 </tr>
-<tr class="row-even"><td><p>0xF030</p></td>
+<tr class="row-even"><td><p>61488</p></td>
+<td><p>0xF030</p></td>
 <td><p>RWOB</p></td>
 <td><p>Output bytes (read/write)</p></td>
 </tr>
-<tr class="row-odd"><td><p>0xF031</p></td>
+<tr class="row-odd"><td><p>61489</p></td>
+<td><p>0xF031</p></td>
 <td><p>RWOX</p></td>
 <td><p>Output bits (read/write)</p></td>
 </tr>
@@ -578,110 +640,203 @@
 </table>
 </div>
 </section>
-</section>
-<section id="symbol-naming-convention">
-<h2>Symbol Naming Convention<a class="headerlink" href="#symbol-naming-convention" title="Link to this heading">#</a></h2>
-<p>Symbols follow the TwinCAT naming convention:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TIID</span><span class="o">^</span><span class="n">Device</span> <span class="n">N</span> <span class="p">(</span><span class="n">EtherCAT</span><span class="p">)</span><span class="o">^&lt;</span><span class="n">terminal_name</span><span class="o">&gt;^&lt;</span><span class="n">symbol_name</span><span class="o">&gt;</span>
+<section id="coe-objects">
+<h3>CoE Objects<a class="headerlink" href="#coe-objects" title="Link to this heading">#</a></h3>
+<p>CANopen over EtherCAT objects for terminal configuration (optional):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">coe_objects</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x8000</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Settings&quot;</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;USINT&quot;</span>
+<span class="w">    </span><span class="nt">bit_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rw&quot;</span>
 </pre></div>
 </div>
-<p>Example: <code class="docutils literal notranslate"><span class="pre">TIID^Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT)^Term</span> <span class="pre">4</span> <span class="pre">(EL2024)^Channel</span> <span class="pre">1^Output</span></code></p>
 </section>
-<section id="type-name-patterns">
-<h2>Type Name Patterns<a class="headerlink" href="#type-name-patterns" title="Link to this heading">#</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">type_name</span></code> field must match expansion patterns defined in <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code>:</p>
+<section id="group-type">
+<h3>Group Type<a class="headerlink" href="#group-type" title="Link to this heading">#</a></h3>
+<p>The terminal’s functional group from the XML:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">group_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AnaIn</span><span class="w">  </span><span class="c1"># AnaIn, AnaOut, DigIn, DigOut, etc.</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="ads-runtime-symbols-vs-xml-definitions">
+<h2>ADS Runtime Symbols vs XML Definitions<a class="headerlink" href="#ads-runtime-symbols-vs-xml-definitions" title="Link to this heading">#</a></h2>
+<p>When introspecting real hardware via ADS, you may see additional symbols that don’t appear in the XML definitions, such as <code class="docutils literal notranslate"><span class="pre">WcState^WcState</span></code> or <code class="docutils literal notranslate"><span class="pre">InputToggle</span></code>. These are <strong>ADS runtime symbols</strong> added by the EtherCAT master, not terminal-specific PDO data.</p>
+<section id="what-are-runtime-symbols">
+<h3>What are Runtime Symbols?<a class="headerlink" href="#what-are-runtime-symbols" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">WcState^WcState</span></code> and similar symbols come from the <strong>ADS runtime symbol table</strong> when you query actual hardware. These are <strong>EtherCAT Working Counter</strong> status bits that the TwinCAT/ADS runtime adds dynamically to indicate whether each terminal is responding correctly on the EtherCAT bus.</p>
+</section>
+<section id="known-runtime-symbols">
+<h3>Known Runtime Symbols<a class="headerlink" href="#known-runtime-symbols" title="Link to this heading">#</a></h3>
+<p>TwinCAT adds these standardized diagnostic symbols to terminals:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
-<tr class="row-odd"><th class="head"><p>Type Name</p></th>
-<th class="head"><p>Expansion</p></th>
-<th class="head"><p>Example Terminal</p></th>
+<tr class="row-odd"><th class="head"><p>Symbol</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Size</p></th>
+<th class="head"><p>Description</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BIT</span></code></p></td>
-<td><p>Simple bit value</p></td>
-<td><p>Digital I/O</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WcState^WcState</span></code></p></td>
+<td><p>BIT</p></td>
+<td><p>1 bit</p></td>
+<td><p>Working Counter State - indicates if terminal is communicating properly on the EtherCAT bus</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
-<td><p>Digital input channel (8 bits)</p></td>
-<td><p>EL1004, EL1014</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">InfoData^State</span></code></p></td>
+<td><p>UINT16</p></td>
+<td><p>2 bytes</p></td>
+<td><p>Device state information (EtherCAT state machine)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs_TYPE</span></code></p></td>
-<td><p>Counter inputs (status + value)</p></td>
-<td><p>EL1502</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Outputs_TYPE</span></code></p></td>
-<td><p>Counter outputs (control + set value)</p></td>
-<td><p>EL1502</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
-<td><p>Analog input (status + value)</p></td>
-<td><p>EL3004, EL3104</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AO</span> <span class="pre">Output</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
-<td><p>Analog output value</p></td>
-<td><p>EL4004, EL4134</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">InputToggle</span></code></p></td>
+<td><p>BIT</p></td>
+<td><p>1 bit</p></td>
+<td><p>Toggles on each EtherCAT cycle to indicate data freshness</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>The client expands these type patterns into multiple actual symbols. For example, <code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">1_TYPE</span></code> with 8 channels expands into:</p>
+<p>These symbols are:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">1^Input</span></code> (bit 0)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">2^Input</span></code> (bit 1)</p></li>
-<li><p>…</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Channel</span> <span class="pre">8^Input</span></code> (bit 7)</p></li>
+<li><p><strong>Mostly standardized</strong> - similar across terminal types, but not all terminals have all symbols</p></li>
+<li><p><strong>Generated at runtime</strong> - not defined in ESI XML files</p></li>
+<li><p><strong>Diagnostic in nature</strong> - used for monitoring bus health, not process data</p></li>
 </ul>
 </section>
-<section id="example-complete-terminal-definition">
-<h2>Example: Complete Terminal Definition<a class="headerlink" href="#example-complete-terminal-definition" title="Link to this heading">#</a></h2>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">terminal_types</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">EL2024</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;4-channel</span><span class="nv"> </span><span class="s">Digital</span><span class="nv"> </span><span class="s">Output</span><span class="nv"> </span><span class="s">24V</span><span class="nv"> </span><span class="s">DC&quot;</span>
-<span class="w">    </span><span class="nt">identity</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">vendor_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="w">      </span><span class="nt">product_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x07E83052</span>
-<span class="w">      </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x00100000</span>
-<span class="w">    </span><span class="nt">symbol_nodes</span><span class="p">:</span>
-<span class="w">      </span><span class="c1"># Output channels - individual bit symbols</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Channel</span><span class="nv"> </span><span class="s">{channel}^Output&quot;</span>
-<span class="w">        </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0xF031</span><span class="w">  </span><span class="c1"># ADSIGRP_IOIMAGE_RWOX</span>
-<span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">              </span><span class="c1"># Bit-level access</span>
-<span class="w">        </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">33</span><span class="w">         </span><span class="c1"># BIT</span>
-<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;BIT&quot;</span>
-<span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<span class="w">      </span><span class="c1"># Working counter state</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;WcState^WcState&quot;</span>
-<span class="w">        </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0xF021</span>
-<span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="w">        </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">33</span>
-<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;BIT&quot;</span>
-<span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<section id="why-aren-t-they-in-the-xml">
+<h3>Why aren’t they in the XML?<a class="headerlink" href="#why-aren-t-they-in-the-xml" title="Link to this heading">#</a></h3>
+<p>Runtime symbols are <strong>not</strong> in the Beckhoff XML terminal description files because:</p>
+<ol class="arabic simple">
+<li><p>The XML files describe the <strong>static hardware capabilities</strong> of each terminal type (PDO mappings, CoE objects)</p></li>
+<li><p>The WcState symbols are <strong>runtime diagnostics</strong> added by the EtherCAT master when it configures the bus</p></li>
+<li><p>These symbols are added dynamically based on bus configuration, not terminal capabilities</p></li>
+</ol>
+</section>
+<section id="runtime-symbols-configuration">
+<h3>Runtime Symbols Configuration<a class="headerlink" href="#runtime-symbols-configuration" title="Link to this heading">#</a></h3>
+<p>Runtime symbols are defined in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/config/runtime_symbols.yaml</span></code> using a schema similar to terminal symbol nodes, with additional filtering capabilities:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">runtime_symbols</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">WcState^WcState</span>
+<span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61473</span><span class="w">  </span><span class="c1"># 0xF021 - RWIX (input bits)</span>
+<span class="w">    </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">    </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">33</span><span class="w">  </span><span class="c1"># BIT</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BIT</span>
+<span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read-only</span>
+<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">WcstateWcstate</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Working Counter State - indicates bus communication status</span>
+<span class="w">    </span><span class="c1"># Filtering options:</span>
+<span class="w">    </span><span class="nt">group_blacklist</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Coupler</span><span class="w">  </span><span class="c1"># Couplers may not have WcState</span>
 </pre></div>
 </div>
+<section id="filtering-options">
+<h4>Filtering Options<a class="headerlink" href="#filtering-options" title="Link to this heading">#</a></h4>
+<p>Each runtime symbol can specify which terminals it applies to:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">whitelist</span></code></p></td>
+<td><p>Only apply to these specific terminal IDs (e.g., <code class="docutils literal notranslate"><span class="pre">[&quot;EL3004&quot;,</span> <span class="pre">&quot;EL3104&quot;]</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">blacklist</span></code></p></td>
+<td><p>Exclude these specific terminal IDs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">group_whitelist</span></code></p></td>
+<td><p>Only apply to terminals in these groups (e.g., <code class="docutils literal notranslate"><span class="pre">[&quot;AnaIn&quot;,</span> <span class="pre">&quot;DigIn&quot;]</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">group_blacklist</span></code></p></td>
+<td><p>Exclude terminals in these groups (e.g., <code class="docutils literal notranslate"><span class="pre">[&quot;Coupler&quot;]</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>If no filters are specified, the symbol applies to all terminals. Whitelist takes precedence over blacklist.</p>
+</section>
+</section>
+<section id="data-sources">
+<h3>Data Sources<a class="headerlink" href="#data-sources" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Availability</p></th>
+<th class="head"><p>Contains</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>XML (ESI files)</p></td>
+<td><p>Downloadable from Beckhoff, scrapable</p></td>
+<td><p>Static terminal capabilities, PDO mappings</p></td>
+</tr>
+<tr class="row-odd"><td><p>Runtime Symbols</p></td>
+<td><p>Defined in <code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code></p></td>
+<td><p>Dynamic diagnostics from EtherCAT master</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The runtime symbols are documented in Beckhoff InfoSys but the content uses heavy JavaScript rendering that makes it difficult to scrape programmatically. The relevant documentation pages are:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://infosys.beckhoff.com/content/1033/tc3_io_intro/1257993099.html">TwinCAT I/O Variables</a></p></li>
+<li><p><a class="reference external" href="https://infosys.beckhoff.com/content/1033/ethercatsystem/2469122443.html">EtherCAT Diagnosis</a></p></li>
+</ul>
+</section>
+<section id="key-differences">
+<h3>Key Differences<a class="headerlink" href="#key-differences" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Contains</p></th>
+<th class="head"><p>Examples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>XML (ESI files)</p></td>
+<td><p>Static terminal capabilities, PDO mappings</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Value</span> <span class="pre">{channel}</span></code>, <code class="docutils literal notranslate"><span class="pre">Status__Error</span> <span class="pre">{channel}</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Runtime Symbols</p></td>
+<td><p>Dynamic diagnostics from EtherCAT master</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WcState^WcState</span></code>, <code class="docutils literal notranslate"><span class="pre">InputToggle</span></code>, <code class="docutils literal notranslate"><span class="pre">InfoData^State</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="handling-in-catio-terminals">
+<h3>Handling in catio-terminals<a class="headerlink" href="#handling-in-catio-terminals" title="Link to this heading">#</a></h3>
+<p>The catio-terminals editor separates XML-defined symbols from runtime symbols:</p>
+<ul class="simple">
+<li><p><strong>XML symbols</strong>: Derived from Beckhoff ESI files, shown in the terminal editor</p></li>
+<li><p><strong>Runtime symbols</strong>: Loaded from <code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code>, filtered per terminal based on whitelist/blacklist rules</p></li>
+<li><p>When merging YAML files with XML data, symbols not in XML or runtime symbols are dropped with a warning</p></li>
+</ul>
+<p>The symbol expansion logic in <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code> handles runtime symbol types when reading from actual hardware.</p>
+</section>
 </section>
 <section id="adding-new-terminal-types">
 <h2>Adding New Terminal Types<a class="headerlink" href="#adding-new-terminal-types" title="Link to this heading">#</a></h2>
 <p>To add a new terminal type:</p>
 <ol class="arabic simple">
-<li><p>Identify the appropriate YAML file in <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/terminals/</span></code> based on terminal class</p></li>
-<li><p>Add the terminal definition with:</p>
-<ul class="simple">
-<li><p>Correct CANopen identity (vendor_id, product_code, revision_number)</p></li>
-<li><p>Symbol node definitions matching the terminal’s I/O structure</p></li>
-<li><p>Appropriate <code class="docutils literal notranslate"><span class="pre">type_name</span></code> values that match patterns in <code class="docutils literal notranslate"><span class="pre">symbols.py</span></code></p></li>
-</ul>
-</li>
-<li><p>The terminal type will be automatically loaded by the ADS simulator</p></li>
+<li><p>Launch <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> and open the appropriate YAML file</p></li>
+<li><p>Click “Add Terminal” and search for the terminal ID (e.g., “EL3104”)</p></li>
+<li><p>Select the symbols you want to include from the XML definition</p></li>
+<li><p>Save the file</p></li>
 </ol>
+<p>The terminal will be automatically available to the ADS simulator and FastCS integration.</p>
 </section>
 <section id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="ads-client.html"><span class="std std-doc">ADS Client Architecture</span></a></p></li>
 <li><p><a class="reference internal" href="architecture-overview.html"><span class="std std-doc">Architecture Overview</span></a></p></li>
-<li><p>Terminal type source files: <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/terminals/</span></code></p></li>
-<li><p>Symbol expansion logic: <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code></p></li>
+<li><p>Terminal type source files: <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/</span></code></p></li>
+<li><p>catio-terminals documentation: <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/README.md</span></code></p></li>
 </ul>
 </section>
 </section>
@@ -697,20 +852,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="api-decoupling.html"
+       href="terminal-yaml-definitions.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">API Decoupling Analysis</p>
+        <p class="prev-next-title">Terminal YAML Definitions</p>
       </div>
     </a>
     <a class="right-next"
-       href="decisions.html"
+       href="composite-types.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Architectural Decision Records</p>
+        <p class="prev-next-title">Composite Types in TwinCAT</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -734,17 +889,36 @@
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#purpose">Purpose</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generating-terminal-definitions-with-catio-terminals">Generating Terminal Definitions with catio-terminals</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#updating-the-xml-cache">Updating the XML Cache</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-or-editing-terminal-files">Creating or Editing Terminal Files</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow">Workflow</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#file-organization">File Organization</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminal-definition-structure">Terminal Definition Structure</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#identity">Identity</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-nodes">Symbol Nodes</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-node-properties">Symbol Node Properties</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ads-index-groups">ADS Index Groups</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coe-objects">CoE Objects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#group-type">Group Type</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-naming-convention">Symbol Naming Convention</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#type-name-patterns">Type Name Patterns</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-complete-terminal-definition">Example: Complete Terminal Definition</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ads-runtime-symbols-vs-xml-definitions">ADS Runtime Symbols vs XML Definitions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-are-runtime-symbols">What are Runtime Symbols?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-runtime-symbols">Known Runtime Symbols</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-aren-t-they-in-the-xml">Why aren’t they in the XML?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-symbols-configuration">Runtime Symbols Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-options">Filtering Options</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-sources">Data Sources</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-differences">Key Differences</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#handling-in-catio-terminals">Handling in catio-terminals</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-new-terminal-types">Adding New Terminal Types</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
 </ul>

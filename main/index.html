@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>fastcs_catio &#8212; fastcs-catio 1.1a4.dev1+gce8efa1ee documentation</title>
+    <title>fastcs_catio &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=aaef3bf6"></script>
+    <script src="_static/documentation_options.js?v=dcddec71"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -450,6 +450,7 @@ how it does it, and why people should use it.</p>
 <p>This is where you should put some images or code snippets that illustrate
 some relevant examples. If it is a library then you might put some
 introductory code here:</p>
+<p>Some tips about using Claude Code[CLAUDE_NOTES.md].</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fastcs_catio</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello fastcs_catio </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -493,6 +494,7 @@ introductory code here:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="how-to.html">How-to Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="how-to/contribute.html">Contribute to the project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-to/get-all-pdos-in-chain.html">How to Get All PDOs in an EtherCAT Chain</a></li>
 <li class="toctree-l2"><a class="reference internal" href="how-to/run-container.html">Run in a container</a></li>
 </ul>
 </li>
@@ -516,7 +518,10 @@ introductory code here:</p>
 <li class="toctree-l2"><a class="reference internal" href="explanations/fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="explanations/ads-client.html">ADS Client Implementation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="explanations/api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="explanations/terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="explanations/terminal-definitions.html">Terminal Type Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="explanations/composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="explanations/useful_notes_ads_twincat.html">Useful Notes on ADS and TwinCAT</a></li>
 <li class="toctree-l2"><a class="reference internal" href="explanations/decisions.html">Architectural Decision Records</a></li>
 </ul>
 </li>
@@ -537,6 +542,10 @@ introductory code here:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="_api/fastcs_catio.html">API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/DLS_terminals.html">DLS Terminal Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/beckhoff-xml-format.html">Beckhoff ESI XML File Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/ethercat-composite-types.html">EtherCAT Composite Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="genindex.html">Index</a></li>
 <li class="toctree-l2"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
 </ul>
