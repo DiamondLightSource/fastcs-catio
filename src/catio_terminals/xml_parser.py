@@ -324,6 +324,9 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
             # This matches how TwinCAT creates composite symbol names
             pdo_channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
 
+            # Initialize name - will be set in one of the branches below
+            name = entry_name or pdo_name or ""
+
             # Build the symbol name using '.' separator to match TwinCAT's
             # symbol naming convention: {PDO_name}.{Entry_name}
             # e.g., "Channel 1.Input" matches TwinCAT symbol

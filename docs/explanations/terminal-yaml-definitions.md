@@ -235,6 +235,7 @@ Runtime symbols can be filtered to apply only to certain terminals:
 | `group_whitelist` | Only apply to these group types (AnaIn, DigOut, etc.) |
 | `group_blacklist` | Exclude these group types |
 
+(using-catio-terminals)=
 ## Using catio-terminals
 
 The `catio-terminals` GUI editor simplifies creating and maintaining terminal YAML files.
