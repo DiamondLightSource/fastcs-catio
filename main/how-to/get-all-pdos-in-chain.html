@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev2+gd2cb4a82e documentation</title>
+    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev4+g4e5852a56 documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=dcddec71"></script>
+    <script src="../_static/documentation_options.js?v=1bcb340c"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -516,7 +516,7 @@
 </tr>
 <tr class="row-odd"><td><p>EL1502</p></td>
 <td><p>2Ch Up/Down Counter 24V, 100kHz</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 1</strong></p></td>
 <td><p>Multiple PDO configurations (per-channel vs combined)</p></td>
 </tr>
 <tr class="row-even"><td><p>EL2024</p></td>
@@ -556,12 +556,12 @@
 </tr>
 <tr class="row-odd"><td><p>EL3104</p></td>
 <td><p>4Ch Analog Input +/-10V Diff</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
 <td><p>Standard vs Compact PDO selection</p></td>
 </tr>
 <tr class="row-even"><td><p>EL3124</p></td>
 <td><p>4Ch Analog Input 4-20mA Diff</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
 <td><p>Standard vs Compact PDO selection</p></td>
 </tr>
 <tr class="row-odd"><td><p>EL3202</p></td>
@@ -581,7 +581,7 @@
 </tr>
 <tr class="row-even"><td><p>EL3356-0010</p></td>
 <td><p>1Ch Resistor Bridge, 16bit High Precision</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 3</strong></p></td>
 <td><p>Multiple PDO formats (INT32, Real, Standard, Compact)</p></td>
 </tr>
 <tr class="row-odd"><td><p>EL3602</p></td>
@@ -591,7 +591,7 @@
 </tr>
 <tr class="row-even"><td><p>EL3702</p></td>
 <td><p>2Ch Analog Input +/-10V Oversample</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 4</strong></p></td>
 <td><p>1-100 samples per channel</p></td>
 </tr>
 <tr class="row-odd"><td><p>EL4134</p></td>
@@ -601,7 +601,7 @@
 </tr>
 <tr class="row-even"><td><p>EL4732</p></td>
 <td><p>2Ch Analog Output +/-10V Oversample</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 4</strong></p></td>
 <td><p>Configurable sample count</p></td>
 </tr>
 <tr class="row-odd"><td><p>EL9410</p></td>
@@ -626,7 +626,7 @@
 </tr>
 <tr class="row-odd"><td><p>ELM3704-0000</p></td>
 <td><p>4Ch Universal Analog Input, 24bit</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 4</strong></p></td>
 <td><p>Oversampling (1-100), data format (INT16/INT32/REAL), per-channel config</p></td>
 </tr>
 <tr class="row-even"><td><p>EP2338-0002</p></td>
@@ -641,7 +641,7 @@
 </tr>
 <tr class="row-even"><td><p>EP3174-0002</p></td>
 <td><p>4Ch Analog Input configurable</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
 <td><p>Standard vs Compact PDO selection</p></td>
 </tr>
 <tr class="row-odd"><td><p>EP3204-0002</p></td>
@@ -661,7 +661,7 @@
 </tr>
 <tr class="row-even"><td><p>EP4374-0002</p></td>
 <td><p>2Ch AI + 2Ch AO configurable</p></td>
-<td><p><strong>Dynamic</strong></p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
 <td><p>Standard vs Compact PDO selection for inputs</p></td>
 </tr>
 </tbody>
@@ -670,8 +670,8 @@
 </section>
 <section id="terminals-requiring-runtime-discovery">
 <h2>Terminals Requiring Runtime Discovery<a class="headerlink" href="#terminals-requiring-runtime-discovery" title="Link to this heading">#</a></h2>
-<section id="counter-terminals-el1502-el2502">
-<h3>Counter Terminals (EL1502, EL2502)<a class="headerlink" href="#counter-terminals-el1502-el2502" title="Link to this heading">#</a></h3>
+<section id="type-1-counter-terminals-with-configuration-variants-el1502">
+<h3>Type 1: Counter Terminals with Configuration Variants (EL1502)<a class="headerlink" href="#type-1-counter-terminals-with-configuration-variants-el1502" title="Link to this heading">#</a></h3>
 <section id="el1502-up-down-counter">
 <h4>EL1502 - Up/Down Counter<a class="headerlink" href="#el1502-up-down-counter" title="Link to this heading">#</a></h4>
 <p><strong>Problem:</strong> The ESI XML defines multiple PDO configurations:</p>
@@ -707,8 +707,8 @@
 </div>
 </section>
 </section>
-<section id="analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002">
-<h3>Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)<a class="headerlink" href="#analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002" title="Link to this heading">#</a></h3>
+<section id="type-2-analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002">
+<h3>Type 2: Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)<a class="headerlink" href="#type-2-analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002" title="Link to this heading">#</a></h3>
 <p><strong>Problem:</strong> These analog input terminals offer two PDO formats per channel:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -746,8 +746,8 @@
 </pre></div>
 </div>
 </section>
-<section id="resistor-bridge-terminal-el3356-0010">
-<h3>Resistor Bridge Terminal (EL3356-0010)<a class="headerlink" href="#resistor-bridge-terminal-el3356-0010" title="Link to this heading">#</a></h3>
+<section id="type-3-multi-format-terminals-el3356-0010">
+<h3>Type 3: Multi-Format Terminals (EL3356-0010)<a class="headerlink" href="#type-3-multi-format-terminals-el3356-0010" title="Link to this heading">#</a></h3>
 <p><strong>Problem:</strong> The EL3356-0010 offers multiple PDO formats for measurement data:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -794,8 +794,8 @@
 </pre></div>
 </div>
 </section>
-<section id="oversampling-terminals-el3702-el4732-elm3704-0000">
-<h3>Oversampling Terminals (EL3702, EL4732, ELM3704-0000)<a class="headerlink" href="#oversampling-terminals-el3702-el4732-elm3704-0000" title="Link to this heading">#</a></h3>
+<section id="type-4-oversampling-terminals-el3702-el4732-elm3704-0000">
+<h3>Type 4: Oversampling Terminals (EL3702, EL4732, ELM3704-0000)<a class="headerlink" href="#type-4-oversampling-terminals-el3702-el4732-elm3704-0000" title="Link to this heading">#</a></h3>
 <section id="el3702-2ch-oversampling-analog-input">
 <h4>EL3702 - 2Ch Oversampling Analog Input<a class="headerlink" href="#el3702-2ch-oversampling-analog-input" title="Link to this heading">#</a></h4>
 <p><strong>Problem:</strong> The number of samples per channel is configurable (1-100). The XML only shows a template with one sample.</p>
@@ -982,25 +982,25 @@
 <li><p>PDO structure is fixed and predictable</p></li>
 </ul>
 </li>
-<li><p><strong>For Standard/Compact selectable terminals</strong> (EL3104, EL3124, EP3174-0002, EP4374-0002):</p>
-<ul class="simple">
-<li><p>Query symbol table at startup to determine which format is active</p></li>
-<li><p>YAML should define both formats; reconcile with actual symbols</p></li>
-</ul>
-</li>
-<li><p><strong>For multi-format terminals</strong> (EL3356-0010):</p>
-<ul class="simple">
-<li><p>Query symbol table to determine active value format (INT32, Real, Standard, Compact)</p></li>
-<li><p>Check for optional features (Timestamp, Control)</p></li>
-</ul>
-</li>
-<li><p><strong>For counter terminals with configuration variants</strong> (EL1502):</p>
+<li><p><strong>For Type 1 counter terminals with configuration variants</strong> (EL1502):</p>
 <ul class="simple">
 <li><p>Query symbol table to determine per-channel vs combined configuration</p></li>
 <li><p>YAML includes both; only one will be active</p></li>
 </ul>
 </li>
-<li><p><strong>For oversampling terminals</strong> (EL3702, EL4732, ELM3704-0000):</p>
+<li><p><strong>For Type 2 Standard/Compact selectable terminals</strong> (EL3104, EL3124, EP3174-0002, EP4374-0002):</p>
+<ul class="simple">
+<li><p>Query symbol table at startup to determine which format is active</p></li>
+<li><p>YAML should define both formats; reconcile with actual symbols</p></li>
+</ul>
+</li>
+<li><p><strong>For Type 3 multi-format terminals</strong> (EL3356-0010):</p>
+<ul class="simple">
+<li><p>Query symbol table to determine active value format (INT32, Real, Standard, Compact)</p></li>
+<li><p>Check for optional features (Timestamp, Control)</p></li>
+</ul>
+</li>
+<li><p><strong>For Type 4 oversampling terminals</strong> (EL3702, EL4732, ELM3704-0000):</p>
 <ul class="simple">
 <li><p>Always query symbol table - sample count is runtime-configurable</p></li>
 <li><p>ELM3704 additionally requires checking data format per channel</p></li>
@@ -1069,13 +1069,13 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-in-the-test-configuration">Terminals in the Test Configuration</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-requiring-runtime-discovery">Terminals Requiring Runtime Discovery</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#counter-terminals-el1502-el2502">Counter Terminals (EL1502, EL2502)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-1-counter-terminals-with-configuration-variants-el1502">Type 1: Counter Terminals with Configuration Variants (EL1502)</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#el1502-up-down-counter">EL1502 - Up/Down Counter</a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002">Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#resistor-bridge-terminal-el3356-0010">Resistor Bridge Terminal (EL3356-0010)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#oversampling-terminals-el3702-el4732-elm3704-0000">Oversampling Terminals (EL3702, EL4732, ELM3704-0000)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-2-analog-input-with-standard-compact-pdo-selection-el3104-el3124-ep3174-0002-ep4374-0002">Type 2: Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-3-multi-format-terminals-el3356-0010">Type 3: Multi-Format Terminals (EL3356-0010)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-4-oversampling-terminals-el3702-el4732-elm3704-0000">Type 4: Oversampling Terminals (EL3702, EL4732, ELM3704-0000)</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#el3702-2ch-oversampling-analog-input">EL3702 - 2Ch Oversampling Analog Input</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#el4732-2ch-oversampling-analog-output">EL4732 - 2Ch Oversampling Analog Output</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#elm3704-0000-4ch-universal-analog-input-with-oversampling">ELM3704-0000 - 4Ch Universal Analog Input with Oversampling</a></li>
