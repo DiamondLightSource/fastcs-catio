@@ -190,12 +190,6 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
   - Cached at `~/.cache/catio_terminals/beckhoff_xml/`
   - Use `catio-terminals update-cache` to download/refresh
 
-- **Composite Types**: TwinCAT BIGTYPE structures (ads_type=65) that group primitive fields:
-  - Defined in `src/catio_terminals/config/composite_types.yaml`
-  - Example: `"AI Standard Channel 1_TYPE"` contains Status (UINT) + Value (INT)
-  - Used by simulator for accurate symbol table responses
-  - Used by FastCS generator to create controller attributes
-
 - **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals update-cache` to fetch Beckhoff XML definitions, then use `catio-terminals edit [filename]` to edit files with the GUI.
 
 ## Agent Skills
@@ -214,9 +208,9 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 - "Help me create a terminal YAML from XML"
 
 **Skill context:** Read these documents:
-- [docs/reference/beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) - ESI XML schema (Device, TxPdo, RxPdo, Entry, CoE objects), XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.), what information is NOT in XML (composite type names, ADS offsets)
-- [docs/explanations/terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
-- [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) - Composite type definitions (members, offsets, sizes)
+- [beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) - ESI XML schema (Device, TxPdo, RxPdo, Entry, CoE objects), XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.), what information is NOT in XML (composite type names, ADS offsets)
+- [terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
+- [composite-types.md](docs/explanations/composite-types.md) - Composite type definitions
 - XML files cached at `~/.cache/catio_terminals/beckhoff_xml/` - Actual Beckhoff ESI files grouped by series
 
 **Key mappings from XML to YAML:**
