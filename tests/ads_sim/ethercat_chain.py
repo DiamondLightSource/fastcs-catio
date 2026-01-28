@@ -45,15 +45,14 @@ class SymbolDefinition:
             List of symbol dictionaries ready for symbol table.
         """
         symbols = []
-        base_path = f"TIID^Device {device_id} (EtherCAT)^{terminal_name}"
 
         for ch in range(1, self.channels + 1):
-            # Format the name template
+            # Format the name template with dot separator (matches hardware format)
             if self.channels == 1:
                 # Single channel - don't include channel number in name
-                name = f"{base_path}^{self.name_template}"
+                name = f"{terminal_name}.{self.name_template}"
             else:
-                name = f"{base_path}^{self.name_template.format(channel=ch)}"
+                name = f"{terminal_name}.{self.name_template.format(channel=ch)}"
 
             # Calculate offset based on channel and size
             if self.size == 0:  # Bit
