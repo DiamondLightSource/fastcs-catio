@@ -28,6 +28,7 @@ CHANNEL_KEYWORD_PATTERN = re.compile(
     re.IGNORECASE,
 )
 CHANNEL_NUMBER_PATTERN = re.compile(r"(.+?)\s+(\d+)$")
+PDO_ARRAY_PATTERN = re.compile(r"^(.*)__ARRAY\s*\[(\d+)\]$")
 
 # ADS type mapping
 ADS_TYPE_MAP = {
@@ -488,8 +489,102 @@ def _process_pdo_entries(
             other_entries.sort(key=lambda x: x["offset"])
 
         # 2. Process Other Entries (Non-Bits or Single Bits)
-        # These remain as individual symbols
+
+        # Group array-like entries (e.g. "Samples__ARRAY [0]", "Samples__ARRAY [1]")
+        processed_other_entries = []
+        other_entries.sort(key=lambda x: x["offset"])
+
+        current_array_group = []
+        current_array_prefix = None
+
+        def flush_array_group(
+            pdo_name=pdo_name,
+            pdo_channel_info=pdo_channel_info,
+            processed_other_entries=processed_other_entries,
+        ):
+            nonlocal current_array_prefix, current_array_group
+            if not current_array_group:
+                return
+
+            if len(current_array_group) > 1:
+                # Create aggregation
+                prefix = current_array_prefix
+                start_offset = current_array_group[0]["offset"]
+                # Calculate total size based on last element
+                end_bit_offset = (
+                    current_array_group[-1]["offset"]
+                    + current_array_group[-1]["bit_len_val"]
+                )
+                total_bits = end_bit_offset - start_offset
+                total_bytes = (total_bits + 7) // 8
+
+                members = []
+                for item in current_array_group:
+                    match = PDO_ARRAY_PATTERN.match(item["name"])
+                    idx = match.group(2) if match else "0"
+
+                    members.append(
+                        CompositeTypeMember(
+                            name=idx,  # Use simple index as name
+                            offset=(item["offset"] - start_offset) // 8,
+                            type_name=item["data_type"],
+                            size=(item["bit_len_val"] + 7) // 8,
+                            fastcs_attr=f"Idx{idx}",
+                            access="read-write" if is_output else "read-only",
+                        )
+                    )
+
+                # Determine Type Name
+                group_suffix = f".{prefix}"
+                type_base_name = pdo_name
+                if pdo_channel_info:
+                    pattern, _ = pdo_channel_info
+                    type_base_name = pattern.format(channel=1)
+
+                type_name = f"{type_base_name}{group_suffix}_TYPE"
+
+                if type_name not in extracted_types:
+                    extracted_types[type_name] = CompositeType(
+                        description=f"Array type for {prefix}",
+                        size=total_bytes,
+                        members=members,
+                    )
+
+                # Create group entry
+                group_entry = current_array_group[0].copy()
+                group_entry["name"] = prefix
+                group_entry["data_type"] = type_name
+                group_entry["bit_len_val"] = total_bits
+
+                processed_other_entries.append(group_entry)
+            else:
+                processed_other_entries.extend(current_array_group)
+
+            current_array_group = []
+            current_array_prefix = None
+
         for info in other_entries:
+            name = info["name"]
+            match = PDO_ARRAY_PATTERN.match(name)
+
+            if match:
+                prefix = match.group(1)
+                if current_array_prefix is None:
+                    current_array_prefix = prefix
+                    current_array_group = [info]
+                elif prefix == current_array_prefix:
+                    current_array_group.append(info)
+                else:
+                    flush_array_group()
+                    current_array_prefix = prefix
+                    current_array_group = [info]
+            else:
+                flush_array_group()
+                processed_other_entries.append(info)
+        flush_array_group()
+
+        # These remain as individual symbols
+        for info in processed_other_entries:
             entry_name = info["name"]
             data_type = info["data_type"]
             bit_len = info["bit_len_val"]
