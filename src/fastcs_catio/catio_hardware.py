@@ -18,7 +18,6 @@ from fastcs.attributes import Attribute, AttributeIORef, AttrR, AttrRW
 from fastcs.datatypes import DataType, DType, Float, Int, String, Waveform
 from fastcs.logging import bind_logger
 from fastcs.tracer import Tracer
-from fastcs.util import ONCE
 
 from fastcs_catio._types import AmsAddress
 from fastcs_catio.catio_attribute_io import (
@@ -1618,10 +1617,10 @@ class EL1502Controller(CATioTerminalController):
         # Map the FastCS attribute name to the symbol name used by ADS
         self.ads_name_map["WcState"] = "WcState.WcState"
         self.ads_name_map["InputToggle"] = "WcState.InputToggle"
-        self.ads_name_map["CNTInputStatus"] = "CNTInputs.Countervalue"
-        self.ads_name_map["CNTInputValue"] = "CNTOutputs.Setcountervalue"
-        self.ads_name_map["CNTOutputStatus"] = "CNTInputs.Countervalue"
-        self.ads_name_map["CNTOutputValue"] = "CNTOutputs.Setcountervalue"
+        self.ads_name_map["CNTInputStatus"] = "CNT Inputs.Status"
+        self.ads_name_map["CNTInputValue"] = "CNT Inputs.Counter value"
+        self.ads_name_map["CNTOutputStatus"] = "CNT Outputs.Control"
+        self.ads_name_map["CNTOutputValue"] = "CNT Outputs.Set counter value"
 
         # Get the attributes for the available CoE parameters
         assert self.coe_manager is not None

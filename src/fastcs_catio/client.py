@@ -3348,6 +3348,7 @@ class AsyncioADSClient:
             dev_symbols = self._ecsymbols[dev_id]
             full_symbol_name = ".".join([ctlr.name, symbol_name])
             symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            print(f"SYMBOL: {full_symbol_name}")
             if symbol is not None:
                 _, response = await self.read_ads_symbol(symbol)
                 result = (
