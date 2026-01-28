@@ -24,7 +24,7 @@
 runtime_symbols:
   # Working Counter State - indicates if terminal is communicating on EtherCAT bus
   - name_template: WcState.WcState
-    index_group: 61473 # 0xF021 - RWIX (input bits)
+    index_group: 61489 # 0xF031 - Terminal input/status area
     type_name: BIT
     channels: 1
     access: Read-only
@@ -39,7 +39,7 @@ runtime_symbols:
 
   # Input Toggle - indicates data freshness
   - name_template: WcState.InputToggle
-    index_group: 61473 # 0xF021 - RWIX (input bits)
+    index_group: 61489 # 0xF031 - Terminal input/status area
     type_name: BIT
     channels: 1
     access: Read-only

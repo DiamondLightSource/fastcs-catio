@@ -6,7 +6,7 @@ orphan: true
 
 **Created:** 2026-01-27
 **Updated:** 2026-01-28
-**Status:** In Progress (Issues 1-3 Complete)
+**Status:** In Progress (Issues 1-4 Complete)
 **Related files:**
 - [tests/ads_sim/ethercat_chain.py](../../tests/ads_sim/ethercat_chain.py) - Symbol generation logic
 - [tests/ads_sim/server_config.yaml](../../tests/ads_sim/server_config.yaml) - Device/slave configuration
@@ -19,8 +19,8 @@ The ADS simulator generates symbols that differ from real TwinCAT hardware in:
 1. ~~Symbol naming convention~~ ✅ Fixed
 2. ~~Missing device-level symbols~~ ✅ Fixed
 3. ~~Missing per-terminal WcState symbols~~ ✅ Fixed
-4. Extra/different symbols per terminal type
-5. Index group assignments
+4. ~~Index group assignments~~ ✅ Fixed
+5. Extra/different symbols per terminal type
 
 | Metric | Simulator (Before) | Simulator (After) | Hardware |
 |--------|-----------|-----------|----------|
@@ -103,24 +103,25 @@ Runtime symbols are filtered by terminal group (DigIn, DigOut, AnaIn, etc.) as d
 
 ### Issue 4: Index Group Assignments
 **Priority:** Medium
-**Status:** [ ] Not Started
+**Status:** [x] Complete (2026-01-28)
 
 **Problem:**
-Simulator uses `0xF030` for most symbols. Hardware uses:
-- `0xF030` - Device inputs, terminal inputs
-- `0xF020` - Device outputs, terminal outputs
-- `0xF021` - Terminal channel outputs (e.g., EL2024 channels)
-- `0xF031` - WcState symbols
+Simulator was using wrong index groups. Hardware uses:
+- `0xF020` (61472) - Device-level inputs (Frm0State, SlaveCount, DevState)
+- `0xF021` (61473) - Terminal OUTPUT channels (EL2024, etc.)
+- `0xF030` (61488) - (Not observed in hardware)
+- `0xF031` (61489) - Terminal INPUT channels (EL1014, etc.) and WcState symbols
 
-**Tasks:**
-- [ ] 4.1 Document index group meanings and usage
-- [ ] 4.2 Update `SymbolDefinition` to support input vs output distinction
-- [ ] 4.3 Update terminal YAML files with correct index groups
-- [ ] 4.4 Update `expand_symbols()` to use appropriate index groups
+**Solution:**
+Fixed default index group assignments in XML parser:
+- TxPdo (inputs from device) → `0xF031` (61489)
+- RxPdo (outputs to device) → `0xF021` (61473)
+- WcState runtime symbols → `0xF031` (61489)
 
-**Files to modify:**
-- `tests/ads_sim/ethercat_chain.py`
-- Terminal YAML files
+**Files modified:**
+- `src/catio_terminals/xml_pdo.py` - Fixed line 404: Changed `0xF020/0xF030` to `0xF031/0xF021`
+- `src/catio_terminals/config/runtime_symbols.yaml` - Fixed WcState and InputToggle to use 61489
+- Regenerated `src/catio_terminals/terminals/terminal_types.yaml` with corrected values
 
 ---
 
@@ -200,6 +201,7 @@ diff <(grep -oE "^  [A-Za-z][^\n]+" simulator-output.txy | sort -u) \
 | 2026-01-28 | 3 | Integrated runtime symbols from catio_terminals | WcState symbols added (140+ new symbols) |
 | 2026-01-28 | - | Fixed relative import in server.py | Tests pass |
 | 2026-01-28 | - | Updated `total_symbol_count` to filter unhandled types | Test assertion fixed |
+| 2026-01-28 | 4 | Fixed index group assignments in XML parser | TxPdo→0xF031, RxPdo→0xF021, regenerated YAML |
 
 ---
 

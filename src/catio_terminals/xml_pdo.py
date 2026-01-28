@@ -401,7 +401,7 @@ def process_pdo_entries(
     channel_bit_field_map: dict = {}
     symbol_pdo_map: dict[str, int] = {}  # Maps symbol name pattern -> PDO index
 
-    default_index_group = 0xF020 if pdo_type == "TxPdo" else 0xF030
+    default_index_group = 0xF031 if pdo_type == "TxPdo" else 0xF021
     is_output = pdo_type == "RxPdo"
 
     for pdo in device.findall(f".//{pdo_type}"):
