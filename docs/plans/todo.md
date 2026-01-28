@@ -71,5 +71,3 @@ case AdsDataType.ADS_TYPE_UINT16:
 
 - Simulator symbol alignment plan: [simulator-symbol-alignment.md](simulator-symbol-alignment.md)
 - Runtime symbols config: `src/catio_terminals/config/runtime_symbols.yaml`
-
----

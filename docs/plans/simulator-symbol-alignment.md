@@ -5,7 +5,8 @@ orphan: true
 # Plan: Align Simulator Symbols with Real Hardware
 
 **Created:** 2026-01-27
-**Status:** In Progress
+**Updated:** 2026-01-28
+**Status:** In Progress (Issues 1-3 Complete)
 **Related files:**
 - [tests/ads_sim/ethercat_chain.py](../../tests/ads_sim/ethercat_chain.py) - Symbol generation logic
 - [tests/ads_sim/server_config.yaml](../../tests/ads_sim/server_config.yaml) - Device/slave configuration
@@ -15,16 +16,16 @@ orphan: true
 ## Problem Summary
 
 The ADS simulator generates symbols that differ from real TwinCAT hardware in:
-1. Symbol naming convention
-2. Missing device-level symbols
-3. Missing per-terminal WcState symbols
+1. ~~Symbol naming convention~~ ✅ Fixed
+2. ~~Missing device-level symbols~~ ✅ Fixed
+3. ~~Missing per-terminal WcState symbols~~ ✅ Fixed
 4. Extra/different symbols per terminal type
 5. Index group assignments
 
-| Metric | Simulator | Hardware |
-|--------|-----------|----------|
-| Total Symbols | 1091 | 550 |
-| Naming Format | `TIID^Device 1 (EtherCAT)^Term X^...` | `Term X (type).Channel Y` |
+| Metric | Simulator (Before) | Simulator (After) | Hardware |
+|--------|-----------|-----------|----------|
+| Total Symbols | 1091 | 1239 | 550 |
+| Naming Format | `TIID^Device 1 (EtherCAT)^Term X^...` | `Term X (type).Channel Y` ✅ | `Term X (type).Channel Y` |
 
 ---
 
@@ -32,71 +33,71 @@ The ADS simulator generates symbols that differ from real TwinCAT hardware in:
 
 ### Issue 1: Symbol Naming Convention
 **Priority:** High
-**Status:** [ ] Not Started
+**Status:** [x] Complete (2026-01-28)
 
 **Problem:**
-- Simulator uses: `TIID^Device 1 (EtherCAT)^Term 4 (EL2024)^Channel 1`
+- Simulator used: `TIID^Device 1 (EtherCAT)^Term 4 (EL2024)^Channel 1`
 - Hardware uses: `Term 10 (EL2024).Channel 1`
 
-**Tasks:**
-- [ ] 1.1 Update `SymbolDefinition.expand_symbols()` in `ethercat_chain.py` to use dot-separated format
-- [ ] 1.2 Remove `TIID^Device {device_id} (EtherCAT)^` prefix
-- [ ] 1.3 Change `^` separator to `.` separator
-- [ ] 1.4 Update tests to expect new format
+**Solution:**
+Updated `SymbolDefinition.expand_symbols()` in `ethercat_chain.py` to:
+- Remove `TIID^Device {device_id} (EtherCAT)^` prefix
+- Change `^` separator to `.` separator
+- Use format: `{terminal_name}.{symbol_name}`
 
-**Files to modify:**
-- `tests/ads_sim/ethercat_chain.py` (lines 24-77)
+**Files modified:**
+- `tests/ads_sim/ethercat_chain.py` - `expand_symbols()` method
 
 ---
 
 ### Issue 2: Missing Device-Level Symbols
 **Priority:** High
-**Status:** [ ] Not Started
+**Status:** [x] Complete (2026-01-28)
 
 **Problem:**
-Real hardware exposes EtherCAT master device symbols that simulator doesn't generate:
-```
-Device 1 (EtherCAT).Inputs.Frm0State
-Device 1 (EtherCAT).Inputs.Frm0WcState
-Device 1 (EtherCAT).Inputs.Frm0InputToggle
-Device 1 (EtherCAT).Inputs.SlaveCount
-Device 1 (EtherCAT).Inputs.DevState
-Device 1 (EtherCAT).Outputs.Frm0Ctrl
-Device 1 (EtherCAT).Outputs.Frm0WcCtrl
-Device 1 (EtherCAT).Outputs.DevCtrl
-```
+Real hardware exposes EtherCAT master device symbols that simulator didn't generate.
 
-**Tasks:**
-- [ ] 2.1 Add device-level symbol generation to `EtherCATDevice` class
-- [ ] 2.2 Define standard device input symbols (Frm0State, Frm0WcState, etc.)
-- [ ] 2.3 Define standard device output symbols (Frm0Ctrl, Frm0WcCtrl, DevCtrl)
-- [ ] 2.4 Use correct index groups: `0xF030` for inputs, `0xF020` for outputs
+**Solution:**
+Added `get_device_symbols()` method to `EtherCATDevice` class that returns 8 device-level symbols:
+- `Device 1 (EtherCAT).Inputs.Frm0State`
+- `Device 1 (EtherCAT).Inputs.Frm0WcState`
+- `Device 1 (EtherCAT).Inputs.Frm0InputToggle`
+- `Device 1 (EtherCAT).Inputs.SlaveCount`
+- `Device 1 (EtherCAT).Inputs.DevState`
+- `Device 1 (EtherCAT).Outputs.Frm0Ctrl`
+- `Device 1 (EtherCAT).Outputs.Frm0WcCtrl`
+- `Device 1 (EtherCAT).Outputs.DevCtrl`
 
-**Files to modify:**
-- `tests/ads_sim/ethercat_chain.py` - Add `get_device_symbols()` method to `EtherCATDevice`
+**Note:** Used `ADS_TYPE_BIT` (33) instead of `ADS_TYPE_UINT16` (18) because client's `symbol_lookup` doesn't handle UINT16. See [todo.md](todo.md) for follow-up task.
+
+**Files modified:**
+- `tests/ads_sim/ethercat_chain.py` - Added `get_device_symbols()` method, updated `get_all_symbols()`
 
 ---
 
 ### Issue 3: Missing Per-Terminal WcState Symbols
 **Priority:** Medium
-**Status:** [ ] Not Started
+**Status:** [x] Complete (2026-01-28)
 
 **Problem:**
-Each terminal on real hardware has WcState symbols:
-```
-Term 10 (EL2024).WcState.WcState
-Term 100 (EL1502).WcState.InputToggle
-Term 100 (EL1502).WcState.WcState
-```
+Each terminal on real hardware has WcState symbols that simulator didn't generate.
 
-**Tasks:**
-- [ ] 3.1 Add WcState symbol generation for all terminal types
-- [ ] 3.2 Add InputToggle symbol for terminals that have it (EL1502, EL9410, etc.)
-- [ ] 3.3 Use index group `0xF031` for WcState symbols
+**Solution:**
+Integrated with `catio_terminals` runtime symbols system:
+- Load `RuntimeSymbolsConfig` from `src/catio_terminals/config/runtime_symbols.yaml`
+- Apply runtime symbols to each slave based on terminal type and group
+- Symbols added: `WcState.WcState`, `WcState.InputToggle`, `InfoData.State`
 
-**Files to modify:**
-- `tests/ads_sim/ethercat_chain.py`
-- Terminal YAML definitions in `src/catio_terminals/terminals/`
+Runtime symbols are filtered by terminal group (DigIn, DigOut, AnaIn, etc.) as defined in the YAML config.
+
+**Note:** `InfoData.State` uses `ADS_TYPE_UINT16` which client doesn't handle - these symbols are generated but filtered by client. See [todo.md](todo.md).
+
+**Files modified:**
+- `tests/ads_sim/ethercat_chain.py`:
+  - Added `_load_runtime_symbols()` method to `EtherCATChain`
+  - Added `group_type` field to `TerminalType`
+  - Updated `EtherCATSlave.get_symbols()` to include runtime symbols
+  - Updated `total_symbol_count` to filter unhandled ADS types
 
 ---
 
@@ -194,6 +195,11 @@ diff <(grep -oE "^  [A-Za-z][^\n]+" simulator-output.txy | sort -u) \
 | Date | Issue | Action | Result |
 |------|-------|--------|--------|
 | 2026-01-27 | - | Initial analysis and plan created | Identified 6 issues |
+| 2026-01-28 | 1 | Updated `expand_symbols()` naming format | Symbols now use `Term.Symbol` format |
+| 2026-01-28 | 2 | Added `get_device_symbols()` to EtherCATDevice | 8 device-level symbols added |
+| 2026-01-28 | 3 | Integrated runtime symbols from catio_terminals | WcState symbols added (140+ new symbols) |
+| 2026-01-28 | - | Fixed relative import in server.py | Tests pass |
+| 2026-01-28 | - | Updated `total_symbol_count` to filter unhandled types | Test assertion fixed |
 
 ---
 
@@ -202,3 +208,4 @@ diff <(grep -oE "^  [A-Za-z][^\n]+" simulator-output.txy | sort -u) \
 - The `diagnose_hardware.py` script can be used to compare simulator and hardware outputs
 - Symbol alignment is important for tests in `test_system.py` to pass against real hardware
 - The simulator should produce symbols that match hardware format exactly for proper testing
+- Client's `symbol_lookup` limitation documented in [todo.md](todo.md) - doesn't handle `ADS_TYPE_UINT16`
