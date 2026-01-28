@@ -9,6 +9,8 @@ from lxml import etree
 from catio_terminals.models import (
     CoEObject,
     CoESubIndex,
+    CompositeType,
+    CompositeTypeMember,
     Identity,
     SymbolNode,
     TerminalType,
@@ -274,30 +276,139 @@ def _extract_channel_pattern(name: str) -> tuple[str, int] | None:
     return None
 
 
-def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
+def _process_pdo_entries(
+    device, pdo_type: str
+) -> tuple[dict, dict, dict[str, CompositeType]]:
     """Process PDO entries and group by channel pattern.
 
     Uses PDO name (not Entry name) to determine channel patterns, matching
     how TwinCAT generates symbol names at runtime.
+
+    If a PDO contains bit entries (BOOL), it is aggregated into a single
+    symbol with a generated CompositeType, rather than creating individual
+    symbols for each bit.
 
     Args:
         device: lxml Device element
         pdo_type: "TxPdo" or "RxPdo"
 
     Returns:
-        Tuple of (channel_groups dict, duplicate_tracker dict)
+        Tuple of (channel_groups, duplicate_tracker, extracted_types)
     """
     channel_groups: dict = {}
     duplicate_tracker: dict = {}
+    extracted_types: dict[str, CompositeType] = {}
 
     default_index_group = 0xF020 if pdo_type == "TxPdo" else 0xF030
     is_output = pdo_type == "RxPdo"
+    access_str = "Read/Write" if is_output else "Read-only"
 
     for pdo in device.findall(f".//{pdo_type}"):
-        # Use PDO name for pattern matching (TwinCAT uses this for composite types)
-        pdo_name = pdo.findtext("Name", "")
+        pdo_name = pdo.findtext("Name", "") or "Unknown"
+        entries = pdo.findall("Entry")
 
-        for entry in pdo.findall("Entry"):
+        # Check if we should composite this PDO (contains BOOLs)
+        has_bits = any(e.findtext("DataType") == "BOOL" for e in entries)
+
+        if has_bits:
+            # Create a composite type for this PDO
+            members = []
+            current_offset = 0
+
+            # Determine channel info to normalize type name
+            pdo_channel_info = _extract_channel_pattern(pdo_name)
+
+            type_base_name = pdo_name
+            if pdo_channel_info:
+                # Reconstruct name with channel 1 to create generic type name
+                pattern, _ = pdo_channel_info
+                # Pattern is like "Channel {channel}" or "AI Input {channel}"
+                type_base_name = pattern.format(channel=1)
+
+            type_name = f"{type_base_name}_TYPE"
+
+            for entry in entries:
+                entry_name = entry.findtext("Name", "")
+                bit_len = int(entry.findtext("BitLen", "0"))
+                data_type = entry.findtext("DataType", "UNKNOWN")
+
+                # Skip padding/reserved entries (Index=#x0 indicates filler)
+                index_str = entry.findtext("Index", "0")
+                if parse_hex_value(index_str) == 0:
+                    current_offset += bit_len
+                    continue
+
+                members.append(
+                    CompositeTypeMember(
+                        name=entry_name,
+                        offset=current_offset // 8,
+                        type_name=data_type,
+                        size=(bit_len + 7) // 8,
+                        fastcs_attr=to_pascal_case(entry_name),
+                        access="read-write" if is_output else "read-only",
+                        bit_size=bit_len,
+                        bit_offset=current_offset % 8,
+                    )
+                )
+                current_offset += bit_len
+
+            total_size_bytes = (current_offset + 7) // 8
+
+            if type_name not in extracted_types:
+                extracted_types[type_name] = CompositeType(
+                    description=f"Composite type for {type_base_name}",
+                    size=total_size_bytes,
+                    members=members,
+                )
+
+            # Treat as single symbol with composite type
+            # Use default_index_group as we don't have per-entry index groups here
+            # (unlike non-bit entries where we might check entry index)
+            index_group = default_index_group
+            # But wait, looking at existing code: index_group = (index >> 16) & 0xFFFF
+            # For PDOs, the entry index usually matches the mapping.
+            # Let's check the first entry's index group?
+            first_entry_idx = 0
+            # Find first non-padding entry
+            for e in entries:
+                idx_val = parse_hex_value(e.findtext("Index", "0"))
+                if idx_val != 0:
+                    first_entry_idx = idx_val
+                    break
+
+            if first_entry_idx != 0:
+                calculated_group = (first_entry_idx >> 16) & 0xFFFF
+                if calculated_group != 0:
+                    index_group = calculated_group
+
+            if pdo_channel_info:
+                pattern, channel_num = pdo_channel_info
+                group_key = (
+                    pattern,
+                    index_group,
+                    total_size_bytes,
+                    65,
+                    type_name,
+                    access_str,
+                )
+                if group_key not in channel_groups:
+                    channel_groups[group_key] = []
+                channel_groups[group_key].append(channel_num)
+            else:
+                dup_key = (
+                    pdo_name,
+                    index_group,
+                    total_size_bytes,
+                    65,
+                    type_name,
+                    access_str,
+                )
+                duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
+
+            continue
+
+        # Existing logic for non-bit PDOs
+        for entry in entries:
             entry_name = entry.findtext("Name", "")
             if not entry_name:
                 continue
@@ -316,7 +427,6 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
             if index_group == 0:
                 index_group = default_index_group
 
-            access = "Read/Write" if is_output else "Read-only"
             size = (bit_len + 7) // 8
             ads_type = get_ads_type(data_type)
 
@@ -351,15 +461,22 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
 
             if channel_info:
                 pattern, channel_num = channel_info
-                group_key = (pattern, index_group, size, ads_type, data_type, access)
+                group_key = (
+                    pattern,
+                    index_group,
+                    size,
+                    ads_type,
+                    data_type,
+                    access_str,
+                )
                 if group_key not in channel_groups:
                     channel_groups[group_key] = []
                 channel_groups[group_key].append(channel_num)
             else:
-                dup_key = (name, index_group, size, ads_type, data_type, access)
+                dup_key = (name, index_group, size, ads_type, data_type, access_str)
                 duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
 
-    return channel_groups, duplicate_tracker
+    return channel_groups, duplicate_tracker, extracted_types
 
 
 def _create_symbol_nodes(
@@ -592,8 +709,8 @@ def parse_terminal_details(
                 description = name_elem.text
 
         # Process PDOs
-        tx_channels, tx_dups = _process_pdo_entries(device, "TxPdo")
-        rx_channels, rx_dups = _process_pdo_entries(device, "RxPdo")
+        tx_channels, tx_dups, tx_types = _process_pdo_entries(device, "TxPdo")
+        rx_channels, rx_dups, rx_types = _process_pdo_entries(device, "RxPdo")
 
         # Merge channel groups
         for key, nums in rx_channels.items():
@@ -607,11 +724,13 @@ def parse_terminal_details(
 
         symbol_nodes = _create_symbol_nodes(tx_channels, tx_dups)
         coe_objects = _parse_coe_objects(device)
+        data_types = {**tx_types, **rx_types}
 
         return TerminalType(
             description=description,
             identity=identity,
             symbol_nodes=symbol_nodes,
+            data_types=data_types,
             coe_objects=coe_objects,
             group_type=group_type,
         )
