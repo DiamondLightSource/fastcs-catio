@@ -102,6 +102,7 @@ def _build_symbol_tree_data(
     terminal_id: str,
     terminal: TerminalType,
     composite_types: dict[str, CompositeType] | None = None,
+    active_indices: set[int] | None = None,
 ) -> list[dict[str, Any]]:
     """Build symbol tree showing primitive symbols with checkboxes.
 
@@ -109,6 +110,7 @@ def _build_symbol_tree_data(
         terminal_id: Terminal ID for generating unique node IDs
         terminal: Terminal instance containing symbol_nodes
         composite_types: Optional dict of composite types for bit field expansion
+        active_indices: Optional set of symbol indices to include (for PDO groups)
 
     Returns:
         List of tree node dictionaries for ui.tree
@@ -116,6 +118,9 @@ def _build_symbol_tree_data(
     symbol_tree_data: list[dict[str, Any]] = []
 
     for idx, symbol in enumerate(terminal.symbol_nodes):
+        # Skip symbols not in the active PDO group
+        if active_indices is not None and idx not in active_indices:
+            continue
         symbol_tree_data.append(
             _build_symbol_node(terminal_id, idx, symbol, composite_types)
         )
@@ -331,8 +336,59 @@ def show_terminal_details(
 
     ui.separator().classes("my-4")
 
+    # PDO Group selector for terminals with dynamic PDOs
+    if terminal.has_dynamic_pdos:
+        with ui.card().props("flat").classes("w-full mb-4"):
+            with ui.row().classes("items-center gap-2"):
+                ui.label("PDO Configuration:").classes("text-caption text-gray-600")
+                # Build options from pdo_groups
+                group_options = {g.name: g.name for g in terminal.pdo_groups}
+                # Mark default group
+                for g in terminal.pdo_groups:
+                    if g.is_default:
+                        group_options[g.name] = f"{g.name} (default)"
+                        break
+
+                current_group = terminal.selected_pdo_group or (
+                    terminal.default_pdo_group.name
+                    if terminal.default_pdo_group
+                    else ""
+                )
+
+                def on_group_change(e):
+                    """Handle PDO group selection change."""
+                    new_group = e.value
+                    terminal.selected_pdo_group = new_group
+
+                    # Get indices for the new group
+                    active_indices = terminal.get_active_symbol_indices()
+
+                    # Update symbol selection: select symbols in active group,
+                    # deselect symbols not in active group
+                    for idx, symbol in enumerate(terminal.symbol_nodes):
+                        symbol.selected = idx in active_indices
+
+                    _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
+
+                ui.select(
+                    options=list(group_options.keys()),
+                    value=current_group,
+                    on_change=on_group_change,
+                ).classes("min-w-48")
+
+            ui.label(
+                "Terminals with dynamic PDOs have mutually exclusive configurations. "
+                "Only symbols from the selected group can be used."
+            ).classes("text-xs text-gray-400 mt-1")
+
     # Symbols section with Select All button
-    total_symbols = len(terminal.symbol_nodes)
+    active_symbol_indices = terminal.get_active_symbol_indices()
+    active_symbols = [
+        (idx, s)
+        for idx, s in enumerate(terminal.symbol_nodes)
+        if idx in active_symbol_indices
+    ]
+    total_symbols = len(active_symbols)
 
     with ui.row().classes("items-center w-full justify-between mb-2"):
         ui.label(f"Symbols ({total_symbols})").classes("text-h6")
@@ -340,18 +396,26 @@ def show_terminal_details(
         with ui.row().classes("gap-2"):
 
             def toggle_all_symbols():
-                all_selected = all(s.selected for s in terminal.symbol_nodes)
+                # Only toggle symbols in the active PDO group
+                active_indices = terminal.get_active_symbol_indices()
+                active_symbol_list = [
+                    terminal.symbol_nodes[i]
+                    for i in active_indices
+                    if i < len(terminal.symbol_nodes)
+                ]
+                all_selected = all(s.selected for s in active_symbol_list)
                 new_value = not all_selected
 
-                for symbol in terminal.symbol_nodes:
-                    symbol.selected = new_value
+                for idx in active_indices:
+                    if idx < len(terminal.symbol_nodes):
+                        terminal.symbol_nodes[idx].selected = new_value
 
                 _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
 
-            # Determine button label based on current state
+            # Determine button label based on current state (only active symbols)
             all_symbols_selected = (
-                all(s.selected for s in terminal.symbol_nodes)
-                if terminal.symbol_nodes
+                all(terminal.symbol_nodes[i].selected for i in active_symbol_indices)
+                if active_symbols
                 else True
             )
             symbol_btn_label = "Deselect All" if all_symbols_selected else "Select All"
@@ -361,9 +425,11 @@ def show_terminal_details(
                 on_click=toggle_all_symbols,
             ).props("flat dense")
 
-    # Build symbol tree data (primitive symbols with checkboxes)
+    # Build symbol tree data (only for active PDO group)
     composite_types = app.config.composite_types if app.config else None
-    symbol_tree_data = _build_symbol_tree_data(terminal_id, terminal, composite_types)
+    symbol_tree_data = _build_symbol_tree_data(
+        terminal_id, terminal, composite_types, active_symbol_indices
+    )
 
     if symbol_tree_data:
         with ui.card().props("flat").classes("w-full"):

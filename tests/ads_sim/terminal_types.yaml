@@ -289,7 +289,7 @@ terminal_types:
         type_name: InputBits
         channels: 4
         access: Read-only
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigIn
   EL1084:
@@ -304,7 +304,7 @@ terminal_types:
         type_name: InputBits
         channels: 4
         access: Read-only
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigIn
   EL1124:
@@ -319,7 +319,7 @@ terminal_types:
         type_name: InputBits
         channels: 4
         access: Read-only
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigIn
   EL1502:
@@ -334,49 +334,49 @@ terminal_types:
         type_name: Output functions enabled_6Bits
         channels: 2
         access: Read-only
-        fastcs_name: CntInputsChannel{channel}
+        fastcs_name: cnt_inputs_channel_{channel}
       - name_template: CNT Inputs Channel {channel}.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 2
         access: Read-only
-        fastcs_name: CntInputsChannelCounterValue{channel}
+        fastcs_name: cnt_inputs_channel_{channel}_counter_value
       - name_template: CNT Outputs Channel {channel}
         index_group: 61488
         type_name: Enable output functions_4Bits
         channels: 2
         access: Read/Write
-        fastcs_name: CntOutputsChannel{channel}
+        fastcs_name: cnt_outputs_channel_{channel}
       - name_template: CNT Outputs Channel {channel}.Set counter value
         index_group: 61488
         type_name: UDINT
         channels: 2
         access: Read/Write
-        fastcs_name: CntOutputsChannelSetCounterValue{channel}
+        fastcs_name: cnt_outputs_channel_{channel}_set_counter_value
       - name_template: CNT Inputs
         index_group: 61472
         type_name: Output functions enabled_7Bits
         channels: 1
         access: Read-only
-        fastcs_name: CntInputs
+        fastcs_name: cnt_inputs
       - name_template: CNT Inputs.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read-only
-        fastcs_name: CntInputsCounterValue
+        fastcs_name: cnt_inputs_counter_value
       - name_template: CNT Outputs
         index_group: 61488
         type_name: Enable output functions_4Bits
         channels: 1
         access: Read/Write
-        fastcs_name: CntOutputs
+        fastcs_name: cnt_outputs
       - name_template: CNT Outputs.Set counter value
         index_group: 61488
         type_name: UDINT
         channels: 1
         access: Read/Write
-        fastcs_name: CntOutputsSetCounterValue
+        fastcs_name: cnt_outputs_set_counter_value
     coe_objects: []
     group_type: Measuring
   EL2024:
@@ -391,7 +391,7 @@ terminal_types:
         type_name: OutputBits
         channels: 4
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EL2024-0010:
@@ -406,7 +406,7 @@ terminal_types:
         type_name: OutputBits
         channels: 4
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EL2124:
@@ -421,7 +421,7 @@ terminal_types:
         type_name: OutputBits
         channels: 4
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EL2502:
@@ -436,7 +436,7 @@ terminal_types:
         type_name: UINT
         channels: 2
         access: Read/Write
-        fastcs_name: PwmOutputsChannelPwmOutput{channel}
+        fastcs_name: pwm_outputs_channel_{channel}_pwm_output
     coe_objects: []
     group_type: DigOut
   EL2595:
@@ -451,57 +451,116 @@ terminal_types:
         type_name: UINT
         channels: 2
         access: Read-only
-        fastcs_name: DoxSynchronInfoDataInfoData{channel}
+        fastcs_name: dox_synchron_info_data_info_data_{channel}
       - name_template: DOX Status
         index_group: 61472
         type_name: Status__Ready to activate_6Bits
         channels: 1
         access: Read-only
-        fastcs_name: DoxStatus
+        fastcs_name: dox_status
       - name_template: DC Feedback.Feedback
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: DcFeedbackFeedback
+        fastcs_name: dc_feedback_feedback
       - name_template: DOX Control
         index_group: 61488
         type_name: Control__Output_3Bits
         channels: 1
         access: Read/Write
-        fastcs_name: DoxControl
+        fastcs_name: dox_control
       - name_template: DOX Current.Output current
         index_group: 61488
         type_name: UINT
         channels: 1
         access: Read/Write
-        fastcs_name: DoxCurrentOutputCurrent
+        fastcs_name: dox_current_output_current
       - name_template: DOX Impulse length.Impulse length
         index_group: 61488
         type_name: UDINT
         channels: 1
         access: Read/Write
-        fastcs_name: DoxImpulseLengthImpulseLength
+        fastcs_name: dox_impulse_length_impulse_length
       - name_template: DOX Trigger delay.Trigger delay
         index_group: 61488
         type_name: UDINT
         channels: 1
         access: Read/Write
-        fastcs_name: DoxTriggerDelayTriggerDelay
+        fastcs_name: dox_trigger_delay_trigger_delay
       - name_template: DC Sync.Activate
         index_group: 61488
         type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: DcSyncActivate
+        fastcs_name: dc_sync_activate
       - name_template: DC Sync.Start time
         index_group: 61488
         type_name: ULINT
         channels: 1
         access: Read/Write
-        fastcs_name: DcSyncStartTime
+        fastcs_name: dc_sync_start_time
     coe_objects: []
     group_type: DigOut
+    pdo_groups:
+      - name: Standard digital output
+        is_default: true
+        pdo_indices:
+          - 5632
+          - 6656
+        symbol_indices: []
+      - name: Standard digital output with Info Data
+        is_default: false
+        pdo_indices:
+          - 5632
+          - 6656
+          - 6657
+        symbol_indices: []
+      - name: External trigger input
+        is_default: false
+        pdo_indices:
+          - 5632
+          - 5634
+          - 5635
+          - 6656
+        symbol_indices: []
+      - name: External trigger input with Info Data
+        is_default: false
+        pdo_indices:
+          - 5632
+          - 5634
+          - 5635
+          - 6656
+          - 6657
+        symbol_indices:
+          - 6
+      - name: DC digital output
+        is_default: false
+        pdo_indices:
+          - 5632
+          - 5634
+          - 5636
+          - 6656
+          - 6658
+        symbol_indices: []
+      - name: DC digital output with Info Data
+        is_default: false
+        pdo_indices:
+          - 5632
+          - 5634
+          - 5636
+          - 6656
+          - 6657
+          - 6658
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 5
+          - 7
+          - 8
+    selected_pdo_group: Standard digital output
   EL2612:
     description: 2Ch. Relay Output, CO (125V AC / 30V DC)
     identity:
@@ -514,7 +573,7 @@ terminal_types:
         type_name: OutputBits
         channels: 2
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EL2624:
@@ -529,7 +588,7 @@ terminal_types:
         type_name: OutputBits
         channels: 4
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EL3104:
@@ -544,35 +603,58 @@ terminal_types:
         type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: ai_standard_channel_{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusLimit1{channel}
+        fastcs_name: ai_standard_channel_{channel}_status_limit_1
         tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusLimit2{channel}
+        fastcs_name: ai_standard_channel_{channel}_status_limit_2
         tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelValue{channel}
+        fastcs_name: ai_standard_channel_{channel}_value
       - name_template: AI Compact Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiCompactChannelValue{channel}
+        fastcs_name: ai_compact_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Standard
+        is_default: true
+        pdo_indices:
+          - 6656
+          - 6658
+          - 6660
+          - 6662
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+      - name: Compact
+        is_default: false
+        pdo_indices:
+          - 6657
+          - 6659
+          - 6661
+          - 6663
+        symbol_indices:
+          - 4
+    selected_pdo_group: Standard
   EL3124:
     description: 4-channel Analog Input 4..20mA 16-bit
     identity:
@@ -585,35 +667,58 @@ terminal_types:
         type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: ai_standard_channel_{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusLimit1{channel}
+        fastcs_name: ai_standard_channel_{channel}_status_limit_1
         tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusLimit2{channel}
+        fastcs_name: ai_standard_channel_{channel}_status_limit_2
         tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelValue{channel}
+        fastcs_name: ai_standard_channel_{channel}_value
       - name_template: AI Compact Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiCompactChannelValue{channel}
+        fastcs_name: ai_compact_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Standard
+        is_default: true
+        pdo_indices:
+          - 6656
+          - 6658
+          - 6660
+          - 6662
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+      - name: Compact
+        is_default: false
+        pdo_indices:
+          - 6657
+          - 6659
+          - 6661
+          - 6663
+        symbol_indices:
+          - 4
+    selected_pdo_group: Standard
   EL3202:
     description: 2Ch. Ana. Input PT100 (RTD)
     identity:
@@ -626,27 +731,27 @@ terminal_types:
         type_name: Underrange_5Bits
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannel{channel}
+        fastcs_name: rtd_inputs_channel_{channel}
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelLimit1{channel}
+        fastcs_name: rtd_inputs_channel_{channel}_limit_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelLimit2{channel}
+        fastcs_name: rtd_inputs_channel_{channel}_limit_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelValue{channel}
+        fastcs_name: rtd_inputs_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
   EL3202-0010:
@@ -661,27 +766,27 @@ terminal_types:
         type_name: Underrange_5Bits
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannel{channel}
+        fastcs_name: rtd_inputs_channel_{channel}
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelLimit1{channel}
+        fastcs_name: rtd_inputs_channel_{channel}_limit_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelLimit2{channel}
+        fastcs_name: rtd_inputs_channel_{channel}_limit_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelValue{channel}
+        fastcs_name: rtd_inputs_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
   EL3314:
@@ -696,33 +801,33 @@ terminal_types:
         type_name: Underrange_5Bits
         channels: 4
         access: Read-only
-        fastcs_name: TcInputsChannel{channel}
+        fastcs_name: tc_inputs_channel_{channel}
       - name_template: TC Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: TcInputsChannelLimit1{channel}
+        fastcs_name: tc_inputs_channel_{channel}_limit_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: TC Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: TcInputsChannelLimit2{channel}
+        fastcs_name: tc_inputs_channel_{channel}_limit_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: TcInputsChannelValue{channel}
+        fastcs_name: tc_inputs_channel_{channel}_value
       - name_template: TC Outputs Channel {channel}.CJCompensation
         index_group: 61488
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: TcOutputsChannelCjcompensation{channel}
+        fastcs_name: tc_outputs_channel_{channel}_cjcompensation
     coe_objects: []
     group_type: AnaIn
   EL3356-0010:
@@ -737,51 +842,86 @@ terminal_types:
         type_name: Underrange_4Bits
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: ai_standard_channel_{channel}
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannelValue{channel}
+        fastcs_name: ai_standard_channel_{channel}_value
       - name_template: AI Compact Channel {channel}.Value
         index_group: 61472
         type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiCompactChannelValue{channel}
+        fastcs_name: ai_compact_channel_{channel}_value
       - name_template: RMB Status
         index_group: 61472
         type_name: Status__Overrange_7Bits
         channels: 1
         access: Read-only
-        fastcs_name: RmbStatus
+        fastcs_name: rmb_status
       - name_template: RMB Value (INT32).Value
         index_group: 61472
         type_name: DINT
         channels: 1
         access: Read-only
-        fastcs_name: RmbValueInt32Value
+        fastcs_name: rmb_value_int32_value
       - name_template: RMB Value (Real).Value (Real)
         index_group: 61472
         type_name: REAL
         channels: 1
         access: Read-only
-        fastcs_name: RmbValueRealValueReal
+        fastcs_name: rmb_value_real_value_real
       - name_template: RMB Timestamp.Timestamp
         index_group: 61472
         type_name: ULINT
         channels: 1
         access: Read-only
-        fastcs_name: RmbTimestampTimestamp
+        fastcs_name: rmb_timestamp_timestamp
       - name_template: RMB Control
         index_group: 61488
         type_name: Ctrl__Start calibration_5Bits
         channels: 1
         access: Read/Write
-        fastcs_name: RmbControl
+        fastcs_name: rmb_control
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Standard (INT32)
+        is_default: true
+        pdo_indices:
+          - 5632
+          - 6656
+          - 6657
+        symbol_indices:
+          - 4
+      - name: Standard (REAL)
+        is_default: false
+        pdo_indices:
+          - 5632
+          - 6656
+          - 6658
+        symbol_indices:
+          - 3
+          - 5
+          - 7
+      - name: 2x AnalogIn (Standard)
+        is_default: false
+        pdo_indices:
+          - 6660
+          - 6662
+        symbol_indices:
+          - 0
+          - 1
+      - name: 2x AnalogIn (Compact)
+        is_default: false
+        pdo_indices:
+          - 6661
+          - 6663
+        symbol_indices:
+          - 2
+    selected_pdo_group: Standard (INT32)
   EL3602:
     description: 2-channel Analog Input +/-10V 24-bit
     identity:
@@ -794,27 +934,27 @@ terminal_types:
         type_name: Underrange_5Bits
         channels: 2
         access: Read-only
-        fastcs_name: AiInputsChannel{channel}
+        fastcs_name: ai_inputs_channel_{channel}
       - name_template: AI Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: AiInputsChannelLimit1{channel}
+        fastcs_name: ai_inputs_channel_{channel}_limit_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: AI Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: AiInputsChannelLimit2{channel}
+        fastcs_name: ai_inputs_channel_{channel}_limit_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: AI Inputs Channel {channel}.Value
         index_group: 61472
         type_name: DINT
         channels: 2
         access: Read-only
-        fastcs_name: AiInputsChannelValue{channel}
+        fastcs_name: ai_inputs_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
   EL3702:
@@ -829,31 +969,31 @@ terminal_types:
         type_name: UINT
         channels: 1
         access: Read-only
-        fastcs_name: Ch1Cyclecount
+        fastcs_name: ch1_cyclecount
       - name_template: Ch1 Sample.Ch1 Value
         index_group: 61472
         type_name: INT
         channels: 1
         access: Read-only
-        fastcs_name: Ch1SampleCh1Value
+        fastcs_name: ch1_sample_ch1_value
       - name_template: Ch2 CycleCount
         index_group: 61472
         type_name: UINT
         channels: 1
         access: Read-only
-        fastcs_name: Ch2Cyclecount
+        fastcs_name: ch2_cyclecount
       - name_template: Ch2 Sample.Ch2 Value
         index_group: 61472
         type_name: INT
         channels: 1
         access: Read-only
-        fastcs_name: Ch2SampleCh2Value
+        fastcs_name: ch2_sample_ch2_value
       - name_template: NextSync1Time.StartTimeNextLatch
         index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read-only
-        fastcs_name: Nextsync1timeStarttimenextlatch
+        fastcs_name: nextsync1time_starttimenextlatch
     coe_objects: []
     group_type: AnaIn
   EL4134:
@@ -868,7 +1008,7 @@ terminal_types:
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: AoOutputChannelAnalogOutput{channel}
+        fastcs_name: ao_output_channel_{channel}_analog_output
     coe_objects: []
     group_type: AnaOut
   EL4732:
@@ -883,25 +1023,25 @@ terminal_types:
         type_name: UDINT
         channels: 1
         access: Read-only
-        fastcs_name: Nextsync1time
+        fastcs_name: nextsync1time
       - name_template: Cycle Counter
         index_group: 61488
         type_name: UINT
         channels: 1
         access: Read/Write
-        fastcs_name: CycleCounter
+        fastcs_name: cycle_counter
       - name_template: Sample.Value1
         index_group: 61488
         type_name: INT
         channels: 1
         access: Read/Write
-        fastcs_name: SampleValue1
+        fastcs_name: sample_value1
       - name_template: Sample.Value2
         index_group: 61488
         type_name: INT
         channels: 1
         access: Read/Write
-        fastcs_name: SampleValue2
+        fastcs_name: sample_value2
     coe_objects: []
     group_type: AnaOut
   EL9410:
@@ -916,13 +1056,13 @@ terminal_types:
         type_name: UndervoltageBits
         channels: 1
         access: Read-only
-        fastcs_name: StatusUs
+        fastcs_name: status_us
       - name_template: Status Up
         index_group: 61472
         type_name: UndervoltageBits
         channels: 1
         access: Read-only
-        fastcs_name: StatusUp
+        fastcs_name: status_up
     coe_objects: []
     group_type: PowerSupply
   EL9505:
@@ -937,7 +1077,7 @@ terminal_types:
         type_name: Power OK_2Bits
         channels: 1
         access: Read-only
-        fastcs_name: StatusUo
+        fastcs_name: status_uo
     coe_objects: []
     group_type: PowerSupply
   EL9510:
@@ -952,7 +1092,7 @@ terminal_types:
         type_name: Power OK_2Bits
         channels: 1
         access: Read-only
-        fastcs_name: StatusUo
+        fastcs_name: status_uo
     coe_objects: []
     group_type: PowerSupply
   EL9512:
@@ -967,7 +1107,7 @@ terminal_types:
         type_name: Power OK_2Bits
         channels: 1
         access: Read-only
-        fastcs_name: StatusUo
+        fastcs_name: status_uo
     coe_objects: []
     group_type: PowerSupply
   ELM3704-0000:
@@ -983,211 +1123,211 @@ terminal_types:
         type_name: Status__Error_5Bits
         channels: 4
         access: Read-only
-        fastcs_name: PaiStatusChannel{channel}
+        fastcs_name: pai_status_channel_{channel}
       - name_template: PAI Status Channel {channel}.Status__No of Samples
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiStatusChannelStatusNoOfSamples{channel}
+        fastcs_name: pai_status_channel_{channel}_status_no_of_samples
       - name_template: PAI Status Channel {channel}.Status__Input cycle counter
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: PaiStatusChannelStatusInputCycleCounter{channel}
+        fastcs_name: pai_status_channel_{channel}_status_input_cycle_counter
       - name_template: PAI Samples 1 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..0] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1ChannelSamples{channel}
+        fastcs_name: pai_samples_1_channel_{channel}_samples
       - name_template: PAI Samples 2 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..1] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples2ChannelSamples{channel}
+        fastcs_name: pai_samples_2_channel_{channel}_samples
       - name_template: PAI Samples 4 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..3] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples4ChannelSamples{channel}
+        fastcs_name: pai_samples_4_channel_{channel}_samples
       - name_template: PAI Samples 5 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..4] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples5ChannelSamples{channel}
+        fastcs_name: pai_samples_5_channel_{channel}_samples
       - name_template: PAI Samples 8 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..7] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples8ChannelSamples{channel}
+        fastcs_name: pai_samples_8_channel_{channel}_samples
       - name_template: PAI Samples 10 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..9] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples10ChannelSamples{channel}
+        fastcs_name: pai_samples_10_channel_{channel}_samples
       - name_template: PAI Samples 16 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..15] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples16ChannelSamples{channel}
+        fastcs_name: pai_samples_16_channel_{channel}_samples
       - name_template: PAI Samples 20 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..19] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples20ChannelSamples{channel}
+        fastcs_name: pai_samples_20_channel_{channel}_samples
       - name_template: PAI Samples 25 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..24] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples25ChannelSamples{channel}
+        fastcs_name: pai_samples_25_channel_{channel}_samples
       - name_template: PAI Samples 32 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..31] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples32ChannelSamples{channel}
+        fastcs_name: pai_samples_32_channel_{channel}_samples
       - name_template: PAI Samples 40 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..39] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples40ChannelSamples{channel}
+        fastcs_name: pai_samples_40_channel_{channel}_samples
       - name_template: PAI Samples 50 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..49] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples50ChannelSamples{channel}
+        fastcs_name: pai_samples_50_channel_{channel}_samples
       - name_template: PAI Samples 64 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..63] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples64ChannelSamples{channel}
+        fastcs_name: pai_samples_64_channel_{channel}_samples
       - name_template: PAI Samples 80 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..79] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples80ChannelSamples{channel}
+        fastcs_name: pai_samples_80_channel_{channel}_samples
       - name_template: PAI Samples 100 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..99] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples100ChannelSamples{channel}
+        fastcs_name: pai_samples_100_channel_{channel}_samples
       - name_template: PAI Timestamp Channel {channel}.StartTimeNextLatch__Low
         index_group: 61472
         type_name: UDINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiTimestampChannelStarttimenextlatchLow{channel}
+        fastcs_name: pai_timestamp_channel_{channel}_starttimenextlatch_low
       - name_template: PAI Timestamp Channel {channel}.StartTimeNextLatch__Hi
         index_group: 61472
         type_name: UDINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiTimestampChannelStarttimenextlatchHi{channel}
+        fastcs_name: pai_timestamp_channel_{channel}_starttimenextlatch_hi
       - name_template: PAI Samples16 1 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..0] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples161ChannelSamples{channel}
+        fastcs_name: pai_samples16_1_channel_{channel}_samples
       - name_template: PAI Samples16 2 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..1] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples162ChannelSamples{channel}
+        fastcs_name: pai_samples16_2_channel_{channel}_samples
       - name_template: PAI Samples16 4 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..3] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples164ChannelSamples{channel}
+        fastcs_name: pai_samples16_4_channel_{channel}_samples
       - name_template: PAI Samples16 5 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..4] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples165ChannelSamples{channel}
+        fastcs_name: pai_samples16_5_channel_{channel}_samples
       - name_template: PAI Samples16 8 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..7] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples168ChannelSamples{channel}
+        fastcs_name: pai_samples16_8_channel_{channel}_samples
       - name_template: PAI Samples16 10 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..9] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1610ChannelSamples{channel}
+        fastcs_name: pai_samples16_10_channel_{channel}_samples
       - name_template: PAI Samples16 16 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..15] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1616ChannelSamples{channel}
+        fastcs_name: pai_samples16_16_channel_{channel}_samples
       - name_template: PAI Samples16 20 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..19] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1620ChannelSamples{channel}
+        fastcs_name: pai_samples16_20_channel_{channel}_samples
       - name_template: PAI Samples16 25 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..24] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1625ChannelSamples{channel}
+        fastcs_name: pai_samples16_25_channel_{channel}_samples
       - name_template: PAI Samples16 32 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..31] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1632ChannelSamples{channel}
+        fastcs_name: pai_samples16_32_channel_{channel}_samples
       - name_template: PAI Samples16 40 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..39] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1640ChannelSamples{channel}
+        fastcs_name: pai_samples16_40_channel_{channel}_samples
       - name_template: PAI Samples16 50 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..49] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1650ChannelSamples{channel}
+        fastcs_name: pai_samples16_50_channel_{channel}_samples
       - name_template: PAI Samples16 64 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..63] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1664ChannelSamples{channel}
+        fastcs_name: pai_samples16_64_channel_{channel}_samples
       - name_template: PAI Samples16 80 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..79] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples1680ChannelSamples{channel}
+        fastcs_name: pai_samples16_80_channel_{channel}_samples
       - name_template: PAI Samples16 100 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..99] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamples16100ChannelSamples{channel}
+        fastcs_name: pai_samples16_100_channel_{channel}_samples
       - name_template: PAI Synchronous Oversampling Channel 
           {channel}.SM-Synchron__Internal Buffer
         index_group: 61472
@@ -1195,111 +1335,491 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: 
-          PaiSynchronousOversamplingChannelSmSynchronInternalBuffer{channel}
+          pai_synchronous_oversampling_channel_{channel}_sm_synchron_internal_buffer
       - name_template: PAI SamplesR32 1 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..0] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr321ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_1_channel_{channel}_samples
       - name_template: PAI SamplesR32 2 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..1] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr322ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_2_channel_{channel}_samples
       - name_template: PAI SamplesR32 4 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..3] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr324ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_4_channel_{channel}_samples
       - name_template: PAI SamplesR32 5 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..4] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr325ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_5_channel_{channel}_samples
       - name_template: PAI SamplesR32 8 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..7] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr328ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_8_channel_{channel}_samples
       - name_template: PAI SamplesR32 10 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..9] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3210ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_10_channel_{channel}_samples
       - name_template: PAI SamplesR32 16 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..15] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3216ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_16_channel_{channel}_samples
       - name_template: PAI SamplesR32 20 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..19] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3220ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_20_channel_{channel}_samples
       - name_template: PAI SamplesR32 25 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..24] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3225ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_25_channel_{channel}_samples
       - name_template: PAI SamplesR32 32 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..31] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3232ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_32_channel_{channel}_samples
       - name_template: PAI SamplesR32 40 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..39] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3240ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_40_channel_{channel}_samples
       - name_template: PAI SamplesR32 50 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..49] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3250ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_50_channel_{channel}_samples
       - name_template: PAI SamplesR32 64 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..63] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3264ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_64_channel_{channel}_samples
       - name_template: PAI SamplesR32 80 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..79] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr3280ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_80_channel_{channel}_samples
       - name_template: PAI SamplesR32 100 Channel {channel}.Samples
         index_group: 61472
         type_name: ARRAY [0..99] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: PaiSamplesr32100ChannelSamples{channel}
+        fastcs_name: pai_samplesr32_100_channel_{channel}_samples
       - name_template: PAI Control Channel {channel}
         index_group: 61488
         type_name: Control__Integrator Reset_3Bits
         channels: 4
         access: Read/Write
-        fastcs_name: PaiControlChannel{channel}
+        fastcs_name: pai_control_channel_{channel}
       - name_template: PAI TC Channel {channel}.Cold Junction Temperature
         index_group: 61488
         type_name: REAL
         channels: 4
         access: Read/Write
-        fastcs_name: PaiTcChannelColdJunctionTemperature{channel}
+        fastcs_name: pai_tc_channel_{channel}_cold_junction_temperature
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Oversampling 1 (24Bit)
+        is_default: true
+        pdo_indices:
+          - 6656
+          - 6657
+          - 6672
+          - 6704
+          - 6705
+          - 6752
+          - 6753
+          - 6800
+          - 6801
+        symbol_indices: []
+      - name: Oversampling 5 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6660
+          - 6672
+          - 6704
+          - 6708
+          - 6752
+          - 6756
+          - 6800
+          - 6804
+        symbol_indices:
+          - 6
+      - name: Oversampling 10 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6662
+          - 6672
+          - 6704
+          - 6710
+          - 6752
+          - 6758
+          - 6800
+          - 6806
+        symbol_indices: []
+      - name: Oversampling 20 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6664
+          - 6672
+          - 6704
+          - 6712
+          - 6752
+          - 6760
+          - 6800
+          - 6808
+        symbol_indices:
+          - 10
+      - name: Oversampling 50 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6668
+          - 6672
+          - 6704
+          - 6716
+          - 6752
+          - 6764
+          - 6800
+          - 6812
+        symbol_indices:
+          - 14
+      - name: Oversampling 100 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6671
+          - 6672
+          - 6704
+          - 6719
+          - 6752
+          - 6767
+          - 6800
+          - 6815
+        symbol_indices:
+          - 17
+      - name: SM Oversampling 1 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6657
+          - 6688
+          - 6704
+          - 6705
+          - 6736
+          - 6752
+          - 6753
+          - 6784
+          - 6800
+          - 6801
+          - 6832
+        symbol_indices: []
+      - name: SM Oversampling 10 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6662
+          - 6688
+          - 6704
+          - 6710
+          - 6736
+          - 6752
+          - 6758
+          - 6784
+          - 6800
+          - 6806
+          - 6832
+        symbol_indices: []
+      - name: Ch 1+2 Ovs 5 - Ch 3+4 Ovs 10 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6660
+          - 6672
+          - 6704
+          - 6708
+          - 6752
+          - 6758
+          - 6800
+          - 6806
+        symbol_indices:
+          - 8
+      - name: Ch 1+2 Ovs 10 - Ch 3+4 Ovs 1 (24Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6662
+          - 6672
+          - 6704
+          - 6710
+          - 6752
+          - 6753
+          - 6800
+          - 6801
+        symbol_indices:
+          - 3
+      - name: Oversampling 1 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6673
+          - 6704
+          - 6721
+          - 6752
+          - 6769
+          - 6800
+          - 6817
+        symbol_indices: []
+      - name: Oversampling 5 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6676
+          - 6704
+          - 6724
+          - 6752
+          - 6772
+          - 6800
+          - 6820
+        symbol_indices:
+          - 23
+      - name: Oversampling 10 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6678
+          - 6704
+          - 6726
+          - 6752
+          - 6774
+          - 6800
+          - 6822
+        symbol_indices: []
+      - name: Oversampling 20 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6680
+          - 6704
+          - 6728
+          - 6752
+          - 6776
+          - 6800
+          - 6824
+        symbol_indices:
+          - 27
+      - name: Oversampling 50 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6684
+          - 6704
+          - 6732
+          - 6752
+          - 6780
+          - 6800
+          - 6828
+        symbol_indices:
+          - 31
+      - name: Oversampling 100 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6687
+          - 6704
+          - 6735
+          - 6752
+          - 6783
+          - 6800
+          - 6831
+        symbol_indices:
+          - 34
+      - name: SM Oversampling 1 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6673
+          - 6688
+          - 6704
+          - 6721
+          - 6736
+          - 6752
+          - 6769
+          - 6784
+          - 6800
+          - 6817
+          - 6832
+        symbol_indices:
+          - 20
+      - name: SM Oversampling 10 (16Bit)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6678
+          - 6688
+          - 6704
+          - 6726
+          - 6736
+          - 6752
+          - 6774
+          - 6784
+          - 6800
+          - 6822
+          - 6832
+        symbol_indices:
+          - 25
+      - name: Oversampling 1 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6689
+          - 6704
+          - 6737
+          - 6752
+          - 6785
+          - 6800
+          - 6833
+        symbol_indices: []
+      - name: Oversampling 5 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6692
+          - 6704
+          - 6740
+          - 6752
+          - 6788
+          - 6800
+          - 6836
+        symbol_indices:
+          - 39
+      - name: Oversampling 10 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6694
+          - 6704
+          - 6742
+          - 6752
+          - 6790
+          - 6800
+          - 6838
+        symbol_indices: []
+      - name: Oversampling 20 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6696
+          - 6704
+          - 6744
+          - 6752
+          - 6792
+          - 6800
+          - 6840
+        symbol_indices:
+          - 43
+      - name: Oversampling 50 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6700
+          - 6704
+          - 6748
+          - 6752
+          - 6796
+          - 6800
+          - 6844
+        symbol_indices:
+          - 47
+      - name: Oversampling 100 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6672
+          - 6703
+          - 6704
+          - 6751
+          - 6752
+          - 6799
+          - 6800
+          - 6847
+        symbol_indices:
+          - 50
+      - name: SM Oversampling 1 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6688
+          - 6689
+          - 6704
+          - 6736
+          - 6737
+          - 6752
+          - 6784
+          - 6785
+          - 6800
+          - 6832
+          - 6833
+        symbol_indices:
+          - 36
+      - name: SM Oversampling 10 (REAL32)
+        is_default: false
+        pdo_indices:
+          - 6656
+          - 6688
+          - 6694
+          - 6704
+          - 6736
+          - 6742
+          - 6752
+          - 6784
+          - 6790
+          - 6800
+          - 6832
+          - 6838
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 35
+          - 41
+    selected_pdo_group: Oversampling 1 (24Bit)
   EP2338-0002:
     description: 8 Ch. Dig. Input/Output 24V, 0,5A, M12
     identity:
@@ -1312,13 +1832,13 @@ terminal_types:
         type_name: InputBits
         channels: 8
         access: Read-only
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
       - name_template: Channel {channel}
         index_group: 61488
         type_name: InputBits
         channels: 8
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EP2624-0002:
@@ -1333,7 +1853,7 @@ terminal_types:
         type_name: OutputBits
         channels: 4
         access: Read/Write
-        fastcs_name: Channel{channel}
+        fastcs_name: channel_{channel}
     coe_objects: []
     group_type: DigOut
   EP3174-0002:
@@ -1348,33 +1868,33 @@ terminal_types:
         type_name: Status__Underrange_5Bits
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannel{channel}
+        fastcs_name: ai_standard_channel_{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusLimit1{channel}
+        fastcs_name: ai_standard_channel_{channel}_status_limit_1
         tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusLimit2{channel}
+        fastcs_name: ai_standard_channel_{channel}_status_limit_2
         tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelValue{channel}
+        fastcs_name: ai_standard_channel_{channel}_value
       - name_template: AI Compact Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: AiCompactChannelValue{channel}
+        fastcs_name: ai_compact_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
   EP3204-0002:
@@ -1389,25 +1909,25 @@ terminal_types:
         type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
-        fastcs_name: RtdRtdinputsChannel{channel}
+        fastcs_name: rtd_rtdinputs_channel_{channel}
       - name_template: RTD RTDInputs Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusLimit1{channel}
+        fastcs_name: rtd_rtdinputs_channel_{channel}_status_limit_1
       - name_template: RTD RTDInputs Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusLimit2{channel}
+        fastcs_name: rtd_rtdinputs_channel_{channel}_status_limit_2
       - name_template: RTD RTDInputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: RtdRtdinputsChannelValue{channel}
+        fastcs_name: rtd_rtdinputs_channel_{channel}_value
     coe_objects: []
     group_type: AnaIn
   EP3314-0002:
@@ -1422,31 +1942,31 @@ terminal_types:
         type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
-        fastcs_name: TcTcinputsChannel{channel}
+        fastcs_name: tc_tcinputs_channel_{channel}
       - name_template: TC TCInputs Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: TcTcinputsChannelStatusLimit1{channel}
+        fastcs_name: tc_tcinputs_channel_{channel}_status_limit_1
       - name_template: TC TCInputs Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: TcTcinputsChannelStatusLimit2{channel}
+        fastcs_name: tc_tcinputs_channel_{channel}_status_limit_2
       - name_template: TC TCInputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: TcTcinputsChannelValue{channel}
+        fastcs_name: tc_tcinputs_channel_{channel}_value
       - name_template: TC Outputs Channel {channel}.CJCompensation
         index_group: 61488
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: TcOutputsChannelCjcompensation{channel}
+        fastcs_name: tc_outputs_channel_{channel}_cjcompensation
     coe_objects: []
     group_type: AnaIn
   EP4174-0002:
@@ -1461,7 +1981,7 @@ terminal_types:
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: AoOutputsChannelAnalogOutput{channel}
+        fastcs_name: ao_outputs_channel_{channel}_analog_output
         tooltip: analog Output
     coe_objects: []
     group_type: AnaOut
@@ -1478,38 +1998,38 @@ terminal_types:
         type_name: Status__Underrange_6Bits
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannel{channel}
+        fastcs_name: ai_txpdo_map_standard_channel_{channel}
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusLimit1{channel}
+        fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_1
         tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusLimit2{channel}
+        fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_2
         tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelValue{channel}
+        fastcs_name: ai_txpdo_map_standard_channel_{channel}_value
       - name_template: AI TxPDO-Map Compact Channel {channel}.Value
         index_group: 61472
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapCompactChannelValue{channel}
+        fastcs_name: ai_txpdo_map_compact_channel_{channel}_value
       - name_template: AO RxPDO-Map Channel {channel}.Analog output
         index_group: 61488
         type_name: INT
         channels: 2
         access: Read/Write
-        fastcs_name: AoRxpdoMapChannelAnalogOutput{channel}
+        fastcs_name: ao_rxpdo_map_channel_{channel}_analog_output
     coe_objects: []
     group_type: AnaOut

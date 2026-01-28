@@ -191,6 +191,8 @@ def _process_bit_entries(
     duplicate_tracker: dict,
     bit_field_tracker: dict,
     channel_bit_field_map: dict,
+    pdo_index: int,
+    symbol_pdo_map: dict[str, int],
 ) -> None:
     """Process bit field entries and create composite symbol using PDO name.
 
@@ -209,6 +211,8 @@ def _process_bit_entries(
         duplicate_tracker: Dict to track non-channel duplicates
         bit_field_tracker: Dict to collect bit field structures by type name
         channel_bit_field_map: Dict mapping channel patterns to bit field keys
+        pdo_index: Index of the source PDO for group tracking
+        symbol_pdo_map: Dict mapping symbol name patterns to PDO indices
     """
     if not bit_entries:
         return
@@ -272,6 +276,10 @@ def _process_bit_entries(
     symbol_pattern = pdo_channel_info[0] if pdo_channel_info else full_name
     bit_field_tracker[bit_field_key]["symbols"].append(symbol_pattern)
 
+    # Track PDO index for this symbol pattern
+    if pdo_index != 0:
+        symbol_pdo_map[symbol_pattern] = pdo_index
+
     # Generate a type name for this composite (will be finalized later)
     # For now, use the base type - we'll update to composite type name after
     composite_type = base_type
@@ -300,6 +308,8 @@ def _process_value_entry(
     is_output: bool,
     channel_groups: dict,
     duplicate_tracker: dict,
+    pdo_index: int,
+    symbol_pdo_map: dict[str, int],
 ) -> None:
     """Process a single non-bit value entry.
 
@@ -311,6 +321,8 @@ def _process_value_entry(
         is_output: True for RxPdo (outputs), False for TxPdo (inputs)
         channel_groups: Dict to collect channel patterns
         duplicate_tracker: Dict to track non-channel duplicates
+        pdo_index: Index of the source PDO for group tracking
+        symbol_pdo_map: Dict mapping symbol name patterns to PDO indices
     """
     entry_name = entry_data["name"]
     index = entry_data["index"]
@@ -343,6 +355,11 @@ def _process_value_entry(
         name = entry_name
         channel_info = extract_channel_pattern(entry_name)
 
+    # Track PDO index for this symbol pattern
+    symbol_pattern = channel_info[0] if channel_info else name
+    if pdo_index != 0:
+        symbol_pdo_map[symbol_pattern] = pdo_index
+
     _add_to_groups(
         channel_groups,
         duplicate_tracker,
@@ -357,7 +374,9 @@ def _process_value_entry(
     )
 
 
-def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict, dict, dict]:
+def process_pdo_entries(
+    device, pdo_type: str
+) -> tuple[dict, dict, dict, dict, dict[str, int]]:
     """Process PDO entries and group by channel pattern.
 
     Uses PDO name (not Entry name) to determine channel patterns, matching
@@ -373,18 +392,24 @@ def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict, dict, dict]:
 
     Returns:
         Tuple of (channel_groups dict, duplicate_tracker dict, bit_field_tracker dict,
-                  channel_bit_field_map dict)
+                  channel_bit_field_map dict, symbol_pdo_map dict)
+        The symbol_pdo_map maps symbol name patterns to their source PDO index.
     """
     channel_groups: dict = {}
     duplicate_tracker: dict = {}
     bit_field_tracker: dict = {}
     channel_bit_field_map: dict = {}
+    symbol_pdo_map: dict[str, int] = {}  # Maps symbol name pattern -> PDO index
 
     default_index_group = 0xF020 if pdo_type == "TxPdo" else 0xF030
     is_output = pdo_type == "RxPdo"
 
     for pdo in device.findall(f".//{pdo_type}"):
         pdo_name = pdo.findtext("Name", "")
+
+        # Get PDO index for tracking which group this symbol belongs to
+        pdo_index_str = pdo.findtext("Index", "0")
+        pdo_index = parse_hex_value(pdo_index_str)
 
         # Collect all entries for this PDO to analyze grouping
         entries = []
@@ -445,6 +470,8 @@ def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict, dict, dict]:
             duplicate_tracker,
             bit_field_tracker,
             channel_bit_field_map,
+            pdo_index,
+            symbol_pdo_map,
         )
 
         # Process non-bit (value) entries normally
@@ -458,9 +485,17 @@ def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict, dict, dict]:
                 is_output,
                 channel_groups,
                 duplicate_tracker,
+                pdo_index,
+                symbol_pdo_map,
             )
 
-    return channel_groups, duplicate_tracker, bit_field_tracker, channel_bit_field_map
+    return (
+        channel_groups,
+        duplicate_tracker,
+        bit_field_tracker,
+        channel_bit_field_map,
+        symbol_pdo_map,
+    )
 
 
 def create_symbol_nodes(
@@ -468,7 +503,8 @@ def create_symbol_nodes(
     duplicate_tracker: dict,
     bit_field_tracker: dict,
     channel_bit_field_map: dict | None = None,
-) -> tuple[list[SymbolNode], dict[str, CompositeType]]:
+    symbol_pdo_map: dict[str, int] | None = None,
+) -> tuple[list[SymbolNode], dict[str, CompositeType], dict[int, int]]:
     """Create SymbolNode list and composite types from grouped PDO data.
 
     Args:
@@ -476,13 +512,17 @@ def create_symbol_nodes(
         duplicate_tracker: Dict mapping duplicate keys to counts
         bit_field_tracker: Dict mapping bit field keys to structure info
         channel_bit_field_map: Optional dict mapping channel patterns to bit field keys
+        symbol_pdo_map: Optional dict mapping symbol name patterns to PDO indices
 
     Returns:
-        Tuple of (list of SymbolNode instances, dict of composite types)
+        Tuple of (list of SymbolNode instances, dict of composite types,
+                  dict mapping symbol index to PDO index)
     """
     symbol_nodes = []
     composite_types: dict[str, CompositeType] = {}
+    symbol_index_to_pdo: dict[int, int] = {}
     channel_bit_field_map = channel_bit_field_map or {}
+    symbol_pdo_map = symbol_pdo_map or {}
 
     # Generate composite type names for each unique bit field structure
     bit_field_key_to_type_name: dict[tuple, str] = {}
@@ -525,6 +565,7 @@ def create_symbol_nodes(
         if bit_field_key and bit_field_key in bit_field_key_to_type_name:
             data_type = bit_field_key_to_type_name[bit_field_key]
 
+        symbol_idx = len(symbol_nodes)
         symbol_nodes.append(
             SymbolNode(
                 name_template=name_pattern,
@@ -536,6 +577,9 @@ def create_symbol_nodes(
                 tooltip=tooltip,
             )
         )
+        # Track PDO index for this symbol
+        if name_pattern in symbol_pdo_map:
+            symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name_pattern]
 
     for dup_key, dup_info in duplicate_tracker.items():
         # dup_info is now a dict with 'count' and 'tooltip' keys
@@ -561,6 +605,7 @@ def create_symbol_nodes(
         if bit_field_key and bit_field_key in bit_field_key_to_type_name:
             data_type = bit_field_key_to_type_name[bit_field_key]
 
+        symbol_idx = len(symbol_nodes)
         if count > 1:
             name_pattern = f"{name} {{channel}}"
             symbol_nodes.append(
@@ -574,6 +619,11 @@ def create_symbol_nodes(
                     tooltip=tooltip,
                 )
             )
+            # Track PDO index for this symbol
+            if name_pattern in symbol_pdo_map:
+                symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name_pattern]
+            elif name in symbol_pdo_map:
+                symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name]
         else:
             symbol_nodes.append(
                 SymbolNode(
@@ -586,5 +636,8 @@ def create_symbol_nodes(
                     tooltip=tooltip,
                 )
             )
+            # Track PDO index for this symbol
+            if name in symbol_pdo_map:
+                symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name]
 
-    return symbol_nodes, composite_types
+    return symbol_nodes, composite_types, symbol_index_to_pdo

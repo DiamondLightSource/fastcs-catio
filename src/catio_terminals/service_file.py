@@ -124,12 +124,26 @@ class FileService:
             # New terminals should have all symbols selected by default
             is_new_terminal = len(yaml_symbol_map) == 0
 
+            # Merge PDO groups from XML
+            if xml_terminal.pdo_groups:
+                terminal.pdo_groups = xml_terminal.pdo_groups
+                # Set selected group to default if not already set
+                if not terminal.selected_pdo_group:
+                    terminal.selected_pdo_group = xml_terminal.selected_pdo_group
+
             # Build merged symbol list from XML primitive symbols
             merged_symbols = []
             xml_symbol_map = {}
 
+            # Get active symbol indices based on PDO groups
+            active_indices = (
+                xml_terminal.get_active_symbol_indices()
+                if xml_terminal.has_dynamic_pdos
+                else set(range(len(xml_terminal.symbol_nodes)))
+            )
+
             # Add all XML symbols (primitive symbols directly from XML)
-            for xml_sym in xml_terminal.symbol_nodes:
+            for idx, xml_sym in enumerate(xml_terminal.symbol_nodes):
                 xml_symbol_map[xml_sym.name_template] = xml_sym
                 if xml_sym.name_template in yaml_symbol_map:
                     if prefer_xml:
@@ -142,8 +156,15 @@ class FileService:
                         yaml_sym.selected = True
                         merged_symbols.append(yaml_sym)
                 else:
-                    # Symbol only in XML - select for new terminals, not for existing
-                    xml_sym.selected = is_new_terminal
+                    # Symbol only in XML
+                    # For new terminals with dynamic PDOs: only select symbols
+                    # in the default group
+                    if is_new_terminal and xml_terminal.has_dynamic_pdos:
+                        xml_sym.selected = idx in active_indices
+                    else:
+                        # For new terminals without dynamic PDOs: select all
+                        # For existing terminals: not selected
+                        xml_sym.selected = is_new_terminal
                     merged_symbols.append(xml_sym)
 
             # Warn about YAML-only symbols not in XML (these are dropped)
@@ -182,9 +203,14 @@ class FileService:
 
             terminal.coe_objects = merged_coe
 
+            pdo_groups_info = (
+                f", {len(terminal.pdo_groups)} PDO groups"
+                if terminal.has_dynamic_pdos
+                else ""
+            )
             logger.info(
                 f"Merged {terminal_id}: {len(merged_symbols)} symbols, "
-                f"{len(merged_coe)} CoE objects"
+                f"{len(merged_coe)} CoE objects{pdo_groups_info}"
             )
             return True
 

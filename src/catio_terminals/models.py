@@ -263,6 +263,27 @@ class RuntimeSymbolsConfig(BaseModel):
         ]
 
 
+class PdoGroup(BaseModel):
+    """A group of PDOs that can be active together.
+
+    Terminals with dynamic PDO configurations (AlternativeSmMapping in XML)
+    have mutually exclusive PDO groups. Only one group can be selected at a time.
+    """
+
+    name: str = Field(description="Group name (e.g., 'Standard', 'Compact')")
+    is_default: bool = Field(
+        default=False, description="Whether this is the default group"
+    )
+    pdo_indices: list[int] = Field(
+        default_factory=list,
+        description="List of PDO indices (hex values) in this group",
+    )
+    symbol_indices: list[int] = Field(
+        default_factory=list,
+        description="Indices into symbol_nodes that belong to this group",
+    )
+
+
 class TerminalType(BaseModel):
     """Terminal type definition."""
 
@@ -275,6 +296,55 @@ class TerminalType(BaseModel):
         default_factory=list, description="CoE object dictionary"
     )
     group_type: str | None = Field(default=None, description="Terminal group type")
+    pdo_groups: list[PdoGroup] = Field(
+        default_factory=list,
+        description="Mutually exclusive PDO groups (empty = static PDOs)",
+    )
+    selected_pdo_group: str | None = Field(
+        default=None,
+        description="Currently selected PDO group name (None = all symbols available)",
+    )
+
+    @property
+    def has_dynamic_pdos(self) -> bool:
+        """Check if this terminal has dynamic PDO configurations."""
+        return len(self.pdo_groups) > 0
+
+    @property
+    def default_pdo_group(self) -> PdoGroup | None:
+        """Get the default PDO group if any."""
+        for group in self.pdo_groups:
+            if group.is_default:
+                return group
+        return self.pdo_groups[0] if self.pdo_groups else None
+
+    def get_pdo_group(self, name: str) -> PdoGroup | None:
+        """Get a PDO group by name."""
+        for group in self.pdo_groups:
+            if group.name == name:
+                return group
+        return None
+
+    def get_active_symbol_indices(self) -> set[int]:
+        """Get indices of symbols in the currently selected PDO group.
+
+        Returns:
+            Set of symbol indices that are active, or all indices if no groups.
+        """
+        if not self.pdo_groups:
+            # No dynamic PDOs - all symbols are available
+            return set(range(len(self.symbol_nodes)))
+
+        # Find the selected group
+        group = None
+        if self.selected_pdo_group:
+            group = self.get_pdo_group(self.selected_pdo_group)
+        if not group:
+            group = self.default_pdo_group
+
+        if group:
+            return set(group.symbol_indices)
+        return set(range(len(self.symbol_nodes)))
 
 
 # Forward reference for TerminalConfig (defined after CompositeType models)
@@ -342,6 +412,12 @@ class TerminalConfig(BaseModel):
                     for coe in terminal_data["coe_objects"]
                     if coe.get("selected", False)
                 ]
+            # Remove empty pdo_groups
+            if not terminal_data.get("pdo_groups"):
+                terminal_data.pop("pdo_groups", None)
+            # Remove selected_pdo_group if no pdo_groups
+            if not terminal_data.get("pdo_groups"):
+                terminal_data.pop("selected_pdo_group", None)
 
         yaml = YAML()
         yaml.default_flow_style = False

@@ -6,6 +6,7 @@ re-exporting from specialized submodules:
 - xml_constants: Regex patterns, type mappings, utility functions
 - xml_catalog: Terminal catalog parsing (parse_terminal_catalog)
 - xml_pdo: PDO (Process Data Object) parsing
+- xml_pdo_groups: AlternativeSmMapping parsing for dynamic PDO configurations
 - xml_coe: CoE (CANopen over EtherCAT) object parsing
 """
 
@@ -37,6 +38,10 @@ from catio_terminals.xml_pdo import (
     extract_channel_pattern,
     process_pdo_entries,
 )
+from catio_terminals.xml_pdo_groups import (
+    assign_symbols_to_groups,
+    parse_pdo_groups,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +62,9 @@ __all__ = [
     "extract_terminal_id_from_device",
     "extract_group_type",
     "parse_terminal_catalog",
+    # PDO group functions
+    "parse_pdo_groups",
+    "assign_symbols_to_groups",
     # Main parsing functions
     "parse_terminal_details",
     "create_default_terminal",
@@ -133,8 +141,12 @@ def parse_terminal_details(
                 description = name_elem.text
 
         # Process PDOs
-        tx_channels, tx_dups, tx_bits, tx_bf_map = process_pdo_entries(device, "TxPdo")
-        rx_channels, rx_dups, rx_bits, rx_bf_map = process_pdo_entries(device, "RxPdo")
+        tx_channels, tx_dups, tx_bits, tx_bf_map, tx_pdo_map = process_pdo_entries(
+            device, "TxPdo"
+        )
+        rx_channels, rx_dups, rx_bits, rx_bf_map, rx_pdo_map = process_pdo_entries(
+            device, "RxPdo"
+        )
 
         # Merge channel groups
         for key, group_info in rx_channels.items():
@@ -171,10 +183,29 @@ def parse_terminal_details(
             if pattern not in tx_bf_map or len(bf_key) > len(tx_bf_map[pattern]):
                 tx_bf_map[pattern] = bf_key
 
-        symbol_nodes, composite_types = create_symbol_nodes(
-            tx_channels, tx_dups, tx_bits, tx_bf_map
+        # Merge symbol PDO maps
+        merged_pdo_map = {**tx_pdo_map, **rx_pdo_map}
+
+        symbol_nodes, composite_types, symbol_index_to_pdo = create_symbol_nodes(
+            tx_channels, tx_dups, tx_bits, tx_bf_map, merged_pdo_map
         )
         coe_objects = parse_coe_objects(device)
+
+        # Parse PDO groups (AlternativeSmMapping)
+        pdo_groups = parse_pdo_groups(device)
+
+        # Assign symbols to their respective PDO groups
+        if pdo_groups:
+            assign_symbols_to_groups(pdo_groups, symbol_index_to_pdo)
+
+        # Set default selected group based on is_default flag
+        default_group = None
+        for group in pdo_groups:
+            if group.is_default:
+                default_group = group.name
+                break
+        if not default_group and pdo_groups:
+            default_group = pdo_groups[0].name
 
         terminal_type = TerminalType(
             description=description,
@@ -182,6 +213,8 @@ def parse_terminal_details(
             symbol_nodes=symbol_nodes,
             coe_objects=coe_objects,
             group_type=group_type,
+            pdo_groups=pdo_groups,
+            selected_pdo_group=default_group,
         )
 
         return terminal_type, composite_types
