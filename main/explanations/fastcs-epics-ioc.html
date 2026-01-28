@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a4.dev4+g4e5852a56 documentation</title>
+    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a4.dev5+g2a19faef4 documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=1bcb340c"></script>
+    <script src="../_static/documentation_options.js?v=a900ef02"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -537,6 +537,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unique identifier for the controller instance.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_io</span><span class="p">:</span> <span class="n">IOServer</span> <span class="o">|</span> <span class="n">IODevice</span> <span class="o">|</span> <span class="n">IOSlave</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The I/O object referenced by the CATio controller.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ams_address</span><span class="p">:</span> <span class="n">AmsAddress</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The AmsAdress associated with the CATio controller.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the I/O controller.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ecat_name</span> <span class="o">=</span> <span class="n">ecat_name</span>
@@ -566,6 +568,16 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">CATioControllerSymbolAttributeIO</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ads_name_map</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">CATioControllerCoEAttributeIO</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
                 <span class="p">),</span>
             <span class="p">],</span>
         <span class="p">)</span>
