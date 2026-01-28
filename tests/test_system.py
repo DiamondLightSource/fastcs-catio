@@ -99,6 +99,7 @@ async def fastcs_catio_controller(simulator_process):
     time.sleep(0.5)
 
     # Create controller instance
+    # ip = "172.23.242.40"
     # ip = "172.23.242.42"
     ip = "127.0.0.1"
     target_port = 27905
@@ -156,8 +157,13 @@ class TestFastcsCatioConnection:
 
         # Validate IO server info was retrieved
         assert hasattr(client, "ioserver"), "IO server not discovered"
-        assert client.ioserver.num_devices == 1, (
-            f"Expected 1 device, got {client.ioserver.num_devices}"
+
+        # Validate EtherCAT device count
+        # Note: num_devices from the IO server may include non-EtherCAT devices
+        # We verify the number of discovered EtherCAT devices matches expected
+        assert len(client._ecdevices) == expected_chain.device_count, (
+            f"Expected {expected_chain.device_count} EtherCAT device(s), "
+            f"got {len(client._ecdevices)}"
         )
 
         assert client.ioserver.name == expected_chain.server_info.name, (

@@ -185,14 +185,13 @@ The parser detects channel patterns in PDO names:
 
 The ESI XML files do **not** include:
 
-1. **Composite type names**: TwinCAT generates names like `"AI Standard Channel 1_TYPE"` at compile time
+1. **Composite type names**: TwinCAT generates names like `"AI Standard Channel 1_TYPE"` at compile time. Catio-terminals ignores these in favor of primitive types.
 2. **ADS index offsets**: Runtime memory layout is determined by TwinCAT
 3. **Symbol table structure**: ADS symbols are TwinCAT constructs, not EtherCAT standard
 
-These must be obtained from a live TwinCAT system or defined in `composite_types.yaml`.
+These must be obtained from a live TwinCAT system.
 
 ## Related Documentation
 
 - [Terminal Definitions](../explanations/terminal-definitions.md) - YAML file structure
-- [Composite Types](../explanations/composite-types.md) - TwinCAT type generation
 - [catio-terminals README](https://github.com/DiamondLightSource/fastcs-catio/tree/main/src/catio_terminals) - Tool usage

@@ -1,8 +1,11 @@
 """Beckhoff terminal client - simplified facade over XML cache and parser modules."""
 
+from __future__ import annotations
+
 import logging
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from catio_terminals.models import TerminalType
 from catio_terminals.xml_cache import BeckhoffTerminalInfo, XmlCache
@@ -11,6 +14,9 @@ from catio_terminals.xml_parser import (
     parse_terminal_catalog,
     parse_terminal_details,
 )
+
+if TYPE_CHECKING:
+    from catio_terminals.models import CompositeType
 
 logger = logging.getLogger(__name__)
 
@@ -256,7 +262,7 @@ class BeckhoffClient:
         xml_content: str,
         terminal_id: str,
         group_type: str | None = None,
-    ) -> TerminalType:
+    ) -> tuple[TerminalType, dict[str, CompositeType]]:
         """Parse terminal XML and create TerminalType.
 
         Args:
@@ -265,14 +271,16 @@ class BeckhoffClient:
             group_type: Optional terminal group type
 
         Returns:
-            TerminalType instance
+            Tuple of (TerminalType instance, dict of composite types)
         """
         result = parse_terminal_details(xml_content, terminal_id, group_type)
         if result is None:
             return create_default_terminal(
                 terminal_id, f"Terminal {terminal_id}", group_type
-            )
-        return result
+            ), {}
+        # Unpack tuple - parse_terminal_details returns (TerminalType, composite_types)
+        terminal, composite_types = result
+        return terminal, composite_types
 
     def create_default_terminal(
         self,

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
-from catio_terminals.models import SymbolNode, TerminalType
+from catio_terminals.models import CompositeType, SymbolNode, TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
-from catio_terminals.utils import to_pascal_case
+from catio_terminals.utils import to_snake_case
 
 if TYPE_CHECKING:
     from catio_terminals.ui_app import TerminalEditorApp
@@ -101,12 +101,16 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
 def _build_symbol_tree_data(
     terminal_id: str,
     terminal: TerminalType,
+    composite_types: dict[str, CompositeType] | None = None,
+    active_indices: set[int] | None = None,
 ) -> list[dict[str, Any]]:
     """Build symbol tree showing primitive symbols with checkboxes.
 
     Args:
         terminal_id: Terminal ID for generating unique node IDs
         terminal: Terminal instance containing symbol_nodes
+        composite_types: Optional dict of composite types for bit field expansion
+        active_indices: Optional set of symbol indices to include (for PDO groups)
 
     Returns:
         List of tree node dictionaries for ui.tree
@@ -114,7 +118,12 @@ def _build_symbol_tree_data(
     symbol_tree_data: list[dict[str, Any]] = []
 
     for idx, symbol in enumerate(terminal.symbol_nodes):
-        symbol_tree_data.append(_build_symbol_node(terminal_id, idx, symbol))
+        # Skip symbols not in the active PDO group
+        if active_indices is not None and idx not in active_indices:
+            continue
+        symbol_tree_data.append(
+            _build_symbol_node(terminal_id, idx, symbol, composite_types)
+        )
 
     return symbol_tree_data
 
@@ -123,6 +132,7 @@ def _build_symbol_node(
     terminal_id: str,
     symbol_idx: int,
     symbol: SymbolNode,
+    composite_types: dict[str, CompositeType] | None = None,
 ) -> dict[str, Any]:
     """Build a tree node for a primitive symbol.
 
@@ -130,12 +140,37 @@ def _build_symbol_node(
         terminal_id: Terminal ID for generating unique node IDs
         symbol_idx: Index of the symbol in terminal.symbol_nodes
         symbol: SymbolNode instance
+        composite_types: Optional dict of composite types for bit field expansion
 
     Returns:
         Tree node dictionary for ui.tree
     """
     access = TerminalService.get_symbol_access(symbol.index_group)
-    pascal_name = to_pascal_case(symbol.name_template)
+    snake_name = to_snake_case(symbol.name_template)
+
+    # Check if the symbol type is a composite type with bit fields
+    composite_type = composite_types.get(symbol.type_name) if composite_types else None
+    has_bit_fields = composite_type and composite_type.bit_fields
+
+    # Build the type node - make it expandable if it has bit fields
+    type_node: dict[str, Any] = {
+        "id": f"{terminal_id}_sym{symbol_idx}_type",
+        "label": f"Type: {symbol.type_name}",
+        "icon": "code",
+    }
+
+    if has_bit_fields:
+        # Add bit fields as children of the type node
+        assert composite_type is not None  # guaranteed by has_bit_fields check
+        bit_field_children = [
+            {
+                "id": f"{terminal_id}_sym{symbol_idx}_bit{bf.bit}",
+                "label": f"Bit {bf.bit}: {bf.name}",
+                "icon": "toggle_on",
+            }
+            for bf in sorted(composite_type.bit_fields, key=lambda b: b.bit)
+        ]
+        type_node["children"] = bit_field_children
 
     symbol_children = [
         {
@@ -143,14 +178,10 @@ def _build_symbol_node(
             "label": f"Access: {access}",
             "icon": "lock" if access == "Read-only" else "edit",
         },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_type",
-            "label": f"Type: {symbol.type_name}",
-            "icon": "code",
-        },
+        type_node,
         {
             "id": f"{terminal_id}_sym{symbol_idx}_fastcs",
-            "label": f"FastCS Name: {pascal_name}",
+            "label": f"FastCS Name: {snake_name}",
             "icon": "label",
         },
         {
@@ -167,6 +198,13 @@ def _build_symbol_node(
             "id": f"{terminal_id}_sym{symbol_idx}_index",
             "label": f"Index Group: 0x{symbol.index_group:04X}",
             "icon": "tag",
+        },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_tooltip",
+            "label": f"Tooltip: {symbol.tooltip or '(none)'}",
+            "icon": "info",
+            "tooltip_idx": symbol_idx,
+            "tooltip_value": symbol.tooltip or "",
         },
     ]
 
@@ -298,8 +336,59 @@ def show_terminal_details(
 
     ui.separator().classes("my-4")
 
+    # PDO Group selector for terminals with dynamic PDOs
+    if terminal.has_dynamic_pdos:
+        with ui.card().props("flat").classes("w-full mb-4"):
+            with ui.row().classes("items-center gap-2"):
+                ui.label("PDO Configuration:").classes("text-caption text-gray-600")
+                # Build options from pdo_groups
+                group_options = {g.name: g.name for g in terminal.pdo_groups}
+                # Mark default group
+                for g in terminal.pdo_groups:
+                    if g.is_default:
+                        group_options[g.name] = f"{g.name} (default)"
+                        break
+
+                current_group = terminal.selected_pdo_group or (
+                    terminal.default_pdo_group.name
+                    if terminal.default_pdo_group
+                    else ""
+                )
+
+                def on_group_change(e):
+                    """Handle PDO group selection change."""
+                    new_group = e.value
+                    terminal.selected_pdo_group = new_group
+
+                    # Get indices for the new group
+                    active_indices = terminal.get_active_symbol_indices()
+
+                    # Update symbol selection: select symbols in active group,
+                    # deselect symbols not in active group
+                    for idx, symbol in enumerate(terminal.symbol_nodes):
+                        symbol.selected = idx in active_indices
+
+                    _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
+
+                ui.select(
+                    options=list(group_options.keys()),
+                    value=current_group,
+                    on_change=on_group_change,
+                ).classes("min-w-48")
+
+            ui.label(
+                "Terminals with dynamic PDOs have mutually exclusive configurations. "
+                "Only symbols from the selected group can be used."
+            ).classes("text-xs text-gray-400 mt-1")
+
     # Symbols section with Select All button
-    total_symbols = len(terminal.symbol_nodes)
+    active_symbol_indices = terminal.get_active_symbol_indices()
+    active_symbols = [
+        (idx, s)
+        for idx, s in enumerate(terminal.symbol_nodes)
+        if idx in active_symbol_indices
+    ]
+    total_symbols = len(active_symbols)
 
     with ui.row().classes("items-center w-full justify-between mb-2"):
         ui.label(f"Symbols ({total_symbols})").classes("text-h6")
@@ -307,18 +396,26 @@ def show_terminal_details(
         with ui.row().classes("gap-2"):
 
             def toggle_all_symbols():
-                all_selected = all(s.selected for s in terminal.symbol_nodes)
+                # Only toggle symbols in the active PDO group
+                active_indices = terminal.get_active_symbol_indices()
+                active_symbol_list = [
+                    terminal.symbol_nodes[i]
+                    for i in active_indices
+                    if i < len(terminal.symbol_nodes)
+                ]
+                all_selected = all(s.selected for s in active_symbol_list)
                 new_value = not all_selected
 
-                for symbol in terminal.symbol_nodes:
-                    symbol.selected = new_value
+                for idx in active_indices:
+                    if idx < len(terminal.symbol_nodes):
+                        terminal.symbol_nodes[idx].selected = new_value
 
                 _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
 
-            # Determine button label based on current state
+            # Determine button label based on current state (only active symbols)
             all_symbols_selected = (
-                all(s.selected for s in terminal.symbol_nodes)
-                if terminal.symbol_nodes
+                all(terminal.symbol_nodes[i].selected for i in active_symbol_indices)
+                if active_symbols
                 else True
             )
             symbol_btn_label = "Deselect All" if all_symbols_selected else "Select All"
@@ -328,8 +425,11 @@ def show_terminal_details(
                 on_click=toggle_all_symbols,
             ).props("flat dense")
 
-    # Build symbol tree data (primitive symbols with checkboxes)
-    symbol_tree_data = _build_symbol_tree_data(terminal_id, terminal)
+    # Build symbol tree data (only for active PDO group)
+    composite_types = app.config.composite_types if app.config else None
+    symbol_tree_data = _build_symbol_tree_data(
+        terminal_id, terminal, composite_types, active_symbol_indices
+    )
 
     if symbol_tree_data:
         with ui.card().props("flat").classes("w-full"):
@@ -359,11 +459,24 @@ def show_terminal_details(
 
                 return toggle
 
-            # Add custom slot to include checkbox for symbols
+            def make_tooltip_handler(symbol_idx: int):
+                """Handler for updating a symbol's tooltip."""
+
+                def update_tooltip(e):
+                    new_value = e.args if isinstance(e.args, str) else str(e.args)
+                    # Set to None if empty string
+                    terminal.symbol_nodes[symbol_idx].tooltip = (
+                        new_value if new_value else None
+                    )
+                    _mark_changed(app, lambda: None)
+
+                return update_tooltip
+
+            # Add custom slot to include checkbox for symbols and editable tooltip
             tree.add_slot(
                 "default-header",
                 r"""
-                <div class="row items-center">
+                <div class="row items-center full-width">
                     <q-checkbox
                         v-if="props.node.symbol_idx !== undefined"
                         :model-value="props.node.selected"
@@ -382,7 +495,28 @@ def show_terminal_details(
                         size="xs"
                         class="q-mr-xs"
                     />
-                    <span>{{ props.node.label }}</span>
+                    <template v-if="props.node.tooltip_idx !== undefined">
+                        <span class="q-mr-sm">Tooltip:</span>
+                        <q-input
+                            :model-value="props.node.tooltip_value"
+                            @click.stop="() => {}"
+                            @keydown.stop="() => {}"
+                            @keyup.stop="() => {}"
+                            @keypress.stop="() => {}"
+                            @update:model-value="(val) => {
+                                props.node.tooltip_value = val;
+                                $parent.$emit(
+                                    'update-tooltip-' + props.node.tooltip_idx, val
+                                );
+                            }"
+                            dense
+                            borderless
+                            placeholder="(none)"
+                            class="tooltip-input col-grow"
+                            input-class="text-white"
+                        />
+                    </template>
+                    <span v-else>{{ props.node.label }}</span>
                 </div>
                 """,
             )
@@ -392,6 +526,8 @@ def show_terminal_details(
                 if "symbol_idx" in node:
                     idx = node["symbol_idx"]
                     tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
+                    # Also connect tooltip handler for this symbol
+                    tree.on(f"update-tooltip-{idx}", make_tooltip_handler(idx))
 
     # Display Runtime Symbols section
     _show_runtime_symbols(app, terminal_id, terminal)
@@ -400,9 +536,19 @@ def show_terminal_details(
     if terminal.coe_objects:
         ui.separator().classes("my-4")
 
+        # TEMP WORKAROUND: Limit CoE objects displayed in GUI for performance
+        # Terminals like ELM3704-0000 have 200+ CoE objects which makes the GUI sluggish
+        max_coe_display = 60
+        coe_count = len(terminal.coe_objects)
+        coe_truncated = coe_count > max_coe_display
+        coe_to_display = terminal.coe_objects[:max_coe_display]
+
         # CoE Objects section with Select All button
         with ui.row().classes("items-center w-full justify-between mb-2"):
-            ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6")
+            coe_label = f"CoE Objects ({coe_count})"
+            if coe_truncated:
+                coe_label += f" - showing first {max_coe_display}"
+            ui.label(coe_label).classes("text-h6")
 
             def toggle_all_coe():
                 all_selected = all(c.selected for c in terminal.coe_objects)
@@ -422,7 +568,7 @@ def show_terminal_details(
 
         # Build CoE tree data with checkboxes
         coe_tree_data: list[dict[str, Any]] = []
-        for idx, coe_obj in enumerate(terminal.coe_objects):
+        for idx, coe_obj in enumerate(coe_to_display):
             # Map access flags to readable text
             access_map = {
                 "ro": "Read-only",

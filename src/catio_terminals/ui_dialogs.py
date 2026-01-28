@@ -440,43 +440,36 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                     term for term in terminals if term.group_type == selected_group
                 ]
 
-            # Separate terminals into already added and available
-            already_added = [
-                term
-                for term in terminals
-                if TerminalService.is_terminal_already_added(app.config, term)
-            ]
-            filtered_terminals = [
+            # Check which terminals are already added
+            available_terminals = [
                 term
                 for term in terminals
                 if not TerminalService.is_terminal_already_added(app.config, term)
             ]
 
-            # Update tracked list for "Add All" button
-            filtered_terminals_list = filtered_terminals.copy()
+            # Update tracked list for "Add All" button (only available ones)
+            filtered_terminals_list = available_terminals.copy()
 
             # Update status label
             total_matching = len(terminals)
-            already_added_count = len(already_added)
-            available_count = len(filtered_terminals)
+            already_added_count = total_matching - len(available_terminals)
+            available_count = len(available_terminals)
             status_label.text = (
-                f"Showing {available_count} available terminal(s) "
-                f"({already_added_count} already added, {total_matching} total matches)"
+                f"Showing {total_matching} terminal(s) "
+                f"({already_added_count} already added, {available_count} available)"
             )
 
             # Update Add All button visibility
             add_all_btn.visible = available_count > 0
 
             with results_container:
-                if not filtered_terminals:
-                    if terminals:
-                        ui.label("All matching terminals are already added").classes(
-                            "text-gray-500"
-                        )
-                    else:
-                        ui.label("No terminals found").classes("text-gray-500")
+                if not terminals:
+                    ui.label("No terminals found").classes("text-gray-500")
                 else:
-                    for term in filtered_terminals:
+                    for term in terminals:
+                        is_already_added = TerminalService.is_terminal_already_added(
+                            app.config, term
+                        )
                         # Use cleaned description, matching Terminal Types list format
                         description = (
                             term.description.replace("\n", " ").strip()
@@ -487,27 +480,28 @@ async def show_add_terminal_dialog(app: "TerminalEditorApp") -> None:
                         group_label = GROUP_TYPE_LABELS.get(
                             term.group_type, term.group_type
                         )
-                        with (
-                            ui.row()
-                            .classes(
-                                "w-full items-center gap-2 p-2 hover:bg-gray-700"
-                                " rounded"
-                            )
-                            .style("min-width: 0")
-                        ):
+                        row_classes = "w-full items-center gap-2 p-2 rounded"
+                        if is_already_added:
+                            row_classes += " opacity-60"
+                        else:
+                            row_classes += " hover:bg-gray-700"
+                        with ui.row().classes(row_classes).style("min-width: 0"):
                             with ui.column().classes("flex-1").style("min-width: 0"):
                                 ui.label(f"{term.terminal_id} - {description}").classes(
                                     "overflow-hidden text-ellipsis whitespace-nowrap"
                                 )
-                                ui.label(f"Type: {group_label}").classes(
-                                    "text-xs text-gray-400"
-                                )
-                            ui.button(
+                                label_text = f"Type: {group_label}"
+                                if is_already_added:
+                                    label_text += " (already added)"
+                                ui.label(label_text).classes("text-xs text-gray-400")
+                            add_btn = ui.button(
                                 "Add",
                                 on_click=lambda t=term: _add_terminal_and_refresh(
                                     app, t, search_terminals
                                 ),
                             ).props("color=primary")
+                            if is_already_added:
+                                add_btn.disable()
 
         # Trigger search when group filter changes or search input changes
         group_filter.on("update:model-value", search_terminals)

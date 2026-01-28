@@ -166,14 +166,30 @@ async def _cleanup_single_yaml(
     await file_service.merge_xml_data(config, beckhoff_client, prefer_xml=True)
 
     # Select ALL symbols, but no CoE objects
+    # For dynamic PDO terminals, only select symbols in the default group
     for terminal_id, terminal in config.terminal_types.items():
         selected_count = 0
-        for symbol in terminal.symbol_nodes:
-            symbol.selected = True
-            selected_count += 1
+
+        if terminal.has_dynamic_pdos:
+            # Get the active (or default) group's symbol indices
+            active_indices = terminal.get_active_symbol_indices()
+            for idx, symbol in enumerate(terminal.symbol_nodes):
+                symbol.selected = idx in active_indices
+                if symbol.selected:
+                    selected_count += 1
+            group_name = terminal.selected_pdo_group or "default"
+            print(
+                f"  {terminal_id}: selected {selected_count} symbols "
+                f"(PDO group: {group_name}), 0 CoE"
+            )
+        else:
+            for symbol in terminal.symbol_nodes:
+                symbol.selected = True
+                selected_count += 1
+            print(f"  {terminal_id}: selected {selected_count} symbols, 0 CoE")
+
         for coe in terminal.coe_objects:
             coe.selected = False
-        print(f"  {terminal_id}: selected {selected_count} symbols, 0 CoE")
 
     # Save the cleaned file
     config.to_yaml(yaml_path)

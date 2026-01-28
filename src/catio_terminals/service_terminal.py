@@ -107,9 +107,13 @@ class TerminalService:
 
             if xml_content:
                 try:
-                    terminal = beckhoff_client.parse_terminal_xml(
+                    terminal, composite_types = beckhoff_client.parse_terminal_xml(
                         xml_content, terminal_info.terminal_id, terminal_info.group_type
                     )
+                    # Merge composite types into config
+                    for type_name, comp_type in composite_types.items():
+                        if type_name not in config.composite_types:
+                            config.composite_types[type_name] = comp_type
                     # Yield control after parsing
                     await asyncio.sleep(0)
                 except ValueError:
@@ -129,9 +133,6 @@ class TerminalService:
             # Mark all symbols as selected for new terminals
             for sym in terminal.symbol_nodes:
                 sym.selected = True
-
-        config.add_terminal(terminal_info.terminal_id, terminal)
-        return terminal
 
         config.add_terminal(terminal_info.terminal_id, terminal)
         return terminal

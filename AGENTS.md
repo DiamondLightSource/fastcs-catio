@@ -174,6 +174,17 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - [ ] No commented-out code or debug statements
 - [ ] No hardcoded credentials
 
+## Documentation
+
+- **ALWAYS** add new documentation files to the appropriate index:
+  - Explanations → `docs/explanations.md` toctree
+  - How-to guides → `docs/how-to.md` toctree
+  - Reference → `docs/reference.md` toctree
+  - Tutorials → `docs/tutorials.md` toctree
+- **NEVER** embed Python code from the repository in documentation files
+  - Instead, reference the source file and briefly describe what the classes/functions provide
+  - Example: "The data models are defined in [models.py](src/catio_terminals/models.py): `PdoGroup` stores the group name and PDO indices, `TerminalType` includes helper properties for PDO group selection."
+
 ## Domain Knowledge
 
 This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protocol. Key concepts:
@@ -190,13 +201,17 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
   - Cached at `~/.cache/catio_terminals/beckhoff_xml/`
   - Use `catio-terminals update-cache` to download/refresh
 
-- **Composite Types**: TwinCAT BIGTYPE structures (ads_type=65) that group primitive fields:
-  - Defined in `src/catio_terminals/config/composite_types.yaml`
-  - Example: `"AI Standard Channel 1_TYPE"` contains Status (UINT) + Value (INT)
-  - Used by simulator for accurate symbol table responses
-  - Used by FastCS generator to create controller attributes
-
 - **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals update-cache` to fetch Beckhoff XML definitions, then use `catio-terminals edit [filename]` to edit files with the GUI.
+
+- **Terminal YAML Files Are Generated**: **NEVER manually edit** terminal YAML files in `src/catio_terminals/terminals/`. These files are generated from Beckhoff XML by the code in `src/catio_terminals/xml_parser.py` and `src/catio_terminals/xml_pdo.py`. If the YAML has incorrect values:
+  1. Fix the XML parsing code that generates the YAML
+  2. Regenerate the YAML using `uv run catio-terminals clean-yaml <file>`
+  3. Manual edits will be lost on next regeneration
+
+  **Special cases:**
+  - Index groups default to 0xF031/0xF021 for standard I/O
+  - Counter terminals (group_type="Measuring") use 0xF030/0xF020 instead
+  - Group-specific logic is in `process_pdo_entries()` in `xml_pdo.py`
 
 ## Agent Skills
 
@@ -214,9 +229,9 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 - "Help me create a terminal YAML from XML"
 
 **Skill context:** Read these documents:
-- [docs/reference/beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) - ESI XML schema (Device, TxPdo, RxPdo, Entry, CoE objects), XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.), what information is NOT in XML (composite type names, ADS offsets)
-- [docs/explanations/terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
-- [src/catio_terminals/config/composite_types.yaml](src/catio_terminals/config/composite_types.yaml) - Composite type definitions (members, offsets, sizes)
+- [beckhoff-xml-format.md](docs/reference/beckhoff-xml-format.md) - ESI XML schema (Device, TxPdo, RxPdo, Entry, CoE objects), XML file naming conventions (terminals grouped by series: EL31xx.xml, EL32xx.xml, etc.), what information is NOT in XML (composite type names, ADS offsets)
+- [terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) - Terminal YAML structure (identity, symbol_nodes, coe_objects), SymbolNode fields, computed properties, channel templating
+- [composite-types.md](docs/explanations/composite-types.md) - Composite type definitions
 - XML files cached at `~/.cache/catio_terminals/beckhoff_xml/` - Actual Beckhoff ESI files grouped by series
 
 **Key mappings from XML to YAML:**
@@ -225,6 +240,81 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 - `TxPdo/Entry` → `symbol_nodes[]` (inputs)
 - `RxPdo/Entry` → `symbol_nodes[]` (outputs)
 - `Profile/Dictionary/Objects` → `coe_objects[]`
+
+---
+
+### ADS Simulator Testing Skill
+
+**Activation prompts:**
+- "Load simulator testing skill"
+- "Help me test the ADS simulator"
+- "How do I check simulator symbol count"
+- "Test simulator against hardware"
+- "Debug simulator symbols"
+
+**Skill context:** Testing and validating the ADS simulator in `tests/ads_sim/`
+
+**Key patterns:**
+
+1. **Import the simulator correctly:**
+   ```python
+   import sys
+   sys.path.insert(0, 'tests')  # Required for imports to work
+   from ads_sim.ethercat_chain import EtherCATChain
+   from pathlib import Path
+   ```
+
+2. **Instantiate and load configuration:**
+   ```python
+   chain = EtherCATChain()  # Create instance first
+   chain.load_config(Path('tests/ads_sim/server_config.yaml'))  # Instance method, not class method
+   ```
+
+3. **Check symbol counts:**
+   ```python
+   print(f'Total symbols: {chain.total_symbol_count}')
+   print(f'Hardware count: 550')
+   print(f'Difference: {chain.total_symbol_count - 550}')
+   ```
+
+4. **Inspect devices and slaves:**
+   ```python
+   for dev_id, device in chain.devices.items():
+       print(f'Device {dev_id}: {device.name}')
+       for slave in device.slaves:
+           print(f'  {slave.name} ({slave.type})')
+           symbols = slave.get_symbols(dev_id, chain.runtime_symbols)
+           print(f'    Symbols: {len(symbols)}')
+   ```
+
+5. **Debug specific terminal symbols (useful for PDO filtering issues):**
+   ```python
+   # Check which symbols are generated for a specific terminal type
+   for dev_id, device in chain.devices.items():
+       for slave in device.slaves:
+           if 'EL1502' in slave.type:  # Replace with terminal type to debug
+               symbols = slave.get_symbols(dev_id, chain.runtime_symbols)
+               print(f'{slave.name} ({slave.type}): {len(symbols)} symbols')
+               for sym in symbols:
+                   print(f'  - {sym["name"]}')
+   ```
+
+**Common gotchas:**
+- ❌ `from ads_sim...` without adding 'tests' to path → ModuleNotFoundError
+- ❌ `EtherCATChain.load_config(path)` → TypeError (it's an instance method)
+- ❌ `EtherCATChain.from_config(path)` → AttributeError (method doesn't exist)
+- ✅ Create instance first, then call `load_config()` on it
+
+**Testing against hardware:**
+- Hardware output is in `hardware-output.txy` (550 symbols)
+- Simulator output can be generated: `./tests/diagnose_hardware.py --ip 127.0.0.1 --dump-symbols`
+- Compare with: `diff simulator-output.txy hardware-output.txy`
+
+**Related files:**
+- `tests/ads_sim/ethercat_chain.py` - Chain and device/slave models
+- `tests/ads_sim/server.py` - ADS protocol server
+- `tests/ads_sim/server_config.yaml` - Device/slave configuration
+- `tests/test_system.py` - Integration tests against simulator
 
 ---
 
