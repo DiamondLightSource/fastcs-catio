@@ -25,9 +25,18 @@ import yaml
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add tests to path for simulator imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 from fastcs_catio.client import AsyncioADSClient, get_remote_address
 from fastcs_catio.devices import AdsSymbol, IODevice, IOServer
+
+try:
+    from ads_sim.ethercat_chain import EtherCATChain
+
+    SIMULATOR_AVAILABLE = True
+except ImportError:
+    SIMULATOR_AVAILABLE = False
 
 
 def generate_yaml_config(
@@ -131,6 +140,7 @@ async def diagnose_hardware(
     target_port: int = 27905,
     output_yaml: str | None = None,
     dump_symbols: bool = False,
+    compare_file: str | None = None,
 ) -> None:
     """Connect to hardware and enumerate all devices and slaves.
 
@@ -139,6 +149,7 @@ async def diagnose_hardware(
         target_port: Target AMS port (default 27905).
         output_yaml: Optional path to write YAML configuration file.
         dump_symbols: Whether to dump all introspected symbols.
+        compare_file: Optional simulator config YAML to compare against hardware.
     """
     logging.info(f"Connecting to {ip}:{target_port}...")
 
@@ -158,8 +169,9 @@ async def diagnose_hardware(
         # Introspect the IO server to discover devices
         await client.introspect_io_server()
 
-        # Load symbols if requested (must be done after introspection)
-        if dump_symbols:
+        # Load symbols if requested or needed for comparison
+        # (must be done after introspection)
+        if dump_symbols or compare_file:
             logging.info("Loading symbols from device...")
             await client.get_all_symbols()
 
@@ -198,10 +210,108 @@ async def diagnose_hardware(
         print("=" * 70)
         print(f"  Total Devices: {client.ioserver.num_devices}")
         print(f"  Total Slaves: {total_slaves}")
-        print(f"  Total Symbols: {sum(len(s) for s in client._ecsymbols.values())}")
+        hardware_symbol_count = sum(len(s) for s in client._ecsymbols.values())
+        print(f"  Total Symbols: {hardware_symbol_count}")
 
         # Print FastCS IO map entries
         print(f"\n  FastCS IO Map Entries: {len(client.fastcs_io_map)}")
+
+        # Compare with simulator if requested
+        if compare_file:
+            if not SIMULATOR_AVAILABLE:
+                logging.error("Simulator not available - cannot compare")
+            else:
+                compare_path = Path(compare_file)
+                if not compare_path.exists():
+                    logging.error(f"Compare file not found: {compare_path}")
+                else:
+                    print("\n" + "=" * 70)
+                    print("SIMULATOR COMPARISON")
+                    print("=" * 70)
+                    print(f"  Config File: {compare_path}")
+
+                    try:
+                        # Load simulator config
+                        chain = EtherCATChain()
+                        chain.load_config(compare_path)
+
+                        # Compare counts
+                        print(f"\n  Hardware Symbols: {hardware_symbol_count}")
+                        print(f"  Simulator Total:  {chain.total_symbol_count}")
+
+                        # Break down simulator symbols
+                        device_symbols = 0
+                        for dev_id, device in chain.devices.items():
+                            for slave in device.slaves:
+                                symbols = slave.get_symbols(
+                                    dev_id, chain.runtime_symbols
+                                )
+                                device_symbols += len(symbols)
+
+                        runtime_count = chain.total_symbol_count - device_symbols
+                        print(f"    - Device Symbols:  {device_symbols}")
+                        print(f"    - Runtime Symbols: {runtime_count}")
+
+                        diff = hardware_symbol_count - device_symbols
+                        print(f"\n  Difference: {diff:+d}")
+
+                        if diff == 0:
+                            print("  ✓ Hardware matches simulator device symbols")
+                        elif abs(diff) <= 5:
+                            print(f"  ⚠ Minor difference ({abs(diff)} symbols)")
+                        else:
+                            print(f"  ✗ Significant difference ({abs(diff)} symbols)")
+
+                        # Show symbol diff if there's a difference
+                        if diff != 0:
+                            # Collect hardware symbol names
+                            hardware_names = set()
+                            for device_symbols in client._ecsymbols.values():
+                                for sym in device_symbols:
+                                    hardware_names.add(sym.name)
+
+                            # Collect simulator symbol names
+                            # (all symbols it would generate)
+                            simulator_names = set()
+                            for _dev_id, device in chain.devices.items():
+                                # Get all symbols including device-level runtime symbols
+                                all_symbols = device.get_all_symbols(
+                                    chain.runtime_symbols
+                                )
+                                for sym in all_symbols:
+                                    simulator_names.add(sym["name"])
+
+                            # Find differences
+                            only_in_hardware = hardware_names - simulator_names
+                            only_in_simulator = simulator_names - hardware_names
+
+                            if only_in_hardware:
+                                print(
+                                    "\n  Symbols only in hardware "
+                                    f"({len(only_in_hardware)}):"
+                                )
+                                for name in sorted(only_in_hardware)[:10]:
+                                    print(f"    + {name}")
+                                if len(only_in_hardware) > 10:
+                                    print(
+                                        f"    ... and {len(only_in_hardware) - 10} more"
+                                    )
+
+                            if only_in_simulator:
+                                print(
+                                    "\n  Symbols only in simulator "
+                                    f"({len(only_in_simulator)}):"
+                                )
+                                for name in sorted(only_in_simulator)[:10]:
+                                    print(f"    - {name}")
+                                if len(only_in_simulator) > 10:
+                                    more = len(only_in_simulator) - 10
+                                    print(f"    ... and {more} more")
+                    except Exception as e:
+                        logging.error(f"Failed to compare with simulator: {e}")
+                        import traceback
+
+                        traceback.print_exc()
 
         # Dump symbols if requested
         if dump_symbols:
@@ -263,6 +373,15 @@ def main() -> None:
         help="Dump all introspected symbols",
     )
     parser.add_argument(
+        "--compare",
+        type=str,
+        default=None,
+        help=(
+            "Simulator config YAML to compare against hardware "
+            "(e.g., tests/ads_sim/server_config.yaml)"
+        ),
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable debug logging",
@@ -281,6 +400,7 @@ def main() -> None:
             args.port,
             output_yaml=args.output,
             dump_symbols=args.dump_symbols,
+            compare_file=args.compare,
         )
     )
 
