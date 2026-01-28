@@ -45,6 +45,8 @@ class FileService:
         all symbols and CoE objects, marking those in YAML as selected=True
         and those only in XML as selected=False.
 
+        Also merges composite types from XML into the config.
+
         Args:
             config: Configuration to enhance with XML data
             beckhoff_client: Beckhoff client for fetching XML
@@ -57,6 +59,7 @@ class FileService:
                 terminal_id,
                 terminal,
                 beckhoff_client,
+                config,  # Pass config for composite type merging
                 prefer_xml=prefer_xml,
             )
             if not success:
@@ -73,6 +76,7 @@ class FileService:
         terminal_id: str,
         terminal: "TerminalType",
         beckhoff_client: BeckhoffClient,
+        config: TerminalConfig | None = None,
         prefer_xml: bool = False,
     ) -> bool:
         """Merge XML data for a single terminal.
@@ -81,10 +85,13 @@ class FileService:
         and CoE objects, marking those in YAML as selected=True and XML-only
         as selected=False.
 
+        Also merges composite types into the config if provided.
+
         Args:
             terminal_id: Terminal ID (e.g., "EL3004")
             terminal: Terminal instance to merge into
             beckhoff_client: Beckhoff client for fetching XML
+            config: Optional config to merge composite types into
             prefer_xml: If True, use XML symbol data instead of YAML when both exist
 
         Returns:
@@ -100,9 +107,15 @@ class FileService:
 
         try:
             # Parse XML to get full terminal definition (primitive symbols)
-            xml_terminal = beckhoff_client.parse_terminal_xml(
+            xml_terminal, composite_types = beckhoff_client.parse_terminal_xml(
                 xml_content, terminal_id, terminal.group_type
             )
+
+            # Merge composite types into the config
+            if config is not None and composite_types:
+                for type_name, comp_type in composite_types.items():
+                    if type_name not in config.composite_types:
+                        config.composite_types[type_name] = comp_type
 
             # Merge symbols: Create lookup of YAML symbols by name template
             yaml_symbol_map = {sym.name_template: sym for sym in terminal.symbol_nodes}
