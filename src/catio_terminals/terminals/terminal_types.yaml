@@ -4,7 +4,7 @@
 
 composite_types:
   InputBits:
-    description: 'Bit fields: Input'
+    description: "Bit fields: Input"
     ads_type: 65
     size: 1
     members: []
@@ -12,8 +12,9 @@ composite_types:
       - name: Input
         bit: 0
   Output functions enabled_6Bits:
-    description: 'Bit fields: Output functions enabled, Status of output, Set counter
-      done, Counter inhibited, Status of input clock, TxPDO Toggle'
+    description:
+      "Bit fields: Output functions enabled, Status of output, Set counter
+      done, Counter inhibited, Status of input clock, TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -31,8 +32,9 @@ composite_types:
       - name: TxPDO Toggle
         bit: 5
   Output functions enabled_7Bits:
-    description: 'Bit fields: Output functions enabled, Status of output, Set counter
-      done, Counter inhibited, Status of input UD, Status of input clock, TxPDO Toggle'
+    description:
+      "Bit fields: Output functions enabled, Status of output, Set counter
+      done, Counter inhibited, Status of input UD, Status of input clock, TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -52,8 +54,9 @@ composite_types:
       - name: TxPDO Toggle
         bit: 6
   Enable output functions_4Bits:
-    description: 'Bit fields: Enable output functions, Set output, Set counter, Inhibit
-      counter'
+    description:
+      "Bit fields: Enable output functions, Set output, Set counter, Inhibit
+      counter"
     ads_type: 65
     size: 1
     members: []
@@ -67,7 +70,7 @@ composite_types:
       - name: Inhibit counter
         bit: 3
   OutputBits:
-    description: 'Bit fields: Output'
+    description: "Bit fields: Output"
     ads_type: 65
     size: 1
     members: []
@@ -75,8 +78,9 @@ composite_types:
       - name: Output
         bit: 0
   Status__Ready to activate_6Bits:
-    description: 'Bit fields: Status__Ready to activate, Status__Output active, Status__Warning,
-      Status__Error, Status__Digital input, Status__TxPDO Toggle'
+    description:
+      "Bit fields: Status__Ready to activate, Status__Output active, Status__Warning,
+      Status__Error, Status__Digital input, Status__TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -94,7 +98,7 @@ composite_types:
       - name: Status__TxPDO Toggle
         bit: 5
   Control__Output_3Bits:
-    description: 'Bit fields: Control__Output, Control__Input trigger enable, Control__Reset'
+    description: "Bit fields: Control__Output, Control__Input trigger enable, Control__Reset"
     ads_type: 65
     size: 1
     members: []
@@ -106,8 +110,9 @@ composite_types:
       - name: Control__Reset
         bit: 2
   Status__Underrange_6Bits:
-    description: 'Bit fields: Status__Underrange, Status__Overrange, Status__Error,
-      Status__Sync error, Status__TxPDO State, Status__TxPDO Toggle'
+    description:
+      "Bit fields: Status__Underrange, Status__Overrange, Status__Error,
+      Status__Sync error, Status__TxPDO State, Status__TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -125,7 +130,7 @@ composite_types:
       - name: Status__TxPDO Toggle
         bit: 5
   Underrange_5Bits:
-    description: 'Bit fields: Underrange, Overrange, Error, TxPDO State, TxPDO Toggle'
+    description: "Bit fields: Underrange, Overrange, Error, TxPDO State, TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -141,9 +146,10 @@ composite_types:
       - name: TxPDO Toggle
         bit: 4
   Status__Overrange_7Bits:
-    description: 'Bit fields: Status__Overrange, Status__Data invalid, Status__Error,
+    description:
+      "Bit fields: Status__Overrange, Status__Data invalid, Status__Error,
       Status__Calibration in progress, Status__Steady state, Status__Sync error, Status__TxPDO
-      Toggle'
+      Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -163,7 +169,7 @@ composite_types:
       - name: Status__TxPDO Toggle
         bit: 6
   Underrange_4Bits:
-    description: 'Bit fields: Underrange, Overrange, Error, TxPDO Toggle'
+    description: "Bit fields: Underrange, Overrange, Error, TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -177,8 +183,9 @@ composite_types:
       - name: TxPDO Toggle
         bit: 3
   Ctrl__Start calibration_5Bits:
-    description: 'Bit fields: Ctrl__Start calibration, Ctrl__Disable calibration,
-      Ctrl__Input freeze, Ctrl__Sample mode, Ctrl__Tara'
+    description:
+      "Bit fields: Ctrl__Start calibration, Ctrl__Disable calibration,
+      Ctrl__Input freeze, Ctrl__Sample mode, Ctrl__Tara"
     ads_type: 65
     size: 1
     members: []
@@ -194,7 +201,7 @@ composite_types:
       - name: Ctrl__Tara
         bit: 4
   UndervoltageBits:
-    description: 'Bit fields: Undervoltage'
+    description: "Bit fields: Undervoltage"
     ads_type: 65
     size: 1
     members: []
@@ -202,7 +209,7 @@ composite_types:
       - name: Undervoltage
         bit: 0
   Power OK_2Bits:
-    description: 'Bit fields: Power OK, Overload'
+    description: "Bit fields: Power OK, Overload"
     ads_type: 65
     size: 1
     members: []
@@ -212,8 +219,9 @@ composite_types:
       - name: Overload
         bit: 1
   Status__Error_5Bits:
-    description: 'Bit fields: Status__Error, Status__Underrange, Status__Overrange,
-      Status__Diag, Status__TxPDO State'
+    description:
+      "Bit fields: Status__Error, Status__Underrange, Status__Overrange,
+      Status__Diag, Status__TxPDO State"
     ads_type: 65
     size: 1
     members: []
@@ -229,8 +237,9 @@ composite_types:
       - name: Status__TxPDO State
         bit: 4
   Control__Integrator Reset_3Bits:
-    description: 'Bit fields: Control__Integrator Reset, Control__Peak Hold Reset,
-      Control__Invalidate'
+    description:
+      "Bit fields: Control__Integrator Reset, Control__Peak Hold Reset,
+      Control__Invalidate"
     ads_type: 65
     size: 1
     members: []
@@ -242,8 +251,9 @@ composite_types:
       - name: Control__Invalidate
         bit: 2
   Status__Underrange_5Bits:
-    description: 'Bit fields: Status__Underrange, Status__Overrange, Status__Error,
-      Status__TxPDO State, Status__TxPDO Toggle'
+    description:
+      "Bit fields: Status__Underrange, Status__Overrange, Status__Error,
+      Status__TxPDO State, Status__TxPDO Toggle"
     ads_type: 65
     size: 1
     members: []
@@ -333,56 +343,56 @@ terminal_types:
       revision_number: 1245184
     symbol_nodes:
       - name_template: CNT Inputs Channel {channel}
-        index_group: 61489
+        index_group: 61488
         type_name: Output functions enabled_6Bits
         channels: 2
         access: Read-only
         fastcs_name: cnt_inputs_channel_{channel}
         selected: false
       - name_template: CNT Inputs Channel {channel}.Counter value
-        index_group: 61489
+        index_group: 61488
         type_name: UDINT
         channels: 2
         access: Read-only
         fastcs_name: cnt_inputs_channel_{channel}_counter_value
         selected: false
       - name_template: CNT Outputs Channel {channel}
-        index_group: 61473
+        index_group: 61472
         type_name: Enable output functions_4Bits
         channels: 2
         access: Read/Write
         fastcs_name: cnt_outputs_channel_{channel}
         selected: false
       - name_template: CNT Outputs Channel {channel}.Set counter value
-        index_group: 61473
+        index_group: 61472
         type_name: UDINT
         channels: 2
         access: Read/Write
         fastcs_name: cnt_outputs_channel_{channel}_set_counter_value
         selected: false
       - name_template: CNT Inputs
-        index_group: 61489
+        index_group: 61488
         type_name: Output functions enabled_7Bits
         channels: 1
         access: Read-only
         fastcs_name: cnt_inputs
         selected: true
       - name_template: CNT Inputs.Counter value
-        index_group: 61489
+        index_group: 61488
         type_name: UDINT
         channels: 1
         access: Read-only
         fastcs_name: cnt_inputs_counter_value
         selected: true
       - name_template: CNT Outputs
-        index_group: 61473
+        index_group: 61472
         type_name: Enable output functions_4Bits
         channels: 1
         access: Read/Write
         fastcs_name: cnt_outputs
         selected: true
       - name_template: CNT Outputs.Set counter value
-        index_group: 61473
+        index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read/Write
@@ -622,7 +632,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_1
-        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
+        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -630,7 +640,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_2
-        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
+        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
@@ -681,7 +691,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_1
-        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
+        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -689,7 +699,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_2
-        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
+        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
@@ -740,7 +750,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_1
-        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
+        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
         selected: true
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -748,7 +758,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_2
-        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
+        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
         selected: true
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61489
@@ -779,7 +789,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_1
-        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
+        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
         selected: true
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -787,7 +797,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_2
-        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
+        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
         selected: true
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61489
@@ -818,7 +828,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_1
-        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
+        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
         selected: true
       - name_template: TC Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -826,7 +836,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_2
-        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
+        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
         selected: true
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61489
@@ -950,7 +960,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_channel_{channel}_limit_1
-        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
+        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
         selected: true
       - name_template: AI Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -958,7 +968,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_channel_{channel}_limit_2
-        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
+        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
         selected: true
       - name_template: AI Inputs Channel {channel}.Value
         index_group: 61489
@@ -1138,7 +1148,7 @@ terminal_types:
     coe_objects: []
     group_type: PowerSupply
   ELM3704-0000:
-    description: 4Ch. Ana. Input +/-60V, +/-20mA, TC, RTD, Bridge Measuring 
+    description: 4Ch. Ana. Input +/-60V, +/-20mA, TC, RTD, Bridge Measuring
       (SG), IEPE, 24 bit, high precision
     identity:
       vendor_id: 2
@@ -1390,14 +1400,13 @@ terminal_types:
         access: Read-only
         fastcs_name: pai_samples16_100_channel_{channel}_samples
         selected: false
-      - name_template: PAI Synchronous Oversampling Channel 
+      - name_template: PAI Synchronous Oversampling Channel
           {channel}.SM-Synchron__Internal Buffer
         index_group: 61489
         type_name: UINT
         channels: 4
         access: Read-only
-        fastcs_name: 
-          pai_synchronous_oversampling_channel_{channel}_sm_synchron_internal_buffer
+        fastcs_name: pai_synchronous_oversampling_channel_{channel}_sm_synchron_internal_buffer
         selected: false
       - name_template: PAI SamplesR32 1 Channel {channel}.Samples
         index_group: 61489
@@ -1681,7 +1690,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_1
-        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
+        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -1689,7 +1698,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_2
-        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
+        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
@@ -1826,7 +1835,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_1
-        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
+        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -1834,7 +1843,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_2
-        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
+        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
         index_group: 61489

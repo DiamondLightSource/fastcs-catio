@@ -375,7 +375,7 @@ def _process_value_entry(
 
 
 def process_pdo_entries(
-    device, pdo_type: str
+    device, pdo_type: str, group_type: str | None = None
 ) -> tuple[dict, dict, dict, dict, dict[str, int]]:
     """Process PDO entries and group by channel pattern.
 
@@ -389,6 +389,7 @@ def process_pdo_entries(
     Args:
         device: lxml Device element
         pdo_type: "TxPdo" or "RxPdo"
+        group_type: Terminal group type (e.g., "DigIn", "DigOut", "Measuring")
 
     Returns:
         Tuple of (channel_groups dict, duplicate_tracker dict, bit_field_tracker dict,
@@ -401,7 +402,12 @@ def process_pdo_entries(
     channel_bit_field_map: dict = {}
     symbol_pdo_map: dict[str, int] = {}  # Maps symbol name pattern -> PDO index
 
-    default_index_group = 0xF031 if pdo_type == "TxPdo" else 0xF021
+    # Counter terminals (Measuring group) use different index groups
+    # 0xF030/0xF020 instead of the standard 0xF031/0xF021
+    if group_type == "Measuring":
+        default_index_group = 0xF030 if pdo_type == "TxPdo" else 0xF020
+    else:
+        default_index_group = 0xF031 if pdo_type == "TxPdo" else 0xF021
     is_output = pdo_type == "RxPdo"
 
     for pdo in device.findall(f".//{pdo_type}"):

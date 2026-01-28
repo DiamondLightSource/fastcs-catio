@@ -203,6 +203,16 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
 
 - **catio-terminals**: GUI editor for terminal YAML files. Use `catio-terminals update-cache` to fetch Beckhoff XML definitions, then use `catio-terminals edit [filename]` to edit files with the GUI.
 
+- **Terminal YAML Files Are Generated**: **NEVER manually edit** terminal YAML files in `src/catio_terminals/terminals/`. These files are generated from Beckhoff XML by the code in `src/catio_terminals/xml_parser.py` and `src/catio_terminals/xml_pdo.py`. If the YAML has incorrect values:
+  1. Fix the XML parsing code that generates the YAML
+  2. Regenerate the YAML using `uv run catio-terminals clean-yaml <file>`
+  3. Manual edits will be lost on next regeneration
+
+  **Special cases:**
+  - Index groups default to 0xF031/0xF021 for standard I/O
+  - Counter terminals (group_type="Measuring") use 0xF030/0xF020 instead
+  - Group-specific logic is in `process_pdo_entries()` in `xml_pdo.py`
+
 ## Agent Skills
 
 Skills are specialized knowledge that can be loaded on demand. Use these prompts to activate a skill:

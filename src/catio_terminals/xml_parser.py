@@ -142,10 +142,10 @@ def parse_terminal_details(
 
         # Process PDOs
         tx_channels, tx_dups, tx_bits, tx_bf_map, tx_pdo_map = process_pdo_entries(
-            device, "TxPdo"
+            device, "TxPdo", group_type
         )
         rx_channels, rx_dups, rx_bits, rx_bf_map, rx_pdo_map = process_pdo_entries(
-            device, "RxPdo"
+            device, "RxPdo", group_type
         )
 
         # Merge channel groups
