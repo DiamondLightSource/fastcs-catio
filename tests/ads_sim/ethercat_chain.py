@@ -696,10 +696,24 @@ class EtherCATChain:
         - AI Standard Channel 1_TYPE -> 2 symbols (status + value)
         - AI Inputs Channel 1_TYPE -> 2 symbols (status + value)
         - Other types -> 1 symbol each
+
+        Note: The client's symbol_lookup only handles certain ADS types:
+        - ADS_TYPE_BIT (33)
+        - ADS_TYPE_BIGTYPE (65)
+        - ADS_TYPE_UINT8 (17)
+        Symbols with other types (e.g., UINT16=18) are filtered out.
         """
+        # ADS types that symbol_lookup handles
+        handled_ads_types = {33, 65, 17}  # BIT, BIGTYPE, UINT8
+
         total = 0
         for dev in self.devices.values():
             for sym in dev.get_all_symbols(self.runtime_symbols):
+                ads_type = sym.get("ads_type", 33)
+                # Skip symbols with types that symbol_lookup doesn't handle
+                if ads_type not in handled_ads_types:
+                    continue
+
                 type_name = sym["type_name"]
                 # Count how many symbols this node will expand to on the client
                 if type_name in ("CNT Inputs_TYPE", "CNT Outputs_TYPE"):
