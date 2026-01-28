@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
 
-from catio_terminals.models import SymbolNode, TerminalType
+from catio_terminals.models import CompositeType, SymbolNode, TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
 from catio_terminals.utils import to_pascal_case
@@ -101,12 +101,14 @@ async def build_tree_view(app: "TerminalEditorApp") -> None:
 def _build_symbol_tree_data(
     terminal_id: str,
     terminal: TerminalType,
+    composite_types: dict[str, CompositeType] | None = None,
 ) -> list[dict[str, Any]]:
     """Build symbol tree showing primitive symbols with checkboxes.
 
     Args:
         terminal_id: Terminal ID for generating unique node IDs
         terminal: Terminal instance containing symbol_nodes
+        composite_types: Optional dict of composite types for bit field expansion
 
     Returns:
         List of tree node dictionaries for ui.tree
@@ -114,7 +116,9 @@ def _build_symbol_tree_data(
     symbol_tree_data: list[dict[str, Any]] = []
 
     for idx, symbol in enumerate(terminal.symbol_nodes):
-        symbol_tree_data.append(_build_symbol_node(terminal_id, idx, symbol))
+        symbol_tree_data.append(
+            _build_symbol_node(terminal_id, idx, symbol, composite_types)
+        )
 
     return symbol_tree_data
 
@@ -123,6 +127,7 @@ def _build_symbol_node(
     terminal_id: str,
     symbol_idx: int,
     symbol: SymbolNode,
+    composite_types: dict[str, CompositeType] | None = None,
 ) -> dict[str, Any]:
     """Build a tree node for a primitive symbol.
 
@@ -130,6 +135,7 @@ def _build_symbol_node(
         terminal_id: Terminal ID for generating unique node IDs
         symbol_idx: Index of the symbol in terminal.symbol_nodes
         symbol: SymbolNode instance
+        composite_types: Optional dict of composite types for bit field expansion
 
     Returns:
         Tree node dictionary for ui.tree
@@ -137,17 +143,37 @@ def _build_symbol_node(
     access = TerminalService.get_symbol_access(symbol.index_group)
     pascal_name = to_pascal_case(symbol.name_template)
 
+    # Check if the symbol type is a composite type with bit fields
+    composite_type = composite_types.get(symbol.type_name) if composite_types else None
+    has_bit_fields = composite_type and composite_type.bit_fields
+
+    # Build the type node - make it expandable if it has bit fields
+    type_node: dict[str, Any] = {
+        "id": f"{terminal_id}_sym{symbol_idx}_type",
+        "label": f"Type: {symbol.type_name}",
+        "icon": "code",
+    }
+
+    if has_bit_fields:
+        # Add bit fields as children of the type node
+        assert composite_type is not None  # guaranteed by has_bit_fields check
+        bit_field_children = [
+            {
+                "id": f"{terminal_id}_sym{symbol_idx}_bit{bf.bit}",
+                "label": f"Bit {bf.bit}: {bf.name}",
+                "icon": "toggle_on",
+            }
+            for bf in sorted(composite_type.bit_fields, key=lambda b: b.bit)
+        ]
+        type_node["children"] = bit_field_children
+
     symbol_children = [
         {
             "id": f"{terminal_id}_sym{symbol_idx}_access",
             "label": f"Access: {access}",
             "icon": "lock" if access == "Read-only" else "edit",
         },
-        {
-            "id": f"{terminal_id}_sym{symbol_idx}_type",
-            "label": f"Type: {symbol.type_name}",
-            "icon": "code",
-        },
+        type_node,
         {
             "id": f"{terminal_id}_sym{symbol_idx}_fastcs",
             "label": f"FastCS Name: {pascal_name}",
@@ -329,7 +355,8 @@ def show_terminal_details(
             ).props("flat dense")
 
     # Build symbol tree data (primitive symbols with checkboxes)
-    symbol_tree_data = _build_symbol_tree_data(terminal_id, terminal)
+    composite_types = app.config.composite_types if app.config else None
+    symbol_tree_data = _build_symbol_tree_data(terminal_id, terminal, composite_types)
 
     if symbol_tree_data:
         with ui.card().props("flat").classes("w-full"):
