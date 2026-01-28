@@ -307,16 +307,128 @@ def _process_pdo_entries(
         pdo_name = pdo.findtext("Name", "") or "Unknown"
         entries = pdo.findall("Entry")
 
-        # Check if we should composite this PDO (contains BOOLs)
-        has_bits = any(e.findtext("DataType") == "BOOL" for e in entries)
+        # Separate entries into boolean (bits) and others, while tracking offsets.
+        bool_members = []
+        other_entries = []
+        current_offset = 0
 
-        if has_bits:
-            # Create a composite type for this PDO
-            members = []
-            current_offset = 0
+        # Calculate first entry index for index group determination
+        first_entry_idx = 0
 
-            # Determine channel info to normalize type name
-            pdo_channel_info = _extract_channel_pattern(pdo_name)
+        for entry in entries:
+            entry_name = entry.findtext("Name", "")
+            bit_len = int(entry.findtext("BitLen", "0"))
+            data_type = entry.findtext("DataType", "UNKNOWN")
+            index_str = entry.findtext("Index", "0")
+            index_val = parse_hex_value(index_str)
+
+            # Find first non-padding index
+            if first_entry_idx == 0 and index_val != 0:
+                first_entry_idx = index_val
+
+            # Padding
+            if index_val == 0:
+                current_offset += bit_len
+                continue
+
+            # Create entry info object/dict
+            entry_info = {
+                "entry": entry,
+                "name": entry_name,
+                "offset": current_offset,
+                "bit_len": bit_len,
+                "data_type": data_type,
+                "index_val": index_val,
+                "bit_len_val": bit_len,
+            }
+
+            if data_type == "BOOL":
+                # Create CompositeTypeMember for bits
+                member = CompositeTypeMember(
+                    name=entry_name,
+                    offset=current_offset // 8,
+                    type_name=data_type,
+                    size=(bit_len + 7) // 8,
+                    fastcs_attr=to_pascal_case(entry_name),
+                    access="read-write" if is_output else "read-only",
+                    bit_size=bit_len,
+                    bit_offset=current_offset % 8,
+                )
+                # Store enough info to revert if needed
+                bool_members.append((member, entry_info))
+            else:
+                other_entries.append(entry_info)
+
+            current_offset += bit_len
+
+        # Determine index group
+        index_group = default_index_group
+        if first_entry_idx != 0:
+            calculated_group = (first_entry_idx >> 16) & 0xFFFF
+            if calculated_group != 0:
+                index_group = calculated_group
+
+        # Determine shared properties
+        total_size_bytes = (current_offset + 7) // 8
+        pdo_channel_info = _extract_channel_pattern(pdo_name)
+
+        # 1. Process Boolean Group
+        # Aggregate bits if we have more than 1, OR if it's a mixed PDO (even 1 bit
+        # + other types)
+        # For single-bit pure PDOs, prefer standard scalar handling (e.g. EL1004)
+        if len(bool_members) > 1 or (len(bool_members) > 0 and len(other_entries) > 0):
+            # Extract just the member objects
+            members = [m for m, _ in bool_members]
+
+            # Determine Suffix for aggregation
+            # Check for common prefix in bit names (e.g. "Status__Error",
+            # "Status__Warning")
+            bit_names = [m.name for m in members]
+            common_prefix = ""
+            if len(bit_names) > 0:
+                s1 = min(bit_names)
+                s2 = max(bit_names)
+                for i, c in enumerate(s1):
+                    if c != s2[i]:
+                        break
+                    common_prefix = s1[: i + 1]
+                else:
+                    # All names are identical? Unlikely for bits
+                    common_prefix = s1
+
+            suffix = ""
+            # We look for specific separators common in Beckhoff XML
+            separator = ""
+            if "__" in common_prefix:
+                separator = "__"
+            elif "." in common_prefix:
+                separator = "."
+
+            if separator and separator in common_prefix:
+                # Truncate prefix at the last separator
+                last_sep_idx = common_prefix.rfind(separator)
+                real_prefix = common_prefix[: last_sep_idx + len(separator)]
+                clean_prefix = common_prefix[:last_sep_idx]
+
+                # Suffix becomes ".{Prefix}"
+                suffix = f".{clean_prefix}"
+
+                # Strip prefix from members to clean up names
+                for m in members:
+                    if m.name.startswith(real_prefix):
+                        m.name = m.name[len(real_prefix) :]
+                        m.fastcs_attr = to_pascal_case(m.name)
+            else:
+                # No specific prefix found.
+                # For Mixed PDOs, apply generic suffix based on direction
+                if len(other_entries) > 0:
+                    if is_output:
+                        if "control" not in pdo_name.lower():
+                            suffix = ".Control"
+                    else:
+                        if "status" not in pdo_name.lower():
+                            suffix = ".Status"
+                # For Pure PDOs, leave suffix empty (name = PDO Name)
 
             type_base_name = pdo_name
             if pdo_channel_info:
@@ -325,34 +437,8 @@ def _process_pdo_entries(
                 # Pattern is like "Channel {channel}" or "AI Input {channel}"
                 type_base_name = pattern.format(channel=1)
 
-            type_name = f"{type_base_name}_TYPE"
-
-            for entry in entries:
-                entry_name = entry.findtext("Name", "")
-                bit_len = int(entry.findtext("BitLen", "0"))
-                data_type = entry.findtext("DataType", "UNKNOWN")
-
-                # Skip padding/reserved entries (Index=#x0 indicates filler)
-                index_str = entry.findtext("Index", "0")
-                if parse_hex_value(index_str) == 0:
-                    current_offset += bit_len
-                    continue
-
-                members.append(
-                    CompositeTypeMember(
-                        name=entry_name,
-                        offset=current_offset // 8,
-                        type_name=data_type,
-                        size=(bit_len + 7) // 8,
-                        fastcs_attr=to_pascal_case(entry_name),
-                        access="read-write" if is_output else "read-only",
-                        bit_size=bit_len,
-                        bit_offset=current_offset % 8,
-                    )
-                )
-                current_offset += bit_len
-
-            total_size_bytes = (current_offset + 7) // 8
+            # Type name should reflect the content
+            type_name = f"{type_base_name}{suffix}_TYPE"
 
             if type_name not in extracted_types:
                 extracted_types[type_name] = CompositeType(
@@ -361,33 +447,18 @@ def _process_pdo_entries(
                     members=members,
                 )
 
-            # Treat as single symbol with composite type
-            # Use default_index_group as we don't have per-entry index groups here
-            # (unlike non-bit entries where we might check entry index)
-            index_group = default_index_group
-            # But wait, looking at existing code: index_group = (index >> 16) & 0xFFFF
-            # For PDOs, the entry index usually matches the mapping.
-            # Let's check the first entry's index group?
-            first_entry_idx = 0
-            # Find first non-padding entry
-            for e in entries:
-                idx_val = parse_hex_value(e.findtext("Index", "0"))
-                if idx_val != 0:
-                    first_entry_idx = idx_val
-                    break
-
-            if first_entry_idx != 0:
-                calculated_group = (first_entry_idx >> 16) & 0xFFFF
-                if calculated_group != 0:
-                    index_group = calculated_group
-
+            # Create the Key for the Composite Symbol
             if pdo_channel_info:
                 pattern, channel_num = pdo_channel_info
+                # Append suffix to pattern for the Symbol Name
+                # e.g. "Channel {channel}" -> "Channel {channel}.Status"
+                full_pattern = f"{pattern}{suffix}"
+
                 group_key = (
-                    pattern,
+                    full_pattern,
                     index_group,
                     total_size_bytes,
-                    65,
+                    65,  # ADS BIGTYPE
                     type_name,
                     access_str,
                 )
@@ -395,45 +466,47 @@ def _process_pdo_entries(
                     channel_groups[group_key] = []
                 channel_groups[group_key].append(channel_num)
             else:
+                # Append suffix to PDO Name for the Symbol Name
+                full_name = f"{pdo_name}{suffix}"
+
                 dup_key = (
-                    pdo_name,
+                    full_name,
                     index_group,
                     total_size_bytes,
-                    65,
+                    65,  # ADS BIGTYPE
                     type_name,
                     access_str,
                 )
                 duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
+        elif len(bool_members) == 1:
+            # Single bit in a pure PDO - treat as normal entry
+            # (no composite struct)
+            # Add back to other_entries to be processed in the loop below
+            other_entries.append(bool_members[0][1])
+            # Re-sort entries by offset to keep order? (Not strictly necessary for
+            # symbol list but good for debug)
+            other_entries.sort(key=lambda x: x["offset"])
 
-            continue
+        # 2. Process Other Entries (Non-Bits or Single Bits)
+        # These remain as individual symbols
+        for info in other_entries:
+            entry_name = info["name"]
+            data_type = info["data_type"]
+            bit_len = info["bit_len_val"]
+            index_val = info["index_val"]
 
-        # Existing logic for non-bit PDOs
-        for entry in entries:
-            entry_name = entry.findtext("Name", "")
-            if not entry_name:
-                continue
-
-            index_str = entry.findtext("Index", "0")
-            index = parse_hex_value(index_str)
-
-            # Skip padding/reserved entries (Index=#x0 indicates filler bits)
-            if index == 0:
-                continue
-
-            bit_len = int(entry.findtext("BitLen", "0"))
-            data_type = entry.findtext("DataType", "UNKNOWN")
-
-            index_group = (index >> 16) & 0xFFFF
-            if index_group == 0:
-                index_group = default_index_group
+            # Recalculate index group for individual entry if needed?
+            # Usually strict index group logic applies to entries.
+            # But here we used the PDO-based one.
+            # Let's use the per-entry logic if index implies it.
+            entry_index_group = (index_val >> 16) & 0xFFFF
+            if entry_index_group == 0:
+                entry_index_group = index_group
 
             size = (bit_len + 7) // 8
             ads_type = get_ads_type(data_type)
 
-            # Try PDO name first (e.g., "Channel 1" for EL1004)
-            # This matches how TwinCAT creates composite symbol names
-            pdo_channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
-
+            # Determine Name
             # Initialize name - will be set in one of the branches below
             name = entry_name or pdo_name or ""
 
@@ -441,6 +514,8 @@ def _process_pdo_entries(
             # symbol naming convention: {PDO_name}.{Entry_name}
             # e.g., "Channel 1.Input" matches TwinCAT symbol
             #   "Term 55 (EL1014).Channel 1.Input"
+            channel_info = None
+
             if pdo_name and entry_name and pdo_name != entry_name:
                 if pdo_channel_info:
                     # PDO has channel pattern - include entry name for distinction
@@ -458,6 +533,30 @@ def _process_pdo_entries(
             else:
                 name = entry_name
                 channel_info = _extract_channel_pattern(entry_name)
+
+            if channel_info:
+                pattern, channel_num = channel_info
+                group_key = (
+                    pattern,
+                    entry_index_group,
+                    size,
+                    ads_type,
+                    data_type,
+                    access_str,
+                )
+                if group_key not in channel_groups:
+                    channel_groups[group_key] = []
+                channel_groups[group_key].append(channel_num)
+            else:
+                dup_key = (
+                    name,
+                    entry_index_group,
+                    size,
+                    ads_type,
+                    data_type,
+                    access_str,
+                )
+                duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
 
             if channel_info:
                 pattern, channel_num = channel_info
