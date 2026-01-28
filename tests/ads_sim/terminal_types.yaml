@@ -28,12 +28,12 @@ terminal_types:
       product_code: 66465874
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Status
+      - name_template: Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: ChannelStatus{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigIn
   EL1084:
@@ -43,12 +43,12 @@ terminal_types:
       product_code: 71053394
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Status
+      - name_template: Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: ChannelStatus{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigIn
   EL1124:
@@ -58,12 +58,12 @@ terminal_types:
       product_code: 73674834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Status
+      - name_template: Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: ChannelStatus{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigIn
   EL1502:
@@ -73,48 +73,48 @@ terminal_types:
       product_code: 98447442
       revision_number: 1245184
     symbol_nodes:
-      - name_template: CNT Inputs Channel {channel}.Status
+      - name_template: CNT Inputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: CntInputsChannelStatus{channel}
+        fastcs_name: CntInputsChannel{channel}
       - name_template: CNT Inputs Channel {channel}.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelCounterValue{channel}
-      - name_template: CNT Outputs Channel {channel}.Control
+      - name_template: CNT Outputs Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 2
         access: Read/Write
-        fastcs_name: CntOutputsChannelControl{channel}
+        fastcs_name: CntOutputsChannel{channel}
       - name_template: CNT Outputs Channel {channel}.Set counter value
         index_group: 61488
         type_name: UDINT
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelSetCounterValue{channel}
-      - name_template: CNT Inputs.Status
+      - name_template: CNT Inputs
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: CntInputsStatus
+        fastcs_name: CntInputs
       - name_template: CNT Inputs.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read-only
         fastcs_name: CntInputsCounterValue
-      - name_template: CNT Outputs.Control
+      - name_template: CNT Outputs
         index_group: 61488
         type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: CntOutputsControl
+        fastcs_name: CntOutputs
       - name_template: CNT Outputs.Set counter value
         index_group: 61488
         type_name: UDINT
@@ -130,12 +130,12 @@ terminal_types:
       product_code: 132657234
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Control
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EL2024-0010:
@@ -145,12 +145,12 @@ terminal_types:
       product_code: 132657252
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Control
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EL2124:
@@ -160,12 +160,12 @@ terminal_types:
       product_code: 139210834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Control
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EL2502:
@@ -196,24 +196,24 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: DoxSynchronInfoDataInfoData{channel}
-      - name_template: DOX Status.Status
+      - name_template: DOX Status
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: DoxStatusStatus
+        fastcs_name: DoxStatus
       - name_template: DC Feedback.Feedback
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
         fastcs_name: DcFeedbackFeedback
-      - name_template: DOX Control.Control
+      - name_template: DOX Control
         index_group: 61488
         type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: DoxControlControl
+        fastcs_name: DoxControl
       - name_template: DOX Current.Output current
         index_group: 61488
         type_name: UINT
@@ -253,12 +253,12 @@ terminal_types:
       product_code: 171192402
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Control
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 2
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EL2624:
@@ -268,12 +268,12 @@ terminal_types:
       product_code: 171978834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Control
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EL3104:
@@ -283,12 +283,12 @@ terminal_types:
       product_code: 203436114
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status
+      - name_template: AI Standard Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatus{channel}
+        fastcs_name: AiStandardChannel{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -322,12 +322,12 @@ terminal_types:
       product_code: 204746834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status
+      - name_template: AI Standard Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatus{channel}
+        fastcs_name: AiStandardChannel{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -361,12 +361,12 @@ terminal_types:
       product_code: 209858642
       revision_number: 1048576
     symbol_nodes:
-      - name_template: RTD Inputs Channel {channel}.Status
+      - name_template: RTD Inputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelStatus{channel}
+        fastcs_name: RtdInputsChannel{channel}
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -394,12 +394,12 @@ terminal_types:
       product_code: 209858642
       revision_number: 1048586
     symbol_nodes:
-      - name_template: RTD Inputs Channel {channel}.Status
+      - name_template: RTD Inputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelStatus{channel}
+        fastcs_name: RtdInputsChannel{channel}
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -427,12 +427,12 @@ terminal_types:
       product_code: 217198674
       revision_number: 1048576
     symbol_nodes:
-      - name_template: TC Inputs Channel {channel}.Status
+      - name_template: TC Inputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: TcInputsChannelStatus{channel}
+        fastcs_name: TcInputsChannel{channel}
       - name_template: TC Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -466,12 +466,12 @@ terminal_types:
       product_code: 219951186
       revision_number: 1114122
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status
+      - name_template: AI Standard Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannelStatus{channel}
+        fastcs_name: AiStandardChannel{channel}
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: DINT
@@ -484,12 +484,12 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: AiCompactChannelValue{channel}
-      - name_template: RMB Status.Status
+      - name_template: RMB Status
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: RmbStatusStatus
+        fastcs_name: RmbStatus
       - name_template: RMB Value (INT32).Value
         index_group: 61472
         type_name: DINT
@@ -508,12 +508,12 @@ terminal_types:
         channels: 1
         access: Read-only
         fastcs_name: RmbTimestampTimestamp
-      - name_template: RMB Control.Control
+      - name_template: RMB Control
         index_group: 61488
         type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: RmbControlControl
+        fastcs_name: RmbControl
     coe_objects: []
     group_type: AnaIn
   EL3602:
@@ -523,12 +523,12 @@ terminal_types:
       product_code: 236073042
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Inputs Channel {channel}.Status
+      - name_template: AI Inputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: AiInputsChannelStatus{channel}
+        fastcs_name: AiInputsChannel{channel}
       - name_template: AI Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -643,18 +643,18 @@ terminal_types:
       product_code: 616706130
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Us.Status
+      - name_template: Status Us
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUsStatus
-      - name_template: Status Up.Status
+        fastcs_name: StatusUs
+      - name_template: Status Up
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUpStatus
+        fastcs_name: StatusUp
     coe_objects: []
     group_type: PowerSupply
   EL9505:
@@ -664,12 +664,12 @@ terminal_types:
       product_code: 622932050
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Uo.Status
+      - name_template: Status Uo
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUoStatus
+        fastcs_name: StatusUo
     coe_objects: []
     group_type: PowerSupply
   EL9510:
@@ -679,12 +679,12 @@ terminal_types:
       product_code: 623259730
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Uo.Status
+      - name_template: Status Uo
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUoStatus
+        fastcs_name: StatusUo
     coe_objects: []
     group_type: PowerSupply
   EL9512:
@@ -694,12 +694,12 @@ terminal_types:
       product_code: 623390802
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Uo.Status
+      - name_template: Status Uo
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUoStatus
+        fastcs_name: StatusUo
     coe_objects: []
     group_type: PowerSupply
   ELM3704-0000:
@@ -710,12 +710,12 @@ terminal_types:
       product_code: 1344379273
       revision_number: 1048576
     symbol_nodes:
-      - name_template: PAI Status Channel {channel}.Status
+      - name_template: PAI Status Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: PaiStatusChannelStatus{channel}
+        fastcs_name: PaiStatusChannel{channel}
       - name_template: PAI Status Channel {channel}.Status__No of Samples
         index_group: 61472
         type_name: USINT
@@ -1018,12 +1018,12 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: PaiSamplesr32100ChannelSamples{channel}
-      - name_template: PAI Control Channel {channel}.Control
+      - name_template: PAI Control Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: PaiControlChannelControl{channel}
+        fastcs_name: PaiControlChannel{channel}
       - name_template: PAI TC Channel {channel}.Cold Junction Temperature
         index_group: 61488
         type_name: REAL
@@ -1039,18 +1039,18 @@ terminal_types:
       product_code: 153239634
       revision_number: 1048578
     symbol_nodes:
-      - name_template: Channel {channel}.Status
+      - name_template: Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 8
         access: Read-only
-        fastcs_name: ChannelStatus{channel}
-      - name_template: Channel {channel}.Control
+        fastcs_name: Channel{channel}
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 8
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EP2624-0002:
@@ -1060,12 +1060,12 @@ terminal_types:
       product_code: 171982930
       revision_number: 1114114
     symbol_nodes:
-      - name_template: Channel {channel}.Control
+      - name_template: Channel {channel}
         index_group: 61488
         type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelControl{channel}
+        fastcs_name: Channel{channel}
     coe_objects: []
     group_type: DigOut
   EP3174-0002:
@@ -1075,12 +1075,12 @@ terminal_types:
       product_code: 208027730
       revision_number: 1048578
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status
+      - name_template: AI Standard Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatus{channel}
+        fastcs_name: AiStandardChannel{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -1114,12 +1114,12 @@ terminal_types:
       product_code: 209993810
       revision_number: 1114114
     symbol_nodes:
-      - name_template: RTD RTDInputs Channel {channel}.Status
+      - name_template: RTD RTDInputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatus{channel}
+        fastcs_name: RtdRtdinputsChannel{channel}
       - name_template: RTD RTDInputs Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -1147,12 +1147,12 @@ terminal_types:
       product_code: 217202770
       revision_number: 1048578
     symbol_nodes:
-      - name_template: TC TCInputs Channel {channel}.Status
+      - name_template: TC TCInputs Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: TcTcinputsChannelStatus{channel}
+        fastcs_name: TcTcinputsChannel{channel}
       - name_template: TC TCInputs Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -1202,12 +1202,12 @@ terminal_types:
       product_code: 286670930
       revision_number: 1048578
     symbol_nodes:
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status
+      - name_template: AI TxPDO-Map Standard Channel {channel}
         index_group: 61472
         type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatus{channel}
+        fastcs_name: AiTxpdoMapStandardChannel{channel}
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2

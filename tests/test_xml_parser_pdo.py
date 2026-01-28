@@ -150,10 +150,10 @@ COUNTER_TERMINAL_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 class TestBitFieldGrouping:
-    """Tests for grouping bit fields into composite Status/Control symbols."""
+    """Tests for grouping bit fields into composite symbols using PDO name."""
 
-    def test_bit_fields_grouped_into_status(self):
-        """Verify bit fields from TxPdo are grouped into a Status symbol."""
+    def test_bit_fields_grouped_into_pdo_name(self):
+        """Verify bit fields from TxPdo are grouped using the PDO name."""
         terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
 
         assert terminal is not None
@@ -161,8 +161,8 @@ class TestBitFieldGrouping:
         # Get symbol names
         symbol_names = [s.name_template for s in terminal.symbol_nodes]
 
-        # Should have Status composite instead of individual bits
-        assert "CNT Inputs Channel {channel}.Status" in symbol_names
+        # Bit fields should use the PDO name directly (no .Status suffix)
+        assert "CNT Inputs Channel {channel}" in symbol_names
 
         # Should NOT have individual bit entries
         assert (
@@ -173,16 +173,16 @@ class TestBitFieldGrouping:
         # Should still have the Counter value entry
         assert "CNT Inputs Channel {channel}.Counter value" in symbol_names
 
-    def test_bit_fields_grouped_into_control(self):
-        """Verify bit fields from RxPdo are grouped into a Control symbol."""
+    def test_bit_fields_grouped_into_pdo_name_rxpdo(self):
+        """Verify bit fields from RxPdo are grouped using the PDO name."""
         terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
 
         assert terminal is not None
 
         symbol_names = [s.name_template for s in terminal.symbol_nodes]
 
-        # Should have Control composite instead of individual bits
-        assert "CNT Outputs Channel {channel}.Control" in symbol_names
+        # Bit fields should use the PDO name directly (no .Control suffix)
+        assert "CNT Outputs Channel {channel}" in symbol_names
 
         # Should NOT have individual bit entries
         assert (
@@ -193,39 +193,43 @@ class TestBitFieldGrouping:
         # Should still have the Set counter value entry
         assert "CNT Outputs Channel {channel}.Set counter value" in symbol_names
 
-    def test_status_symbol_type_is_composite(self):
-        """Verify Status symbol has appropriate composite type (USINT/UINT)."""
+    def test_txpdo_bit_symbol_type_is_composite(self):
+        """Verify TxPdo bit symbol has appropriate composite type (USINT/UINT)."""
         terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
 
         assert terminal is not None
 
-        # Find Status symbol
-        status_symbols = [
-            s for s in terminal.symbol_nodes if "Status" in s.name_template
+        # Find TxPdo bit symbol (CNT Inputs Channel)
+        input_symbols = [
+            s
+            for s in terminal.symbol_nodes
+            if s.name_template == "CNT Inputs Channel {channel}"
         ]
 
-        assert len(status_symbols) == 1
-        status = status_symbols[0]
+        assert len(input_symbols) == 1
+        symbol = input_symbols[0]
 
         # 4 bits should fit in USINT (8 bits)
-        assert status.type_name == "USINT"
+        assert symbol.type_name == "USINT"
 
-    def test_control_symbol_type_is_composite(self):
-        """Verify Control symbol has appropriate composite type."""
+    def test_rxpdo_bit_symbol_type_is_composite(self):
+        """Verify RxPdo bit symbol has appropriate composite type."""
         terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
 
         assert terminal is not None
 
-        # Find Control symbol
-        control_symbols = [
-            s for s in terminal.symbol_nodes if "Control" in s.name_template
+        # Find RxPdo bit symbol (CNT Outputs Channel)
+        output_symbols = [
+            s
+            for s in terminal.symbol_nodes
+            if s.name_template == "CNT Outputs Channel {channel}"
         ]
 
-        assert len(control_symbols) == 1
-        control = control_symbols[0]
+        assert len(output_symbols) == 1
+        symbol = output_symbols[0]
 
         # Control bits should fit in USINT
-        assert control.type_name == "USINT"
+        assert symbol.type_name == "USINT"
 
     def test_channel_count_preserved(self):
         """Verify channel count is correctly detected for grouped symbols."""
@@ -233,24 +237,26 @@ class TestBitFieldGrouping:
 
         assert terminal is not None
 
-        # Find Status symbol (should have 2 channels)
-        status_symbols = [
-            s for s in terminal.symbol_nodes if "Status" in s.name_template
+        # Find TxPdo bit symbol (should have 2 channels)
+        input_symbols = [
+            s
+            for s in terminal.symbol_nodes
+            if s.name_template == "CNT Inputs Channel {channel}"
         ]
 
-        assert len(status_symbols) == 1
-        assert status_symbols[0].channels == 2
+        assert len(input_symbols) == 1
+        assert input_symbols[0].channels == 2
 
     def test_access_modes_correct(self):
-        """Verify Status is read-only and Control is read/write."""
+        """Verify TxPdo symbols are read-only and RxPdo symbols are read/write."""
         terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
 
         assert terminal is not None
 
         for symbol in terminal.symbol_nodes:
-            if "Status" in symbol.name_template:
+            if "CNT Inputs" in symbol.name_template:
                 assert symbol.access == "Read-only"
-            elif "Control" in symbol.name_template:
+            elif "CNT Outputs" in symbol.name_template:
                 assert symbol.access == "Read/Write"
 
 
@@ -305,18 +311,19 @@ DIGITAL_INPUT_XML = """<?xml version="1.0" encoding="UTF-8"?>
 class TestSingleBitPdo:
     """Tests for PDOs that contain only a single bit entry."""
 
-    def test_single_bit_pdo_creates_status(self):
-        """Single bit PDO should create a Status symbol."""
+    def test_single_bit_pdo_uses_pdo_name(self):
+        """Single bit PDO should use the PDO name directly."""
         terminal = parse_terminal_details(DIGITAL_INPUT_XML, "EL1004", "DigIn")
 
         assert terminal is not None
 
         symbol_names = [s.name_template for s in terminal.symbol_nodes]
 
-        # Should have Status composite (since the only entry is a bit)
-        assert "Channel {channel}.Status" in symbol_names
+        # Should use the PDO name directly (e.g., "Channel {channel}")
+        assert "Channel {channel}" in symbol_names
 
-        # Should NOT have individual Input entries
+        # Should NOT have .Status or .Input suffixes
+        assert "Channel {channel}.Status" not in symbol_names
         assert "Channel {channel}.Input" not in symbol_names
 
 
