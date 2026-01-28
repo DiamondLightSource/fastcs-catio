@@ -28,12 +28,12 @@ terminal_types:
       product_code: 66465874
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Input
+      - name_template: Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: ChannelInput{channel}
+        fastcs_name: ChannelStatus{channel}
     coe_objects: []
     group_type: DigIn
   EL1084:
@@ -43,12 +43,12 @@ terminal_types:
       product_code: 71053394
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Input
+      - name_template: Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: ChannelInput{channel}
+        fastcs_name: ChannelStatus{channel}
     coe_objects: []
     group_type: DigIn
   EL1124:
@@ -58,12 +58,12 @@ terminal_types:
       product_code: 73674834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Input
+      - name_template: Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: ChannelInput{channel}
+        fastcs_name: ChannelStatus{channel}
     coe_objects: []
     group_type: DigIn
   EL1502:
@@ -73,150 +73,48 @@ terminal_types:
       product_code: 98447442
       revision_number: 1245184
     symbol_nodes:
-      - name_template: CNT Inputs Channel {channel}.Output functions enabled
+      - name_template: CNT Inputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: CntInputsChannelOutputFunctionsEnabled{channel}
-      - name_template: CNT Inputs Channel {channel}.Status of output
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: CntInputsChannelStatusOfOutput{channel}
-      - name_template: CNT Inputs Channel {channel}.Set counter done
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: CntInputsChannelSetCounterDone{channel}
-      - name_template: CNT Inputs Channel {channel}.Counter inhibited
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: CntInputsChannelCounterInhibited{channel}
-      - name_template: CNT Inputs Channel {channel}.Status of input clock
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: CntInputsChannelStatusOfInputClock{channel}
-      - name_template: CNT Inputs Channel {channel}.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: CntInputsChannelTxpdoToggle{channel}
+        fastcs_name: CntInputsChannelStatus{channel}
       - name_template: CNT Inputs Channel {channel}.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannelCounterValue{channel}
-      - name_template: CNT Outputs Channel {channel}.Enable output functions
+      - name_template: CNT Outputs Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read/Write
-        fastcs_name: CntOutputsChannelEnableOutputFunctions{channel}
-      - name_template: CNT Outputs Channel {channel}.Set output
-        index_group: 61488
-        type_name: BOOL
-        channels: 2
-        access: Read/Write
-        fastcs_name: CntOutputsChannelSetOutput{channel}
-      - name_template: CNT Outputs Channel {channel}.Set counter
-        index_group: 61488
-        type_name: BOOL
-        channels: 2
-        access: Read/Write
-        fastcs_name: CntOutputsChannelSetCounter{channel}
-      - name_template: CNT Outputs Channel {channel}.Inhibit counter
-        index_group: 61488
-        type_name: BOOL
-        channels: 2
-        access: Read/Write
-        fastcs_name: CntOutputsChannelInhibitCounter{channel}
+        fastcs_name: CntOutputsChannelControl{channel}
       - name_template: CNT Outputs Channel {channel}.Set counter value
         index_group: 61488
         type_name: UDINT
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannelSetCounterValue{channel}
-      - name_template: CNT Inputs.Output functions enabled
+      - name_template: CNT Inputs.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: CntInputsOutputFunctionsEnabled
-      - name_template: CNT Inputs.Status of output
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: CntInputsStatusOfOutput
-      - name_template: CNT Inputs.Set counter done
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: CntInputsSetCounterDone
-      - name_template: CNT Inputs.Counter inhibited
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: CntInputsCounterInhibited
-      - name_template: CNT Inputs.Status of input UD
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: CntInputsStatusOfInputUd
-      - name_template: CNT Inputs.Status of input clock
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: CntInputsStatusOfInputClock
-      - name_template: CNT Inputs.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: CntInputsTxpdoToggle
+        fastcs_name: CntInputsStatus
       - name_template: CNT Inputs.Counter value
         index_group: 61472
         type_name: UDINT
         channels: 1
         access: Read-only
         fastcs_name: CntInputsCounterValue
-      - name_template: CNT Outputs.Enable output functions
+      - name_template: CNT Outputs.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: CntOutputsEnableOutputFunctions
-      - name_template: CNT Outputs.Set output
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: CntOutputsSetOutput
-      - name_template: CNT Outputs.Set counter
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: CntOutputsSetCounter
-      - name_template: CNT Outputs.Inhibit counter
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: CntOutputsInhibitCounter
+        fastcs_name: CntOutputsControl
       - name_template: CNT Outputs.Set counter value
         index_group: 61488
         type_name: UDINT
@@ -232,12 +130,12 @@ terminal_types:
       product_code: 132657234
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Output
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EL2024-0010:
@@ -247,12 +145,12 @@ terminal_types:
       product_code: 132657252
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Output
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EL2124:
@@ -262,12 +160,12 @@ terminal_types:
       product_code: 139210834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Output
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EL2502:
@@ -298,66 +196,24 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: DoxSynchronInfoDataInfoData{channel}
-      - name_template: DOX Status.Status__Ready to activate
+      - name_template: DOX Status.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: DoxStatusStatusReadyToActivate
-      - name_template: DOX Status.Status__Output active
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: DoxStatusStatusOutputActive
-      - name_template: DOX Status.Status__Warning
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: DoxStatusStatusWarning
-      - name_template: DOX Status.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: DoxStatusStatusError
-      - name_template: DOX Status.Status__Digital input
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: DoxStatusStatusDigitalInput
-      - name_template: DOX Status.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: DoxStatusStatusTxpdoToggle
+        fastcs_name: DoxStatusStatus
       - name_template: DC Feedback.Feedback
         index_group: 61472
         type_name: USINT
         channels: 1
         access: Read-only
         fastcs_name: DcFeedbackFeedback
-      - name_template: DOX Control.Control__Output
+      - name_template: DOX Control.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: DoxControlControlOutput
-      - name_template: DOX Control.Control__Input trigger enable
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: DoxControlControlInputTriggerEnable
-      - name_template: DOX Control.Control__Reset
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: DoxControlControlReset
+        fastcs_name: DoxControlControl
       - name_template: DOX Current.Output current
         index_group: 61488
         type_name: UINT
@@ -397,12 +253,12 @@ terminal_types:
       product_code: 171192402
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Output
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EL2624:
@@ -412,12 +268,12 @@ terminal_types:
       product_code: 171978834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}.Output
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EL3104:
@@ -427,18 +283,12 @@ terminal_types:
       product_code: 203436114
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status__Underrange
+      - name_template: AI Standard Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusUnderrange{channel}
-      - name_template: AI Standard Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusOverrange{channel}
+        fastcs_name: AiStandardChannelStatus{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -451,30 +301,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit2{channel}
-      - name_template: AI Standard Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusError{channel}
-      - name_template: AI Standard Channel {channel}.Status__Sync error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusSyncError{channel}
-      - name_template: AI Standard Channel {channel}.Status__TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusTxpdoState{channel}
-      - name_template: AI Standard Channel {channel}.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusTxpdoToggle{channel}
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -496,18 +322,12 @@ terminal_types:
       product_code: 204746834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status__Underrange
+      - name_template: AI Standard Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusUnderrange{channel}
-      - name_template: AI Standard Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusOverrange{channel}
+        fastcs_name: AiStandardChannelStatus{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -520,30 +340,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit2{channel}
-      - name_template: AI Standard Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusError{channel}
-      - name_template: AI Standard Channel {channel}.Status__Sync error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusSyncError{channel}
-      - name_template: AI Standard Channel {channel}.Status__TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusTxpdoState{channel}
-      - name_template: AI Standard Channel {channel}.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusTxpdoToggle{channel}
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -565,18 +361,12 @@ terminal_types:
       product_code: 209858642
       revision_number: 1048576
     symbol_nodes:
-      - name_template: RTD Inputs Channel {channel}.Underrange
+      - name_template: RTD Inputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelUnderrange{channel}
-      - name_template: RTD Inputs Channel {channel}.Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelOverrange{channel}
+        fastcs_name: RtdInputsChannelStatus{channel}
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -589,24 +379,6 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannelLimit2{channel}
-      - name_template: RTD Inputs Channel {channel}.Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelError{channel}
-      - name_template: RTD Inputs Channel {channel}.TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelTxpdoState{channel}
-      - name_template: RTD Inputs Channel {channel}.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelTxpdoToggle{channel}
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -622,18 +394,12 @@ terminal_types:
       product_code: 209858642
       revision_number: 1048586
     symbol_nodes:
-      - name_template: RTD Inputs Channel {channel}.Underrange
+      - name_template: RTD Inputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: RtdInputsChannelUnderrange{channel}
-      - name_template: RTD Inputs Channel {channel}.Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelOverrange{channel}
+        fastcs_name: RtdInputsChannelStatus{channel}
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -646,24 +412,6 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannelLimit2{channel}
-      - name_template: RTD Inputs Channel {channel}.Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelError{channel}
-      - name_template: RTD Inputs Channel {channel}.TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelTxpdoState{channel}
-      - name_template: RTD Inputs Channel {channel}.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: RtdInputsChannelTxpdoToggle{channel}
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -679,18 +427,12 @@ terminal_types:
       product_code: 217198674
       revision_number: 1048576
     symbol_nodes:
-      - name_template: TC Inputs Channel {channel}.Underrange
+      - name_template: TC Inputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: TcInputsChannelUnderrange{channel}
-      - name_template: TC Inputs Channel {channel}.Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcInputsChannelOverrange{channel}
+        fastcs_name: TcInputsChannelStatus{channel}
       - name_template: TC Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -703,24 +445,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: TcInputsChannelLimit2{channel}
-      - name_template: TC Inputs Channel {channel}.Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcInputsChannelError{channel}
-      - name_template: TC Inputs Channel {channel}.TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcInputsChannelTxpdoState{channel}
-      - name_template: TC Inputs Channel {channel}.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcInputsChannelTxpdoToggle{channel}
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -742,30 +466,12 @@ terminal_types:
       product_code: 219951186
       revision_number: 1114122
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Underrange
+      - name_template: AI Standard Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: AiStandardChannelUnderrange{channel}
-      - name_template: AI Standard Channel {channel}.Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiStandardChannelOverrange{channel}
-      - name_template: AI Standard Channel {channel}.Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiStandardChannelError{channel}
-      - name_template: AI Standard Channel {channel}.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiStandardChannelTxpdoToggle{channel}
+        fastcs_name: AiStandardChannelStatus{channel}
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: DINT
@@ -778,48 +484,12 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: AiCompactChannelValue{channel}
-      - name_template: RMB Status.Status__Overrange
+      - name_template: RMB Status.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: RmbStatusStatusOverrange
-      - name_template: RMB Status.Status__Data invalid
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: RmbStatusStatusDataInvalid
-      - name_template: RMB Status.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: RmbStatusStatusError
-      - name_template: RMB Status.Status__Calibration in progress
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: RmbStatusStatusCalibrationInProgress
-      - name_template: RMB Status.Status__Steady state
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: RmbStatusStatusSteadyState
-      - name_template: RMB Status.Status__Sync error
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: RmbStatusStatusSyncError
-      - name_template: RMB Status.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: RmbStatusStatusTxpdoToggle
+        fastcs_name: RmbStatusStatus
       - name_template: RMB Value (INT32).Value
         index_group: 61472
         type_name: DINT
@@ -838,36 +508,12 @@ terminal_types:
         channels: 1
         access: Read-only
         fastcs_name: RmbTimestampTimestamp
-      - name_template: RMB Control.Ctrl__Start calibration
+      - name_template: RMB Control.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read/Write
-        fastcs_name: RmbControlCtrlStartCalibration
-      - name_template: RMB Control.Ctrl__Disable calibration
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: RmbControlCtrlDisableCalibration
-      - name_template: RMB Control.Ctrl__Input freeze
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: RmbControlCtrlInputFreeze
-      - name_template: RMB Control.Ctrl__Sample mode
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: RmbControlCtrlSampleMode
-      - name_template: RMB Control.Ctrl__Tara
-        index_group: 61488
-        type_name: BOOL
-        channels: 1
-        access: Read/Write
-        fastcs_name: RmbControlCtrlTara
+        fastcs_name: RmbControlControl
     coe_objects: []
     group_type: AnaIn
   EL3602:
@@ -877,18 +523,12 @@ terminal_types:
       product_code: 236073042
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Inputs Channel {channel}.Underrange
+      - name_template: AI Inputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: AiInputsChannelUnderrange{channel}
-      - name_template: AI Inputs Channel {channel}.Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiInputsChannelOverrange{channel}
+        fastcs_name: AiInputsChannelStatus{channel}
       - name_template: AI Inputs Channel {channel}.Limit 1
         index_group: 61472
         type_name: BIT2
@@ -901,24 +541,6 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: AiInputsChannelLimit2{channel}
-      - name_template: AI Inputs Channel {channel}.Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiInputsChannelError{channel}
-      - name_template: AI Inputs Channel {channel}.TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiInputsChannelTxpdoState{channel}
-      - name_template: AI Inputs Channel {channel}.TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiInputsChannelTxpdoToggle{channel}
       - name_template: AI Inputs Channel {channel}.Value
         index_group: 61472
         type_name: DINT
@@ -1021,18 +643,18 @@ terminal_types:
       product_code: 616706130
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Us.Undervoltage
+      - name_template: Status Us.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUsUndervoltage
-      - name_template: Status Up.Undervoltage
+        fastcs_name: StatusUsStatus
+      - name_template: Status Up.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUpUndervoltage
+        fastcs_name: StatusUpStatus
     coe_objects: []
     group_type: PowerSupply
   EL9505:
@@ -1042,18 +664,12 @@ terminal_types:
       product_code: 622932050
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Uo.Power OK
+      - name_template: Status Uo.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUoPowerOk
-      - name_template: Status Uo.Overload
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: StatusUoOverload
+        fastcs_name: StatusUoStatus
     coe_objects: []
     group_type: PowerSupply
   EL9510:
@@ -1063,18 +679,12 @@ terminal_types:
       product_code: 623259730
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Uo.Power OK
+      - name_template: Status Uo.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUoPowerOk
-      - name_template: Status Uo.Overload
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: StatusUoOverload
+        fastcs_name: StatusUoStatus
     coe_objects: []
     group_type: PowerSupply
   EL9512:
@@ -1084,18 +694,12 @@ terminal_types:
       product_code: 623390802
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Status Uo.Power OK
+      - name_template: Status Uo.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 1
         access: Read-only
-        fastcs_name: StatusUoPowerOk
-      - name_template: Status Uo.Overload
-        index_group: 61472
-        type_name: BOOL
-        channels: 1
-        access: Read-only
-        fastcs_name: StatusUoOverload
+        fastcs_name: StatusUoStatus
     coe_objects: []
     group_type: PowerSupply
   ELM3704-0000:
@@ -1106,42 +710,18 @@ terminal_types:
       product_code: 1344379273
       revision_number: 1048576
     symbol_nodes:
+      - name_template: PAI Status Channel {channel}.Status
+        index_group: 61472
+        type_name: USINT
+        channels: 4
+        access: Read-only
+        fastcs_name: PaiStatusChannelStatus{channel}
       - name_template: PAI Status Channel {channel}.Status__No of Samples
         index_group: 61472
         type_name: USINT
         channels: 4
         access: Read-only
         fastcs_name: PaiStatusChannelStatusNoOfSamples{channel}
-      - name_template: PAI Status Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: PaiStatusChannelStatusError{channel}
-      - name_template: PAI Status Channel {channel}.Status__Underrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: PaiStatusChannelStatusUnderrange{channel}
-      - name_template: PAI Status Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: PaiStatusChannelStatusOverrange{channel}
-      - name_template: PAI Status Channel {channel}.Status__Diag
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: PaiStatusChannelStatusDiag{channel}
-      - name_template: PAI Status Channel {channel}.Status__TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: PaiStatusChannelStatusTxpdoState{channel}
       - name_template: PAI Status Channel {channel}.Status__Input cycle counter
         index_group: 61472
         type_name: BIT2
@@ -9394,24 +8974,12 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: PaiSamplesr32100ChannelSamplesArray99{channel}
-      - name_template: PAI Control Channel {channel}.Control__Integrator Reset
+      - name_template: PAI Control Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: PaiControlChannelControlIntegratorReset{channel}
-      - name_template: PAI Control Channel {channel}.Control__Peak Hold Reset
-        index_group: 61488
-        type_name: BOOL
-        channels: 4
-        access: Read/Write
-        fastcs_name: PaiControlChannelControlPeakHoldReset{channel}
-      - name_template: PAI Control Channel {channel}.Control__Invalidate
-        index_group: 61488
-        type_name: BOOL
-        channels: 4
-        access: Read/Write
-        fastcs_name: PaiControlChannelControlInvalidate{channel}
+        fastcs_name: PaiControlChannelControl{channel}
       - name_template: PAI TC Channel {channel}.Cold Junction Temperature
         index_group: 61488
         type_name: REAL
@@ -9427,18 +8995,18 @@ terminal_types:
       product_code: 153239634
       revision_number: 1048578
     symbol_nodes:
-      - name_template: Channel {channel}.Input
+      - name_template: Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 8
         access: Read-only
-        fastcs_name: ChannelInput{channel}
-      - name_template: Channel {channel}.Output
+        fastcs_name: ChannelStatus{channel}
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 8
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EP2624-0002:
@@ -9448,12 +9016,12 @@ terminal_types:
       product_code: 171982930
       revision_number: 1114114
     symbol_nodes:
-      - name_template: Channel {channel}.Output
+      - name_template: Channel {channel}.Control
         index_group: 61488
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read/Write
-        fastcs_name: ChannelOutput{channel}
+        fastcs_name: ChannelControl{channel}
     coe_objects: []
     group_type: DigOut
   EP3174-0002:
@@ -9463,18 +9031,12 @@ terminal_types:
       product_code: 208027730
       revision_number: 1048578
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}.Status__Underrange
+      - name_template: AI Standard Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: AiStandardChannelStatusUnderrange{channel}
-      - name_template: AI Standard Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusOverrange{channel}
+        fastcs_name: AiStandardChannelStatus{channel}
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -9487,24 +9049,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit2{channel}
-      - name_template: AI Standard Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusError{channel}
-      - name_template: AI Standard Channel {channel}.Status__TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusTxpdoState{channel}
-      - name_template: AI Standard Channel {channel}.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: AiStandardChannelStatusTxpdoToggle{channel}
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -9526,18 +9070,12 @@ terminal_types:
       product_code: 209993810
       revision_number: 1114114
     symbol_nodes:
-      - name_template: RTD RTDInputs Channel {channel}.Status__Underrange
+      - name_template: RTD RTDInputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusUnderrange{channel}
-      - name_template: RTD RTDInputs Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusOverrange{channel}
+        fastcs_name: RtdRtdinputsChannelStatus{channel}
       - name_template: RTD RTDInputs Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -9550,30 +9088,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: RtdRtdinputsChannelStatusLimit2{channel}
-      - name_template: RTD RTDInputs Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusError{channel}
-      - name_template: RTD RTDInputs Channel {channel}.Status__Sync error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusSyncError{channel}
-      - name_template: RTD RTDInputs Channel {channel}.Status__TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusTxpdoState{channel}
-      - name_template: RTD RTDInputs Channel {channel}.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: RtdRtdinputsChannelStatusTxpdoToggle{channel}
       - name_template: RTD RTDInputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -9589,18 +9103,12 @@ terminal_types:
       product_code: 217202770
       revision_number: 1048578
     symbol_nodes:
-      - name_template: TC TCInputs Channel {channel}.Status__Underrange
+      - name_template: TC TCInputs Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: TcTcinputsChannelStatusUnderrange{channel}
-      - name_template: TC TCInputs Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcTcinputsChannelStatusOverrange{channel}
+        fastcs_name: TcTcinputsChannelStatus{channel}
       - name_template: TC TCInputs Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -9613,30 +9121,6 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: TcTcinputsChannelStatusLimit2{channel}
-      - name_template: TC TCInputs Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcTcinputsChannelStatusError{channel}
-      - name_template: TC TCInputs Channel {channel}.Status__Sync error
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcTcinputsChannelStatusSyncError{channel}
-      - name_template: TC TCInputs Channel {channel}.Status__TxPDO State
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcTcinputsChannelStatusTxpdoState{channel}
-      - name_template: TC TCInputs Channel {channel}.Status__TxPDO Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 4
-        access: Read-only
-        fastcs_name: TcTcinputsChannelStatusTxpdoToggle{channel}
       - name_template: TC TCInputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -9674,19 +9158,12 @@ terminal_types:
       product_code: 286670930
       revision_number: 1048578
     symbol_nodes:
-      - name_template: AI TxPDO-Map Standard Channel 
-          {channel}.Status__Underrange
+      - name_template: AI TxPDO-Map Standard Channel {channel}.Status
         index_group: 61472
-        type_name: BOOL
+        type_name: USINT
         channels: 2
         access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusUnderrange{channel}
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Overrange
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusOverrange{channel}
+        fastcs_name: AiTxpdoMapStandardChannelStatus{channel}
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 1
         index_group: 61472
         type_name: BIT2
@@ -9699,33 +9176,6 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: AiTxpdoMapStandardChannelStatusLimit2{channel}
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Error
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusError{channel}
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Sync 
-          error
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusSyncError{channel}
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__TxPDO 
-          State
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusTxpdoState{channel}
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__TxPDO 
-          Toggle
-        index_group: 61472
-        type_name: BOOL
-        channels: 2
-        access: Read-only
-        fastcs_name: AiTxpdoMapStandardChannelStatusTxpdoToggle{channel}
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT

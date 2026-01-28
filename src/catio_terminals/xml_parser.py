@@ -280,6 +280,10 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
     Uses PDO name (not Entry name) to determine channel patterns, matching
     how TwinCAT generates symbol names at runtime.
 
+    When a PDO contains a group of bit fields followed by a value entry,
+    the bit fields are collapsed into a single "Status" or "Control" composite
+    symbol (matching TwinCAT's grouping behavior).
+
     Args:
         device: lxml Device element
         pdo_type: "TxPdo" or "RxPdo"
@@ -294,14 +298,12 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
     is_output = pdo_type == "RxPdo"
 
     for pdo in device.findall(f".//{pdo_type}"):
-        # Use PDO name for pattern matching (TwinCAT uses this for composite types)
         pdo_name = pdo.findtext("Name", "")
 
+        # Collect all entries for this PDO to analyze grouping
+        entries = []
         for entry in pdo.findall("Entry"):
             entry_name = entry.findtext("Name", "")
-            if not entry_name:
-                continue
-
             index_str = entry.findtext("Index", "0")
             index = parse_hex_value(index_str)
 
@@ -309,55 +311,195 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
             if index == 0:
                 continue
 
+            if not entry_name:
+                continue
+
             bit_len = int(entry.findtext("BitLen", "0"))
             data_type = entry.findtext("DataType", "UNKNOWN")
+
+            entries.append(
+                {
+                    "name": entry_name,
+                    "index": index,
+                    "bit_len": bit_len,
+                    "data_type": data_type,
+                }
+            )
+
+        if not entries:
+            continue
+
+        # Analyze entries: separate bit fields from value entries
+        # Bit fields are BOOL entries or entries with BitLen=1
+        bit_entries = []
+        value_entries = []
+        for e in entries:
+            is_bit = e["data_type"] == "BOOL" or e["bit_len"] == 1
+            if is_bit:
+                bit_entries.append(e)
+            else:
+                value_entries.append(e)
+
+        access = "Read/Write" if is_output else "Read-only"
+
+        # If we have bit entries that form a group, create a composite symbol
+        # Use the index of the first bit entry to determine the group name
+        if bit_entries:
+            # Calculate total size of bit group (round up to nearest byte)
+            total_bits = sum(e["bit_len"] for e in bit_entries)
+            # Determine composite type based on bit count
+            if total_bits <= 8:
+                composite_type = "USINT"
+                composite_size = 1
+            elif total_bits <= 16:
+                composite_type = "UINT"
+                composite_size = 2
+            else:
+                composite_type = "UDINT"
+                composite_size = 4
+
+            # Determine composite name from the first bit entry's index
+            # TwinCAT groups bits under "Status" (inputs) or "Control" (outputs)
+            first_index = bit_entries[0]["index"]
+            if (first_index & 0xF000) == 0x6000:
+                composite_name = "Status"
+            elif (first_index & 0xF000) == 0x7000:
+                composite_name = "Control"
+            else:
+                # Fallback: use generic name
+                composite_name = "Status" if pdo_type == "TxPdo" else "Control"
+
+            index_group = (first_index >> 16) & 0xFFFF
+            if index_group == 0:
+                index_group = default_index_group
+
+            ads_type = get_ads_type(composite_type)
+
+            # Build full symbol name: "{PDO_name}.{composite_name}"
+            if pdo_name:
+                full_name = f"{pdo_name}.{composite_name}"
+            else:
+                full_name = composite_name
+
+            # Check for channel pattern in PDO name
+            pdo_channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
+
+            if pdo_channel_info:
+                pdo_pattern, channel_num = pdo_channel_info
+                pattern = f"{pdo_pattern}.{composite_name}"
+                group_key = (
+                    pattern,
+                    index_group,
+                    composite_size,
+                    ads_type,
+                    composite_type,
+                    access,
+                )
+                if group_key not in channel_groups:
+                    channel_groups[group_key] = []
+                channel_groups[group_key].append(channel_num)
+            else:
+                dup_key = (
+                    full_name,
+                    index_group,
+                    composite_size,
+                    ads_type,
+                    composite_type,
+                    access,
+                )
+                duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
+
+        # Process non-bit (value) entries normally
+        for entry_data in value_entries:
+            entry_name = entry_data["name"]
+            index = entry_data["index"]
+            bit_len = entry_data["bit_len"]
+            data_type = entry_data["data_type"]
 
             index_group = (index >> 16) & 0xFFFF
             if index_group == 0:
                 index_group = default_index_group
 
-            access = "Read/Write" if is_output else "Read-only"
             size = (bit_len + 7) // 8
             ads_type = get_ads_type(data_type)
 
-            # Try PDO name first (e.g., "Channel 1" for EL1004)
-            # This matches how TwinCAT creates composite symbol names
+            # Build symbol name
             pdo_channel_info = _extract_channel_pattern(pdo_name) if pdo_name else None
 
-            # Initialize name - will be set in one of the branches below
-            name = entry_name or pdo_name or ""
-
-            # Build the symbol name using '.' separator to match TwinCAT's
-            # symbol naming convention: {PDO_name}.{Entry_name}
-            # e.g., "Channel 1.Input" matches TwinCAT symbol
-            #   "Term 55 (EL1014).Channel 1.Input"
             if pdo_name and entry_name and pdo_name != entry_name:
                 if pdo_channel_info:
-                    # PDO has channel pattern - include entry name for distinction
-                    # e.g., "Channel 1" + "Input" -> "Channel {channel}.Input"
-                    pdo_pattern, _ = pdo_channel_info
+                    pdo_pattern, channel_num = pdo_channel_info
                     pattern = f"{pdo_pattern}.{entry_name}"
-                    channel_info = (pattern, pdo_channel_info[1])
+                    group_key = (
+                        pattern,
+                        index_group,
+                        size,
+                        ads_type,
+                        data_type,
+                        access,
+                    )
+                    if group_key not in channel_groups:
+                        channel_groups[group_key] = []
+                    channel_groups[group_key].append(channel_num)
                 else:
-                    # Neither has pattern, combine them with '.'
                     name = f"{pdo_name}.{entry_name}"
                     channel_info = _extract_channel_pattern(name)
+                    if channel_info:
+                        pattern, channel_num = channel_info
+                        group_key = (
+                            pattern,
+                            index_group,
+                            size,
+                            ads_type,
+                            data_type,
+                            access,
+                        )
+                        if group_key not in channel_groups:
+                            channel_groups[group_key] = []
+                        channel_groups[group_key].append(channel_num)
+                    else:
+                        dup_key = (name, index_group, size, ads_type, data_type, access)
+                        duplicate_tracker[dup_key] = (
+                            duplicate_tracker.get(dup_key, 0) + 1
+                        )
             elif pdo_name:
                 name = pdo_name
                 channel_info = pdo_channel_info
+                if channel_info:
+                    pattern, channel_num = channel_info
+                    group_key = (
+                        pattern,
+                        index_group,
+                        size,
+                        ads_type,
+                        data_type,
+                        access,
+                    )
+                    if group_key not in channel_groups:
+                        channel_groups[group_key] = []
+                    channel_groups[group_key].append(channel_num)
+                else:
+                    dup_key = (name, index_group, size, ads_type, data_type, access)
+                    duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
             else:
                 name = entry_name
                 channel_info = _extract_channel_pattern(entry_name)
-
-            if channel_info:
-                pattern, channel_num = channel_info
-                group_key = (pattern, index_group, size, ads_type, data_type, access)
-                if group_key not in channel_groups:
-                    channel_groups[group_key] = []
-                channel_groups[group_key].append(channel_num)
-            else:
-                dup_key = (name, index_group, size, ads_type, data_type, access)
-                duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
+                if channel_info:
+                    pattern, channel_num = channel_info
+                    group_key = (
+                        pattern,
+                        index_group,
+                        size,
+                        ads_type,
+                        data_type,
+                        access,
+                    )
+                    if group_key not in channel_groups:
+                        channel_groups[group_key] = []
+                    channel_groups[group_key].append(channel_num)
+                else:
+                    dup_key = (name, index_group, size, ads_type, data_type, access)
+                    duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
 
     return channel_groups, duplicate_tracker
 
