@@ -7,7 +7,7 @@ from nicegui import ui
 from catio_terminals.models import CompositeType, SymbolNode, TerminalType
 from catio_terminals.service_config import ConfigService
 from catio_terminals.service_terminal import TerminalService
-from catio_terminals.utils import to_pascal_case
+from catio_terminals.utils import to_snake_case
 
 if TYPE_CHECKING:
     from catio_terminals.ui_app import TerminalEditorApp
@@ -141,7 +141,7 @@ def _build_symbol_node(
         Tree node dictionary for ui.tree
     """
     access = TerminalService.get_symbol_access(symbol.index_group)
-    pascal_name = to_pascal_case(symbol.name_template)
+    snake_name = to_snake_case(symbol.name_template)
 
     # Check if the symbol type is a composite type with bit fields
     composite_type = composite_types.get(symbol.type_name) if composite_types else None
@@ -176,7 +176,7 @@ def _build_symbol_node(
         type_node,
         {
             "id": f"{terminal_id}_sym{symbol_idx}_fastcs",
-            "label": f"FastCS Name: {pascal_name}",
+            "label": f"FastCS Name: {snake_name}",
             "icon": "label",
         },
         {

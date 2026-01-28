@@ -1,7 +1,7 @@
 """PDO (Process Data Object) parsing for Beckhoff terminal XML files."""
 
 from catio_terminals.models import BitField, CompositeType, SymbolNode
-from catio_terminals.utils import to_pascal_case
+from catio_terminals.utils import to_snake_case
 from catio_terminals.xml_constants import (
     ARRAY_ELEMENT_PATTERN,
     CHANNEL_KEYWORD_PATTERN,
@@ -532,7 +532,7 @@ def create_symbol_nodes(
                 type_name=data_type,
                 channels=len(channel_nums),
                 access=access,
-                fastcs_name=to_pascal_case(name_pattern),
+                fastcs_name=to_snake_case(name_pattern),
                 tooltip=tooltip,
             )
         )
@@ -570,7 +570,7 @@ def create_symbol_nodes(
                     type_name=data_type,
                     channels=count,
                     access=access,
-                    fastcs_name=to_pascal_case(name_pattern),
+                    fastcs_name=to_snake_case(name_pattern),
                     tooltip=tooltip,
                 )
             )
@@ -582,7 +582,7 @@ def create_symbol_nodes(
                     type_name=data_type,
                     channels=1,
                     access=access,
-                    fastcs_name=to_pascal_case(name),
+                    fastcs_name=to_snake_case(name),
                     tooltip=tooltip,
                 )
             )
