@@ -109,17 +109,17 @@ Some terminals (like EL1502) use a different approach to define mutually exclusi
 **Example from EL1502:**
 
 ```xml
-<TxPdo>
+<TxPdo Fixed="1">
   <Index>#x1a00</Index>
   <Name>CNT Inputs Channel 1</Name>
   <Exclude>#x1a02</Exclude>  <!-- Excludes the combined PDO -->
 </TxPdo>
-<TxPdo>
+<TxPdo Fixed="1">
   <Index>#x1a01</Index>
   <Name>CNT Inputs Channel 2</Name>
   <Exclude>#x1a02</Exclude>  <!-- Excludes the combined PDO -->
 </TxPdo>
-<TxPdo>
+<TxPdo Fixed="1" Sm="3">
   <Index>#x1a02</Index>
   <Name>CNT Inputs</Name>
   <Exclude>#x1a00</Exclude>  <!-- Excludes channel 1 -->
@@ -131,11 +131,15 @@ This exclusion graph defines two groups:
 - **Per-Channel**: `#x1a00` + `#x1a01` (each channel separate)
 - **Combined**: `#x1a02` (both channels in one PDO)
 
+The default group is determined by the `Sm` attribute. PDOs with an explicit `Sm` attribute are assigned to a Sync Manager by default, making their group the default. In EL1502, the Combined PDO (`#x1a02`) has `Sm="3"`, so **Combined is the default**.
+
 ### Sync Manager Assignment
 
-The `<Sm No="3">` element indicates which Sync Manager the PDOs are assigned to:
-- SM2 (Sm No="2"): RxPDO outputs
-- SM3 (Sm No="3"): TxPDO inputs
+The `Sm` attribute on PDO elements indicates the default Sync Manager assignment:
+- SM2 (Sm="2"): RxPDO outputs
+- SM3 (Sm="3"): TxPDO inputs
+
+PDOs without an `Sm` attribute are not assigned by default and require explicit selection.
 
 ## Terminals at Diamond Light Source
 
@@ -208,7 +212,7 @@ The `xml_pdo_groups.py` module handles parsing of PDO group definitions using tw
 ```python
 def parse_pdo_groups(device: _Element) -> list[PdoGroup]:
     """Parse PDO groups from device XML.
-    
+
     Tries AlternativeSmMapping first, then falls back to Exclude elements.
     """
     # Find VendorSpecific/TwinCAT/AlternativeSmMapping elements

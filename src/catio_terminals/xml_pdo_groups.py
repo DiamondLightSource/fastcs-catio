@@ -100,6 +100,9 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
     to declare which PDOs are mutually exclusive. This function analyzes
     the exclusion graph to identify per-channel vs combined modes.
 
+    The default group is determined by which PDOs have an explicit Sm attribute
+    (Sync Manager assignment), as these are the PDOs active by default.
+
     Args:
         device: lxml Device element
 
@@ -109,6 +112,7 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
     # Build exclusion graph and collect PDO info
     excludes: dict[int, set[int]] = defaultdict(set)
     pdo_names: dict[int, str] = {}
+    pdo_has_sm: dict[int, bool] = {}  # Track which PDOs have Sm attribute
     all_pdos: set[int] = set()
 
     for pdo_type in ["TxPdo", "RxPdo"]:
@@ -122,6 +126,8 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
 
             all_pdos.add(idx)
             pdo_names[idx] = pdo.findtext("Name", f"PDO 0x{idx:04X}")
+            # PDOs with Sm attribute are assigned to a Sync Manager by default
+            pdo_has_sm[idx] = pdo.get("Sm") is not None
 
             for excl in pdo.findall("Exclude"):
                 if excl.text:
@@ -157,6 +163,15 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
         logger.debug(f"Using symmetric exclusion heuristic for {len(excludes)} PDOs")
         return []  # Can't determine groups from simple exclusions
 
+    # Determine which group is default based on Sm attribute
+    # PDOs with Sm attribute are the default active PDOs
+    combined_has_sm = any(pdo_has_sm.get(idx, False) for idx in combined_pdos)
+    channel_has_sm = any(pdo_has_sm.get(idx, False) for idx in channel_pdos)
+
+    # Default to the group whose PDOs have Sm attribute
+    # If both or neither have Sm, default to Combined (as TwinCAT typically does)
+    combined_is_default = combined_has_sm or not channel_has_sm
+
     # Build the two groups
     pdo_groups: list[PdoGroup] = []
 
@@ -170,7 +185,7 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
         pdo_groups.append(
             PdoGroup(
                 name="Per-Channel",
-                is_default=True,  # Per-channel is typically the default
+                is_default=not combined_is_default,
                 pdo_indices=sorted(pure_channel_pdos | neutral_pdos),
                 symbol_indices=[],
             )
@@ -181,16 +196,17 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
         pdo_groups.append(
             PdoGroup(
                 name="Combined",
-                is_default=False,
+                is_default=combined_is_default,
                 pdo_indices=sorted(combined_pdos | neutral_pdos),
                 symbol_indices=[],
             )
         )
 
     if pdo_groups:
+        default_name = next((g.name for g in pdo_groups if g.is_default), "unknown")
         logger.info(
             f"Inferred {len(pdo_groups)} PDO groups from Exclude elements: "
-            f"{[g.name for g in pdo_groups]}"
+            f"{[g.name for g in pdo_groups]} (default: {default_name})"
         )
 
     return pdo_groups
