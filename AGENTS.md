@@ -181,6 +181,9 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
   - How-to guides → `docs/how-to.md` toctree
   - Reference → `docs/reference.md` toctree
   - Tutorials → `docs/tutorials.md` toctree
+- **NEVER** embed Python code from the repository in documentation files
+  - Instead, reference the source file and briefly describe what the classes/functions provide
+  - Example: "The data models are defined in [models.py](src/catio_terminals/models.py): `PdoGroup` stores the group name and PDO indices, `TerminalType` includes helper properties for PDO group selection."
 
 ## Domain Knowledge
 
