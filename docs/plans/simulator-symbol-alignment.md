@@ -4,8 +4,8 @@ orphan: true
 
 # Plan: Align Simulator Symbols with Real Hardware
 
-**Created:** 2026-01-27  
-**Status:** In Progress  
+**Created:** 2026-01-27
+**Status:** In Progress
 **Related files:**
 - [tests/ads_sim/ethercat_chain.py](../../tests/ads_sim/ethercat_chain.py) - Symbol generation logic
 - [tests/ads_sim/server_config.yaml](../../tests/ads_sim/server_config.yaml) - Device/slave configuration
@@ -31,7 +31,7 @@ The ADS simulator generates symbols that differ from real TwinCAT hardware in:
 ## Issues and Tasks
 
 ### Issue 1: Symbol Naming Convention
-**Priority:** High  
+**Priority:** High
 **Status:** [ ] Not Started
 
 **Problem:**
@@ -50,7 +50,7 @@ The ADS simulator generates symbols that differ from real TwinCAT hardware in:
 ---
 
 ### Issue 2: Missing Device-Level Symbols
-**Priority:** High  
+**Priority:** High
 **Status:** [ ] Not Started
 
 **Problem:**
@@ -78,7 +78,7 @@ Device 1 (EtherCAT).Outputs.DevCtrl
 ---
 
 ### Issue 3: Missing Per-Terminal WcState Symbols
-**Priority:** Medium  
+**Priority:** Medium
 **Status:** [ ] Not Started
 
 **Problem:**
@@ -101,13 +101,13 @@ Term 100 (EL1502).WcState.WcState
 ---
 
 ### Issue 4: Index Group Assignments
-**Priority:** Medium  
+**Priority:** Medium
 **Status:** [ ] Not Started
 
 **Problem:**
 Simulator uses `0xF030` for most symbols. Hardware uses:
 - `0xF030` - Device inputs, terminal inputs
-- `0xF020` - Device outputs, terminal outputs  
+- `0xF020` - Device outputs, terminal outputs
 - `0xF021` - Terminal channel outputs (e.g., EL2024 channels)
 - `0xF031` - WcState symbols
 
@@ -124,7 +124,7 @@ Simulator uses `0xF030` for most symbols. Hardware uses:
 ---
 
 ### Issue 5: EL1502 Counter Terminal Symbol Mismatch
-**Priority:** Medium  
+**Priority:** Medium
 **Status:** [ ] Not Started
 
 **Problem:**
@@ -149,7 +149,7 @@ Hardware only exposes:
 ---
 
 ### Issue 6: SyncUnits Symbol
-**Priority:** Low  
+**Priority:** Low
 **Status:** [ ] Not Started
 
 **Problem:**

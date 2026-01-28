@@ -419,6 +419,10 @@ class TerminalConfig(BaseModel):
             # Remove empty pdo_groups
             if not terminal_data.get("pdo_groups"):
                 terminal_data.pop("pdo_groups", None)
+            else:
+                # Exclude pdo_indices (only needed during XML parsing)
+                for group in terminal_data["pdo_groups"]:
+                    group.pop("pdo_indices", None)
             # Remove selected_pdo_group if no pdo_groups
             if not terminal_data.get("pdo_groups"):
                 terminal_data.pop("selected_pdo_group", None)

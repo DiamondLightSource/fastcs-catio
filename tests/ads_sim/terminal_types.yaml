@@ -393,11 +393,6 @@ terminal_types:
     pdo_groups:
       - name: Per-Channel
         is_default: false
-        pdo_indices:
-          - 5632
-          - 5633
-          - 6656
-          - 6657
         symbol_indices:
           - 0
           - 1
@@ -405,9 +400,6 @@ terminal_types:
           - 3
       - name: Combined
         is_default: true
-        pdo_indices:
-          - 5634
-          - 6658
         symbol_indices:
           - 4
           - 5
@@ -553,53 +545,22 @@ terminal_types:
     pdo_groups:
       - name: Standard digital output
         is_default: true
-        pdo_indices:
-          - 5632
-          - 6656
         symbol_indices: []
       - name: Standard digital output with Info Data
         is_default: false
-        pdo_indices:
-          - 5632
-          - 6656
-          - 6657
         symbol_indices: []
       - name: External trigger input
         is_default: false
-        pdo_indices:
-          - 5632
-          - 5634
-          - 5635
-          - 6656
         symbol_indices: []
       - name: External trigger input with Info Data
         is_default: false
-        pdo_indices:
-          - 5632
-          - 5634
-          - 5635
-          - 6656
-          - 6657
         symbol_indices:
           - 6
       - name: DC digital output
         is_default: false
-        pdo_indices:
-          - 5632
-          - 5634
-          - 5636
-          - 6656
-          - 6658
         symbol_indices: []
       - name: DC digital output with Info Data
         is_default: false
-        pdo_indices:
-          - 5632
-          - 5634
-          - 5636
-          - 6656
-          - 6657
-          - 6658
         symbol_indices:
           - 0
           - 1
@@ -690,11 +651,6 @@ terminal_types:
     pdo_groups:
       - name: Standard
         is_default: true
-        pdo_indices:
-          - 6656
-          - 6658
-          - 6660
-          - 6662
         symbol_indices:
           - 0
           - 1
@@ -702,11 +658,6 @@ terminal_types:
           - 3
       - name: Compact
         is_default: false
-        pdo_indices:
-          - 6657
-          - 6659
-          - 6661
-          - 6663
         symbol_indices:
           - 4
     selected_pdo_group: Standard
@@ -759,11 +710,6 @@ terminal_types:
     pdo_groups:
       - name: Standard
         is_default: true
-        pdo_indices:
-          - 6656
-          - 6658
-          - 6660
-          - 6662
         symbol_indices:
           - 0
           - 1
@@ -771,11 +717,6 @@ terminal_types:
           - 3
       - name: Compact
         is_default: false
-        pdo_indices:
-          - 6657
-          - 6659
-          - 6661
-          - 6663
         symbol_indices:
           - 4
     selected_pdo_group: Standard
@@ -971,35 +912,21 @@ terminal_types:
     pdo_groups:
       - name: Standard (INT32)
         is_default: true
-        pdo_indices:
-          - 5632
-          - 6656
-          - 6657
         symbol_indices:
           - 4
       - name: Standard (REAL)
         is_default: false
-        pdo_indices:
-          - 5632
-          - 6656
-          - 6658
         symbol_indices:
           - 3
           - 5
           - 7
       - name: 2x AnalogIn (Standard)
         is_default: false
-        pdo_indices:
-          - 6660
-          - 6662
         symbol_indices:
           - 0
           - 1
       - name: 2x AnalogIn (Compact)
         is_default: false
-        pdo_indices:
-          - 6661
-          - 6663
         symbol_indices:
           - 2
     selected_pdo_group: Standard (INT32)
@@ -1596,376 +1523,98 @@ terminal_types:
     pdo_groups:
       - name: Oversampling 1 (24Bit)
         is_default: true
-        pdo_indices:
-          - 6656
-          - 6657
-          - 6672
-          - 6704
-          - 6705
-          - 6752
-          - 6753
-          - 6800
-          - 6801
         symbol_indices: []
       - name: Oversampling 5 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6660
-          - 6672
-          - 6704
-          - 6708
-          - 6752
-          - 6756
-          - 6800
-          - 6804
         symbol_indices:
           - 6
       - name: Oversampling 10 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6662
-          - 6672
-          - 6704
-          - 6710
-          - 6752
-          - 6758
-          - 6800
-          - 6806
         symbol_indices: []
       - name: Oversampling 20 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6664
-          - 6672
-          - 6704
-          - 6712
-          - 6752
-          - 6760
-          - 6800
-          - 6808
         symbol_indices:
           - 10
       - name: Oversampling 50 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6668
-          - 6672
-          - 6704
-          - 6716
-          - 6752
-          - 6764
-          - 6800
-          - 6812
         symbol_indices:
           - 14
       - name: Oversampling 100 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6671
-          - 6672
-          - 6704
-          - 6719
-          - 6752
-          - 6767
-          - 6800
-          - 6815
         symbol_indices:
           - 17
       - name: SM Oversampling 1 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6657
-          - 6688
-          - 6704
-          - 6705
-          - 6736
-          - 6752
-          - 6753
-          - 6784
-          - 6800
-          - 6801
-          - 6832
         symbol_indices: []
       - name: SM Oversampling 10 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6662
-          - 6688
-          - 6704
-          - 6710
-          - 6736
-          - 6752
-          - 6758
-          - 6784
-          - 6800
-          - 6806
-          - 6832
         symbol_indices: []
       - name: Ch 1+2 Ovs 5 - Ch 3+4 Ovs 10 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6660
-          - 6672
-          - 6704
-          - 6708
-          - 6752
-          - 6758
-          - 6800
-          - 6806
         symbol_indices:
           - 8
       - name: Ch 1+2 Ovs 10 - Ch 3+4 Ovs 1 (24Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6662
-          - 6672
-          - 6704
-          - 6710
-          - 6752
-          - 6753
-          - 6800
-          - 6801
         symbol_indices:
           - 3
       - name: Oversampling 1 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6673
-          - 6704
-          - 6721
-          - 6752
-          - 6769
-          - 6800
-          - 6817
         symbol_indices: []
       - name: Oversampling 5 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6676
-          - 6704
-          - 6724
-          - 6752
-          - 6772
-          - 6800
-          - 6820
         symbol_indices:
           - 23
       - name: Oversampling 10 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6678
-          - 6704
-          - 6726
-          - 6752
-          - 6774
-          - 6800
-          - 6822
         symbol_indices: []
       - name: Oversampling 20 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6680
-          - 6704
-          - 6728
-          - 6752
-          - 6776
-          - 6800
-          - 6824
         symbol_indices:
           - 27
       - name: Oversampling 50 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6684
-          - 6704
-          - 6732
-          - 6752
-          - 6780
-          - 6800
-          - 6828
         symbol_indices:
           - 31
       - name: Oversampling 100 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6687
-          - 6704
-          - 6735
-          - 6752
-          - 6783
-          - 6800
-          - 6831
         symbol_indices:
           - 34
       - name: SM Oversampling 1 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6673
-          - 6688
-          - 6704
-          - 6721
-          - 6736
-          - 6752
-          - 6769
-          - 6784
-          - 6800
-          - 6817
-          - 6832
         symbol_indices:
           - 20
       - name: SM Oversampling 10 (16Bit)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6678
-          - 6688
-          - 6704
-          - 6726
-          - 6736
-          - 6752
-          - 6774
-          - 6784
-          - 6800
-          - 6822
-          - 6832
         symbol_indices:
           - 25
       - name: Oversampling 1 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6689
-          - 6704
-          - 6737
-          - 6752
-          - 6785
-          - 6800
-          - 6833
         symbol_indices: []
       - name: Oversampling 5 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6692
-          - 6704
-          - 6740
-          - 6752
-          - 6788
-          - 6800
-          - 6836
         symbol_indices:
           - 39
       - name: Oversampling 10 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6694
-          - 6704
-          - 6742
-          - 6752
-          - 6790
-          - 6800
-          - 6838
         symbol_indices: []
       - name: Oversampling 20 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6696
-          - 6704
-          - 6744
-          - 6752
-          - 6792
-          - 6800
-          - 6840
         symbol_indices:
           - 43
       - name: Oversampling 50 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6700
-          - 6704
-          - 6748
-          - 6752
-          - 6796
-          - 6800
-          - 6844
         symbol_indices:
           - 47
       - name: Oversampling 100 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6672
-          - 6703
-          - 6704
-          - 6751
-          - 6752
-          - 6799
-          - 6800
-          - 6847
         symbol_indices:
           - 50
       - name: SM Oversampling 1 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6688
-          - 6689
-          - 6704
-          - 6736
-          - 6737
-          - 6752
-          - 6784
-          - 6785
-          - 6800
-          - 6832
-          - 6833
         symbol_indices:
           - 36
       - name: SM Oversampling 10 (REAL32)
         is_default: false
-        pdo_indices:
-          - 6656
-          - 6688
-          - 6694
-          - 6704
-          - 6736
-          - 6742
-          - 6752
-          - 6784
-          - 6790
-          - 6800
-          - 6832
-          - 6838
         symbol_indices:
           - 0
           - 1
