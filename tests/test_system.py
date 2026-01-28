@@ -112,10 +112,11 @@ async def fastcs_catio_controller(simulator_process):
     )
     launcher = FastCS(controller, transports=[])
 
-    try:
-        asyncio.create_task(launcher.serve())
-    except Exception as e:
-        pytest.fail(f"Failed to start fastcs client: {e}")
+    # Start the launcher task and let it run
+    launcher_task = asyncio.create_task(launcher.serve())
+
+    # Give the launcher time to connect and initialize
+    await asyncio.sleep(2.0)
 
     # wait until the controller is ready
     # TODO this requires https://github.com/DiamondLightSource/FastCS/pull/308
@@ -123,8 +124,18 @@ async def fastcs_catio_controller(simulator_process):
 
     # make sure the notification system is enabled
     # meaning the scan routine has started
+    timeout = 60  # seconds
+    start_time = time.time()
     while controller.notification_enabled is False:
         await asyncio.sleep(0.5)
+        if time.time() - start_time > timeout:
+            # Check if launcher task failed
+            if launcher_task.done():
+                exc = launcher_task.exception()
+                pytest.fail(f"Launcher task died: {exc}")
+            pytest.fail(
+                f"Timeout waiting for notification system to enable after {timeout}s"
+            )
     yield controller
 
     # Cleanup: close the connection
@@ -134,6 +145,13 @@ async def fastcs_catio_controller(simulator_process):
         print("WARNING: Connection close timed out")
     except Exception as e:
         print(f"WARNING: Error during cleanup: {e}")
+
+    # Cancel the launcher task
+    launcher_task.cancel()
+    try:
+        await launcher_task
+    except asyncio.CancelledError:
+        pass
 
 
 class TestFastcsCatioConnection:
