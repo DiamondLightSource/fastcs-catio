@@ -174,6 +174,14 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - [ ] No commented-out code or debug statements
 - [ ] No hardcoded credentials
 
+## Documentation
+
+- **ALWAYS** add new documentation files to the appropriate index:
+  - Explanations → `docs/explanations.md` toctree
+  - How-to guides → `docs/how-to.md` toctree
+  - Reference → `docs/reference.md` toctree
+  - Tutorials → `docs/tutorials.md` toctree
+
 ## Domain Knowledge
 
 This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protocol. Key concepts:
