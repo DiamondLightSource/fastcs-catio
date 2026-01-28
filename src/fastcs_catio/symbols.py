@@ -9,12 +9,13 @@ import numpy as np
 
 from ._constants import AdsDataType
 from .devices import (
-    ELM_OVERSAMPLING_FACTOR,
-    OVERSAMPLING_FACTOR,
     AdsSymbol,
     AdsSymbolNode,
 )
 from .utils import add_comment
+
+OVERSAMPLING_FACTOR = 50
+ELM_OVERSAMPLING_FACTOR = 50
 
 
 class AdsSymbolTypePattern:
