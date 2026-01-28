@@ -1,0 +1,862 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>EtherCAT and TwinCAT Nomenclature &#8212; fastcs-catio 1.1a4.dev43+ge02d2f10b documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d5cbb21b"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/nomenclature';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Terminal YAML Definitions" href="terminal-yaml-definitions.html" />
+    <link rel="prev" title="API Decoupling Analysis" href="api-decoupling.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="architecture-overview.html">CATio Architecture Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">EtherCAT and TwinCAT Nomenclature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic-pdos.html">Dynamic PDOs in EtherCAT Terminals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="useful_notes_ads_twincat.html">Useful Notes on ADS and TwinCAT</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../explanations.html" class="nav-link">Explanations</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">EtherCAT and TwinCAT Nomenclature</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="ethercat-and-twincat-nomenclature">
+<h1>EtherCAT and TwinCAT Nomenclature<a class="headerlink" href="#ethercat-and-twincat-nomenclature" title="Link to this heading">#</a></h1>
+<p>This document explains the terminology used in TwinCAT’s device tree when viewing EtherCAT terminals, and how these concepts map to Beckhoff ESI XML files and our terminal YAML definitions.</p>
+<section id="twincat-device-tree">
+<h2>TwinCAT Device Tree<a class="headerlink" href="#twincat-device-tree" title="Link to this heading">#</a></h2>
+<p>The diagram below shows TwinCAT device trees for different terminal types, illustrating how PDO structure varies by terminal.</p>
+<p><img alt="TwinCAT Device Tree Examples" src="../_images/twincat-device-tree.png" /></p>
+<section id="el1502-counter-terminal">
+<h3>EL1502 Counter Terminal<a class="headerlink" href="#el1502-counter-terminal" title="Link to this heading">#</a></h3>
+<p>The EL1502 is a 2-channel counter with complex PDO structure including Status/Control composites and value entries:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├─ Term 106 (EL1502)              ← Terminal / EtherCAT Slave
+│  ├─ CNT Inputs                  ← TxPDO (inputs to controller)
+│  │  ├─ Status                   ← PDO Entry (composite)
+│  │  │  ├─ Output functions enabled   ← Bit field
+│  │  │  ├─ Status of output           ← Bit field
+│  │  │  ├─ Set counter done           ← Bit field
+│  │  │  ├─ Counter inhibited          ← Bit field
+│  │  │  ├─ Status of input UD         ← Bit field
+│  │  │  ├─ Status of input clock      ← Bit field
+│  │  │  ├─ Sync error                 ← Bit field
+│  │  │  └─ TxPDO Toggle               ← Bit field
+│  │  └─ Counter value            ← PDO Entry (value)
+│  ├─ CNT Outputs                 ← RxPDO (outputs from controller)
+│  │  ├─ Control                  ← PDO Entry (composite)
+│  │  │  ├─ Enable output functions    ← Bit field
+│  │  │  ├─ Set output                 ← Bit field
+│  │  │  ├─ Set counter                ← Bit field
+│  │  │  └─ Inhibit counter            ← Bit field
+│  │  └─ Set counter value        ← PDO Entry (value)
+│  ├─ WcState                     ← Runtime Symbol Group
+│  │  ├─ WcState                  ← Working Counter state
+│  │  └─ InputToggle              ← Data freshness toggle
+│  └─ InfoData                    ← Runtime Symbol Group
+│     ├─ State                    ← EtherCAT state machine
+│     └─ AdsAddr                  ← ADS addressing
+│        ├─ netId                 ← Network identifier
+│        └─ port                  ← ADS port
+└─ Term 158 (EL9011)              ← Next terminal
+</pre></div>
+</div>
+</section>
+<section id="el1014-digital-input-terminal">
+<h3>EL1014 Digital Input Terminal<a class="headerlink" href="#el1014-digital-input-terminal" title="Link to this heading">#</a></h3>
+<p>The EL1014 is a 4-channel digital input with a simpler per-channel PDO structure. Each channel has its own TxPDO with a single Input entry:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├─ Term 53 (EK1100)               ← Bus Coupler
+│  └─ InfoData                    ← Runtime Symbol Group (couplers have limited symbols)
+├─ Term 54 (EL1014)               ← Terminal (collapsed)
+├─ Term 55 (EL1014)               ← Terminal / EtherCAT Slave
+│  ├─ Channel 1                   ← TxPDO (per-channel)
+│  │  └─ Input                    ← PDO Entry (single bit)
+│  ├─ Channel 2                   ← TxPDO (per-channel)
+│  │  └─ Input                    ← PDO Entry (single bit)
+│  ├─ Channel 3                   ← TxPDO (per-channel)
+│  │  └─ Input                    ← PDO Entry (single bit)
+│  ├─ Channel 4                   ← TxPDO (per-channel)
+│  │  └─ Input                    ← PDO Entry (single bit)
+│  ├─ WcState                     ← Runtime Symbol Group
+│  │  ├─ WcState                  ← Working Counter state
+│  │  └─ InputToggle              ← Data freshness toggle
+│  └─ InfoData                    ← Runtime Symbol Group
+│     └─ State                    ← EtherCAT state machine
+</pre></div>
+</div>
+</section>
+</section>
+<section id="terminology-reference">
+<h2>Terminology Reference<a class="headerlink" href="#terminology-reference" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Element in Tree</p></th>
+<th class="head"><p>Terminology</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Term 106 (EL1502)</strong>, <strong>Term 55 (EL1014)</strong></p></td>
+<td><p><strong>Terminal</strong> / <strong>EtherCAT Slave</strong></p></td>
+<td><p>A physical device on the EtherCAT bus. Each terminal has a unique position and identity (vendor ID, product code, revision).</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Term 53 (EK1100)</strong></p></td>
+<td><p><strong>Bus Coupler</strong></p></td>
+<td><p>A special terminal that connects the EtherCAT bus to the fieldbus segment. Has limited symbols (typically just InfoData).</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>CNT Inputs</strong></p></td>
+<td><p><strong>TxPDO</strong> (Transmit PDO)</p></td>
+<td><p>Process Data Object transmitted FROM the terminal TO the controller. These are your <strong>inputs</strong> (read-only from the controller’s perspective).</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CNT Outputs</strong></p></td>
+<td><p><strong>RxPDO</strong> (Receive PDO)</p></td>
+<td><p>Process Data Object received BY the terminal FROM the controller. These are your <strong>outputs</strong> (read/write from the controller’s perspective).</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Channel 1</strong>, <strong>Channel 2</strong>, etc.</p></td>
+<td><p><strong>TxPDO</strong> (per-channel)</p></td>
+<td><p>Some terminals organize PDOs by channel rather than combining them. Each channel is a separate TxPDO.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Status</strong></p></td>
+<td><p><strong>PDO Entry</strong> (composite)</p></td>
+<td><p>A structured entry within the PDO containing multiple bit fields packed together. In TwinCAT, this becomes a composite type.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Output functions enabled</strong>, <strong>Status of output</strong>, etc.</p></td>
+<td><p><strong>PDO Entry Fields</strong> / <strong>Bits</strong></p></td>
+<td><p>Individual fields (often single bits) within a Status or Control word.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Counter value</strong></p></td>
+<td><p><strong>PDO Entry</strong> (value)</p></td>
+<td><p>A data entry within the PDO, typically 16 or 32 bits representing a measured or computed value.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Input</strong></p></td>
+<td><p><strong>PDO Entry</strong> (single bit)</p></td>
+<td><p>A simple single-bit input, common in digital input terminals like the EL1014.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Control</strong></p></td>
+<td><p><strong>PDO Entry</strong> (composite)</p></td>
+<td><p>A structured entry containing control bits that command the terminal’s behavior.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Set counter value</strong></p></td>
+<td><p><strong>PDO Entry</strong> (value)</p></td>
+<td><p>An output value to write to the terminal.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>WcState</strong></p></td>
+<td><p><strong>Runtime Symbol</strong></p></td>
+<td><p>Diagnostic symbol added by the EtherCAT Master at runtime. Indicates communication health (Working Counter state). Not defined in Beckhoff XML.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>InputToggle</strong></p></td>
+<td><p><strong>Runtime Symbol</strong></p></td>
+<td><p>Toggles each EtherCAT cycle to indicate data freshness. Added by the EtherCAT Master.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>InfoData</strong></p></td>
+<td><p><strong>Runtime Symbol Group</strong></p></td>
+<td><p>Diagnostic information group added by the EtherCAT Master.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>State</strong></p></td>
+<td><p><strong>Runtime Symbol</strong></p></td>
+<td><p>EtherCAT state machine state (Init, Pre-Op, Safe-Op, Op).</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>AdsAddr</strong></p></td>
+<td><p><strong>Runtime Symbol Group</strong></p></td>
+<td><p>ADS addressing information for the terminal.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>netId</strong>, <strong>port</strong></p></td>
+<td><p><strong>Runtime Symbols</strong></p></td>
+<td><p>Network identifier and ADS port for direct terminal communication.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="key-concepts">
+<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Link to this heading">#</a></h2>
+<section id="pdo-process-data-object">
+<h3>PDO (Process Data Object)<a class="headerlink" href="#pdo-process-data-object" title="Link to this heading">#</a></h3>
+<p>PDOs are the cyclic I/O data exchanged every EtherCAT cycle. They contain the real-time process data.</p>
+<ul class="simple">
+<li><p><strong>TxPDO</strong> = “Transmit” from the slave’s perspective → controller <strong>inputs</strong> (read-only)</p></li>
+<li><p><strong>RxPDO</strong> = “Receive” from the slave’s perspective → controller <strong>outputs</strong> (read/write)</p></li>
+</ul>
+</section>
+<section id="pdo-entry">
+<h3>PDO Entry<a class="headerlink" href="#pdo-entry" title="Link to this heading">#</a></h3>
+<p>A single data item within a PDO. Can be:</p>
+<ul class="simple">
+<li><p>A single <strong>bit</strong> (e.g., status flags)</p></li>
+<li><p>A <strong>primitive value</strong> (BOOL, INT, UINT, DINT, etc.)</p></li>
+<li><p>A <strong>composite structure</strong> grouping multiple fields (e.g., Status word with bit fields)</p></li>
+</ul>
+</section>
+<section id="runtime-symbols">
+<h3>Runtime Symbols<a class="headerlink" href="#runtime-symbols" title="Link to this heading">#</a></h3>
+<p>Symbols added by the EtherCAT Master at runtime that are <strong>not defined in Beckhoff’s ESI XML files</strong>. These provide diagnostics and addressing information:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">WcState</span></code> - Working Counter state for communication health</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">InputToggle</span></code> - Data freshness indicator</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">InfoData</span></code> - State machine and addressing info</p></li>
+</ul>
+</section>
+</section>
+<section id="mapping-to-esi-xml">
+<h2>Mapping to ESI XML<a class="headerlink" href="#mapping-to-esi-xml" title="Link to this heading">#</a></h2>
+<p>In Beckhoff’s ESI XML files:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>TwinCAT Tree</p></th>
+<th class="head"><p>XML Element</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Terminal (EL1502)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;Device&gt;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>CNT Inputs</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;TxPdo&gt;</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>CNT Outputs</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;RxPdo&gt;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Status, Counter value, etc.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;Entry&gt;</span></code> within the PDO</p></td>
+</tr>
+<tr class="row-even"><td><p>Individual bits</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;Entry&gt;</span></code> with <code class="docutils literal notranslate"><span class="pre">&lt;BitLen&gt;1&lt;/BitLen&gt;</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Example XML structure:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">Sm=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Index&gt;</span>#x1a00<span class="nt">&lt;/Index&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="w"> </span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Index&gt;</span>#x6000<span class="nt">&lt;/Index&gt;</span>
+<span class="w">    </span><span class="nt">&lt;SubIndex&gt;</span>1<span class="nt">&lt;/SubIndex&gt;</span>
+<span class="w">    </span><span class="nt">&lt;BitLen&gt;</span>1<span class="nt">&lt;/BitLen&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Name&gt;</span>Status__Output<span class="w"> </span>functions<span class="w"> </span>enabled<span class="nt">&lt;/Name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;DataType&gt;</span>BOOL<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Index&gt;</span>#x6000<span class="nt">&lt;/Index&gt;</span>
+<span class="w">    </span><span class="nt">&lt;SubIndex&gt;</span>17<span class="nt">&lt;/SubIndex&gt;</span>
+<span class="w">    </span><span class="nt">&lt;BitLen&gt;</span>16<span class="nt">&lt;/BitLen&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Name&gt;</span>Counter<span class="w"> </span>value<span class="nt">&lt;/Name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;DataType&gt;</span>UINT<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="mapping-to-terminal-yaml">
+<h2>Mapping to Terminal YAML<a class="headerlink" href="#mapping-to-terminal-yaml" title="Link to this heading">#</a></h2>
+<p>In our terminal YAML definitions:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>TwinCAT Tree</p></th>
+<th class="head"><p>YAML Section</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Terminal identity</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">identity:</span></code> (vendor_id, product_code, revision_number)</p></td>
+</tr>
+<tr class="row-odd"><td><p>TxPDO/RxPDO entries</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">symbol_nodes:</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Runtime symbols</p></td>
+<td><p>Defined in <code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>CoE parameters</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">coe_objects:</span></code> (not shown in tree, accessed via SDO)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a> - How to define terminals in YAML</p></li>
+<li><p><a class="reference internal" href="../reference/beckhoff-xml-format.html"><span class="std std-doc">Beckhoff XML Format</span></a> - ESI XML schema reference</p></li>
+<li><p><a class="reference internal" href="composite-types.html"><span class="std std-doc">Composite Types</span></a> - How TwinCAT generates composite type names</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="api-decoupling.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">API Decoupling Analysis</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="terminal-yaml-definitions.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Terminal YAML Definitions</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#twincat-device-tree">TwinCAT Device Tree</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#el1502-counter-terminal">EL1502 Counter Terminal</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#el1014-digital-input-terminal">EL1014 Digital Input Terminal</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminology-reference">Terminology Reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-concepts">Key Concepts</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pdo-process-data-object">PDO (Process Data Object)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pdo-entry">PDO Entry</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-symbols">Runtime Symbols</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mapping-to-esi-xml">Mapping to ESI XML</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mapping-to-terminal-yaml">Mapping to Terminal YAML</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#related-documentation">Related Documentation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/explanations/nomenclature.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/explanations/nomenclature.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

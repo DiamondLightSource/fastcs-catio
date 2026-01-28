@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Terminal YAML Definitions &#8212; fastcs-catio 1.1a4.dev5+g2a19faef4 documentation</title>
+    <title>Terminal YAML Definitions &#8212; fastcs-catio 1.1a4.dev43+ge02d2f10b documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=a900ef02"></script>
+    <script src="../_static/documentation_options.js?v=d5cbb21b"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -59,7 +59,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Terminal Type Definitions" href="terminal-definitions.html" />
-    <link rel="prev" title="API Decoupling Analysis" href="api-decoupling.html" />
+    <link rel="prev" title="EtherCAT and TwinCAT Nomenclature" href="nomenclature.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="main" />
@@ -401,9 +401,11 @@
 <li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nomenclature.html">EtherCAT and TwinCAT Nomenclature</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Terminal YAML Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic-pdos.html">Dynamic PDOs in EtherCAT Terminals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="useful_notes_ads_twincat.html">Useful Notes on ADS and TwinCAT</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
@@ -485,7 +487,6 @@
 <ul class="simple">
 <li><p><strong>Terminal identity</strong> - Vendor ID, product code, revision</p></li>
 <li><p><strong>Symbol nodes</strong> - Process data (I/O values) accessible via ADS</p></li>
-<li><p><strong>Composite types</strong> - Structured types that group primitive fields</p></li>
 <li><p><strong>CoE objects</strong> - Configuration parameters (optional)</p></li>
 <li><p><strong>Runtime symbols</strong> - Diagnostic symbols added by the EtherCAT master</p></li>
 </ul>
@@ -532,10 +533,7 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code></p></td>
-<td><p>Composite type definitions (BIGTYPE structures)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code></p></td>
 <td><p>EtherCAT master diagnostic symbols</p></td>
 </tr>
 </tbody>
@@ -555,12 +553,12 @@
 <span class="w">      </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1048576</span>
 <span class="w">    </span><span class="nt">group_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AnaIn</span>
 <span class="w">    </span><span class="nt">symbol_nodes</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}&quot;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}.Value&quot;</span>
 <span class="w">        </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61472</span>
-<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">1_TYPE&quot;</span>
+<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INT</span>
 <span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
 <span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read-only</span>
-<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AiStandardChannel{channel}&quot;</span>
+<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AiStandardChannel{channel}Value&quot;</span>
 <span class="w">    </span><span class="nt">coe_objects</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 </pre></div>
 </div>
@@ -580,12 +578,12 @@
 <h3>Symbol Nodes<a class="headerlink" href="#symbol-nodes" title="Link to this heading">#</a></h3>
 <p>Symbol nodes define the ADS symbols for process data. Each symbol maps to memory that updates during the EtherCAT cycle.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">symbol_nodes</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}.Value&quot;</span>
 <span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61472</span><span class="w">       </span><span class="c1"># 0xF020 - input data</span>
-<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">1_TYPE&quot;</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INT</span>
 <span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
 <span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read-only</span>
-<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AiStandardChannel{channel}&quot;</span>
+<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AiStandardChannel{channel}Value&quot;</span>
 </pre></div>
 </div>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -602,7 +600,7 @@
 <td><p>ADS index group (see table below)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type_name</span></code></p></td>
-<td><p>Data type - primitive (INT, BOOL) or composite type name</p></td>
+<td><p>Data type - primitive (INT, BOOL, etc.)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">channels</span></code></p></td>
 <td><p>Number of channels using this pattern</p></td>
@@ -658,142 +656,6 @@
 </pre></div>
 </div>
 <p>Type mappings are defined in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/ads_types.py</span></code>.</p>
-</section>
-</section>
-<section id="composite-types">
-<h2>Composite Types<a class="headerlink" href="#composite-types" title="Link to this heading">#</a></h2>
-<p>When a symbol’s <code class="docutils literal notranslate"><span class="pre">type_name</span></code> references a composite type (like <code class="docutils literal notranslate"><span class="pre">&quot;AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE&quot;</span></code>), the system looks it up in <code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code>.</p>
-<section id="why-composite-types">
-<h3>Why Composite Types?<a class="headerlink" href="#why-composite-types" title="Link to this heading">#</a></h3>
-<p>Beckhoff’s ESI XML defines PDO entries as individual primitives, but TwinCAT groups them into composite types at runtime. For example:</p>
-<p><strong>XML defines:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Status__Underrange</span></code> (BOOL)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Status__Overrange</span></code> (BOOL)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Value</span></code> (INT)</p></li>
-</ul>
-<p><strong>TwinCAT groups as:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1</span></code> with type <code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code> (4 bytes total)</p></li>
-</ul>
-<p>We define these groupings in <code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code> so the simulator can return accurate type information.</p>
-</section>
-<section id="composite-type-definition">
-<h3>Composite Type Definition<a class="headerlink" href="#composite-type-definition" title="Link to this heading">#</a></h3>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/catio_terminals/config/composite_types.yaml</span>
-
-<span class="nt">composite_types</span><span class="p">:</span>
-<span class="w">  </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">1_TYPE&quot;</span><span class="p p-Indicator">:</span>
-<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;16-bit</span><span class="nv"> </span><span class="s">analog</span><span class="nv"> </span><span class="s">input</span><span class="nv"> </span><span class="s">channel</span><span class="nv"> </span><span class="s">(status</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">value)&quot;</span>
-<span class="w">    </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65</span><span class="w">  </span><span class="c1"># BIGTYPE</span>
-<span class="w">    </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<span class="w">    </span><span class="nt">members</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status</span>
-<span class="w">        </span><span class="nt">offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">UINT</span>
-<span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="w">        </span><span class="nt">fastcs_attr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status</span>
-<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read-only</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Value</span>
-<span class="w">        </span><span class="nt">offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INT</span>
-<span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="w">        </span><span class="nt">fastcs_attr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Value</span>
-<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read-only</span>
-</pre></div>
-</div>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Field</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">description</span></code></p></td>
-<td><p>Human-readable description</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ads_type</span></code></p></td>
-<td><p>Always 65 for composite types (BIGTYPE)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">size</span></code></p></td>
-<td><p>Total size in bytes</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">members</span></code></p></td>
-<td><p>List of member fields</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>Member fields:</strong></p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Field</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
-<td><p>Member name</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">offset</span></code></p></td>
-<td><p>Byte offset within the structure</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type_name</span></code></p></td>
-<td><p>Primitive type (UINT, INT, DINT, etc.)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">size</span></code></p></td>
-<td><p>Size in bytes</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fastcs_attr</span></code></p></td>
-<td><p>FastCS attribute name</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">access</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">read-only</span></code> or <code class="docutils literal notranslate"><span class="pre">read-write</span></code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="common-composite-types">
-<h3>Common Composite Types<a class="headerlink" href="#common-composite-types" title="Link to this heading">#</a></h3>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Type Name</p></th>
-<th class="head"><p>Used By</p></th>
-<th class="head"><p>Size</p></th>
-<th class="head"><p>Members</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
-<td><p>EL3004, EL3104, etc.</p></td>
-<td><p>4</p></td>
-<td><p>Status + Value (16-bit)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
-<td><p>EL3602, EL3612</p></td>
-<td><p>6</p></td>
-<td><p>Status + Value (32-bit)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AO</span> <span class="pre">Output</span> <span class="pre">Channel</span> <span class="pre">1_TYPE</span></code></p></td>
-<td><p>EL4002, EL4004</p></td>
-<td><p>2</p></td>
-<td><p>AnalogOutput</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs_TYPE</span></code></p></td>
-<td><p>EL1502</p></td>
-<td><p>6</p></td>
-<td><p>Status + CounterValue</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Inputs_TYPE</span></code></p></td>
-<td><p>EL1004, EL1008</p></td>
-<td><p>1</p></td>
-<td><p>Packed digital inputs</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>See <a class="reference internal" href="../reference/ethercat-composite-types.html"><span class="std std-doc">EtherCAT Composite Types</span></a> for the full list.</p>
 </section>
 </section>
 <section id="runtime-symbols">
@@ -918,32 +780,8 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
 <ol class="arabic simple">
 <li><p>Find the terminal in Beckhoff’s XML (see <a class="reference internal" href="../reference/beckhoff-xml-format.html"><span class="std std-doc">Beckhoff XML Format</span></a>)</p></li>
 <li><p>Extract identity, PDO names, and data types</p></li>
-<li><p>Check if symbols use existing composite types</p></li>
-<li><p>If needed, add new composite types to <code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code></p></li>
 <li><p>Add the terminal definition to the appropriate YAML file</p></li>
 </ol>
-</section>
-<section id="adding-a-new-composite-type">
-<h3>Adding a New Composite Type<a class="headerlink" href="#adding-a-new-composite-type" title="Link to this heading">#</a></h3>
-<p>If the terminal uses a composite type not yet defined:</p>
-<ol class="arabic simple">
-<li><p>Look at the PDO structure in the XML</p></li>
-<li><p>Determine the TwinCAT type name (PDO name + <code class="docutils literal notranslate"><span class="pre">_TYPE</span></code>)</p></li>
-<li><p>Add to <code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code>:</p></li>
-</ol>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="s">&quot;New</span><span class="nv"> </span><span class="s">Type</span><span class="nv"> </span><span class="s">1_TYPE&quot;</span><span class="p p-Indicator">:</span>
-<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Description</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">type&quot;</span>
-<span class="w">  </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65</span>
-<span class="w">  </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;total bytes&gt;</span>
-<span class="w">  </span><span class="nt">members</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;member1&gt;</span>
-<span class="w">      </span><span class="nt">offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="w">      </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;primitive type&gt;</span>
-<span class="w">      </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;bytes&gt;</span>
-<span class="w">      </span><span class="nt">fastcs_attr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;FastCS name&gt;</span>
-<span class="w">      </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read-only</span>
-</pre></div>
-</div>
 </section>
 </section>
 <section id="how-definitions-are-used">
@@ -962,7 +800,6 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
 <p>(Future) Terminal definitions will generate FastCS controllers:</p>
 <ul class="simple">
 <li><p>Each symbol becomes a FastCS attribute</p></li>
-<li><p>Composite type members become individual attributes</p></li>
 <li><p>Channel templates expand to numbered attributes</p></li>
 </ul>
 </section>
@@ -998,12 +835,12 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="api-decoupling.html"
+       href="nomenclature.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">API Decoupling Analysis</p>
+        <p class="prev-next-title">EtherCAT and TwinCAT Nomenclature</p>
       </div>
     </a>
     <a class="right-next"
@@ -1043,12 +880,6 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computed-properties">Computed Properties</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#composite-types">Composite Types</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-composite-types">Why Composite Types?</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#composite-type-definition">Composite Type Definition</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#common-composite-types">Common Composite Types</a></li>
-</ul>
-</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-symbols">Runtime Symbols</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#common-runtime-symbols">Common Runtime Symbols</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-symbol-definition">Runtime Symbol Definition</a></li>
@@ -1065,7 +896,6 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-new-terminal">Adding a New Terminal</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#option-1-using-catio-terminals-recommended">Option 1: Using catio-terminals (Recommended)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#option-2-manual-entry">Option 2: Manual Entry</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-new-composite-type">Adding a New Composite Type</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-definitions-are-used">How Definitions Are Used</a><ul class="nav section-nav flex-column">

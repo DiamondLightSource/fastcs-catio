@@ -1,0 +1,1020 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Dynamic PDOs in EtherCAT Terminals &#8212; fastcs-catio 1.1a4.dev43+ge02d2f10b documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d5cbb21b"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/dynamic-pdos';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Useful Notes on ADS and TwinCAT" href="useful_notes_ads_twincat.html" />
+    <link rel="prev" title="Composite Types in TwinCAT" href="composite-types.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="architecture-overview.html">CATio Architecture Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nomenclature.html">EtherCAT and TwinCAT Nomenclature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Dynamic PDOs in EtherCAT Terminals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="useful_notes_ads_twincat.html">Useful Notes on ADS and TwinCAT</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../explanations.html" class="nav-link">Explanations</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Dynamic PDOs in EtherCAT Terminals</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="dynamic-pdos-in-ethercat-terminals">
+<h1>Dynamic PDOs in EtherCAT Terminals<a class="headerlink" href="#dynamic-pdos-in-ethercat-terminals" title="Link to this heading">#</a></h1>
+<p>This document explains the concept of dynamic PDO (Process Data Object) configurations in Beckhoff EtherCAT terminals, why they exist, and how <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> handles them.</p>
+<section id="background-static-vs-dynamic-pdos">
+<h2>Background: Static vs Dynamic PDOs<a class="headerlink" href="#background-static-vs-dynamic-pdos" title="Link to this heading">#</a></h2>
+<p>Most EtherCAT terminals have a <strong>static PDO configuration</strong> - the process data structure is fixed and predictable. For example, an EL2024 (4-channel digital output) always has exactly 4 boolean outputs, and an EL3202 (2-channel PT100 input) always has the same structure per channel.</p>
+<p>However, some terminals have <strong>dynamic PDO configurations</strong> that depend on:</p>
+<ul class="simple">
+<li><p>TwinCAT project settings</p></li>
+<li><p>Selected operation mode</p></li>
+<li><p>Oversampling factor</p></li>
+<li><p>PDO assignment choices</p></li>
+</ul>
+<p>For these terminals, the exact PDO layout cannot be determined from the ESI XML alone - it varies based on how the terminal is configured in the TwinCAT project.</p>
+</section>
+<section id="types-of-dynamic-pdo-configurations">
+<h2>Types of Dynamic PDO Configurations<a class="headerlink" href="#types-of-dynamic-pdo-configurations" title="Link to this heading">#</a></h2>
+<section id="type-1-configuration-variants">
+<h3>Type 1: Configuration Variants<a class="headerlink" href="#type-1-configuration-variants" title="Link to this heading">#</a></h3>
+<p>Some terminals offer alternative PDO structures for the same function. For example, the EL1502 (2-channel up/down counter) can be configured as:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>PDO Names</p></th>
+<th class="head"><p>Symbol Pattern</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Per-channel</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span> <span class="pre">Channel</span> <span class="pre">{n}.Counter</span> <span class="pre">value</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Combined</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CNT</span> <span class="pre">Inputs.Counter</span> <span class="pre">value</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The XML defines <strong>both</strong> configurations, but only one will be active at runtime.</p>
+</section>
+<section id="type-2-standard-vs-compact-pdo-selection">
+<h3>Type 2: Standard vs Compact PDO Selection<a class="headerlink" href="#type-2-standard-vs-compact-pdo-selection" title="Link to this heading">#</a></h3>
+<p>Analog input terminals like EL3104, EL3124, EP3174-0002, and EP4374-0002 offer two PDO formats per channel:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Format</p></th>
+<th class="head"><p>PDO Name Pattern</p></th>
+<th class="head"><p>Contents</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Standard</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>Status word (underrange, overrange, limits, error) + Value</p></td>
+</tr>
+<tr class="row-odd"><td><p>Compact</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Compact</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>Value only (no status)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The TwinCAT project selects one format per channel. Both are defined in XML as optional.</p>
+</section>
+<section id="type-3-multi-format-terminals">
+<h3>Type 3: Multi-Format Terminals<a class="headerlink" href="#type-3-multi-format-terminals" title="Link to this heading">#</a></h3>
+<p>Terminals like the EL3356-0010 (precision resistor bridge) offer multiple data formats:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Format</p></th>
+<th class="head"><p>PDO Name</p></th>
+<th class="head"><p>Data Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>INT32</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Value</span> <span class="pre">(INT32)</span></code></p></td>
+<td><p>DINT (32-bit signed)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Real</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Value</span> <span class="pre">(Real)</span></code></p></td>
+<td><p>REAL (32-bit float)</p></td>
+</tr>
+<tr class="row-even"><td><p>Standard Ch1/Ch2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>Status + DINT value</p></td>
+</tr>
+<tr class="row-odd"><td><p>Compact Ch1/Ch2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AI</span> <span class="pre">Compact</span> <span class="pre">Channel</span> <span class="pre">{n}</span></code></p></td>
+<td><p>DINT value only</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Additionally, there are optional PDOs for <code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Status</span></code>, <code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Timestamp</span></code>, and <code class="docutils literal notranslate"><span class="pre">RMB</span> <span class="pre">Control</span></code>.</p>
+</section>
+<section id="type-4-oversampling-terminals">
+<h3>Type 4: Oversampling Terminals<a class="headerlink" href="#type-4-oversampling-terminals" title="Link to this heading">#</a></h3>
+<p>Oversampling terminals like EL3702, EL4732, and ELM3704-0000 have a configurable number of samples per channel (1-100). The XML shows only a template, but the actual symbol count depends on the configured oversampling factor.</p>
+<p>The ELM3704-0000 is particularly complex - each of its 4 channels can have:</p>
+<ul class="simple">
+<li><p>Different data formats: INT16, INT32 (DINT), or REAL32</p></li>
+<li><p>Different oversampling factors: 1, 2, 4, 5, 8, 10, 16, 20, 25, 32, 40, 50, 64, 80, or 100 samples</p></li>
+</ul>
+<p>The XML defines 192 TxPDOs (48 per channel) to cover all combinations.</p>
+</section>
+</section>
+<section id="how-dynamic-pdos-are-defined-in-esi-xml">
+<h2>How Dynamic PDOs are Defined in ESI XML<a class="headerlink" href="#how-dynamic-pdos-are-defined-in-esi-xml" title="Link to this heading">#</a></h2>
+<p>Beckhoff’s ESI XML files indicate dynamic PDO configurations using the <code class="docutils literal notranslate"><span class="pre">&lt;AlternativeSmMapping&gt;</span></code> element within the <code class="docutils literal notranslate"><span class="pre">&lt;VendorSpecific&gt;/&lt;TwinCAT&gt;</span></code> section.</p>
+<section id="the-alternativesmmapping-element">
+<h3>The AlternativeSmMapping Element<a class="headerlink" href="#the-alternativesmmapping-element" title="Link to this heading">#</a></h3>
+<p>Each <code class="docutils literal notranslate"><span class="pre">&lt;AlternativeSmMapping&gt;</span></code> element defines a mutually exclusive PDO configuration. The <code class="docutils literal notranslate"><span class="pre">Default=&quot;1&quot;</span></code> attribute marks which configuration is active by default.</p>
+<p><strong>Example from EL3104:</strong></p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;VendorSpecific&gt;</span>
+<span class="w">  </span><span class="nt">&lt;TwinCAT&gt;</span>
+<span class="w">    </span><span class="nt">&lt;AlternativeSmMapping</span><span class="w"> </span><span class="na">Default=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Name&gt;</span>Standard<span class="nt">&lt;/Name&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Sm</span><span class="w"> </span><span class="na">No=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a00<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Standard Channel 1 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a02<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Standard Channel 2 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a04<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Standard Channel 3 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a06<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Standard Channel 4 --&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/Sm&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/AlternativeSmMapping&gt;</span>
+<span class="w">    </span><span class="nt">&lt;AlternativeSmMapping&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Name&gt;</span>Compact<span class="nt">&lt;/Name&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Sm</span><span class="w"> </span><span class="na">No=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a01<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Compact Channel 1 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a03<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Compact Channel 2 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a05<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Compact Channel 3 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a07<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Compact Channel 4 --&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/Sm&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/AlternativeSmMapping&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/TwinCAT&gt;</span>
+<span class="nt">&lt;/VendorSpecific&gt;</span>
+</pre></div>
+</div>
+<p>This structure indicates that:</p>
+<ol class="arabic simple">
+<li><p>The terminal has two exclusive modes: “Standard” and “Compact”</p></li>
+<li><p>“Standard” is the default (marked with <code class="docutils literal notranslate"><span class="pre">Default=&quot;1&quot;</span></code>)</p></li>
+<li><p>Each mode uses different PDO indices</p></li>
+</ol>
+</section>
+<section id="pdo-exclude-elements">
+<h3>PDO Exclude Elements<a class="headerlink" href="#pdo-exclude-elements" title="Link to this heading">#</a></h3>
+<p>Some terminals (like EL1502) use a different approach to define mutually exclusive PDOs - the <code class="docutils literal notranslate"><span class="pre">&lt;Exclude&gt;</span></code> element within each PDO. This is more commonly used for per-channel vs combined mode selection.</p>
+<p><strong>Example from EL1502:</strong></p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Index&gt;</span>#x1a00<span class="nt">&lt;/Index&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="w"> </span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Exclude&gt;</span>#x1a02<span class="nt">&lt;/Exclude&gt;</span><span class="w">  </span><span class="cm">&lt;!-- Excludes the combined PDO --&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+<span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Index&gt;</span>#x1a01<span class="nt">&lt;/Index&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="w"> </span>Channel<span class="w"> </span>2<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Exclude&gt;</span>#x1a02<span class="nt">&lt;/Exclude&gt;</span><span class="w">  </span><span class="cm">&lt;!-- Excludes the combined PDO --&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+<span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">Sm=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Index&gt;</span>#x1a02<span class="nt">&lt;/Index&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Name&gt;</span>CNT<span class="w"> </span>Inputs<span class="nt">&lt;/Name&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Exclude&gt;</span>#x1a00<span class="nt">&lt;/Exclude&gt;</span><span class="w">  </span><span class="cm">&lt;!-- Excludes channel 1 --&gt;</span>
+<span class="w">  </span><span class="nt">&lt;Exclude&gt;</span>#x1a01<span class="nt">&lt;/Exclude&gt;</span><span class="w">  </span><span class="cm">&lt;!-- Excludes channel 2 --&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+<p>This exclusion graph defines two groups:</p>
+<ul class="simple">
+<li><p><strong>Per-Channel</strong>: <code class="docutils literal notranslate"><span class="pre">#x1a00</span></code> + <code class="docutils literal notranslate"><span class="pre">#x1a01</span></code> (each channel separate)</p></li>
+<li><p><strong>Combined</strong>: <code class="docutils literal notranslate"><span class="pre">#x1a02</span></code> (both channels in one PDO)</p></li>
+</ul>
+<p>The default group is determined by the <code class="docutils literal notranslate"><span class="pre">Sm</span></code> attribute. PDOs with an explicit <code class="docutils literal notranslate"><span class="pre">Sm</span></code> attribute are assigned to a Sync Manager by default, making their group the default. In EL1502, the Combined PDO (<code class="docutils literal notranslate"><span class="pre">#x1a02</span></code>) has <code class="docutils literal notranslate"><span class="pre">Sm=&quot;3&quot;</span></code>, so <strong>Combined is the default</strong>.</p>
+</section>
+<section id="sync-manager-assignment">
+<h3>Sync Manager Assignment<a class="headerlink" href="#sync-manager-assignment" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Sm</span></code> attribute on PDO elements indicates the default Sync Manager assignment:</p>
+<ul class="simple">
+<li><p>SM2 (Sm=”2”): RxPDO outputs</p></li>
+<li><p>SM3 (Sm=”3”): TxPDO inputs</p></li>
+</ul>
+<p>PDOs without an <code class="docutils literal notranslate"><span class="pre">Sm</span></code> attribute are not assigned by default and require explicit selection.</p>
+</section>
+</section>
+<section id="terminals-at-diamond-light-source">
+<h2>Terminals at Diamond Light Source<a class="headerlink" href="#terminals-at-diamond-light-source" title="Link to this heading">#</a></h2>
+<p>The following table categorizes terminals used at Diamond Light Source by their PDO type:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Terminal</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>PDO Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>EK1100</p></td>
+<td><p>EtherCAT Coupler</p></td>
+<td><p>None</p></td>
+</tr>
+<tr class="row-odd"><td><p>EK1122</p></td>
+<td><p>2 Port EtherCAT Junction</p></td>
+<td><p>None</p></td>
+</tr>
+<tr class="row-even"><td><p>EL1014</p></td>
+<td><p>4Ch Digital Input 24V, 10us</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL1084</p></td>
+<td><p>4Ch Digital Input 24V, 3ms, negative</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-even"><td><p>EL1124</p></td>
+<td><p>4Ch Digital Input 5V, 10us</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL1502</p></td>
+<td><p>2Ch Up/Down Counter 24V, 100kHz</p></td>
+<td><p><strong>Dynamic Type 1</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>EL2024</p></td>
+<td><p>4Ch Digital Output 24V, 2A</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL2124</p></td>
+<td><p>4Ch Digital Output 5V, 20mA</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3104</p></td>
+<td><p>4Ch Analog Input +/-10V Diff</p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3124</p></td>
+<td><p>4Ch Analog Input 4-20mA Diff</p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>EL3202</p></td>
+<td><p>2Ch Analog Input PT100 (RTD)</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3314</p></td>
+<td><p>4Ch Analog Input Thermocouple</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3356-0010</p></td>
+<td><p>1Ch Resistor Bridge, 16bit High Precision</p></td>
+<td><p><strong>Dynamic Type 3</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>EL3602</p></td>
+<td><p>2Ch Analog Input +/-10V Diff, 24bit</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-even"><td><p>EL3702</p></td>
+<td><p>2Ch Analog Input +/-10V Oversample</p></td>
+<td><p><strong>Dynamic Type 4</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>EL4134</p></td>
+<td><p>4Ch Analog Output +/-10V, 16bit</p></td>
+<td><p>Static</p></td>
+</tr>
+<tr class="row-even"><td><p>EL4732</p></td>
+<td><p>2Ch Analog Output +/-10V Oversample</p></td>
+<td><p><strong>Dynamic Type 4</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>ELM3704-0000</p></td>
+<td><p>4Ch Universal Analog Input, 24bit</p></td>
+<td><p><strong>Dynamic Type 4</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>EP3174-0002</p></td>
+<td><p>4Ch Analog Input configurable</p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>EP4374-0002</p></td>
+<td><p>2Ch AI + 2Ch AO configurable</p></td>
+<td><p><strong>Dynamic Type 2</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="runtime-discovery">
+<h2>Runtime Discovery<a class="headerlink" href="#runtime-discovery" title="Link to this heading">#</a></h2>
+<p>For terminals with dynamic PDOs, the actual configuration must be queried from the TwinCAT symbol table at runtime:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">with</span> <span class="n">CatioClient</span><span class="p">(</span><span class="n">target_ip</span><span class="o">=</span><span class="s2">&quot;192.168.1.100&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+    <span class="c1"># Discover EtherCAT devices</span>
+    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_ethercat_devices</span><span class="p">()</span>
+
+    <span class="c1"># Get all symbols from the symbol table</span>
+    <span class="n">all_symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
+
+    <span class="c1"># Symbols are keyed by device ID</span>
+    <span class="k">for</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">symbols</span> <span class="ow">in</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="implementation-in-catio-terminals">
+<h2>Implementation in catio-terminals<a class="headerlink" href="#implementation-in-catio-terminals" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> tool supports dynamic PDO configurations through a grouping mechanism that:</p>
+<ol class="arabic simple">
+<li><p><strong>Parses AlternativeSmMapping</strong> from the ESI XML to identify PDO groups</p></li>
+<li><p><strong>Falls back to PDO Exclude elements</strong> for terminals like EL1502 that use exclusion-based grouping</p></li>
+<li><p><strong>Tracks which symbols belong to which PDO group</strong></p></li>
+<li><p><strong>Provides a GUI selector</strong> to choose the active PDO group</p></li>
+<li><p><strong>Filters symbols</strong> based on the selected group</p></li>
+</ol>
+<section id="data-model">
+<h3>Data Model<a class="headerlink" href="#data-model" title="Link to this heading">#</a></h3>
+<p>The data models for PDO groups are defined in <a class="reference download internal" download="" href="../_downloads/dbdb57f02e3f8da507ef37005b1a41e5/models.py"><span class="xref download myst">models.py</span></a>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PdoGroup</span></code>: Represents a group of mutually exclusive PDOs, storing the group name, default flag, PDO indices, and corresponding symbol indices.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TerminalType</span></code>: Extended with <code class="docutils literal notranslate"><span class="pre">pdo_groups</span></code> and <code class="docutils literal notranslate"><span class="pre">selected_pdo_group</span></code> fields, plus helper properties like <code class="docutils literal notranslate"><span class="pre">has_dynamic_pdos</span></code> and <code class="docutils literal notranslate"><span class="pre">get_active_symbol_indices()</span></code>.</p></li>
+</ul>
+</section>
+<section id="xml-parsing">
+<h3>XML Parsing<a class="headerlink" href="#xml-parsing" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">xml_pdo_groups.py</span></code> module handles parsing of PDO group definitions using two methods:</p>
+<p><strong>Method 1: AlternativeSmMapping (preferred)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">parse_pdo_groups</span><span class="p">(</span><span class="n">device</span><span class="p">:</span> <span class="n">_Element</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PdoGroup</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse PDO groups from device XML.</span>
+
+<span class="sd">    Tries AlternativeSmMapping first, then falls back to Exclude elements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find VendorSpecific/TwinCAT/AlternativeSmMapping elements</span>
+    <span class="c1"># Extract group name, default flag, and PDO indices</span>
+    <span class="c1"># Return list of PdoGroup instances</span>
+</pre></div>
+</div>
+<p><strong>Method 2: PDO Exclude Elements (fallback)</strong></p>
+<p>For terminals like EL1502 that use <code class="docutils literal notranslate"><span class="pre">&lt;Exclude&gt;</span></code> elements instead of <code class="docutils literal notranslate"><span class="pre">AlternativeSmMapping</span></code>, the parser:</p>
+<ol class="arabic simple">
+<li><p>Builds an exclusion graph from all PDO Exclude elements</p></li>
+<li><p>Identifies “Combined” PDOs (those that exclude 2+ other PDOs)</p></li>
+<li><p>Identifies “Per-Channel” PDOs (those excluded by Combined PDOs)</p></li>
+<li><p>Creates two PDO groups: “Per-Channel” (default) and “Combined”</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">assign_symbols_to_groups</span><span class="p">(</span>
+    <span class="n">pdo_groups</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PdoGroup</span><span class="p">],</span>
+    <span class="n">symbol_pdo_mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assign symbol indices to their corresponding PDO groups.&quot;&quot;&quot;</span>
+    <span class="c1"># Maps each symbol to its source PDO index</span>
+    <span class="c1"># Updates PdoGroup.symbol_indices accordingly</span>
+</pre></div>
+</div>
+<p>The PDO index is tracked during symbol node creation, allowing each symbol to be associated with its source PDO and thus its PDO group.</p>
+</section>
+<section id="gui-integration">
+<h3>GUI Integration<a class="headerlink" href="#gui-integration" title="Link to this heading">#</a></h3>
+<p>When a terminal has dynamic PDOs, the <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> editor displays:</p>
+<ol class="arabic simple">
+<li><p><strong>A PDO Configuration dropdown</strong> showing available groups (e.g., “Standard”, “Compact”)</p></li>
+<li><p><strong>Filtered symbol tree</strong> showing only symbols in the selected group</p></li>
+<li><p><strong>Visual indicator</strong> of the default group</p></li>
+</ol>
+<p>Changing the selected group updates which symbols are displayed and available for selection.</p>
+</section>
+<section id="yaml-serialization">
+<h3>YAML Serialization<a class="headerlink" href="#yaml-serialization" title="Link to this heading">#</a></h3>
+<p>All symbols are saved in the YAML file with their <code class="docutils literal notranslate"><span class="pre">selected</span></code> state preserved. This allows toggling symbols on/off without needing to re-add them from XML:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">EL3104</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4Ch Analog Input +/-10V Diff</span>
+<span class="w">  </span><span class="nt">identity</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">vendor_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="nt">product_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">203427920</span>
+<span class="w">    </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1114112</span>
+<span class="w">  </span><span class="nt">pdo_groups</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard</span>
+<span class="w">      </span><span class="nt">is_default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">pdo_indices</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0x1a00</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0x1a02</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0x1a04</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0x1a06</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">symbol_indices</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Compact</span>
+<span class="w">      </span><span class="nt">is_default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">pdo_indices</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0x1a01</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0x1a03</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0x1a05</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0x1a07</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">symbol_indices</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">6</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">selected_pdo_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard</span>
+<span class="w">  </span><span class="nt">symbol_nodes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard_Ch1</span>
+<span class="w">      </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard_Ch2</span>
+<span class="w">      </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Compact_Ch1</span>
+<span class="w">      </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># Not in active group</span>
+<span class="w">    </span><span class="c1"># ... all symbols saved with their selection state</span>
+</pre></div>
+</div>
+<p>For terminals with dynamic PDOs, symbols not in the active group are saved with <code class="docutils literal notranslate"><span class="pre">selected:</span> <span class="pre">false</span></code>. This preserves the full terminal definition while tracking which symbols should be active in EPICS.</p>
+</section>
+<section id="default-group-selection">
+<h3>Default Group Selection<a class="headerlink" href="#default-group-selection" title="Link to this heading">#</a></h3>
+<p>When loading a new terminal from XML:</p>
+<ol class="arabic simple">
+<li><p>Parse AlternativeSmMapping to find PDO groups</p></li>
+<li><p>Identify the default group (marked with <code class="docutils literal notranslate"><span class="pre">Default=&quot;1&quot;</span></code>)</p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">selected_pdo_group</span></code> to the default group name</p></li>
+<li><p>Pre-select only symbols belonging to the default group</p></li>
+</ol>
+<p>This ensures new terminals start with a sensible default configuration matching what TwinCAT would use.</p>
+</section>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a> - How terminal definitions are structured</p></li>
+<li><p><a class="reference internal" href="useful_notes_ads_twincat.html"><span class="std std-doc">Useful Notes on ADS and TwinCAT</span></a> - Details on ADS access methods</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="composite-types.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Composite Types in TwinCAT</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="useful_notes_ads_twincat.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Useful Notes on ADS and TwinCAT</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background-static-vs-dynamic-pdos">Background: Static vs Dynamic PDOs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#types-of-dynamic-pdo-configurations">Types of Dynamic PDO Configurations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-1-configuration-variants">Type 1: Configuration Variants</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-2-standard-vs-compact-pdo-selection">Type 2: Standard vs Compact PDO Selection</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-3-multi-format-terminals">Type 3: Multi-Format Terminals</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-4-oversampling-terminals">Type 4: Oversampling Terminals</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-dynamic-pdos-are-defined-in-esi-xml">How Dynamic PDOs are Defined in ESI XML</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-alternativesmmapping-element">The AlternativeSmMapping Element</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pdo-exclude-elements">PDO Exclude Elements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sync-manager-assignment">Sync Manager Assignment</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-at-diamond-light-source">Terminals at Diamond Light Source</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-discovery">Runtime Discovery</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#implementation-in-catio-terminals">Implementation in catio-terminals</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-model">Data Model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xml-parsing">XML Parsing</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gui-integration">GUI Integration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#yaml-serialization">YAML Serialization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#default-group-selection">Default Group Selection</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/explanations/dynamic-pdos.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/explanations/dynamic-pdos.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

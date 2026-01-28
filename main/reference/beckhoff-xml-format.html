@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Beckhoff ESI XML File Format &#8212; fastcs-catio 1.1a4.dev5+g2a19faef4 documentation</title>
+    <title>Beckhoff ESI XML File Format &#8212; fastcs-catio 1.1a4.dev43+ge02d2f10b documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=a900ef02"></script>
+    <script src="../_static/documentation_options.js?v=d5cbb21b"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -402,6 +402,8 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Beckhoff ESI XML File Format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ethercat-composite-types.html">EtherCAT Composite Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plans/todo.html">TODO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plans/simulator-symbol-alignment.html">Plan: Align Simulator Symbols with Real Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
 </ul>
@@ -712,17 +714,16 @@
 <h2>What XML Does NOT Contain<a class="headerlink" href="#what-xml-does-not-contain" title="Link to this heading">#</a></h2>
 <p>The ESI XML files do <strong>not</strong> include:</p>
 <ol class="arabic simple">
-<li><p><strong>Composite type names</strong>: TwinCAT generates names like <code class="docutils literal notranslate"><span class="pre">&quot;AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE&quot;</span></code> at compile time</p></li>
+<li><p><strong>Composite type names</strong>: TwinCAT generates names like <code class="docutils literal notranslate"><span class="pre">&quot;AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE&quot;</span></code> at compile time. Catio-terminals ignores these in favor of primitive types.</p></li>
 <li><p><strong>ADS index offsets</strong>: Runtime memory layout is determined by TwinCAT</p></li>
 <li><p><strong>Symbol table structure</strong>: ADS symbols are TwinCAT constructs, not EtherCAT standard</p></li>
 </ol>
-<p>These must be obtained from a live TwinCAT system or defined in <code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code>.</p>
+<p>These must be obtained from a live TwinCAT system.</p>
 </section>
 <section id="related-documentation">
 <h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../explanations/terminal-definitions.html"><span class="std std-doc">Terminal Definitions</span></a> - YAML file structure</p></li>
-<li><p><a class="reference internal" href="../explanations/composite-types.html"><span class="std std-doc">Composite Types</span></a> - TwinCAT type generation</p></li>
 <li><p><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/tree/main/src/catio_terminals">catio-terminals README</a> - Tool usage</p></li>
 </ul>
 </section>

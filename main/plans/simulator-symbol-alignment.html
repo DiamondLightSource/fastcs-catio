@@ -1,0 +1,919 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Plan: Align Simulator Symbols with Real Hardware &#8212; fastcs-catio 1.1a4.dev43+ge02d2f10b documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d5cbb21b"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'plans/simulator-symbol-alignment';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Index" href="../genindex.html" />
+    <link rel="prev" title="TODO" href="todo.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../_api/fastcs_catio.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/DLS_terminals.html">DLS Terminal Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/beckhoff-xml-format.html">Beckhoff ESI XML File Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ethercat-composite-types.html">EtherCAT Composite Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="todo.html">TODO</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Plan: Align Simulator Symbols with Real Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Plan: Align Simulator Symbols with Real Hardware</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="plan-align-simulator-symbols-with-real-hardware">
+<h1>Plan: Align Simulator Symbols with Real Hardware<a class="headerlink" href="#plan-align-simulator-symbols-with-real-hardware" title="Link to this heading">#</a></h1>
+<p><strong>Created:</strong> 2026-01-27
+<strong>Updated:</strong> 2026-01-28
+<strong>Status:</strong> ✅ <strong>Complete</strong> - Simulator symbol count matches hardware (550 symbols)
+<strong>Related files:</strong></p>
+<ul class="simple">
+<li><p><a class="reference download internal" download="" href="../_downloads/38f2755b169a1fc87be8b40529846d3f/ethercat_chain.py"><span class="xref download myst">tests/ads_sim/ethercat_chain.py</span></a> - Symbol generation logic</p></li>
+<li><p><a class="reference download internal" download="" href="../_downloads/1937f6f776a2af6a24b9c71082676f7b/server_config.yaml"><span class="xref download myst">tests/ads_sim/server_config.yaml</span></a> - Device/slave configuration</p></li>
+<li><p><a class="reference download internal" download="" href="../_downloads/0c02aed99674e944362bf4bb922f82a3/diagnose_hardware.py"><span class="xref download myst">tests/diagnose_hardware.py</span></a> - Hardware comparison tool</p></li>
+</ul>
+<section id="problem-summary">
+<h2>Problem Summary<a class="headerlink" href="#problem-summary" title="Link to this heading">#</a></h2>
+<p>The ADS simulator now generates symbols that exactly match real TwinCAT hardware:</p>
+<ol class="arabic simple">
+<li><p>~~Symbol naming convention~~ ✅ Fixed</p></li>
+<li><p>~~Missing device-level symbols~~ ✅ Fixed</p></li>
+<li><p>~~Missing per-terminal WcState symbols~~ ✅ Fixed</p></li>
+<li><p>~~Index group assignments~~ ✅ Fixed</p></li>
+<li><p>~~Extra/different symbols per terminal type~~ ✅ Fixed (resolved by fixes 1-4, 6)</p></li>
+<li><p>~~Missing SyncUnits global symbol~~ ✅ Fixed</p></li>
+</ol>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Metric</p></th>
+<th class="head"><p>Simulator (Before)</p></th>
+<th class="head"><p>Simulator (After)</p></th>
+<th class="head"><p>Hardware</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Total Symbols</p></td>
+<td><p>1091</p></td>
+<td><p>550 ✅</p></td>
+<td><p>550</p></td>
+</tr>
+<tr class="row-odd"><td><p>Naming Format</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TIID^Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT)^Term</span> <span class="pre">X^...</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">X</span> <span class="pre">(type).Channel</span> <span class="pre">Y</span></code> ✅</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">X</span> <span class="pre">(type).Channel</span> <span class="pre">Y</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Device Symbols</p></td>
+<td><p>0</p></td>
+<td><p>8 ✅</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>Global Symbols</p></td>
+<td><p>0</p></td>
+<td><p>1 ✅</p></td>
+<td><p>1 (SyncUnits)</p></td>
+</tr>
+<tr class="row-even"><td><p>Per-Terminal Runtime</p></td>
+<td><p>0</p></td>
+<td><p>140+ ✅</p></td>
+<td><p>140+ (WcState, InputToggle)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="docutils" />
+<section id="issues-and-tasks">
+<h2>Issues and Tasks<a class="headerlink" href="#issues-and-tasks" title="Link to this heading">#</a></h2>
+<section id="issue-1-symbol-naming-convention">
+<h3>Issue 1: Symbol Naming Convention<a class="headerlink" href="#issue-1-symbol-naming-convention" title="Link to this heading">#</a></h3>
+<p><strong>Priority:</strong> High
+<strong>Status:</strong> [x] Complete (2026-01-28)</p>
+<p><strong>Problem:</strong></p>
+<ul class="simple">
+<li><p>Simulator used: <code class="docutils literal notranslate"><span class="pre">TIID^Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT)^Term</span> <span class="pre">4</span> <span class="pre">(EL2024)^Channel</span> <span class="pre">1</span></code></p></li>
+<li><p>Hardware uses: <code class="docutils literal notranslate"><span class="pre">Term</span> <span class="pre">10</span> <span class="pre">(EL2024).Channel</span> <span class="pre">1</span></code></p></li>
+</ul>
+<p><strong>Solution:</strong>
+Updated <code class="docutils literal notranslate"><span class="pre">SymbolDefinition.expand_symbols()</span></code> in <code class="docutils literal notranslate"><span class="pre">ethercat_chain.py</span></code> to:</p>
+<ul class="simple">
+<li><p>Remove <code class="docutils literal notranslate"><span class="pre">TIID^Device</span> <span class="pre">{device_id}</span> <span class="pre">(EtherCAT)^</span></code> prefix</p></li>
+<li><p>Change <code class="docutils literal notranslate"><span class="pre">^</span></code> separator to <code class="docutils literal notranslate"><span class="pre">.</span></code> separator</p></li>
+<li><p>Use format: <code class="docutils literal notranslate"><span class="pre">{terminal_name}.{symbol_name}</span></code></p></li>
+</ul>
+<p><strong>Files modified:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/ads_sim/ethercat_chain.py</span></code> - <code class="docutils literal notranslate"><span class="pre">expand_symbols()</span></code> method</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="issue-2-missing-device-level-symbols">
+<h3>Issue 2: Missing Device-Level Symbols<a class="headerlink" href="#issue-2-missing-device-level-symbols" title="Link to this heading">#</a></h3>
+<p><strong>Priority:</strong> High
+<strong>Status:</strong> [x] Complete (2026-01-28)</p>
+<p><strong>Problem:</strong>
+Real hardware exposes EtherCAT master device symbols that simulator didn’t generate.</p>
+<p><strong>Solution:</strong>
+Added <code class="docutils literal notranslate"><span class="pre">get_device_symbols()</span></code> method to <code class="docutils literal notranslate"><span class="pre">EtherCATDevice</span></code> class that returns 8 device-level symbols:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.Frm0State</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.Frm0WcState</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.Frm0InputToggle</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.SlaveCount</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.DevState</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Outputs.Frm0Ctrl</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Outputs.Frm0WcCtrl</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Outputs.DevCtrl</span></code></p></li>
+</ul>
+<p><strong>Note:</strong> Used <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_BIT</span></code> (33) instead of <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code> (18) because client’s <code class="docutils literal notranslate"><span class="pre">symbol_lookup</span></code> doesn’t handle UINT16. See <a class="reference internal" href="todo.html"><span class="std std-doc">todo.md</span></a> for follow-up task.</p>
+<p><strong>Files modified:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/ads_sim/ethercat_chain.py</span></code> - Added <code class="docutils literal notranslate"><span class="pre">get_device_symbols()</span></code> method, updated <code class="docutils literal notranslate"><span class="pre">get_all_symbols()</span></code></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="issue-3-missing-per-terminal-wcstate-symbols">
+<h3>Issue 3: Missing Per-Terminal WcState Symbols<a class="headerlink" href="#issue-3-missing-per-terminal-wcstate-symbols" title="Link to this heading">#</a></h3>
+<p><strong>Priority:</strong> Medium
+<strong>Status:</strong> [x] Complete (2026-01-28)</p>
+<p><strong>Problem:</strong>
+Each terminal on real hardware has WcState symbols that simulator didn’t generate.</p>
+<p><strong>Solution:</strong>
+Integrated with <code class="docutils literal notranslate"><span class="pre">catio_terminals</span></code> runtime symbols system:</p>
+<ul class="simple">
+<li><p>Load <code class="docutils literal notranslate"><span class="pre">RuntimeSymbolsConfig</span></code> from <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/config/runtime_symbols.yaml</span></code></p></li>
+<li><p>Apply runtime symbols to each slave based on terminal type and group</p></li>
+<li><p>Symbols added: <code class="docutils literal notranslate"><span class="pre">WcState.WcState</span></code>, <code class="docutils literal notranslate"><span class="pre">WcState.InputToggle</span></code>, <code class="docutils literal notranslate"><span class="pre">InfoData.State</span></code></p></li>
+</ul>
+<p>Runtime symbols are filtered by terminal group (DigIn, DigOut, AnaIn, etc.) as defined in the YAML config.</p>
+<p><strong>Note:</strong> <code class="docutils literal notranslate"><span class="pre">InfoData.State</span></code> uses <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code> which client doesn’t handle - these symbols are generated but filtered by client. See <a class="reference internal" href="todo.html"><span class="std std-doc">todo.md</span></a>.</p>
+<p><strong>Files modified:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/ads_sim/ethercat_chain.py</span></code>:</p>
+<ul>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">_load_runtime_symbols()</span></code> method to <code class="docutils literal notranslate"><span class="pre">EtherCATChain</span></code></p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">group_type</span></code> field to <code class="docutils literal notranslate"><span class="pre">TerminalType</span></code></p></li>
+<li><p>Updated <code class="docutils literal notranslate"><span class="pre">EtherCATSlave.get_symbols()</span></code> to include runtime symbols</p></li>
+<li><p>Updated <code class="docutils literal notranslate"><span class="pre">total_symbol_count</span></code> to filter unhandled ADS types</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="issue-4-index-group-assignments">
+<h3>Issue 4: Index Group Assignments<a class="headerlink" href="#issue-4-index-group-assignments" title="Link to this heading">#</a></h3>
+<p><strong>Priority:</strong> Medium
+<strong>Status:</strong> [x] Complete (2026-01-28)</p>
+<p><strong>Problem:</strong>
+Simulator was using wrong index groups. Hardware uses:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0xF020</span></code> (61472) - Device-level inputs (Frm0State, SlaveCount, DevState)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0xF021</span></code> (61473) - Terminal OUTPUT channels (EL2024, etc.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0xF030</span></code> (61488) - (Not observed in hardware)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0xF031</span></code> (61489) - Terminal INPUT channels (EL1014, etc.) and WcState symbols</p></li>
+</ul>
+<p><strong>Solution:</strong>
+Fixed default index group assignments in XML parser:</p>
+<ul class="simple">
+<li><p>TxPdo (inputs from device) → <code class="docutils literal notranslate"><span class="pre">0xF031</span></code> (61489)</p></li>
+<li><p>RxPdo (outputs to device) → <code class="docutils literal notranslate"><span class="pre">0xF021</span></code> (61473)</p></li>
+<li><p>WcState runtime symbols → <code class="docutils literal notranslate"><span class="pre">0xF031</span></code> (61489)</p></li>
+</ul>
+<p><strong>Files modified:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/catio_terminals/xml_pdo.py</span></code> - Fixed line 404: Changed <code class="docutils literal notranslate"><span class="pre">0xF020/0xF030</span></code> to <code class="docutils literal notranslate"><span class="pre">0xF031/0xF021</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/catio_terminals/config/runtime_symbols.yaml</span></code> - Fixed WcState and InputToggle to use 61489</p></li>
+<li><p>Regenerated <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/terminal_types.yaml</span></code> with corrected values</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="issue-5-el1502-counter-terminal-symbol-mismatch">
+<h3>Issue 5: EL1502 Counter Terminal Symbol Mismatch<a class="headerlink" href="#issue-5-el1502-counter-terminal-symbol-mismatch" title="Link to this heading">#</a></h3>
+<p><strong>Priority:</strong> Medium
+<strong>Status:</strong> [x] Complete (2026-01-28)</p>
+<p><strong>Problem:</strong>
+Simulator was generating extra symbols per terminal that hardware didn’t have.</p>
+<p><strong>Root Cause:</strong>
+Issues 1-4 and 6 collectively resolved this:</p>
+<ul class="simple">
+<li><p>Issue 1 fixed naming to match hardware format</p></li>
+<li><p>Issue 2 added missing device-level symbols</p></li>
+<li><p>Issue 3 added per-terminal WcState symbols</p></li>
+<li><p>Issue 4 corrected index group assignments</p></li>
+<li><p>Issue 6 added the global SyncUnits symbol</p></li>
+</ul>
+<p>With all these fixes, the simulator now generates exactly the same symbols as hardware with no extras.</p>
+<p><strong>Verification:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>tests/diagnose_hardware.py<span class="w"> </span>--compare<span class="w"> </span>tests/ads_sim/server_config.yaml
+Hardware<span class="w"> </span>Symbols:<span class="w"> </span><span class="m">550</span>
+Simulator<span class="w"> </span>Total:<span class="w">  </span><span class="m">550</span>
+Difference:<span class="w"> </span>+0
+✓<span class="w"> </span>Hardware<span class="w"> </span>matches<span class="w"> </span>simulator
+</pre></div>
+</div>
+<p><strong>Files modified:</strong></p>
+<ul class="simple">
+<li><p>Same files as Issues 1-4, 6 (no additional changes needed)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="issue-6-syncunits-symbol">
+<h3>Issue 6: SyncUnits Symbol<a class="headerlink" href="#issue-6-syncunits-symbol" title="Link to this heading">#</a></h3>
+<p><strong>Priority:</strong> Low
+<strong>Status:</strong> [x] Complete (2026-01-28)</p>
+<p><strong>Problem:</strong>
+Hardware has a <code class="docutils literal notranslate"><span class="pre">SyncUnits._default_._unreferenced_.WcState.WcState</span></code> symbol that simulator didn’t generate.</p>
+<p><strong>Solution:</strong>
+Added SyncUnits as a global runtime symbol in <code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code>:</p>
+<ul class="simple">
+<li><p>Single global symbol (not per-terminal)</p></li>
+<li><p>Index group: <code class="docutils literal notranslate"><span class="pre">0xF031</span></code> (61489)</p></li>
+<li><p>Offset: <code class="docutils literal notranslate"><span class="pre">0x00002FB0</span></code> (matches hardware)</p></li>
+<li><p>Type: BIT (ADS_TYPE_BIT = 33)</p></li>
+</ul>
+<p>Global runtime symbols are filtered out from per-terminal application via <code class="docutils literal notranslate"><span class="pre">is_global</span></code> field in <code class="docutils literal notranslate"><span class="pre">RuntimeSymbol</span></code> model.</p>
+<p><strong>Files modified:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/catio_terminals/config/runtime_symbols.yaml</span></code> - Added SyncUnits global symbol definition</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/catio_terminals/models.py</span></code> - Added <code class="docutils literal notranslate"><span class="pre">is_global</span></code> field to <code class="docutils literal notranslate"><span class="pre">RuntimeSymbol</span></code>, updated <code class="docutils literal notranslate"><span class="pre">applies_to_terminal()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/ads_sim/ethercat_chain.py</span></code> - Updated <code class="docutils literal notranslate"><span class="pre">get_all_symbols()</span></code> to add global runtime symbols</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="testing-strategy">
+<h2>Testing Strategy<a class="headerlink" href="#testing-strategy" title="Link to this heading">#</a></h2>
+<p>✅ <strong>Complete</strong> - All issues resolved and verified.</p>
+<p>Testing approach used:</p>
+<ol class="arabic simple">
+<li><p>Ran <code class="docutils literal notranslate"><span class="pre">./tests/diagnose_hardware.py</span> <span class="pre">--compare</span> <span class="pre">tests/ads_sim/server_config.yaml</span></code> against real hardware</p></li>
+<li><p>Compared symbol counts and verified exact match (550 symbols)</p></li>
+<li><p>Verified all symbol names match hardware format</p></li>
+<li><p>Confirmed system tests pass with no regressions</p></li>
+</ol>
+</section>
+<section id="verification-commands">
+<h2>Verification Commands<a class="headerlink" href="#verification-commands" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compare simulator against hardware in real-time</span>
+./tests/diagnose_hardware.py<span class="w"> </span>--ip<span class="w"> </span><span class="m">172</span>.23.242.42<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--compare<span class="w"> </span>tests/ads_sim/server_config.yaml
+
+<span class="c1"># Expected output:</span>
+<span class="c1"># Hardware Symbols: 550</span>
+<span class="c1"># Simulator Total:  550</span>
+<span class="c1"># Difference: +0</span>
+<span class="c1"># ✓ Hardware matches simulator</span>
+</pre></div>
+</div>
+</section>
+<section id="progress-log">
+<h2>Progress Log<a class="headerlink" href="#progress-log" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Date</p></th>
+<th class="head"><p>Issue</p></th>
+<th class="head"><p>Action</p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>2026-01-27</p></td>
+<td><p>-</p></td>
+<td><p>Initial analysis and plan created</p></td>
+<td><p>Identified 6 issues</p></td>
+</tr>
+<tr class="row-odd"><td><p>2026-01-28</p></td>
+<td><p>1</p></td>
+<td><p>Updated <code class="docutils literal notranslate"><span class="pre">expand_symbols()</span></code> naming format</p></td>
+<td><p>Symbols now use <code class="docutils literal notranslate"><span class="pre">Term.Symbol</span></code> format</p></td>
+</tr>
+<tr class="row-even"><td><p>2026-01-28</p></td>
+<td><p>2</p></td>
+<td><p>Added <code class="docutils literal notranslate"><span class="pre">get_device_symbols()</span></code> to EtherCATDevice</p></td>
+<td><p>8 device-level symbols added</p></td>
+</tr>
+<tr class="row-odd"><td><p>2026-01-28</p></td>
+<td><p>3</p></td>
+<td><p>Integrated runtime symbols from catio_terminals</p></td>
+<td><p>WcState symbols added (140+ new symbols)</p></td>
+</tr>
+<tr class="row-even"><td><p>2026-01-28</p></td>
+<td><p>-</p></td>
+<td><p>Fixed relative import in server.py</p></td>
+<td><p>Tests pass</p></td>
+</tr>
+<tr class="row-odd"><td><p>2026-01-28</p></td>
+<td><p>-</p></td>
+<td><p>Updated <code class="docutils literal notranslate"><span class="pre">total_symbol_count</span></code> to filter unhandled types</p></td>
+<td><p>Test assertion fixed</p></td>
+</tr>
+<tr class="row-even"><td><p>2026-01-28</p></td>
+<td><p>4</p></td>
+<td><p>Fixed index group assignments in XML parser</p></td>
+<td><p>TxPdo→0xF031, RxPdo→0xF021, regenerated YAML</p></td>
+</tr>
+<tr class="row-odd"><td><p>2026-01-28</p></td>
+<td><p>6</p></td>
+<td><p>Added SyncUnits global runtime symbol</p></td>
+<td><p>1 global symbol added</p></td>
+</tr>
+<tr class="row-even"><td><p>2026-01-28</p></td>
+<td><p>5</p></td>
+<td><p>All fixes combined resolved symbol mismatch</p></td>
+<td><p>Symbol count now matches: 550 = 550 ✅</p></td>
+</tr>
+<tr class="row-odd"><td><p>2026-01-28</p></td>
+<td><p>-</p></td>
+<td><p>Added <code class="docutils literal notranslate"><span class="pre">--compare</span></code> flag to diagnose_hardware.py</p></td>
+<td><p>Real-time comparison tool</p></td>
+</tr>
+<tr class="row-even"><td><p>2026-01-28</p></td>
+<td><p>-</p></td>
+<td><p><strong>Plan Complete</strong></p></td>
+<td><p><strong>Simulator matches hardware exactly</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="docutils" />
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">diagnose_hardware.py</span></code> script can be used to compare simulator and hardware outputs</p></li>
+<li><p>Symbol alignment is important for tests in <code class="docutils literal notranslate"><span class="pre">test_system.py</span></code> to pass against real hardware</p></li>
+<li><p>The simulator should produce symbols that match hardware format exactly for proper testing</p></li>
+<li><p>Client’s <code class="docutils literal notranslate"><span class="pre">symbol_lookup</span></code> limitation documented in <a class="reference internal" href="todo.html"><span class="std std-doc">todo.md</span></a> - doesn’t handle <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="todo.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">TODO</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../genindex.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Index</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-summary">Problem Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#issues-and-tasks">Issues and Tasks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#issue-1-symbol-naming-convention">Issue 1: Symbol Naming Convention</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#issue-2-missing-device-level-symbols">Issue 2: Missing Device-Level Symbols</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#issue-3-missing-per-terminal-wcstate-symbols">Issue 3: Missing Per-Terminal WcState Symbols</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#issue-4-index-group-assignments">Issue 4: Index Group Assignments</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#issue-5-el1502-counter-terminal-symbol-mismatch">Issue 5: EL1502 Counter Terminal Symbol Mismatch</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#issue-6-syncunits-symbol">Issue 6: SyncUnits Symbol</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#testing-strategy">Testing Strategy</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#verification-commands">Verification Commands</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#progress-log">Progress Log</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes">Notes</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/plans/simulator-symbol-alignment.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/plans/simulator-symbol-alignment.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
