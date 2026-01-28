@@ -318,3 +318,167 @@ class TestSingleBitPdo:
 
         # Should NOT have individual Input entries
         assert "Channel {channel}.Input" not in symbol_names
+
+
+# Sample XML for testing array entry consolidation
+ARRAY_TERMINAL_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor>
+    <Id>2</Id>
+    <Name>Beckhoff</Name>
+  </Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x0e74e052" RevisionNo="#x00010000">ELM3704</Type>
+        <Name LcId="1033">ELM3704 4Ch. Multi-function Input</Name>
+        <GroupType>AnaIn</GroupType>
+        <TxPdo Fixed="1">
+          <Index>#x1a80</Index>
+          <Name>PAI Samples 5 Channel 1</Name>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [0]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [1]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [2]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>4</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [3]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>5</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [4]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1">
+          <Index>#x1a90</Index>
+          <Name>PAI Samples 5 Channel 2</Name>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [0]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [1]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [2]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>4</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [3]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>5</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>Samples__ARRAY [4]</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+        </TxPdo>
+        <Profile>
+          <Dictionary>
+            <DataTypes></DataTypes>
+            <Objects></Objects>
+          </Dictionary>
+        </Profile>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+
+
+class TestArrayConsolidation:
+    """Tests for array entry consolidation."""
+
+    def test_array_entries_consolidated(self):
+        """Array element entries should be consolidated into a single symbol."""
+        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+
+        assert terminal is not None
+
+        symbol_names = [s.name_template for s in terminal.symbol_nodes]
+
+        # Should have a single consolidated Samples array symbol with channel
+        assert "PAI Samples 5 Channel {channel}.Samples" in symbol_names
+
+        # Should NOT have individual array element entries
+        assert "PAI Samples 5 Channel {channel}.Samples__ARRAY [0]" not in symbol_names
+        assert "Samples__ARRAY [0]" not in symbol_names
+
+    def test_array_type_is_correct(self):
+        """Consolidated array should have correct type name."""
+        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+
+        assert terminal is not None
+
+        # Find the Samples symbol
+        samples_symbol = next(
+            (s for s in terminal.symbol_nodes if "Samples" in s.name_template),
+            None,
+        )
+        assert samples_symbol is not None
+
+        # Type should be ARRAY [0..4] OF DINT (5 elements, indices 0-4)
+        assert samples_symbol.type_name == "ARRAY [0..4] OF DINT"
+
+    def test_array_channel_count_preserved(self):
+        """Array consolidation should preserve channel templating."""
+        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+
+        assert terminal is not None
+
+        samples_symbol = next(
+            (s for s in terminal.symbol_nodes if "Samples" in s.name_template),
+            None,
+        )
+        assert samples_symbol is not None
+
+        # Should have 2 channels
+        assert samples_symbol.channels == 2
+
+    def test_symbol_count_reduced(self):
+        """Array consolidation should reduce symbol count significantly."""
+        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+
+        assert terminal is not None
+
+        # Without consolidation: 10 entries (5 per channel x 2 channels)
+        # With consolidation: 1 symbol (templated for 2 channels)
+        assert len(terminal.symbol_nodes) == 1

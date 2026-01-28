@@ -26,6 +26,9 @@ CHANNEL_KEYWORD_PATTERN = re.compile(
     re.IGNORECASE,
 )
 CHANNEL_NUMBER_PATTERN = re.compile(r"(.+?)\s+(\d+)$")
+# Match array element pattern: "BaseName__ARRAY [N]" or "BaseName ARRAY [N]"
+# Captures: (base_name, array_index)
+ARRAY_ELEMENT_PATTERN = re.compile(r"^(.+?)(?:__|[ ])ARRAY \[(\d+)\]$")
 
 # ADS type mapping
 ADS_TYPE_MAP = {
@@ -274,6 +277,72 @@ def _extract_channel_pattern(name: str) -> tuple[str, int] | None:
     return None
 
 
+def _consolidate_array_entries(entries: list[dict]) -> list[dict]:
+    """Consolidate array element entries into single array-typed entries.
+
+    Array elements in Beckhoff XML are represented as individual entries like:
+        - "Samples__ARRAY [0]" (DINT, 32 bits)
+        - "Samples__ARRAY [1]" (DINT, 32 bits)
+        - ...
+        - "Samples__ARRAY [99]" (DINT, 32 bits)
+
+    This function groups them into a single entry:
+        - "Samples" (ARRAY [0..99] OF DINT)
+
+    Args:
+        entries: List of entry dictionaries with name, index, bit_len, data_type
+
+    Returns:
+        List of consolidated entries (array elements merged, non-arrays unchanged)
+    """
+    array_groups: dict[str, list[dict]] = {}
+    non_array_entries: list[dict] = []
+
+    for entry in entries:
+        match = ARRAY_ELEMENT_PATTERN.match(entry["name"])
+        if match:
+            base_name = match.group(1)
+            array_idx = int(match.group(2))
+            if base_name not in array_groups:
+                array_groups[base_name] = []
+            array_groups[base_name].append({**entry, "array_idx": array_idx})
+        else:
+            non_array_entries.append(entry)
+
+    # Build consolidated entries from array groups
+    consolidated = list(non_array_entries)
+    for base_name, elements in array_groups.items():
+        if not elements:
+            continue
+
+        # Sort by array index to get bounds
+        elements.sort(key=lambda e: e["array_idx"])
+        min_idx = elements[0]["array_idx"]
+        max_idx = elements[-1]["array_idx"]
+
+        # Use first element's properties (they should all be the same type)
+        first = elements[0]
+        element_type = first["data_type"]
+        element_bit_len = first["bit_len"]
+
+        # Calculate total size for the array
+        total_bit_len = element_bit_len * len(elements)
+
+        # Create array type string
+        array_type = f"ARRAY [{min_idx}..{max_idx}] OF {element_type}"
+
+        consolidated.append(
+            {
+                "name": base_name,
+                "index": first["index"],  # Use first element's index
+                "bit_len": total_bit_len,
+                "data_type": array_type,
+            }
+        )
+
+    return consolidated
+
+
 def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
     """Process PDO entries and group by channel pattern.
 
@@ -328,6 +397,9 @@ def _process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
 
         if not entries:
             continue
+
+        # Consolidate array element entries into single array-typed entries
+        entries = _consolidate_array_entries(entries)
 
         # Analyze entries: separate bit fields from value entries
         # Bit fields are BOOL entries or entries with BitLen=1
