@@ -16,6 +16,13 @@ import yaml
 
 if TYPE_CHECKING:
     from catio_terminals.models import RuntimeSymbolsConfig
+    from catio_terminals.models import TerminalType as ModelTerminalType
+else:
+    # Import TerminalType at runtime if available (rename to avoid conflict)
+    try:
+        from catio_terminals.models import TerminalType as ModelTerminalType
+    except ImportError:
+        ModelTerminalType = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +145,10 @@ class EtherCATSlave:
     ecat_state: int = 0x08  # Operational state
     link_status: int = 0x00  # Good link state
     crc_counters: tuple[int, int, int, int] = (0, 0, 0, 0)
-    terminal_type: TerminalType | None = None
+    terminal_type: TerminalType | None = None  # Simplified type for basic info
+    model_terminal: ModelTerminalType | None = field(
+        default=None, init=False, repr=False
+    )  # Full model for PDO filtering
 
     @property
     def coe_index(self) -> int:
@@ -182,8 +192,20 @@ class EtherCATSlave:
             return []
 
         symbols = []
-        # Add symbols from terminal type definition
-        for sym_def in self.terminal_type.symbols:
+
+        # Use model_terminal if available to get active symbol indices
+        if self.model_terminal is not None:
+            active_indices = self.model_terminal.get_active_symbol_indices()
+        else:
+            # Fallback: use all symbols if no model terminal available
+            active_indices = set(range(len(self.terminal_type.symbols)))
+
+        # Add symbols from terminal type definition (only active ones
+        # based on PDO group)
+        for idx, sym_def in enumerate(self.terminal_type.symbols):
+            # Skip symbols not in the active PDO group
+            if idx not in active_indices:
+                continue
             symbols.extend(sym_def.expand_symbols(device_id, self.name, self.address))
 
         # Add runtime symbols (WcState, InputToggle, etc.) if available
@@ -435,6 +457,9 @@ class EtherCATChain:
         self.server_info = ServerInfo()
         self.devices: dict[int, EtherCATDevice] = {}
         self.terminal_types: dict[str, TerminalType] = {}
+        self.model_terminals: dict[
+            str, ModelTerminalType
+        ] = {}  # Full terminal models for PDO filtering
         self.runtime_symbols: RuntimeSymbolsConfig | None = None
 
         # Load runtime symbols configuration
@@ -488,6 +513,27 @@ class EtherCATChain:
         1. Built-in terminal types in src/catio_terminals/terminals/
         2. Legacy terminal_types in the main config (for backwards compatibility)
         """
+        # Try to load full model TerminalType definitions for PDO group filtering
+        try:
+            from catio_terminals.models import TerminalConfig
+
+            terminals_path = (
+                Path(__file__).parents[2]
+                / "src"
+                / "catio_terminals"
+                / "terminals"
+                / "terminal_types.yaml"
+            )
+            if terminals_path.exists():
+                config = TerminalConfig.from_yaml(terminals_path)
+                self.model_terminals = config.terminal_types
+                logger.debug(f"Loaded {len(self.model_terminals)} model terminal types")
+            else:
+                logger.warning(f"Terminal types file not found: {terminals_path}")
+        except ImportError:
+            logger.warning("catio_terminals not available, PDO filtering disabled")
+            self.model_terminals = {}
+
         # Try to find the terminals directory relative to the package root
         # First check from the src folder
         pkg_root = Path(__file__).parents[2] / "src" / "catio_terminals" / "terminals"
@@ -661,7 +707,7 @@ class EtherCATChain:
         else:
             identity = SlaveIdentity()
 
-        return EtherCATSlave(
+        slave = EtherCATSlave(
             type=slave_type,
             name=slave_config.get("name", "Unknown"),
             node=slave_config.get("node", 0),
@@ -669,6 +715,12 @@ class EtherCATChain:
             identity=identity,
             terminal_type=terminal_type,
         )
+
+        # Attach model terminal if available for PDO group filtering
+        if hasattr(self, "model_terminals") and slave_type in self.model_terminals:
+            slave.model_terminal = self.model_terminals[slave_type]
+
+        return slave
 
     @property
     def device_count(self) -> int:

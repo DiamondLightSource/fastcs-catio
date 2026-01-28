@@ -47,26 +47,28 @@ runtime_symbols:
     description: >
       Toggles on each EtherCAT cycle to indicate that input data has been
       updated. Can be used to detect stale data.
-    # Typically only on terminals with inputs
+    # Typically only on terminals with inputs (and power supplies per hardware observation)
     group_whitelist:
       - DigIn
       - AnaIn
       - Measuring
+      - PowerSupply
 
   # InfoData State - device state from EtherCAT state machine
-  - name_template: InfoData.State
-    index_group: 61472 # 0xF020 - RWIB (input bytes)
-    type_name: UINT
-    channels: 1
-    access: Read-only
-    fastcs_name: InfodataState
-    description: >
-      Device state information from the EtherCAT state machine.
-      Values: 1=Init, 2=Pre-Op, 3=Bootstrap, 4=Safe-Op, 8=Op
-    # May not apply to all terminal types - TBD based on testing
-    group_whitelist:
-      - DigIn
-      - DigOut
-      - AnaIn
-      - AnaOut
-      - Measuring
+  # NOTE: Disabled - hardware testing shows this symbol does not appear in ADS symbol table
+  # - name_template: InfoData.State
+  #   index_group: 61472 # 0xF020 - RWIB (input bytes)
+  #   type_name: UINT
+  #   channels: 1
+  #   access: Read-only
+  #   fastcs_name: InfodataState
+  #   description: >
+  #     Device state information from the EtherCAT state machine.
+  #     Values: 1=Init, 2=Pre-Op, 3=Bootstrap, 4=Safe-Op, 8=Op
+  #   # May not apply to all terminal types - TBD based on testing
+  #   group_whitelist:
+  #     - DigIn
+  #     - DigOut
+  #     - AnaIn
+  #     - AnaOut
+  #     - Measuring

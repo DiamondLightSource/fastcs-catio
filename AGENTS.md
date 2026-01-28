@@ -243,4 +243,79 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 
 ---
 
+### ADS Simulator Testing Skill
+
+**Activation prompts:**
+- "Load simulator testing skill"
+- "Help me test the ADS simulator"
+- "How do I check simulator symbol count"
+- "Test simulator against hardware"
+- "Debug simulator symbols"
+
+**Skill context:** Testing and validating the ADS simulator in `tests/ads_sim/`
+
+**Key patterns:**
+
+1. **Import the simulator correctly:**
+   ```python
+   import sys
+   sys.path.insert(0, 'tests')  # Required for imports to work
+   from ads_sim.ethercat_chain import EtherCATChain
+   from pathlib import Path
+   ```
+
+2. **Instantiate and load configuration:**
+   ```python
+   chain = EtherCATChain()  # Create instance first
+   chain.load_config(Path('tests/ads_sim/server_config.yaml'))  # Instance method, not class method
+   ```
+
+3. **Check symbol counts:**
+   ```python
+   print(f'Total symbols: {chain.total_symbol_count}')
+   print(f'Hardware count: 550')
+   print(f'Difference: {chain.total_symbol_count - 550}')
+   ```
+
+4. **Inspect devices and slaves:**
+   ```python
+   for dev_id, device in chain.devices.items():
+       print(f'Device {dev_id}: {device.name}')
+       for slave in device.slaves:
+           print(f'  {slave.name} ({slave.type})')
+           symbols = slave.get_symbols(dev_id, chain.runtime_symbols)
+           print(f'    Symbols: {len(symbols)}')
+   ```
+
+5. **Debug specific terminal symbols (useful for PDO filtering issues):**
+   ```python
+   # Check which symbols are generated for a specific terminal type
+   for dev_id, device in chain.devices.items():
+       for slave in device.slaves:
+           if 'EL1502' in slave.type:  # Replace with terminal type to debug
+               symbols = slave.get_symbols(dev_id, chain.runtime_symbols)
+               print(f'{slave.name} ({slave.type}): {len(symbols)} symbols')
+               for sym in symbols:
+                   print(f'  - {sym["name"]}')
+   ```
+
+**Common gotchas:**
+- ❌ `from ads_sim...` without adding 'tests' to path → ModuleNotFoundError
+- ❌ `EtherCATChain.load_config(path)` → TypeError (it's an instance method)
+- ❌ `EtherCATChain.from_config(path)` → AttributeError (method doesn't exist)
+- ✅ Create instance first, then call `load_config()` on it
+
+**Testing against hardware:**
+- Hardware output is in `hardware-output.txy` (550 symbols)
+- Simulator output can be generated: `./tests/diagnose_hardware.py --ip 127.0.0.1 --dump-symbols`
+- Compare with: `diff simulator-output.txy hardware-output.txy`
+
+**Related files:**
+- `tests/ads_sim/ethercat_chain.py` - Chain and device/slave models
+- `tests/ads_sim/server.py` - ADS protocol server
+- `tests/ads_sim/server_config.yaml` - Device/slave configuration
+- `tests/test_system.py` - Integration tests against simulator
+
+---
+
 **Remember:** Prioritize clarity and maintainability over cleverness.

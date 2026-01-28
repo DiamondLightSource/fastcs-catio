@@ -4,7 +4,7 @@
 
 composite_types:
   InputBits:
-    description: "Bit fields: Input"
+    description: 'Bit fields: Input'
     ads_type: 65
     size: 1
     members: []
@@ -12,9 +12,8 @@ composite_types:
       - name: Input
         bit: 0
   Output functions enabled_6Bits:
-    description:
-      "Bit fields: Output functions enabled, Status of output, Set counter
-      done, Counter inhibited, Status of input clock, TxPDO Toggle"
+    description: 'Bit fields: Output functions enabled, Status of output, Set counter
+      done, Counter inhibited, Status of input clock, TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -32,9 +31,8 @@ composite_types:
       - name: TxPDO Toggle
         bit: 5
   Output functions enabled_7Bits:
-    description:
-      "Bit fields: Output functions enabled, Status of output, Set counter
-      done, Counter inhibited, Status of input UD, Status of input clock, TxPDO Toggle"
+    description: 'Bit fields: Output functions enabled, Status of output, Set counter
+      done, Counter inhibited, Status of input UD, Status of input clock, TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -54,9 +52,8 @@ composite_types:
       - name: TxPDO Toggle
         bit: 6
   Enable output functions_4Bits:
-    description:
-      "Bit fields: Enable output functions, Set output, Set counter, Inhibit
-      counter"
+    description: 'Bit fields: Enable output functions, Set output, Set counter, Inhibit
+      counter'
     ads_type: 65
     size: 1
     members: []
@@ -70,7 +67,7 @@ composite_types:
       - name: Inhibit counter
         bit: 3
   OutputBits:
-    description: "Bit fields: Output"
+    description: 'Bit fields: Output'
     ads_type: 65
     size: 1
     members: []
@@ -78,9 +75,8 @@ composite_types:
       - name: Output
         bit: 0
   Status__Ready to activate_6Bits:
-    description:
-      "Bit fields: Status__Ready to activate, Status__Output active, Status__Warning,
-      Status__Error, Status__Digital input, Status__TxPDO Toggle"
+    description: 'Bit fields: Status__Ready to activate, Status__Output active, Status__Warning,
+      Status__Error, Status__Digital input, Status__TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -98,7 +94,7 @@ composite_types:
       - name: Status__TxPDO Toggle
         bit: 5
   Control__Output_3Bits:
-    description: "Bit fields: Control__Output, Control__Input trigger enable, Control__Reset"
+    description: 'Bit fields: Control__Output, Control__Input trigger enable, Control__Reset'
     ads_type: 65
     size: 1
     members: []
@@ -110,9 +106,8 @@ composite_types:
       - name: Control__Reset
         bit: 2
   Status__Underrange_6Bits:
-    description:
-      "Bit fields: Status__Underrange, Status__Overrange, Status__Error,
-      Status__Sync error, Status__TxPDO State, Status__TxPDO Toggle"
+    description: 'Bit fields: Status__Underrange, Status__Overrange, Status__Error,
+      Status__Sync error, Status__TxPDO State, Status__TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -130,7 +125,7 @@ composite_types:
       - name: Status__TxPDO Toggle
         bit: 5
   Underrange_5Bits:
-    description: "Bit fields: Underrange, Overrange, Error, TxPDO State, TxPDO Toggle"
+    description: 'Bit fields: Underrange, Overrange, Error, TxPDO State, TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -146,10 +141,9 @@ composite_types:
       - name: TxPDO Toggle
         bit: 4
   Status__Overrange_7Bits:
-    description:
-      "Bit fields: Status__Overrange, Status__Data invalid, Status__Error,
+    description: 'Bit fields: Status__Overrange, Status__Data invalid, Status__Error,
       Status__Calibration in progress, Status__Steady state, Status__Sync error, Status__TxPDO
-      Toggle"
+      Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -169,7 +163,7 @@ composite_types:
       - name: Status__TxPDO Toggle
         bit: 6
   Underrange_4Bits:
-    description: "Bit fields: Underrange, Overrange, Error, TxPDO Toggle"
+    description: 'Bit fields: Underrange, Overrange, Error, TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -183,9 +177,8 @@ composite_types:
       - name: TxPDO Toggle
         bit: 3
   Ctrl__Start calibration_5Bits:
-    description:
-      "Bit fields: Ctrl__Start calibration, Ctrl__Disable calibration,
-      Ctrl__Input freeze, Ctrl__Sample mode, Ctrl__Tara"
+    description: 'Bit fields: Ctrl__Start calibration, Ctrl__Disable calibration,
+      Ctrl__Input freeze, Ctrl__Sample mode, Ctrl__Tara'
     ads_type: 65
     size: 1
     members: []
@@ -201,7 +194,7 @@ composite_types:
       - name: Ctrl__Tara
         bit: 4
   UndervoltageBits:
-    description: "Bit fields: Undervoltage"
+    description: 'Bit fields: Undervoltage'
     ads_type: 65
     size: 1
     members: []
@@ -209,7 +202,7 @@ composite_types:
       - name: Undervoltage
         bit: 0
   Power OK_2Bits:
-    description: "Bit fields: Power OK, Overload"
+    description: 'Bit fields: Power OK, Overload'
     ads_type: 65
     size: 1
     members: []
@@ -219,9 +212,8 @@ composite_types:
       - name: Overload
         bit: 1
   Status__Error_5Bits:
-    description:
-      "Bit fields: Status__Error, Status__Underrange, Status__Overrange,
-      Status__Diag, Status__TxPDO State"
+    description: 'Bit fields: Status__Error, Status__Underrange, Status__Overrange,
+      Status__Diag, Status__TxPDO State'
     ads_type: 65
     size: 1
     members: []
@@ -237,9 +229,8 @@ composite_types:
       - name: Status__TxPDO State
         bit: 4
   Control__Integrator Reset_3Bits:
-    description:
-      "Bit fields: Control__Integrator Reset, Control__Peak Hold Reset,
-      Control__Invalidate"
+    description: 'Bit fields: Control__Integrator Reset, Control__Peak Hold Reset,
+      Control__Invalidate'
     ads_type: 65
     size: 1
     members: []
@@ -251,9 +242,8 @@ composite_types:
       - name: Control__Invalidate
         bit: 2
   Status__Underrange_5Bits:
-    description:
-      "Bit fields: Status__Underrange, Status__Overrange, Status__Error,
-      Status__TxPDO State, Status__TxPDO Toggle"
+    description: 'Bit fields: Status__Underrange, Status__Overrange, Status__Error,
+      Status__TxPDO State, Status__TxPDO Toggle'
     ads_type: 65
     size: 1
     members: []
@@ -348,28 +338,28 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: cnt_inputs_channel_{channel}
-        selected: false
+        selected: true
       - name_template: CNT Inputs Channel {channel}.Counter value
         index_group: 61488
         type_name: UDINT
         channels: 2
         access: Read-only
         fastcs_name: cnt_inputs_channel_{channel}_counter_value
-        selected: false
+        selected: true
       - name_template: CNT Outputs Channel {channel}
         index_group: 61472
         type_name: Enable output functions_4Bits
         channels: 2
         access: Read/Write
         fastcs_name: cnt_outputs_channel_{channel}
-        selected: false
+        selected: true
       - name_template: CNT Outputs Channel {channel}.Set counter value
         index_group: 61472
         type_name: UDINT
         channels: 2
         access: Read/Write
         fastcs_name: cnt_outputs_channel_{channel}_set_counter_value
-        selected: false
+        selected: true
       - name_template: CNT Inputs
         index_group: 61488
         type_name: Output functions enabled_7Bits
@@ -493,63 +483,63 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: dox_synchron_info_data_info_data_{channel}
-        selected: false
+        selected: true
       - name_template: DOX Status
         index_group: 61489
         type_name: Status__Ready to activate_6Bits
         channels: 1
         access: Read-only
         fastcs_name: dox_status
-        selected: false
+        selected: true
       - name_template: DC Feedback.Feedback
         index_group: 61489
         type_name: USINT
         channels: 1
         access: Read-only
         fastcs_name: dc_feedback_feedback
-        selected: false
+        selected: true
       - name_template: DOX Control
         index_group: 61473
         type_name: Control__Output_3Bits
         channels: 1
         access: Read/Write
         fastcs_name: dox_control
-        selected: false
+        selected: true
       - name_template: DOX Current.Output current
         index_group: 61473
         type_name: UINT
         channels: 1
         access: Read/Write
         fastcs_name: dox_current_output_current
-        selected: false
+        selected: true
       - name_template: DOX Impulse length.Impulse length
         index_group: 61473
         type_name: UDINT
         channels: 1
         access: Read/Write
         fastcs_name: dox_impulse_length_impulse_length
-        selected: false
+        selected: true
       - name_template: DOX Trigger delay.Trigger delay
         index_group: 61473
         type_name: UDINT
         channels: 1
         access: Read/Write
         fastcs_name: dox_trigger_delay_trigger_delay
-        selected: false
+        selected: true
       - name_template: DC Sync.Activate
         index_group: 61473
         type_name: USINT
         channels: 1
         access: Read/Write
         fastcs_name: dc_sync_activate
-        selected: false
+        selected: true
       - name_template: DC Sync.Start time
         index_group: 61473
         type_name: ULINT
         channels: 1
         access: Read/Write
         fastcs_name: dc_sync_start_time
-        selected: false
+        selected: true
     coe_objects: []
     group_type: DigOut
     pdo_groups:
@@ -632,7 +622,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_1
-        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -640,7 +630,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_2
-        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
         selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
@@ -655,7 +645,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_compact_channel_{channel}_value
-        selected: false
+        selected: true
     coe_objects: []
     group_type: AnaIn
     pdo_groups:
@@ -691,7 +681,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_1
-        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -699,7 +689,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_2
-        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
         selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
@@ -714,7 +704,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_compact_channel_{channel}_value
-        selected: false
+        selected: true
     coe_objects: []
     group_type: AnaIn
     pdo_groups:
@@ -750,7 +740,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_1
-        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
         selected: true
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -758,7 +748,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_2
-        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
         selected: true
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61489
@@ -789,7 +779,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_1
-        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
         selected: true
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -797,7 +787,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: rtd_inputs_channel_{channel}_limit_2
-        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
         selected: true
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61489
@@ -828,7 +818,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_1
-        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
         selected: true
       - name_template: TC Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -836,7 +826,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_2
-        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
         selected: true
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61489
@@ -867,28 +857,28 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}
-        selected: false
+        selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
         type_name: DINT
         channels: 2
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_value
-        selected: false
+        selected: true
       - name_template: AI Compact Channel {channel}.Value
         index_group: 61489
         type_name: DINT
         channels: 2
         access: Read-only
         fastcs_name: ai_compact_channel_{channel}_value
-        selected: false
+        selected: true
       - name_template: RMB Status
         index_group: 61489
         type_name: Status__Overrange_7Bits
         channels: 1
         access: Read-only
         fastcs_name: rmb_status
-        selected: false
+        selected: true
       - name_template: RMB Value (INT32).Value
         index_group: 61489
         type_name: DINT
@@ -902,21 +892,21 @@ terminal_types:
         channels: 1
         access: Read-only
         fastcs_name: rmb_value_real_value_real
-        selected: false
+        selected: true
       - name_template: RMB Timestamp.Timestamp
         index_group: 61489
         type_name: ULINT
         channels: 1
         access: Read-only
         fastcs_name: rmb_timestamp_timestamp
-        selected: false
+        selected: true
       - name_template: RMB Control
         index_group: 61473
         type_name: Ctrl__Start calibration_5Bits
         channels: 1
         access: Read/Write
         fastcs_name: rmb_control
-        selected: false
+        selected: true
     coe_objects: []
     group_type: AnaIn
     pdo_groups:
@@ -960,7 +950,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_channel_{channel}_limit_1
-        tooltip: "Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1"
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
         selected: true
       - name_template: AI Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -968,7 +958,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_channel_{channel}_limit_2
-        tooltip: "Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2"
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
         selected: true
       - name_template: AI Inputs Channel {channel}.Value
         index_group: 61489
@@ -1148,7 +1138,7 @@ terminal_types:
     coe_objects: []
     group_type: PowerSupply
   ELM3704-0000:
-    description: 4Ch. Ana. Input +/-60V, +/-20mA, TC, RTD, Bridge Measuring
+    description: 4Ch. Ana. Input +/-60V, +/-20mA, TC, RTD, Bridge Measuring 
       (SG), IEPE, 24 bit, high precision
     identity:
       vendor_id: 2
@@ -1161,217 +1151,217 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: pai_status_channel_{channel}
-        selected: false
+        selected: true
       - name_template: PAI Status Channel {channel}.Status__No of Samples
         index_group: 61489
         type_name: USINT
         channels: 4
         access: Read-only
         fastcs_name: pai_status_channel_{channel}_status_no_of_samples
-        selected: false
+        selected: true
       - name_template: PAI Status Channel {channel}.Status__Input cycle counter
         index_group: 61489
         type_name: BIT2
         channels: 4
         access: Read-only
         fastcs_name: pai_status_channel_{channel}_status_input_cycle_counter
-        selected: false
+        selected: true
       - name_template: PAI Samples 1 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..0] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_1_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 2 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..1] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_2_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 4 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..3] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_4_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 5 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..4] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_5_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 8 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..7] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_8_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 10 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..9] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_10_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 16 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..15] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_16_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 20 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..19] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_20_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 25 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..24] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_25_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 32 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..31] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_32_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 40 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..39] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_40_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 50 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..49] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_50_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 64 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..63] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_64_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 80 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..79] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_80_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples 100 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..99] OF DINT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples_100_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Timestamp Channel {channel}.StartTimeNextLatch__Low
         index_group: 61489
         type_name: UDINT
         channels: 4
         access: Read-only
         fastcs_name: pai_timestamp_channel_{channel}_starttimenextlatch_low
-        selected: false
+        selected: true
       - name_template: PAI Timestamp Channel {channel}.StartTimeNextLatch__Hi
         index_group: 61489
         type_name: UDINT
         channels: 4
         access: Read-only
         fastcs_name: pai_timestamp_channel_{channel}_starttimenextlatch_hi
-        selected: false
+        selected: true
       - name_template: PAI Samples16 1 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..0] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_1_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 2 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..1] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_2_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 4 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..3] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_4_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 5 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..4] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_5_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 8 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..7] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_8_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 10 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..9] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_10_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 16 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..15] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_16_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 20 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..19] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_20_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 25 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..24] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_25_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 32 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..31] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_32_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 40 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..39] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_40_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 50 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..49] OF INT
@@ -1385,148 +1375,149 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_64_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 80 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..79] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_80_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Samples16 100 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..99] OF INT
         channels: 4
         access: Read-only
         fastcs_name: pai_samples16_100_channel_{channel}_samples
-        selected: false
-      - name_template: PAI Synchronous Oversampling Channel
+        selected: true
+      - name_template: PAI Synchronous Oversampling Channel 
           {channel}.SM-Synchron__Internal Buffer
         index_group: 61489
         type_name: UINT
         channels: 4
         access: Read-only
-        fastcs_name: pai_synchronous_oversampling_channel_{channel}_sm_synchron_internal_buffer
-        selected: false
+        fastcs_name: 
+          pai_synchronous_oversampling_channel_{channel}_sm_synchron_internal_buffer
+        selected: true
       - name_template: PAI SamplesR32 1 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..0] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_1_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 2 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..1] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_2_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 4 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..3] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_4_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 5 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..4] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_5_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 8 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..7] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_8_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 10 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..9] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_10_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 16 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..15] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_16_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 20 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..19] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_20_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 25 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..24] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_25_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 32 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..31] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_32_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 40 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..39] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_40_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 50 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..49] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_50_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 64 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..63] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_64_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 80 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..79] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_80_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI SamplesR32 100 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..99] OF REAL
         channels: 4
         access: Read-only
         fastcs_name: pai_samplesr32_100_channel_{channel}_samples
-        selected: false
+        selected: true
       - name_template: PAI Control Channel {channel}
         index_group: 61473
         type_name: Control__Integrator Reset_3Bits
         channels: 4
         access: Read/Write
         fastcs_name: pai_control_channel_{channel}
-        selected: false
+        selected: true
       - name_template: PAI TC Channel {channel}.Cold Junction Temperature
         index_group: 61473
         type_name: REAL
         channels: 4
         access: Read/Write
         fastcs_name: pai_tc_channel_{channel}_cold_junction_temperature
-        selected: false
+        selected: true
     coe_objects: []
     group_type: AnaIn
     pdo_groups:
@@ -1690,7 +1681,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_1
-        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -1698,7 +1689,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_standard_channel_{channel}_status_limit_2
-        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
         selected: true
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
@@ -1835,7 +1826,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_1
-        tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
         index_group: 61489
@@ -1843,7 +1834,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_2
-        tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
         index_group: 61489
@@ -1868,3 +1859,19 @@ terminal_types:
         selected: true
     coe_objects: []
     group_type: AnaOut
+  EL1004:
+    description: 4Ch. Dig. Input 24V, 3ms
+    identity:
+      vendor_id: 2
+      product_code: 65810514
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61489
+        type_name: InputBits
+        channels: 4
+        access: Read-only
+        fastcs_name: channel_{channel}
+        selected: true
+    coe_objects: []
+    group_type: DigIn
