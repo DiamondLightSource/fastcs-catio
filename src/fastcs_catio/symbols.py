@@ -345,7 +345,7 @@ def symbol_lookup(node: AdsSymbolNode):
                         [
                             AdsSymbol(
                                 parent_id=node.parent_id,
-                                name=node.name,
+                                name=".".join([node.name, "Status"]),
                                 dtype=np.uint16,
                                 size=1,
                                 group=node.index_group,
@@ -376,13 +376,13 @@ def symbol_lookup(node: AdsSymbolNode):
                         [
                             AdsSymbol(
                                 parent_id=node.parent_id,
-                                name=node.name,
+                                name=".".join([node.name, "Control"]),
                                 dtype=np.uint16,
                                 size=1,
                                 group=node.index_group,
                                 offset=node.index_offset,
                                 comment=add_comment(
-                                    "Status symbol for a digital output counter "
+                                    "Control symbol for a digital output counter "
                                     + "terminal.",
                                     node.comment,
                                 ),
