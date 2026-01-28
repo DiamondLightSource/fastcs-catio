@@ -10,9 +10,12 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
+
+if TYPE_CHECKING:
+    from catio_terminals.models import RuntimeSymbolsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +87,7 @@ class TerminalType:
     description: str = ""
     identity: SlaveIdentity | None = None
     symbols: list[SymbolDefinition] = field(default_factory=list)
+    group_type: str | None = None
 
 
 @dataclass
@@ -160,11 +164,16 @@ class EtherCATSlave:
             result += crc.to_bytes(4, "little")
         return result
 
-    def get_symbols(self, device_id: int) -> list[dict[str, Any]]:
+    def get_symbols(
+        self,
+        device_id: int,
+        runtime_symbols: RuntimeSymbolsConfig | None = None,
+    ) -> list[dict[str, Any]]:
         """Get all symbols for this slave based on its terminal type.
 
         Args:
             device_id: The device ID this slave belongs to.
+            runtime_symbols: Optional runtime symbols config to include WcState etc.
 
         Returns:
             List of symbol dictionaries.
@@ -173,8 +182,31 @@ class EtherCATSlave:
             return []
 
         symbols = []
+        # Add symbols from terminal type definition
         for sym_def in self.terminal_type.symbols:
             symbols.extend(sym_def.expand_symbols(device_id, self.name, self.address))
+
+        # Add runtime symbols (WcState, InputToggle, etc.) if available
+        if runtime_symbols:
+            terminal_id = self.type  # e.g., "EL2024"
+            group_type = self.terminal_type.group_type
+            runtime_sym_nodes = runtime_symbols.get_symbols_for_terminal(
+                terminal_id, group_type
+            )
+            for sym_node in runtime_sym_nodes:
+                # Convert SymbolNode to SymbolDefinition and expand
+                sym_def = SymbolDefinition(
+                    name_template=sym_node.name_template,
+                    index_group=sym_node.index_group,
+                    size=sym_node.size,
+                    ads_type=sym_node.ads_type,
+                    type_name=sym_node.type_name,
+                    channels=sym_node.channels,
+                )
+                symbols.extend(
+                    sym_def.expand_symbols(device_id, self.name, self.address)
+                )
+
         return symbols
 
 
@@ -349,8 +381,13 @@ class EtherCATDevice:
 
         return symbols
 
-    def get_all_symbols(self) -> list[dict[str, Any]]:
+    def get_all_symbols(
+        self, runtime_symbols: RuntimeSymbolsConfig | None = None
+    ) -> list[dict[str, Any]]:
         """Get all symbols from this device and all its slaves.
+
+        Args:
+            runtime_symbols: Optional runtime symbols config to include WcState etc.
 
         Returns:
             List of all symbol dictionaries.
@@ -360,7 +397,7 @@ class EtherCATDevice:
 
         # Add symbols from all slaves
         for slave in self.slaves:
-            symbols.extend(slave.get_symbols(self.id))
+            symbols.extend(slave.get_symbols(self.id, runtime_symbols))
         return symbols
 
 
@@ -398,6 +435,10 @@ class EtherCATChain:
         self.server_info = ServerInfo()
         self.devices: dict[int, EtherCATDevice] = {}
         self.terminal_types: dict[str, TerminalType] = {}
+        self.runtime_symbols: RuntimeSymbolsConfig | None = None
+
+        # Load runtime symbols configuration
+        self._load_runtime_symbols()
 
         # Load terminal types from separate YAML files
         self._load_terminal_types()
@@ -411,6 +452,33 @@ class EtherCATChain:
                 self.load_config(default_config)
             else:
                 logger.warning("No config file found, using empty chain")
+
+    def _load_runtime_symbols(self) -> None:
+        """Load runtime symbols configuration from catio_terminals package."""
+        try:
+            from catio_terminals.models import RuntimeSymbolsConfig
+
+            runtime_symbols_path = (
+                Path(__file__).parents[2]
+                / "src"
+                / "catio_terminals"
+                / "config"
+                / "runtime_symbols.yaml"
+            )
+            if runtime_symbols_path.exists():
+                self.runtime_symbols = RuntimeSymbolsConfig.from_yaml(
+                    runtime_symbols_path
+                )
+                logger.debug(
+                    f"Loaded {len(self.runtime_symbols.runtime_symbols)} "
+                    "runtime symbol definitions"
+                )
+            else:
+                logger.warning(
+                    f"Runtime symbols file not found: {runtime_symbols_path}"
+                )
+        except ImportError:
+            logger.warning("catio_terminals package not available for runtime symbols")
 
     def _load_terminal_types(self) -> None:
         """
@@ -538,6 +606,7 @@ class EtherCATChain:
             description=type_config.get("description", ""),
             identity=identity,
             symbols=symbols,
+            group_type=type_config.get("group_type"),
         )
 
     def _parse_device(self, dev_config: dict[str, Any]) -> EtherCATDevice:
@@ -630,7 +699,7 @@ class EtherCATChain:
         """
         total = 0
         for dev in self.devices.values():
-            for sym in dev.get_all_symbols():
+            for sym in dev.get_all_symbols(self.runtime_symbols):
                 type_name = sym["type_name"]
                 # Count how many symbols this node will expand to on the client
                 if type_name in ("CNT Inputs_TYPE", "CNT Outputs_TYPE"):
@@ -666,7 +735,7 @@ class EtherCATChain:
         """
         symbols = []
         for device in self.devices.values():
-            symbols.extend(device.get_all_symbols())
+            symbols.extend(device.get_all_symbols(self.runtime_symbols))
         return symbols
 
     def print_chain(self) -> None:
