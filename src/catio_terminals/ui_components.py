@@ -536,9 +536,19 @@ def show_terminal_details(
     if terminal.coe_objects:
         ui.separator().classes("my-4")
 
+        # TEMP WORKAROUND: Limit CoE objects displayed in GUI for performance
+        # Terminals like ELM3704-0000 have 200+ CoE objects which makes the GUI sluggish
+        max_coe_display = 60
+        coe_count = len(terminal.coe_objects)
+        coe_truncated = coe_count > max_coe_display
+        coe_to_display = terminal.coe_objects[:max_coe_display]
+
         # CoE Objects section with Select All button
         with ui.row().classes("items-center w-full justify-between mb-2"):
-            ui.label(f"CoE Objects ({len(terminal.coe_objects)})").classes("text-h6")
+            coe_label = f"CoE Objects ({coe_count})"
+            if coe_truncated:
+                coe_label += f" - showing first {max_coe_display}"
+            ui.label(coe_label).classes("text-h6")
 
             def toggle_all_coe():
                 all_selected = all(c.selected for c in terminal.coe_objects)
@@ -558,7 +568,7 @@ def show_terminal_details(
 
         # Build CoE tree data with checkboxes
         coe_tree_data: list[dict[str, Any]] = []
-        for idx, coe_obj in enumerate(terminal.coe_objects):
+        for idx, coe_obj in enumerate(coe_to_display):
             # Map access flags to readable text
             access_map = {
                 "ro": "Read-only",
