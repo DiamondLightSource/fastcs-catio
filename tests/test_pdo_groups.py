@@ -273,3 +273,110 @@ class TestPdoGroupParsing:
         # Check PDO indices
         assert set(per_channel.pdo_indices) == {0x1600, 0x1601, 0x1A00, 0x1A01}
         assert set(combined.pdo_indices) == {0x1602, 0x1A02}
+
+
+class TestDynamicPdoYamlSerialization:
+    """Tests for YAML serialization of dynamic PDO terminals."""
+
+    def test_dynamic_pdo_terminal_saves_all_symbols(self, tmp_path):
+        """Test that dynamic PDO terminals save ALL symbols with selected field."""
+        from catio_terminals.models import TerminalConfig
+
+        # Create terminal with dynamic PDOs and mixed selection
+        terminal = TerminalType(
+            description="Test Dynamic",
+            identity=Identity(vendor_id=2, product_code=0x1234, revision_number=0),
+            pdo_groups=[
+                PdoGroup(name="GroupA", is_default=True, symbol_indices=[0, 1]),
+                PdoGroup(name="GroupB", symbol_indices=[2, 3]),
+            ],
+            selected_pdo_group="GroupA",
+            symbol_nodes=[
+                SymbolNode(
+                    name_template="SymA1",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=True,
+                ),
+                SymbolNode(
+                    name_template="SymA2",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=True,
+                ),
+                SymbolNode(
+                    name_template="SymB1",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=False,  # Not selected
+                ),
+                SymbolNode(
+                    name_template="SymB2",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=False,  # Not selected
+                ),
+            ],
+        )
+        config = TerminalConfig()
+        config.add_terminal("TEST_DYNAMIC", terminal)
+
+        # Save to YAML
+        yaml_path = tmp_path / "test_dynamic.yaml"
+        config.to_yaml(yaml_path)
+
+        # Load and verify ALL symbols are saved (not just selected ones)
+        loaded = TerminalConfig.from_yaml(yaml_path)
+        loaded_terminal = loaded.terminal_types["TEST_DYNAMIC"]
+
+        # Should have all 4 symbols
+        assert len(loaded_terminal.symbol_nodes) == 4
+
+        # Check selected state is preserved
+        sym_map = {s.name_template: s for s in loaded_terminal.symbol_nodes}
+        assert sym_map["SymA1"].selected is True
+        assert sym_map["SymA2"].selected is True
+        assert sym_map["SymB1"].selected is False
+        assert sym_map["SymB2"].selected is False
+
+    def test_static_terminal_saves_all_symbols_with_selected_field(self, tmp_path):
+        """Test that static terminals also save ALL symbols with selected field."""
+        from catio_terminals.models import TerminalConfig
+
+        # Create static terminal (no pdo_groups)
+        terminal = TerminalType(
+            description="Test Static",
+            identity=Identity(vendor_id=2, product_code=0x5678, revision_number=0),
+            symbol_nodes=[
+                SymbolNode(
+                    name_template="SelectedSym",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=True,
+                ),
+                SymbolNode(
+                    name_template="UnselectedSym",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=False,
+                ),
+            ],
+        )
+        config = TerminalConfig()
+        config.add_terminal("TEST_STATIC", terminal)
+
+        # Save to YAML
+        yaml_path = tmp_path / "test_static.yaml"
+        config.to_yaml(yaml_path)
+
+        # Load and verify ALL symbols are saved with selected field
+        loaded = TerminalConfig.from_yaml(yaml_path)
+        loaded_terminal = loaded.terminal_types["TEST_STATIC"]
+
+        # Should have all 2 symbols
+        assert len(loaded_terminal.symbol_nodes) == 2
+
+        # Check selected state is preserved
+        sym_map = {s.name_template: s for s in loaded_terminal.symbol_nodes}
+        assert sym_map["SelectedSym"].selected is True
+        assert sym_map["UnselectedSym"].selected is False

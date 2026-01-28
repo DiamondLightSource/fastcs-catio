@@ -382,6 +382,9 @@ class TerminalConfig(BaseModel):
     def to_yaml(self, path: Path) -> None:
         """Save configuration to YAML file.
 
+        All symbols are saved with their 'selected' state preserved. This allows
+        toggling symbols on/off without re-adding them from XML.
+
         Args:
             path: Path to save YAML file
         """
@@ -389,23 +392,24 @@ class TerminalConfig(BaseModel):
         from ruamel.yaml import YAML
 
         # Fields to exclude from symbol_nodes (computed or internal)
-        symbol_exclude_fields = {"selected", "size", "ads_type"}
+        symbol_exclude_fields = {"size", "ads_type"}
 
-        # Convert to dict, excluding 'selected' field and filtering items
+        # Convert to dict, excluding None values
         data = self.model_dump(exclude_none=True)
 
         # Remove empty composite_types
         if not data.get("composite_types"):
             data.pop("composite_types", None)
 
-        # Filter symbol_nodes and coe_objects based on 'selected' field
+        # Process each terminal
         for _terminal_id, terminal_data in data.get("terminal_types", {}).items():
+            # Save all symbols with 'selected' field
             if "symbol_nodes" in terminal_data:
                 terminal_data["symbol_nodes"] = [
                     {k: v for k, v in sym.items() if k not in symbol_exclude_fields}
                     for sym in terminal_data["symbol_nodes"]
-                    if sym.get("selected", True)
                 ]
+
             if "coe_objects" in terminal_data:
                 terminal_data["coe_objects"] = [
                     {k: v for k, v in coe.items() if k != "selected"}

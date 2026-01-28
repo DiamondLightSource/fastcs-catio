@@ -253,7 +253,7 @@ Changing the selected group updates which symbols are displayed and available fo
 
 ### YAML Serialization
 
-PDO groups are serialized in the terminal YAML when present:
+All symbols are saved in the YAML file with their `selected` state preserved. This allows toggling symbols on/off without needing to re-add them from XML:
 
 ```yaml
 EL3104:
@@ -273,8 +273,16 @@ EL3104:
       symbol_indices: [4, 5, 6, 7]
   selected_pdo_group: Standard
   symbol_nodes:
-    # ... symbols for all groups, filtered by selected_pdo_group
+    - name_template: Standard_Ch1
+      selected: true
+    - name_template: Standard_Ch2
+      selected: true
+    - name_template: Compact_Ch1
+      selected: false  # Not in active group
+    # ... all symbols saved with their selection state
 ```
+
+For terminals with dynamic PDOs, symbols not in the active group are saved with `selected: false`. This preserves the full terminal definition while tracking which symbols should be active in EPICS.
 
 ### Default Group Selection
 

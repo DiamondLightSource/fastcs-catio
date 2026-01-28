@@ -17,6 +17,7 @@ import argparse
 import asyncio
 import logging
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -94,7 +95,7 @@ def generate_yaml_config(
 
 
 def format_symbol_dump(
-    symbols: dict[Any, list[AdsSymbol]],
+    symbols: dict[Any, Sequence[AdsSymbol]],
 ) -> str:
     """Format symbols for human-readable output.
 

@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Plan: Align Simulator Symbols with Real Hardware
 
 **Created:** 2026-01-27  
