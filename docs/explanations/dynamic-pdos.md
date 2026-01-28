@@ -102,6 +102,35 @@ This structure indicates that:
 2. "Standard" is the default (marked with `Default="1"`)
 3. Each mode uses different PDO indices
 
+### PDO Exclude Elements
+
+Some terminals (like EL1502) use a different approach to define mutually exclusive PDOs - the `<Exclude>` element within each PDO. This is more commonly used for per-channel vs combined mode selection.
+
+**Example from EL1502:**
+
+```xml
+<TxPdo>
+  <Index>#x1a00</Index>
+  <Name>CNT Inputs Channel 1</Name>
+  <Exclude>#x1a02</Exclude>  <!-- Excludes the combined PDO -->
+</TxPdo>
+<TxPdo>
+  <Index>#x1a01</Index>
+  <Name>CNT Inputs Channel 2</Name>
+  <Exclude>#x1a02</Exclude>  <!-- Excludes the combined PDO -->
+</TxPdo>
+<TxPdo>
+  <Index>#x1a02</Index>
+  <Name>CNT Inputs</Name>
+  <Exclude>#x1a00</Exclude>  <!-- Excludes channel 1 -->
+  <Exclude>#x1a01</Exclude>  <!-- Excludes channel 2 -->
+</TxPdo>
+```
+
+This exclusion graph defines two groups:
+- **Per-Channel**: `#x1a00` + `#x1a01` (each channel separate)
+- **Combined**: `#x1a02` (both channels in one PDO)
+
 ### Sync Manager Assignment
 
 The `<Sm No="3">` element indicates which Sync Manager the PDOs are assigned to:
@@ -158,9 +187,10 @@ async with CatioClient(target_ip="192.168.1.100") as client:
 The `catio-terminals` tool supports dynamic PDO configurations through a grouping mechanism that:
 
 1. **Parses AlternativeSmMapping** from the ESI XML to identify PDO groups
-2. **Tracks which symbols belong to which PDO group**
-3. **Provides a GUI selector** to choose the active PDO group
-4. **Filters symbols** based on the selected group
+2. **Falls back to PDO Exclude elements** for terminals like EL1502 that use exclusion-based grouping
+3. **Tracks which symbols belong to which PDO group**
+4. **Provides a GUI selector** to choose the active PDO group
+5. **Filters symbols** based on the selected group
 
 ### Data Model
 
@@ -171,15 +201,31 @@ The data models for PDO groups are defined in [models.py](../../src/catio_termin
 
 ### XML Parsing
 
-The `xml_pdo_groups.py` module handles parsing of AlternativeSmMapping elements:
+The `xml_pdo_groups.py` module handles parsing of PDO group definitions using two methods:
+
+**Method 1: AlternativeSmMapping (preferred)**
 
 ```python
 def parse_pdo_groups(device: _Element) -> list[PdoGroup]:
-    """Parse AlternativeSmMapping elements to extract PDO groups."""
+    """Parse PDO groups from device XML.
+    
+    Tries AlternativeSmMapping first, then falls back to Exclude elements.
+    """
     # Find VendorSpecific/TwinCAT/AlternativeSmMapping elements
     # Extract group name, default flag, and PDO indices
     # Return list of PdoGroup instances
+```
 
+**Method 2: PDO Exclude Elements (fallback)**
+
+For terminals like EL1502 that use `<Exclude>` elements instead of `AlternativeSmMapping`, the parser:
+
+1. Builds an exclusion graph from all PDO Exclude elements
+2. Identifies "Combined" PDOs (those that exclude 2+ other PDOs)
+3. Identifies "Per-Channel" PDOs (those excluded by Combined PDOs)
+4. Creates two PDO groups: "Per-Channel" (default) and "Combined"
+
+```python
 def assign_symbols_to_groups(
     pdo_groups: list[PdoGroup],
     symbol_pdo_mapping: dict[int, int],

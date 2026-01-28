@@ -2,9 +2,13 @@
 
 Parses AlternativeSmMapping elements from TwinCAT VendorSpecific sections
 to identify mutually exclusive PDO configurations.
+
+Also handles PDO Exclude elements as an alternative way to define
+mutually exclusive PDO configurations (used by terminals like EL1502).
 """
 
 import logging
+from collections import defaultdict
 
 from lxml.etree import _Element
 
@@ -15,6 +19,28 @@ logger = logging.getLogger(__name__)
 
 
 def parse_pdo_groups(device: _Element) -> list[PdoGroup]:
+    """Parse PDO groups from device XML.
+
+    Tries two methods:
+    1. AlternativeSmMapping elements (TwinCAT VendorSpecific) - preferred
+    2. PDO Exclude elements - fallback for terminals like EL1502
+
+    Args:
+        device: lxml Device element
+
+    Returns:
+        List of PdoGroup instances (empty if no alternative mappings found)
+    """
+    # Try AlternativeSmMapping first (more explicit)
+    pdo_groups = _parse_alternative_sm_mapping(device)
+    if pdo_groups:
+        return pdo_groups
+
+    # Fallback: Try to infer groups from PDO Exclude elements
+    return _parse_pdo_excludes(device)
+
+
+def _parse_alternative_sm_mapping(device: _Element) -> list[PdoGroup]:
     """Parse AlternativeSmMapping elements to extract PDO groups.
 
     AlternativeSmMapping elements define mutually exclusive PDO configurations.
@@ -63,6 +89,109 @@ def parse_pdo_groups(device: _Element) -> list[PdoGroup]:
                     symbol_indices=[],  # Will be populated after symbol parsing
                 )
             )
+
+    return pdo_groups
+
+
+def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
+    """Parse PDO Exclude elements to infer mutually exclusive groups.
+
+    Some terminals (like EL1502) use <Exclude> elements inside TxPdo/RxPdo
+    to declare which PDOs are mutually exclusive. This function analyzes
+    the exclusion graph to identify per-channel vs combined modes.
+
+    Args:
+        device: lxml Device element
+
+    Returns:
+        List of PdoGroup instances inferred from exclusions
+    """
+    # Build exclusion graph and collect PDO info
+    excludes: dict[int, set[int]] = defaultdict(set)
+    pdo_names: dict[int, str] = {}
+    all_pdos: set[int] = set()
+
+    for pdo_type in ["TxPdo", "RxPdo"]:
+        for pdo in device.findall(pdo_type):
+            idx_str = pdo.findtext("Index", "")
+            if not idx_str:
+                continue
+            idx = parse_hex_value(idx_str)
+            if idx == 0:
+                continue
+
+            all_pdos.add(idx)
+            pdo_names[idx] = pdo.findtext("Name", f"PDO 0x{idx:04X}")
+
+            for excl in pdo.findall("Exclude"):
+                if excl.text:
+                    excl_idx = parse_hex_value(excl.text)
+                    if excl_idx != 0:
+                        excludes[idx].add(excl_idx)
+
+    # No exclusions found - no dynamic PDO groups
+    if not excludes:
+        return []
+
+    # Identify groups from exclusion pattern
+    # Pattern: "Combined" PDOs exclude multiple "Channel" PDOs
+    # Find PDOs that exclude multiple others (likely "Combined" mode)
+    combined_pdos: set[int] = set()
+    channel_pdos: set[int] = set()
+
+    for pdo_idx, excluded in excludes.items():
+        # If this PDO excludes 2+ others, it's likely a "Combined" PDO
+        if len(excluded) >= 2:
+            combined_pdos.add(pdo_idx)
+            channel_pdos.update(excluded)
+        # If excluded by a combined PDO, it's a channel PDO
+        for other_idx, other_excluded in excludes.items():
+            if pdo_idx in other_excluded and len(other_excluded) >= 2:
+                channel_pdos.add(pdo_idx)
+                combined_pdos.add(other_idx)
+
+    # If we couldn't identify combined vs channel, try simpler heuristic
+    if not combined_pdos and excludes:
+        # Just check for symmetric exclusions (A excludes B, B excludes A)
+        # Group by what they exclude
+        logger.debug(f"Using symmetric exclusion heuristic for {len(excludes)} PDOs")
+        return []  # Can't determine groups from simple exclusions
+
+    # Build the two groups
+    pdo_groups: list[PdoGroup] = []
+
+    # Channel PDOs that aren't also combined
+    pure_channel_pdos = channel_pdos - combined_pdos
+    # PDOs with no exclusions go in both groups (always active)
+    neutral_pdos = all_pdos - channel_pdos - combined_pdos
+
+    if pure_channel_pdos:
+        # Per-channel mode: channel PDOs + neutral PDOs
+        pdo_groups.append(
+            PdoGroup(
+                name="Per-Channel",
+                is_default=True,  # Per-channel is typically the default
+                pdo_indices=sorted(pure_channel_pdos | neutral_pdos),
+                symbol_indices=[],
+            )
+        )
+
+    if combined_pdos:
+        # Combined mode: combined PDOs + neutral PDOs
+        pdo_groups.append(
+            PdoGroup(
+                name="Combined",
+                is_default=False,
+                pdo_indices=sorted(combined_pdos | neutral_pdos),
+                symbol_indices=[],
+            )
+        )
+
+    if pdo_groups:
+        logger.info(
+            f"Inferred {len(pdo_groups)} PDO groups from Exclude elements: "
+            f"{[g.name for g in pdo_groups]}"
+        )
 
     return pdo_groups
 

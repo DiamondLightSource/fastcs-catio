@@ -78,7 +78,9 @@ class TestTerminalTypeWithPdoGroups:
                 PdoGroup(name="Compact", symbol_indices=[2, 3]),
             ],
         )
-        assert terminal.get_pdo_group("Compact").name == "Compact"
+        compact_group = terminal.get_pdo_group("Compact")
+        assert compact_group is not None
+        assert compact_group.name == "Compact"
         assert terminal.get_pdo_group("Unknown") is None
 
     def test_get_active_symbol_indices_no_groups(self):
@@ -208,3 +210,60 @@ class TestPdoGroupParsing:
 
         assert groups[0].symbol_indices == [0, 1]
         assert groups[1].symbol_indices == [2, 3]
+
+    def test_parse_pdo_groups_from_exclude_elements(self):
+        """Test parsing PDO groups from Exclude elements (EL1502 pattern)."""
+        # This simulates EL1502's PDO structure with per-channel vs combined modes
+        xml_content = """
+        <Device>
+            <Type>EL1502</Type>
+            <TxPdo>
+                <Index>#x1a00</Index>
+                <Name>CNT Inputs Channel 1</Name>
+                <Exclude>#x1a02</Exclude>
+            </TxPdo>
+            <TxPdo>
+                <Index>#x1a01</Index>
+                <Name>CNT Inputs Channel 2</Name>
+                <Exclude>#x1a02</Exclude>
+            </TxPdo>
+            <TxPdo>
+                <Index>#x1a02</Index>
+                <Name>CNT Inputs</Name>
+                <Exclude>#x1a00</Exclude>
+                <Exclude>#x1a01</Exclude>
+            </TxPdo>
+            <RxPdo>
+                <Index>#x1600</Index>
+                <Name>CNT Outputs Channel 1</Name>
+                <Exclude>#x1602</Exclude>
+            </RxPdo>
+            <RxPdo>
+                <Index>#x1601</Index>
+                <Name>CNT Outputs Channel 2</Name>
+                <Exclude>#x1602</Exclude>
+            </RxPdo>
+            <RxPdo>
+                <Index>#x1602</Index>
+                <Name>CNT Outputs</Name>
+                <Exclude>#x1600</Exclude>
+                <Exclude>#x1601</Exclude>
+            </RxPdo>
+        </Device>
+        """
+        device = etree.fromstring(xml_content)
+        groups = parse_pdo_groups(device)
+
+        assert len(groups) == 2
+
+        # Find groups by name
+        per_channel = next(g for g in groups if g.name == "Per-Channel")
+        combined = next(g for g in groups if g.name == "Combined")
+
+        # Per-channel should be default
+        assert per_channel.is_default is True
+        assert combined.is_default is False
+
+        # Check PDO indices
+        assert set(per_channel.pdo_indices) == {0x1600, 0x1601, 0x1A00, 0x1A01}
+        assert set(combined.pdo_indices) == {0x1602, 0x1A02}
