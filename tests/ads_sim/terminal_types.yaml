@@ -30,7 +30,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: InputBits
         channels: 4
         access: Read-only
         fastcs_name: Channel{channel}
@@ -45,7 +45,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: InputBits
         channels: 4
         access: Read-only
         fastcs_name: Channel{channel}
@@ -60,7 +60,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: InputBits
         channels: 4
         access: Read-only
         fastcs_name: Channel{channel}
@@ -75,7 +75,7 @@ terminal_types:
     symbol_nodes:
       - name_template: CNT Inputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Output functions enabled_6Bits
         channels: 2
         access: Read-only
         fastcs_name: CntInputsChannel{channel}
@@ -87,7 +87,7 @@ terminal_types:
         fastcs_name: CntInputsChannelCounterValue{channel}
       - name_template: CNT Outputs Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: Enable output functions_4Bits
         channels: 2
         access: Read/Write
         fastcs_name: CntOutputsChannel{channel}
@@ -99,7 +99,7 @@ terminal_types:
         fastcs_name: CntOutputsChannelSetCounterValue{channel}
       - name_template: CNT Inputs
         index_group: 61472
-        type_name: USINT
+        type_name: Output functions enabled_7Bits
         channels: 1
         access: Read-only
         fastcs_name: CntInputs
@@ -111,7 +111,7 @@ terminal_types:
         fastcs_name: CntInputsCounterValue
       - name_template: CNT Outputs
         index_group: 61488
-        type_name: USINT
+        type_name: Enable output functions_4Bits
         channels: 1
         access: Read/Write
         fastcs_name: CntOutputs
@@ -132,7 +132,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: OutputBits
         channels: 4
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -147,7 +147,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: OutputBits
         channels: 4
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -162,7 +162,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: OutputBits
         channels: 4
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -198,7 +198,7 @@ terminal_types:
         fastcs_name: DoxSynchronInfoDataInfoData{channel}
       - name_template: DOX Status
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Ready to activate_6Bits
         channels: 1
         access: Read-only
         fastcs_name: DoxStatus
@@ -210,7 +210,7 @@ terminal_types:
         fastcs_name: DcFeedbackFeedback
       - name_template: DOX Control
         index_group: 61488
-        type_name: USINT
+        type_name: Control__Output_3Bits
         channels: 1
         access: Read/Write
         fastcs_name: DoxControl
@@ -255,7 +255,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: OutputBits
         channels: 2
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -270,7 +270,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: OutputBits
         channels: 4
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -285,7 +285,7 @@ terminal_types:
     symbol_nodes:
       - name_template: AI Standard Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannel{channel}
@@ -324,7 +324,7 @@ terminal_types:
     symbol_nodes:
       - name_template: AI Standard Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannel{channel}
@@ -363,7 +363,7 @@ terminal_types:
     symbol_nodes:
       - name_template: RTD Inputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Underrange_5Bits
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannel{channel}
@@ -396,7 +396,7 @@ terminal_types:
     symbol_nodes:
       - name_template: RTD Inputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Underrange_5Bits
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannel{channel}
@@ -429,7 +429,7 @@ terminal_types:
     symbol_nodes:
       - name_template: TC Inputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Underrange_5Bits
         channels: 4
         access: Read-only
         fastcs_name: TcInputsChannel{channel}
@@ -468,7 +468,7 @@ terminal_types:
     symbol_nodes:
       - name_template: AI Standard Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Underrange_4Bits
         channels: 2
         access: Read-only
         fastcs_name: AiStandardChannel{channel}
@@ -486,7 +486,7 @@ terminal_types:
         fastcs_name: AiCompactChannelValue{channel}
       - name_template: RMB Status
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Overrange_7Bits
         channels: 1
         access: Read-only
         fastcs_name: RmbStatus
@@ -510,7 +510,7 @@ terminal_types:
         fastcs_name: RmbTimestampTimestamp
       - name_template: RMB Control
         index_group: 61488
-        type_name: USINT
+        type_name: Ctrl__Start calibration_5Bits
         channels: 1
         access: Read/Write
         fastcs_name: RmbControl
@@ -525,7 +525,7 @@ terminal_types:
     symbol_nodes:
       - name_template: AI Inputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Underrange_5Bits
         channels: 2
         access: Read-only
         fastcs_name: AiInputsChannel{channel}
@@ -645,13 +645,13 @@ terminal_types:
     symbol_nodes:
       - name_template: Status Us
         index_group: 61472
-        type_name: USINT
+        type_name: UndervoltageBits
         channels: 1
         access: Read-only
         fastcs_name: StatusUs
       - name_template: Status Up
         index_group: 61472
-        type_name: USINT
+        type_name: UndervoltageBits
         channels: 1
         access: Read-only
         fastcs_name: StatusUp
@@ -666,7 +666,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Status Uo
         index_group: 61472
-        type_name: USINT
+        type_name: Power OK_2Bits
         channels: 1
         access: Read-only
         fastcs_name: StatusUo
@@ -681,7 +681,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Status Uo
         index_group: 61472
-        type_name: USINT
+        type_name: Power OK_2Bits
         channels: 1
         access: Read-only
         fastcs_name: StatusUo
@@ -696,7 +696,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Status Uo
         index_group: 61472
-        type_name: USINT
+        type_name: Power OK_2Bits
         channels: 1
         access: Read-only
         fastcs_name: StatusUo
@@ -712,7 +712,7 @@ terminal_types:
     symbol_nodes:
       - name_template: PAI Status Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Error_5Bits
         channels: 4
         access: Read-only
         fastcs_name: PaiStatusChannel{channel}
@@ -1020,7 +1020,7 @@ terminal_types:
         fastcs_name: PaiSamplesr32100ChannelSamples{channel}
       - name_template: PAI Control Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: Control__Integrator Reset_3Bits
         channels: 4
         access: Read/Write
         fastcs_name: PaiControlChannel{channel}
@@ -1041,13 +1041,13 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: InputBits
         channels: 8
         access: Read-only
         fastcs_name: Channel{channel}
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: InputBits
         channels: 8
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -1062,7 +1062,7 @@ terminal_types:
     symbol_nodes:
       - name_template: Channel {channel}
         index_group: 61488
-        type_name: USINT
+        type_name: OutputBits
         channels: 4
         access: Read/Write
         fastcs_name: Channel{channel}
@@ -1077,7 +1077,7 @@ terminal_types:
     symbol_nodes:
       - name_template: AI Standard Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Underrange_5Bits
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannel{channel}
@@ -1116,7 +1116,7 @@ terminal_types:
     symbol_nodes:
       - name_template: RTD RTDInputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
         fastcs_name: RtdRtdinputsChannel{channel}
@@ -1149,7 +1149,7 @@ terminal_types:
     symbol_nodes:
       - name_template: TC TCInputs Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Underrange_6Bits
         channels: 4
         access: Read-only
         fastcs_name: TcTcinputsChannel{channel}
@@ -1204,7 +1204,7 @@ terminal_types:
     symbol_nodes:
       - name_template: AI TxPDO-Map Standard Channel {channel}
         index_group: 61472
-        type_name: USINT
+        type_name: Status__Underrange_6Bits
         channels: 2
         access: Read-only
         fastcs_name: AiTxpdoMapStandardChannel{channel}

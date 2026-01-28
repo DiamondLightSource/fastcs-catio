@@ -272,7 +272,9 @@ class BeckhoffClient:
             return create_default_terminal(
                 terminal_id, f"Terminal {terminal_id}", group_type
             )
-        return result
+        # Unpack tuple - parse_terminal_details returns (TerminalType, composite_types)
+        terminal, _composite_types = result
+        return terminal
 
     def create_default_terminal(
         self,

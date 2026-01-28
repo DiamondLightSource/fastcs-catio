@@ -274,9 +274,18 @@ class TerminalType(BaseModel):
     group_type: str | None = Field(default=None, description="Terminal group type")
 
 
+# Forward reference for TerminalConfig (defined after CompositeType models)
 class TerminalConfig(BaseModel):
-    """Root configuration for terminal types."""
+    """Root configuration for terminal types.
 
+    Includes optional composite_types for defining bit field structures
+    that can be referenced by symbol_nodes.
+    """
+
+    composite_types: dict[str, "CompositeType"] = Field(
+        default_factory=dict,
+        description="Dictionary of composite types (bit field structures)",
+    )
     terminal_types: dict[str, TerminalType] = Field(
         default_factory=dict, description="Dictionary of terminal types by ID"
     )
@@ -311,6 +320,10 @@ class TerminalConfig(BaseModel):
 
         # Convert to dict, excluding 'selected' field and filtering items
         data = self.model_dump(exclude_none=True)
+
+        # Remove empty composite_types
+        if not data.get("composite_types"):
+            data.pop("composite_types", None)
 
         # Filter symbol_nodes and coe_objects based on 'selected' field
         for _terminal_id, terminal_data in data.get("terminal_types", {}).items():
@@ -369,6 +382,18 @@ class TerminalConfig(BaseModel):
 # ============================================================
 
 
+class BitField(BaseModel):
+    """A single bit field within a composite type.
+
+    Bit fields represent individual boolean flags packed into a
+    byte-sized composite type (USINT, UINT, UDINT).
+    """
+
+    name: str = Field(description="Bit field name (e.g., 'Input', 'Error')")
+    bit: int = Field(description="Bit position (0-based)")
+    description: str | None = Field(default=None, description="Bit field description")
+
+
 class CompositeTypeMember(BaseModel):
     """A member field within a composite type.
 
@@ -389,7 +414,10 @@ class CompositeTypeMember(BaseModel):
 class CompositeType(BaseModel):
     """A composite type definition (TwinCAT BIGTYPE structure).
 
-    These are structured types that contain multiple primitive members.
+    These are structured types that contain either:
+    - Byte-level members (for complex structures like analog channels)
+    - Bit-level fields (for digital I/O status/control bytes)
+
     They are referenced by type_name in terminal YAML files.
     """
 
@@ -397,7 +425,10 @@ class CompositeType(BaseModel):
     ads_type: int = Field(default=65, description="ADS data type ID (65 = BIGTYPE)")
     size: int = Field(description="Total size in bytes")
     members: list[CompositeTypeMember] = Field(
-        default_factory=list, description="List of member fields"
+        default_factory=list, description="List of byte-level member fields"
+    )
+    bit_fields: list[BitField] = Field(
+        default_factory=list, description="List of bit-level fields"
     )
     array_size: int | None = Field(
         default=None, description="Array size if this is an array type"

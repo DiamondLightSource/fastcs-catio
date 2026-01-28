@@ -13,7 +13,7 @@ import logging
 
 from lxml import etree
 
-from catio_terminals.models import Identity, SymbolNode, TerminalType
+from catio_terminals.models import CompositeType, Identity, SymbolNode, TerminalType
 from catio_terminals.xml_catalog import (
     extract_group_type,
     extract_terminal_id_from_device,
@@ -67,7 +67,7 @@ def parse_terminal_details(
     xml_content: str,
     terminal_id: str,
     group_type: str | None = None,
-) -> TerminalType | None:
+) -> tuple[TerminalType, dict[str, CompositeType]] | None:
     """Parse terminal XML to create detailed TerminalType.
 
     Args:
@@ -76,7 +76,7 @@ def parse_terminal_details(
         group_type: Optional group type
 
     Returns:
-        TerminalType instance or None if parsing fails
+        Tuple of (TerminalType, composite_types dict) or None if parsing fails
     """
     try:
         if isinstance(xml_content, str):
@@ -133,29 +133,51 @@ def parse_terminal_details(
                 description = name_elem.text
 
         # Process PDOs
-        tx_channels, tx_dups = process_pdo_entries(device, "TxPdo")
-        rx_channels, rx_dups = process_pdo_entries(device, "RxPdo")
+        tx_channels, tx_dups, tx_bits, tx_bf_map = process_pdo_entries(device, "TxPdo")
+        rx_channels, rx_dups, rx_bits, rx_bf_map = process_pdo_entries(device, "RxPdo")
 
         # Merge channel groups
-        for key, nums in rx_channels.items():
+        for key, group_info in rx_channels.items():
             if key in tx_channels:
-                tx_channels[key].extend(nums)
+                tx_channels[key]["channels"].extend(group_info["channels"])
+                # Keep max size
+                if group_info["size"] > tx_channels[key]["size"]:
+                    tx_channels[key]["size"] = group_info["size"]
+                    tx_channels[key]["ads_type"] = group_info["ads_type"]
+                    tx_channels[key]["data_type"] = group_info["data_type"]
             else:
-                tx_channels[key] = nums
+                tx_channels[key] = group_info
 
         for key, count in rx_dups.items():
             tx_dups[key] = tx_dups.get(key, 0) + count
 
-        symbol_nodes = create_symbol_nodes(tx_channels, tx_dups)
+        # Merge bit field trackers
+        for key, info in rx_bits.items():
+            if key not in tx_bits:
+                tx_bits[key] = info
+            else:
+                # Merge symbols list
+                tx_bits[key]["symbols"].extend(info["symbols"])
+
+        # Merge channel bit field maps (keep the one with more bits)
+        for pattern, bf_key in rx_bf_map.items():
+            if pattern not in tx_bf_map or len(bf_key) > len(tx_bf_map[pattern]):
+                tx_bf_map[pattern] = bf_key
+
+        symbol_nodes, composite_types = create_symbol_nodes(
+            tx_channels, tx_dups, tx_bits, tx_bf_map
+        )
         coe_objects = parse_coe_objects(device)
 
-        return TerminalType(
+        terminal_type = TerminalType(
             description=description,
             identity=identity,
             symbol_nodes=symbol_nodes,
             coe_objects=coe_objects,
             group_type=group_type,
         )
+
+        return terminal_type, composite_types
 
     except etree.ParseError as e:
         logger.error(f"Failed to parse XML: {e}")

@@ -1,6 +1,6 @@
 """PDO (Process Data Object) parsing for Beckhoff terminal XML files."""
 
-from catio_terminals.models import SymbolNode
+from catio_terminals.models import BitField, CompositeType, SymbolNode
 from catio_terminals.utils import to_pascal_case
 from catio_terminals.xml_constants import (
     ARRAY_ELEMENT_PATTERN,
@@ -124,6 +124,8 @@ def _add_to_groups(
     ads_type: int,
     data_type: str,
     access: str,
+    bit_field_key: tuple | None = None,
+    channel_bit_field_map: dict | None = None,
 ) -> None:
     """Add entry to channel_groups or duplicate_tracker.
 
@@ -137,15 +139,35 @@ def _add_to_groups(
         ads_type: ADS type code
         data_type: Data type name
         access: Access string (Read-only, Read/Write)
+        bit_field_key: Optional key identifying bit field structure
+        channel_bit_field_map: Optional dict mapping channel patterns to bit field keys
     """
     if channel_info:
         pattern, channel_num = channel_info
-        group_key = (pattern, index_group, size, ads_type, data_type, access)
+        # Don't include bit_field_key in group_key - channels with different
+        # bit structures should still be grouped together
+        group_key = (pattern, index_group, access)
         if group_key not in channel_groups:
-            channel_groups[group_key] = []
-        channel_groups[group_key].append(channel_num)
+            channel_groups[group_key] = {
+                "channels": [],
+                "size": size,
+                "ads_type": ads_type,
+                "data_type": data_type,
+            }
+        channel_groups[group_key]["channels"].append(channel_num)
+        # Track max size (for channels with varying bit counts)
+        if size > channel_groups[group_key]["size"]:
+            channel_groups[group_key]["size"] = size
+            channel_groups[group_key]["ads_type"] = ads_type
+            channel_groups[group_key]["data_type"] = data_type
+        # Track bit field key mapping if provided
+        if bit_field_key and channel_bit_field_map is not None:
+            # Keep the bit field key with the most bits (largest structure)
+            existing_key = channel_bit_field_map.get(pattern)
+            if existing_key is None or len(bit_field_key) > len(existing_key):
+                channel_bit_field_map[pattern] = bit_field_key
     else:
-        dup_key = (name, index_group, size, ads_type, data_type, access)
+        dup_key = (name, index_group, size, ads_type, data_type, access, bit_field_key)
         duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
 
 
@@ -156,12 +178,16 @@ def _process_bit_entries(
     default_index_group: int,
     channel_groups: dict,
     duplicate_tracker: dict,
+    bit_field_tracker: dict,
+    channel_bit_field_map: dict,
 ) -> None:
     """Process bit field entries and create composite symbol using PDO name.
 
     Bit entries are consolidated into a single symbol using the PDO name
     (e.g., "Channel 1" becomes "Channel {channel}"). The composite type
     is determined by the total bit count.
+
+    Also tracks bit field structures for composite type generation.
 
     Args:
         bit_entries: List of BOOL/bit entries to consolidate
@@ -170,6 +196,8 @@ def _process_bit_entries(
         default_index_group: Default index group if not in entry
         channel_groups: Dict to collect channel patterns
         duplicate_tracker: Dict to track non-channel duplicates
+        bit_field_tracker: Dict to collect bit field structures by type name
+        channel_bit_field_map: Dict mapping channel patterns to bit field keys
     """
     if not bit_entries:
         return
@@ -182,13 +210,13 @@ def _process_bit_entries(
 
     # Determine composite type based on bit count
     if total_bits <= 8:
-        composite_type = "USINT"
+        base_type = "USINT"
         composite_size = 1
     elif total_bits <= 16:
-        composite_type = "UINT"
+        base_type = "UINT"
         composite_size = 2
     else:
-        composite_type = "UDINT"
+        base_type = "UDINT"
         composite_size = 4
 
     first_index = bit_entries[0]["index"]
@@ -196,13 +224,47 @@ def _process_bit_entries(
     if index_group == 0:
         index_group = default_index_group
 
-    ads_type = get_ads_type(composite_type)
-
     # Use PDO name directly as the symbol name
     full_name = pdo_name if pdo_name else "Status" if pdo_type == "TxPdo" else "Control"
 
     # Check for channel pattern in PDO name
     pdo_channel_info = extract_channel_pattern(pdo_name) if pdo_name else None
+
+    # Build bit fields list (sorted by bit position)
+    bit_fields = []
+    current_bit = 0
+    for entry in bit_entries:
+        bit_fields.append(
+            BitField(
+                name=entry["name"],
+                bit=current_bit,
+                description=None,
+            )
+        )
+        current_bit += entry["bit_len"]
+
+    # Create a hashable key for the bit field structure
+    # (tuple of (name, bit) pairs)
+    bit_field_key = tuple((bf.name, bf.bit) for bf in bit_fields)
+
+    # Track this bit field structure
+    if bit_field_key not in bit_field_tracker:
+        bit_field_tracker[bit_field_key] = {
+            "bit_fields": bit_fields,
+            "size": composite_size,
+            "base_type": base_type,
+            "access": access,
+            "symbols": [],
+        }
+
+    # Record which symbol uses this structure
+    symbol_pattern = pdo_channel_info[0] if pdo_channel_info else full_name
+    bit_field_tracker[bit_field_key]["symbols"].append(symbol_pattern)
+
+    # Generate a type name for this composite (will be finalized later)
+    # For now, use the base type - we'll update to composite type name after
+    composite_type = base_type
+    ads_type = get_ads_type(composite_type)
 
     _add_to_groups(
         channel_groups,
@@ -214,6 +276,8 @@ def _process_bit_entries(
         ads_type,
         composite_type,
         access,
+        bit_field_key,
+        channel_bit_field_map,
     )
 
 
@@ -280,25 +344,28 @@ def _process_value_entry(
     )
 
 
-def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
+def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict, dict, dict]:
     """Process PDO entries and group by channel pattern.
 
     Uses PDO name (not Entry name) to determine channel patterns, matching
     how TwinCAT generates symbol names at runtime.
 
     When a PDO contains a group of bit fields followed by a value entry,
-    the bit fields are collapsed into a single "Status" or "Control" composite
-    symbol (matching TwinCAT's grouping behavior).
+    the bit fields are collapsed into a single composite symbol using the
+    PDO name (e.g., "Channel 1" becomes "Channel {channel}").
 
     Args:
         device: lxml Device element
         pdo_type: "TxPdo" or "RxPdo"
 
     Returns:
-        Tuple of (channel_groups dict, duplicate_tracker dict)
+        Tuple of (channel_groups dict, duplicate_tracker dict, bit_field_tracker dict,
+                  channel_bit_field_map dict)
     """
     channel_groups: dict = {}
     duplicate_tracker: dict = {}
+    bit_field_tracker: dict = {}
+    channel_bit_field_map: dict = {}
 
     default_index_group = 0xF020 if pdo_type == "TxPdo" else 0xF030
     is_output = pdo_type == "RxPdo"
@@ -357,6 +424,8 @@ def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
             default_index_group,
             channel_groups,
             duplicate_tracker,
+            bit_field_tracker,
+            channel_bit_field_map,
         )
 
         # Process non-bit (value) entries normally
@@ -372,25 +441,70 @@ def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict]:
                 duplicate_tracker,
             )
 
-    return channel_groups, duplicate_tracker
+    return channel_groups, duplicate_tracker, bit_field_tracker, channel_bit_field_map
 
 
 def create_symbol_nodes(
-    channel_groups: dict, duplicate_tracker: dict
-) -> list[SymbolNode]:
-    """Create SymbolNode list from grouped PDO data.
+    channel_groups: dict,
+    duplicate_tracker: dict,
+    bit_field_tracker: dict,
+    channel_bit_field_map: dict | None = None,
+) -> tuple[list[SymbolNode], dict[str, CompositeType]]:
+    """Create SymbolNode list and composite types from grouped PDO data.
 
     Args:
-        channel_groups: Dict mapping group keys to channel numbers
+        channel_groups: Dict mapping group keys to channel info dicts
         duplicate_tracker: Dict mapping duplicate keys to counts
+        bit_field_tracker: Dict mapping bit field keys to structure info
+        channel_bit_field_map: Optional dict mapping channel patterns to bit field keys
 
     Returns:
-        List of SymbolNode instances
+        Tuple of (list of SymbolNode instances, dict of composite types)
     """
     symbol_nodes = []
+    composite_types: dict[str, CompositeType] = {}
+    channel_bit_field_map = channel_bit_field_map or {}
 
-    for group_key, channel_nums in channel_groups.items():
-        name_pattern, index_group, _size, _ads_type, data_type, access = group_key
+    # Generate composite type names for each unique bit field structure
+    bit_field_key_to_type_name: dict[tuple, str] = {}
+    type_counter = 1
+    for bit_field_key, info in bit_field_tracker.items():
+        # Generate a descriptive type name based on bit field names
+        bit_names = [bf.name for bf in info["bit_fields"]]
+        if len(bit_names) == 1:
+            type_name = f"{bit_names[0]}Bits"
+        else:
+            # Use first bit name + count for multi-bit types
+            type_name = f"{bit_names[0]}_{len(bit_names)}Bits"
+
+        # Ensure uniqueness
+        base_name = type_name
+        while type_name in composite_types:
+            type_name = f"{base_name}_{type_counter}"
+            type_counter += 1
+
+        bit_field_key_to_type_name[bit_field_key] = type_name
+        composite_types[type_name] = CompositeType(
+            description=f"Bit fields: {', '.join(bit_names)}",
+            ads_type=65,
+            size=info["size"],
+            bit_fields=info["bit_fields"],
+        )
+
+    for group_key, group_info in channel_groups.items():
+        # group_key is (pattern, index_group, access)
+        # group_info has keys: channels, size, ads_type, data_type
+        name_pattern, index_group, access = group_key
+        channel_nums = group_info["channels"]
+        data_type = group_info["data_type"]
+
+        # Look up bit field key from channel_bit_field_map
+        bit_field_key = channel_bit_field_map.get(name_pattern)
+
+        # Use composite type name if this has bit fields
+        if bit_field_key and bit_field_key in bit_field_key_to_type_name:
+            data_type = bit_field_key_to_type_name[bit_field_key]
+
         symbol_nodes.append(
             SymbolNode(
                 name_template=name_pattern,
@@ -403,7 +517,25 @@ def create_symbol_nodes(
         )
 
     for dup_key, count in duplicate_tracker.items():
-        name, index_group, _size, _ads_type, data_type, access = dup_key
+        # Unpack with optional bit_field_key (7 elements if present)
+        if len(dup_key) == 7:
+            (
+                name,
+                index_group,
+                _size,
+                _ads_type,
+                data_type,
+                access,
+                bit_field_key,
+            ) = dup_key
+        else:
+            name, index_group, _size, _ads_type, data_type, access = dup_key
+            bit_field_key = None
+
+        # Use composite type name if this has bit fields
+        if bit_field_key and bit_field_key in bit_field_key_to_type_name:
+            data_type = bit_field_key_to_type_name[bit_field_key]
+
         if count > 1:
             name_pattern = f"{name} {{channel}}"
             symbol_nodes.append(
@@ -428,4 +560,4 @@ def create_symbol_nodes(
                 )
             )
 
-    return symbol_nodes
+    return symbol_nodes, composite_types

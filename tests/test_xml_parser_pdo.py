@@ -154,7 +154,8 @@ class TestBitFieldGrouping:
 
     def test_bit_fields_grouped_into_pdo_name(self):
         """Verify bit fields from TxPdo are grouped using the PDO name."""
-        terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -175,7 +176,8 @@ class TestBitFieldGrouping:
 
     def test_bit_fields_grouped_into_pdo_name_rxpdo(self):
         """Verify bit fields from RxPdo are grouped using the PDO name."""
-        terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -195,7 +197,8 @@ class TestBitFieldGrouping:
 
     def test_txpdo_bit_symbol_type_is_composite(self):
         """Verify TxPdo bit symbol has appropriate composite type (USINT/UINT)."""
-        terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -209,12 +212,16 @@ class TestBitFieldGrouping:
         assert len(input_symbols) == 1
         symbol = input_symbols[0]
 
-        # 4 bits should fit in USINT (8 bits)
-        assert symbol.type_name == "USINT"
+        # Should have a composite type name based on bit fields
+        # The first bit field is "Output functions enabled", and there are 4 bits
+        assert symbol.type_name == "Output functions enabled_4Bits"
+        # Verify the composite type exists
+        assert symbol.type_name in composite_types
 
     def test_rxpdo_bit_symbol_type_is_composite(self):
         """Verify RxPdo bit symbol has appropriate composite type."""
-        terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -228,12 +235,16 @@ class TestBitFieldGrouping:
         assert len(output_symbols) == 1
         symbol = output_symbols[0]
 
-        # Control bits should fit in USINT
-        assert symbol.type_name == "USINT"
+        # Should have a composite type name based on bit fields
+        # The first bit field is "Enable output functions", and there are 3 bits
+        assert symbol.type_name == "Enable output functions_3Bits"
+        # Verify the composite type exists
+        assert symbol.type_name in composite_types
 
     def test_channel_count_preserved(self):
         """Verify channel count is correctly detected for grouped symbols."""
-        terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -249,7 +260,8 @@ class TestBitFieldGrouping:
 
     def test_access_modes_correct(self):
         """Verify TxPdo symbols are read-only and RxPdo symbols are read/write."""
-        terminal = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -313,7 +325,8 @@ class TestSingleBitPdo:
 
     def test_single_bit_pdo_uses_pdo_name(self):
         """Single bit PDO should use the PDO name directly."""
-        terminal = parse_terminal_details(DIGITAL_INPUT_XML, "EL1004", "DigIn")
+        result = parse_terminal_details(DIGITAL_INPUT_XML, "EL1004", "DigIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -436,7 +449,8 @@ class TestArrayConsolidation:
 
     def test_array_entries_consolidated(self):
         """Array element entries should be consolidated into a single symbol."""
-        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        result = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -451,7 +465,8 @@ class TestArrayConsolidation:
 
     def test_array_type_is_correct(self):
         """Consolidated array should have correct type name."""
-        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        result = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -467,7 +482,8 @@ class TestArrayConsolidation:
 
     def test_array_channel_count_preserved(self):
         """Array consolidation should preserve channel templating."""
-        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        result = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
@@ -482,7 +498,8 @@ class TestArrayConsolidation:
 
     def test_symbol_count_reduced(self):
         """Array consolidation should reduce symbol count significantly."""
-        terminal = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        result = parse_terminal_details(ARRAY_TERMINAL_XML, "ELM3704", "AnaIn")
+        terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
