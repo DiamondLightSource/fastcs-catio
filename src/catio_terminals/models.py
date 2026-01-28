@@ -141,6 +141,10 @@ class RuntimeSymbol(BaseModel):
         default_factory=list,
         description="Exclude terminals in these groups (e.g., Coupler)",
     )
+    is_global: bool = Field(
+        default=False,
+        description="Global symbol not tied to specific terminals (e.g., SyncUnits)",
+    )
 
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None
@@ -185,6 +189,10 @@ class RuntimeSymbol(BaseModel):
         Returns:
             True if the symbol should be applied to this terminal
         """
+        # Global symbols are not applied to individual terminals
+        if self.is_global:
+            return False
+
         # Check terminal ID whitelist first (most specific)
         if self.whitelist:
             return terminal_id in self.whitelist

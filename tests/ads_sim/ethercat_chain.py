@@ -417,6 +417,23 @@ class EtherCATDevice:
         # Start with device-level symbols
         symbols = self.get_device_symbols()
 
+        # Add global runtime symbols (e.g., SyncUnits)
+        if runtime_symbols:
+            for runtime_sym in runtime_symbols.runtime_symbols:
+                if runtime_sym.is_global:
+                    # Expand global symbol (no channel substitution)
+                    symbols.append(
+                        {
+                            "name": runtime_sym.name_template,
+                            "index_group": runtime_sym.index_group,
+                            "index_offset": 0x00002FB0,  # Fixed offset for SyncUnits
+                            "size": runtime_sym.size,
+                            "ads_type": runtime_sym.ads_type,
+                            "type_name": runtime_sym.type_name,
+                            "comment": runtime_sym.description or "",
+                        }
+                    )
+
         # Add symbols from all slaves
         for slave in self.slaves:
             symbols.extend(slave.get_symbols(self.id, runtime_symbols))

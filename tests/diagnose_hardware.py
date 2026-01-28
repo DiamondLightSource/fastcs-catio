@@ -36,6 +36,7 @@ try:
 
     SIMULATOR_AVAILABLE = True
 except ImportError:
+    EtherCATChain = None  # type: ignore[assignment,misc]
     SIMULATOR_AVAILABLE = False
 
 
@@ -232,6 +233,7 @@ async def diagnose_hardware(
 
                     try:
                         # Load simulator config
+                        assert EtherCATChain is not None
                         chain = EtherCATChain()
                         chain.load_config(compare_path)
 
@@ -252,11 +254,11 @@ async def diagnose_hardware(
                         print(f"    - Device Symbols:  {device_symbols}")
                         print(f"    - Runtime Symbols: {runtime_count}")
 
-                        diff = hardware_symbol_count - device_symbols
+                        diff = hardware_symbol_count - chain.total_symbol_count
                         print(f"\n  Difference: {diff:+d}")
 
                         if diff == 0:
-                            print("  ✓ Hardware matches simulator device symbols")
+                            print("  ✓ Hardware matches simulator")
                         elif abs(diff) <= 5:
                             print(f"  ⚠ Minor difference ({abs(diff)} symbols)")
                         else:
