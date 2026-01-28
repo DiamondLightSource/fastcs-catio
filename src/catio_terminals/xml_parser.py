@@ -148,8 +148,15 @@ def parse_terminal_details(
             else:
                 tx_channels[key] = group_info
 
-        for key, count in rx_dups.items():
-            tx_dups[key] = tx_dups.get(key, 0) + count
+        # Merge duplicate trackers (now dicts with 'count' and 'tooltip')
+        for key, info in rx_dups.items():
+            if key in tx_dups:
+                tx_dups[key]["count"] += info["count"]
+                # Keep existing tooltip if present, otherwise use rx tooltip
+                if not tx_dups[key].get("tooltip"):
+                    tx_dups[key]["tooltip"] = info.get("tooltip")
+            else:
+                tx_dups[key] = info
 
         # Merge bit field trackers
         for key, info in rx_bits.items():

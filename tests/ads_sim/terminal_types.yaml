@@ -551,12 +551,14 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit1{channel}
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit2{channel}
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -590,12 +592,14 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit1{channel}
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit2{channel}
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -629,12 +633,14 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannelLimit1{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannelLimit2{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -662,12 +668,14 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannelLimit1{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: RTD Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
         fastcs_name: RtdInputsChannelLimit2{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: RTD Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -695,12 +703,14 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: TcInputsChannelLimit1{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: TC Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
         fastcs_name: TcInputsChannelLimit2{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -791,12 +801,14 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: AiInputsChannelLimit1{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
       - name_template: AI Inputs Channel {channel}.Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
         fastcs_name: AiInputsChannelLimit2{channel}
+        tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
       - name_template: AI Inputs Channel {channel}.Value
         index_group: 61472
         type_name: DINT
@@ -1343,12 +1355,14 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit1{channel}
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 4
         access: Read-only
         fastcs_name: AiStandardChannelStatusLimit2{channel}
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT
@@ -1448,6 +1462,7 @@ terminal_types:
         channels: 4
         access: Read/Write
         fastcs_name: AoOutputsChannelAnalogOutput{channel}
+        tooltip: analog Output
     coe_objects: []
     group_type: AnaOut
   EP4374-0002:
@@ -1470,12 +1485,14 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: AiTxpdoMapStandardChannelStatusLimit1{channel}
+        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
         index_group: 61472
         type_name: BIT2
         channels: 2
         access: Read-only
         fastcs_name: AiTxpdoMapStandardChannelStatusLimit2{channel}
+        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
         index_group: 61472
         type_name: INT

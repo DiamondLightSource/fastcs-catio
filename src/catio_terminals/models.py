@@ -60,6 +60,9 @@ class SymbolNode(BaseModel):
     fastcs_name: str | None = Field(
         default=None, description="PascalCase name for FastCS"
     )
+    tooltip: str | None = Field(
+        default=None, description="Tooltip description from XML Comment element"
+    )
     selected: bool = Field(
         default=True, description="Whether to include in YAML output"
     )

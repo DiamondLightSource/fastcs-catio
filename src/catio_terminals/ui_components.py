@@ -194,6 +194,13 @@ def _build_symbol_node(
             "label": f"Index Group: 0x{symbol.index_group:04X}",
             "icon": "tag",
         },
+        {
+            "id": f"{terminal_id}_sym{symbol_idx}_tooltip",
+            "label": f"Tooltip: {symbol.tooltip or '(none)'}",
+            "icon": "info",
+            "tooltip_idx": symbol_idx,
+            "tooltip_value": symbol.tooltip or "",
+        },
     ]
 
     return {
@@ -386,11 +393,24 @@ def show_terminal_details(
 
                 return toggle
 
-            # Add custom slot to include checkbox for symbols
+            def make_tooltip_handler(symbol_idx: int):
+                """Handler for updating a symbol's tooltip."""
+
+                def update_tooltip(e):
+                    new_value = e.args if isinstance(e.args, str) else str(e.args)
+                    # Set to None if empty string
+                    terminal.symbol_nodes[symbol_idx].tooltip = (
+                        new_value if new_value else None
+                    )
+                    _mark_changed(app, lambda: None)
+
+                return update_tooltip
+
+            # Add custom slot to include checkbox for symbols and editable tooltip
             tree.add_slot(
                 "default-header",
                 r"""
-                <div class="row items-center">
+                <div class="row items-center full-width">
                     <q-checkbox
                         v-if="props.node.symbol_idx !== undefined"
                         :model-value="props.node.selected"
@@ -409,7 +429,28 @@ def show_terminal_details(
                         size="xs"
                         class="q-mr-xs"
                     />
-                    <span>{{ props.node.label }}</span>
+                    <template v-if="props.node.tooltip_idx !== undefined">
+                        <span class="q-mr-sm">Tooltip:</span>
+                        <q-input
+                            :model-value="props.node.tooltip_value"
+                            @click.stop="() => {}"
+                            @keydown.stop="() => {}"
+                            @keyup.stop="() => {}"
+                            @keypress.stop="() => {}"
+                            @update:model-value="(val) => {
+                                props.node.tooltip_value = val;
+                                $parent.$emit(
+                                    'update-tooltip-' + props.node.tooltip_idx, val
+                                );
+                            }"
+                            dense
+                            borderless
+                            placeholder="(none)"
+                            class="tooltip-input col-grow"
+                            input-class="text-white"
+                        />
+                    </template>
+                    <span v-else>{{ props.node.label }}</span>
                 </div>
                 """,
             )
@@ -419,6 +460,8 @@ def show_terminal_details(
                 if "symbol_idx" in node:
                     idx = node["symbol_idx"]
                     tree.on(f"toggle-symbol-{idx}", make_symbol_toggle_handler(idx))
+                    # Also connect tooltip handler for this symbol
+                    tree.on(f"update-tooltip-{idx}", make_tooltip_handler(idx))
 
     # Display Runtime Symbols section
     _show_runtime_symbols(app, terminal_id, terminal)

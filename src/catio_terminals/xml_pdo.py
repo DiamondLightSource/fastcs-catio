@@ -126,6 +126,7 @@ def _add_to_groups(
     access: str,
     bit_field_key: tuple | None = None,
     channel_bit_field_map: dict | None = None,
+    tooltip: str | None = None,
 ) -> None:
     """Add entry to channel_groups or duplicate_tracker.
 
@@ -141,6 +142,7 @@ def _add_to_groups(
         access: Access string (Read-only, Read/Write)
         bit_field_key: Optional key identifying bit field structure
         channel_bit_field_map: Optional dict mapping channel patterns to bit field keys
+        tooltip: Optional tooltip/comment from XML
     """
     if channel_info:
         pattern, channel_num = channel_info
@@ -153,6 +155,7 @@ def _add_to_groups(
                 "size": size,
                 "ads_type": ads_type,
                 "data_type": data_type,
+                "tooltip": tooltip,
             }
         channel_groups[group_key]["channels"].append(channel_num)
         # Track max size (for channels with varying bit counts)
@@ -160,6 +163,9 @@ def _add_to_groups(
             channel_groups[group_key]["size"] = size
             channel_groups[group_key]["ads_type"] = ads_type
             channel_groups[group_key]["data_type"] = data_type
+        # Keep first tooltip encountered (they should be the same across channels)
+        if tooltip and not channel_groups[group_key].get("tooltip"):
+            channel_groups[group_key]["tooltip"] = tooltip
         # Track bit field key mapping if provided
         if bit_field_key and channel_bit_field_map is not None:
             # Keep the bit field key with the most bits (largest structure)
@@ -168,7 +174,12 @@ def _add_to_groups(
                 channel_bit_field_map[pattern] = bit_field_key
     else:
         dup_key = (name, index_group, size, ads_type, data_type, access, bit_field_key)
-        duplicate_tracker[dup_key] = duplicate_tracker.get(dup_key, 0) + 1
+        if dup_key not in duplicate_tracker:
+            duplicate_tracker[dup_key] = {"count": 0, "tooltip": tooltip}
+        duplicate_tracker[dup_key]["count"] += 1
+        # Keep first tooltip encountered
+        if tooltip and not duplicate_tracker[dup_key].get("tooltip"):
+            duplicate_tracker[dup_key]["tooltip"] = tooltip
 
 
 def _process_bit_entries(
@@ -293,7 +304,7 @@ def _process_value_entry(
     """Process a single non-bit value entry.
 
     Args:
-        entry_data: Entry dictionary with name, index, bit_len, data_type
+        entry_data: Entry dictionary with name, index, bit_len, data_type, tooltip
         pdo_name: Name of the parent PDO
         pdo_channel_info: Channel info extracted from PDO name
         default_index_group: Default index group if not in entry
@@ -305,6 +316,7 @@ def _process_value_entry(
     index = entry_data["index"]
     bit_len = entry_data["bit_len"]
     data_type = entry_data["data_type"]
+    tooltip = entry_data.get("tooltip")
 
     index_group = (index >> 16) & 0xFFFF
     if index_group == 0:
@@ -341,6 +353,7 @@ def _process_value_entry(
         ads_type,
         data_type,
         access,
+        tooltip=tooltip,
     )
 
 
@@ -390,12 +403,18 @@ def process_pdo_entries(device, pdo_type: str) -> tuple[dict, dict, dict, dict]:
             bit_len = int(entry.findtext("BitLen", "0"))
             data_type = entry.findtext("DataType", "UNKNOWN")
 
+            # Extract comment/tooltip from XML (normalize whitespace)
+            comment_text = entry.findtext("Comment", "")
+            if comment_text:
+                comment_text = " ".join(comment_text.split())
+
             entries.append(
                 {
                     "name": entry_name,
                     "index": index,
                     "bit_len": bit_len,
                     "data_type": data_type,
+                    "tooltip": comment_text or None,
                 }
             )
 
@@ -493,10 +512,11 @@ def create_symbol_nodes(
 
     for group_key, group_info in channel_groups.items():
         # group_key is (pattern, index_group, access)
-        # group_info has keys: channels, size, ads_type, data_type
+        # group_info has keys: channels, size, ads_type, data_type, tooltip
         name_pattern, index_group, access = group_key
         channel_nums = group_info["channels"]
         data_type = group_info["data_type"]
+        tooltip = group_info.get("tooltip")
 
         # Look up bit field key from channel_bit_field_map
         bit_field_key = channel_bit_field_map.get(name_pattern)
@@ -513,10 +533,15 @@ def create_symbol_nodes(
                 channels=len(channel_nums),
                 access=access,
                 fastcs_name=to_pascal_case(name_pattern),
+                tooltip=tooltip,
             )
         )
 
-    for dup_key, count in duplicate_tracker.items():
+    for dup_key, dup_info in duplicate_tracker.items():
+        # dup_info is now a dict with 'count' and 'tooltip' keys
+        count = dup_info["count"]
+        tooltip = dup_info.get("tooltip")
+
         # Unpack with optional bit_field_key (7 elements if present)
         if len(dup_key) == 7:
             (
@@ -546,6 +571,7 @@ def create_symbol_nodes(
                     channels=count,
                     access=access,
                     fastcs_name=to_pascal_case(name_pattern),
+                    tooltip=tooltip,
                 )
             )
         else:
@@ -557,6 +583,7 @@ def create_symbol_nodes(
                     channels=1,
                     access=access,
                     fastcs_name=to_pascal_case(name),
+                    tooltip=tooltip,
                 )
             )
 

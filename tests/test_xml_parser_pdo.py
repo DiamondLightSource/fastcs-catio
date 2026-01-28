@@ -506,3 +506,206 @@ class TestArrayConsolidation:
         # Without consolidation: 10 entries (5 per channel x 2 channels)
         # With consolidation: 1 symbol (templated for 2 channels)
         assert len(terminal.symbol_nodes) == 1
+
+
+# Sample XML for testing tooltip/comment extraction
+TOOLTIP_TERMINAL_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor>
+    <Id>2</Id>
+    <Name>Beckhoff</Name>
+  </Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x0c203052" RevisionNo="#x00100000">EL3104</Type>
+        <Name LcId="1033">EL3104 4Ch. Ana. Input +/-10V</Name>
+        <GroupType>AnaIn</GroupType>
+        <TxPdo Fixed="1">
+          <Index>#x1a00</Index>
+          <Name>AI Standard Channel 1</Name>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Status__Underrange</Name>
+            <Comment>Bit set when upper value limit exceeded</Comment>
+            <DataType>BOOL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Status__Overrange</Name>
+            <Comment>Bit set when lower value limit exceeded</Comment>
+            <DataType>BOOL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>17</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Value</Name>
+            <Comment>The analog input value in raw ADC counts</Comment>
+            <DataType>INT</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1">
+          <Index>#x1a02</Index>
+          <Name>AI Standard Channel 2</Name>
+          <Entry>
+            <Index>#x6010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Status__Underrange</Name>
+            <Comment>Bit set when upper value limit exceeded</Comment>
+            <DataType>BOOL</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6010</Index>
+            <SubIndex>17</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Value</Name>
+            <Comment>The analog input value in raw ADC counts</Comment>
+            <DataType>INT</DataType>
+          </Entry>
+        </TxPdo>
+        <Profile>
+          <Dictionary>
+            <DataTypes></DataTypes>
+            <Objects></Objects>
+          </Dictionary>
+        </Profile>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+
+
+class TestTooltipExtraction:
+    """Tests for extracting Comment elements as tooltips."""
+
+    def test_value_entry_has_tooltip(self):
+        """Verify that Comment elements are extracted as tooltips for value entries."""
+        result = parse_terminal_details(TOOLTIP_TERMINAL_XML, "EL3104", "AnaIn")
+        terminal, composite_types = result if result else (None, {})
+
+        assert terminal is not None
+
+        # Find the Value symbol
+        value_symbol = next(
+            (s for s in terminal.symbol_nodes if "Value" in s.name_template),
+            None,
+        )
+        assert value_symbol is not None, "Value symbol should exist"
+
+        # Should have tooltip extracted from Comment
+        assert value_symbol.tooltip == "The analog input value in raw ADC counts"
+
+    def test_tooltip_preserves_across_channels(self):
+        """Verify tooltips are preserved when symbols are grouped by channel."""
+        result = parse_terminal_details(TOOLTIP_TERMINAL_XML, "EL3104", "AnaIn")
+        terminal, composite_types = result if result else (None, {})
+
+        assert terminal is not None
+
+        # Find the Value symbol (should be templated for both channels)
+        value_symbol = next(
+            (s for s in terminal.symbol_nodes if "Value" in s.name_template),
+            None,
+        )
+        assert value_symbol is not None
+
+        # Should have 2 channels
+        assert value_symbol.channels == 2
+
+        # Tooltip should be present
+        assert value_symbol.tooltip is not None
+
+    def test_entry_without_comment_has_no_tooltip(self):
+        """Verify entries without Comment elements have None for tooltip."""
+        # Create XML without comments
+        xml_no_comments = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor><Id>2</Id></Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x0c203052" RevisionNo="#x00100000">EL3104</Type>
+        <Name LcId="1033">EL3104 Test</Name>
+        <GroupType>AnaIn</GroupType>
+        <TxPdo Fixed="1">
+          <Index>#x1a00</Index>
+          <Name>AI Channel 1</Name>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>17</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Value</Name>
+            <DataType>INT</DataType>
+          </Entry>
+        </TxPdo>
+        <Profile><Dictionary><DataTypes></DataTypes><Objects></Objects></Dictionary></Profile>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+        result = parse_terminal_details(xml_no_comments, "EL3104", "AnaIn")
+        terminal, _ = result if result else (None, {})
+
+        assert terminal is not None
+
+        value_symbol = next(
+            (s for s in terminal.symbol_nodes if "Value" in s.name_template),
+            None,
+        )
+        assert value_symbol is not None
+        assert value_symbol.tooltip is None
+
+    def test_multiline_comment_normalized(self):
+        """Verify multi-line comments are normalized to single line."""
+        xml_multiline = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor><Id>2</Id></Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x0c203052" RevisionNo="#x00100000">EL3104</Type>
+        <Name LcId="1033">EL3104 Test</Name>
+        <GroupType>AnaIn</GroupType>
+        <TxPdo Fixed="1">
+          <Index>#x1a00</Index>
+          <Name>AI Channel 1</Name>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>17</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>Value</Name>
+            <Comment>Bit0: Value greater than Limit1
+Bit1: Value smaller than Limit1</Comment>
+            <DataType>INT</DataType>
+          </Entry>
+        </TxPdo>
+        <Profile><Dictionary><DataTypes></DataTypes><Objects></Objects></Dictionary></Profile>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+        result = parse_terminal_details(xml_multiline, "EL3104", "AnaIn")
+        terminal, _ = result if result else (None, {})
+
+        assert terminal is not None
+
+        value_symbol = next(
+            (s for s in terminal.symbol_nodes if "Value" in s.name_template),
+            None,
+        )
+        assert value_symbol is not None
+
+        # Multi-line should be normalized to single line with space
+        assert (
+            value_symbol.tooltip
+            == "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
+        )
