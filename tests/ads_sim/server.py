@@ -14,7 +14,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from .ethercat_chain import (
+from tests.ads_sim.ethercat_chain import (
     COE_OPERATIONAL_PARAMS_BASE,
     EtherCATChain,
     EtherCATDevice,

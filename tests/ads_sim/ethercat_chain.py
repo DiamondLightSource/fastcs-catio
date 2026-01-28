@@ -242,13 +242,123 @@ class EtherCATDevice:
             + self.acyclic_lost.to_bytes(4, "little")
         )
 
+    def get_device_symbols(self) -> list[dict[str, Any]]:
+        """Get device-level symbols for the EtherCAT master.
+
+        Real hardware exposes these symbols for the EtherCAT master device:
+        - Inputs: Frm0State, Frm0WcState, Frm0InputToggle, SlaveCount, DevState
+        - Outputs: Frm0Ctrl, Frm0WcCtrl, DevCtrl
+
+        Returns:
+            List of device-level symbol dictionaries.
+        """
+        # Base offset for device symbols (from hardware observation)
+        base_offset = 0x5F0
+        device_name = self.name
+
+        # Index groups: 0xF030 for inputs (process data read), 0xF020 for outputs
+        index_group_input = 0xF030
+        index_group_output = 0xF020
+
+        # Note: Using ADS_TYPE_BIT (33) because the client's symbol_lookup doesn't
+        # handle ADS_TYPE_UINT16 (18). Real hardware uses UINT16 for these symbols.
+        # TODO: Update client symbol_lookup to handle ADS_TYPE_UINT16 properly.
+        ads_type_bit = 33  # ADS_TYPE_BIT - client handles this
+
+        symbols = [
+            # Input symbols
+            {
+                "name": f"{device_name}.Inputs.Frm0State",
+                "index_group": index_group_input,
+                "index_offset": base_offset,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Input Frame status symbol for the EtherCAT Master device.",
+            },
+            {
+                "name": f"{device_name}.Inputs.Frm0WcState",
+                "index_group": index_group_input,
+                "index_offset": base_offset + 2,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Input Frame working counter status symbol for the "
+                "EtherCAT Master device.",
+            },
+            {
+                "name": f"{device_name}.Inputs.Frm0InputToggle",
+                "index_group": index_group_input,
+                "index_offset": base_offset + 4,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Input Frame input toggle symbol for the "
+                "EtherCAT Master device.",
+            },
+            {
+                "name": f"{device_name}.Inputs.SlaveCount",
+                "index_group": index_group_input,
+                "index_offset": base_offset + 10,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "SlaveCount symbol for the EtherCAT Master device.",
+            },
+            {
+                "name": f"{device_name}.Inputs.DevState",
+                "index_group": index_group_input,
+                "index_offset": base_offset + 14,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Device Input Status symbol for the EtherCAT Master device.",
+            },
+            # Output symbols
+            {
+                "name": f"{device_name}.Outputs.Frm0Ctrl",
+                "index_group": index_group_output,
+                "index_offset": base_offset,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Output Frame control symbol for the "
+                "EtherCAT Master device.",
+            },
+            {
+                "name": f"{device_name}.Outputs.Frm0WcCtrl",
+                "index_group": index_group_output,
+                "index_offset": base_offset + 2,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Output Frame working counter control symbol for the "
+                "EtherCAT Master device.",
+            },
+            {
+                "name": f"{device_name}.Outputs.DevCtrl",
+                "index_group": index_group_output,
+                "index_offset": base_offset + 4,
+                "size": 1,
+                "ads_type": ads_type_bit,
+                "type_name": "BIT",
+                "comment": "Device Output status symbol for the "
+                "EtherCAT Master device.",
+            },
+        ]
+
+        return symbols
+
     def get_all_symbols(self) -> list[dict[str, Any]]:
-        """Get all symbols from all slaves in this device.
+        """Get all symbols from this device and all its slaves.
 
         Returns:
             List of all symbol dictionaries.
         """
-        symbols = []
+        # Start with device-level symbols
+        symbols = self.get_device_symbols()
+
+        # Add symbols from all slaves
         for slave in self.slaves:
             symbols.extend(slave.get_symbols(self.id))
         return symbols
