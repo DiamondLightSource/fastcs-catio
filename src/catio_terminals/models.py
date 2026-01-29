@@ -71,18 +71,6 @@ class SymbolNode(BaseModel):
     _size_from_yaml: int | None = None
     _ads_type_from_yaml: int | None = None
 
-    @model_validator(mode="before")
-    @classmethod
-    def capture_legacy_fields(cls, data: Any) -> Any:
-        """Capture size/ads_type from YAML for backwards compatibility."""
-        if isinstance(data, dict):
-            # Store legacy values if present, then remove them
-            if "size" in data:
-                data["_size_from_yaml"] = data.pop("size")
-            if "ads_type" in data:
-                data["_ads_type_from_yaml"] = data.pop("ads_type")
-        return data
-
     @computed_field
     @property
     def size(self) -> int:

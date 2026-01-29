@@ -624,12 +624,11 @@ async def _add_terminal_from_beckhoff(
     if not app.config:
         return
 
-    # Use TerminalService to handle the logic with lazy loading enabled
+    # Use TerminalService to handle the logic with lazy loading
     await TerminalService.add_terminal_from_beckhoff(
         app.config,
         terminal_info,
         app.beckhoff_client,
-        lazy_load=True,
     )
 
     app.has_unsaved_changes = True
