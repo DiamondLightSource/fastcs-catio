@@ -17,15 +17,13 @@ from fastcs.transports.epics.options import (
 )
 from softioc.imports import callbackSetQueueSize
 
-from fastcs_catio.catio_dynamic import (
-    set_terminal_types_patterns,
-)
-from fastcs_catio.client import RemoteRoute
+from fastcs_catio.terminal_config import set_terminal_types_patterns
 
 from . import __version__
 from .catio_controller import (
     CATioServerController,
 )
+from .client import RemoteRoute
 
 __all__ = ["main"]
 
