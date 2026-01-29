@@ -20,7 +20,12 @@ from fastcs.attributes import AttrR, AttrRW
 from fastcs.datatypes import Int
 from fastcs.logging import bind_logger
 
-from catio_terminals.models import SymbolNode, TerminalConfig, TerminalType
+from catio_terminals.models import (
+    RuntimeSymbolsConfig,
+    SymbolNode,
+    TerminalConfig,
+    TerminalType,
+)
 from fastcs_catio.catio_controller import CATioTerminalController
 
 logger = bind_logger(logger_name=__name__)
@@ -36,8 +41,16 @@ _TERMINAL_TYPES_PATH = (
     / "terminal_types.yaml"
 )
 
+# Path to the runtime symbols YAML file
+_RUNTIME_SYMBOLS_PATH = (
+    Path(__file__).parent.parent / "catio_terminals" / "config" / "runtime_symbols.yaml"
+)
+
 # Cached terminal configuration (loaded once)
 _terminal_config: TerminalConfig | None = None
+
+# Cached runtime symbols configuration (loaded once)
+_runtime_symbols_config: RuntimeSymbolsConfig | None = None
 
 
 def _load_terminal_config() -> TerminalConfig:
@@ -59,6 +72,29 @@ def _load_terminal_config() -> TerminalConfig:
         logger.info(
             f"Loaded {len(_terminal_config.terminal_types)} terminal definitions"
         )
+    return _terminal_config
+
+
+def _load_runtime_symbols() -> RuntimeSymbolsConfig:
+    """Load and cache the runtime symbols configuration.
+
+    Returns:
+        RuntimeSymbolsConfig instance with all runtime symbol definitions.
+    """
+    global _runtime_symbols_config
+    if _runtime_symbols_config is None:
+        if _RUNTIME_SYMBOLS_PATH.exists():
+            _runtime_symbols_config = RuntimeSymbolsConfig.from_yaml(
+                _RUNTIME_SYMBOLS_PATH
+            )
+            logger.info(
+                f"Loaded {len(_runtime_symbols_config.runtime_symbols)} "
+                "runtime symbol definitions"
+            )
+        else:
+            _runtime_symbols_config = RuntimeSymbolsConfig()
+            logger.warning(f"Runtime symbols YAML not found at {_RUNTIME_SYMBOLS_PATH}")
+    return _runtime_symbols_config
     return _terminal_config
 
 
@@ -124,6 +160,87 @@ def _get_datatype_for_symbol(symbol: SymbolNode) -> Int:
     return Int()
 
 
+def _add_symbol_attribute(
+    controller: CATioTerminalController, symbol: SymbolNode
+) -> None:
+    """Add FastCS attributes for a symbol to a controller.
+
+    Handles both single-channel and multi-channel symbols.
+
+    Args:
+        controller: The controller to add attributes to.
+        symbol: The symbol definition.
+    """
+    if symbol.channels > 1:
+        # Multi-channel symbol - create one attribute per channel
+        for ch in range(1, symbol.channels + 1):
+            fastcs_name = _symbol_to_fastcs_name(symbol, ch)
+            ads_name = _symbol_to_ads_name(symbol, ch)
+
+            is_readonly = symbol.access is None or "read" in symbol.access.lower()
+            desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
+
+            if is_readonly:
+                controller.add_attribute(
+                    fastcs_name,
+                    AttrR(
+                        datatype=_get_datatype_for_symbol(symbol),
+                        io_ref=None,
+                        group=controller.attr_group_name,
+                        initial_value=0,
+                        description=desc,
+                    ),
+                )
+            else:
+                controller.add_attribute(
+                    fastcs_name,
+                    AttrRW(
+                        datatype=_get_datatype_for_symbol(symbol),
+                        io_ref=None,
+                        group=controller.attr_group_name,
+                        initial_value=0,
+                        description=desc,
+                    ),
+                )
+
+            # Map FastCS name to ADS name
+            controller.ads_name_map[fastcs_name] = ads_name
+    else:
+        # Single-channel symbol
+        fastcs_name = _symbol_to_fastcs_name(symbol)
+        ads_name = _symbol_to_ads_name(symbol)
+
+        is_readonly = symbol.access is None or "read" in symbol.access.lower()
+        desc = symbol.tooltip or symbol.name_template
+
+        if is_readonly:
+            controller.add_attribute(
+                fastcs_name,
+                AttrR(
+                    datatype=_get_datatype_for_symbol(symbol),
+                    io_ref=None,
+                    group=controller.attr_group_name,
+                    initial_value=0,
+                    description=desc,
+                ),
+            )
+        else:
+            controller.add_attribute(
+                fastcs_name,
+                AttrRW(
+                    datatype=_get_datatype_for_symbol(symbol),
+                    io_ref=None,
+                    group=controller.attr_group_name,
+                    initial_value=0,
+                    description=desc,
+                ),
+            )
+
+        # Map FastCS name to ADS name if different
+        if fastcs_name != ads_name:
+            controller.ads_name_map[fastcs_name] = ads_name
+
+
 def _create_dynamic_controller_class(
     terminal_id: str, terminal: TerminalType
 ) -> type[CATioTerminalController]:
@@ -142,6 +259,13 @@ def _create_dynamic_controller_class(
     # Get selected symbols only
     selected_symbols = [s for s in terminal.symbol_nodes if s.selected]
 
+    # Get applicable runtime symbols for this terminal
+    runtime_config = _load_runtime_symbols()
+    runtime_symbols: list[SymbolNode] = []
+    for rs in runtime_config.runtime_symbols:
+        if rs.applies_to_terminal(terminal_id, terminal.group_type):
+            runtime_symbols.append(rs.to_symbol_node())
+
     # Create the class body
     class_dict: dict[str, object] = {
         "__module__": __name__,
@@ -149,6 +273,7 @@ def _create_dynamic_controller_class(
         "io_function": io_function,
         "_terminal_id": terminal_id,
         "_selected_symbols": selected_symbols,
+        "_runtime_symbols": runtime_symbols,
     }
 
     async def get_io_attributes(self: CATioTerminalController) -> None:
@@ -157,81 +282,17 @@ def _create_dynamic_controller_class(
         initial_attr_count = len(self.attributes)
         await CATioTerminalController.get_io_attributes(self)
 
-        # Get symbols from class attribute
-        symbols: list[SymbolNode] = getattr(self.__class__, "_selected_symbols", [])
+        # Get symbols from class attributes
+        runtime_syms: list[SymbolNode] = getattr(self.__class__, "_runtime_symbols", [])
+        pdo_symbols: list[SymbolNode] = getattr(self.__class__, "_selected_symbols", [])
 
-        # Create attributes for each selected symbol
-        for symbol in symbols:
-            if symbol.channels > 1:
-                # Multi-channel symbol - create one attribute per channel
-                for ch in range(1, symbol.channels + 1):
-                    fastcs_name = _symbol_to_fastcs_name(symbol, ch)
-                    ads_name = _symbol_to_ads_name(symbol, ch)
+        # Process runtime symbols first (WcState, InputToggle, etc.)
+        for symbol in runtime_syms:
+            _add_symbol_attribute(self, symbol)
 
-                    # Determine if read-only or read-write
-                    is_readonly = (
-                        symbol.access is None or "read" in symbol.access.lower()
-                    )
-
-                    desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
-                    if is_readonly:
-                        self.add_attribute(
-                            fastcs_name,
-                            AttrR(
-                                datatype=_get_datatype_for_symbol(symbol),
-                                io_ref=None,
-                                group=self.attr_group_name,
-                                initial_value=0,
-                                description=desc,
-                            ),
-                        )
-                    else:
-                        self.add_attribute(
-                            fastcs_name,
-                            AttrRW(
-                                datatype=_get_datatype_for_symbol(symbol),
-                                io_ref=None,
-                                group=self.attr_group_name,
-                                initial_value=0,
-                                description=desc,
-                            ),
-                        )
-
-                    # Map FastCS name to ADS name
-                    self.ads_name_map[fastcs_name] = ads_name
-            else:
-                # Single-channel symbol
-                fastcs_name = _symbol_to_fastcs_name(symbol)
-                ads_name = _symbol_to_ads_name(symbol)
-
-                is_readonly = symbol.access is None or "read" in symbol.access.lower()
-
-                if is_readonly:
-                    self.add_attribute(
-                        fastcs_name,
-                        AttrR(
-                            datatype=_get_datatype_for_symbol(symbol),
-                            io_ref=None,
-                            group=self.attr_group_name,
-                            initial_value=0,
-                            description=symbol.tooltip or symbol.name_template,
-                        ),
-                    )
-                else:
-                    self.add_attribute(
-                        fastcs_name,
-                        AttrRW(
-                            datatype=_get_datatype_for_symbol(symbol),
-                            io_ref=None,
-                            group=self.attr_group_name,
-                            initial_value=0,
-                            description=symbol.tooltip or symbol.name_template,
-                        ),
-                    )
-
-                # Map FastCS name to ADS name if different
-                if fastcs_name != ads_name:
-                    self.ads_name_map[fastcs_name] = ads_name
+        # Then process PDO symbols (Channel 1, etc.)
+        for symbol in pdo_symbols:
+            _add_symbol_attribute(self, symbol)
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(
@@ -297,5 +358,6 @@ def clear_controller_cache() -> None:
     Useful for testing or when terminal definitions change.
     """
     _DYNAMIC_CONTROLLER_CACHE.clear()
-    global _terminal_config
+    global _terminal_config, _runtime_symbols_config
     _terminal_config = None
+    _runtime_symbols_config = None

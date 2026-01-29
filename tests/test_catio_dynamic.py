@@ -154,3 +154,19 @@ class TestDynamicControllerAttributes:
         # Check that _terminal_id class attribute is set
         assert hasattr(controller_class, "_terminal_id")
         assert controller_class._terminal_id == "EL1004"  # type: ignore[attr-defined]
+
+    def test_el1004_has_runtime_symbols(self) -> None:
+        """Test that EL1004 dynamic controller has runtime symbols."""
+        controller_class = get_terminal_controller_class("EL1004")
+
+        # Check that _runtime_symbols class attribute exists
+        assert hasattr(controller_class, "_runtime_symbols")
+        runtime_symbols = controller_class._runtime_symbols  # type: ignore[attr-defined]
+
+        # EL1004 is a DigIn terminal, should have WcState and InputToggle
+        assert len(runtime_symbols) >= 2
+
+        # Check runtime symbol names
+        symbol_names = [s.name_template for s in runtime_symbols]
+        assert "WcState.WcState" in symbol_names
+        assert "WcState.InputToggle" in symbol_names
