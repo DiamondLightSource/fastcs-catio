@@ -550,6 +550,7 @@ class CATioServerController(CATioController):
         :returns: the subcontroller object created for the current node.
         """
         # Lazy import to prevent circular import reference
+        from fastcs_catio.catio_dynamic import get_terminal_controller_class
         from fastcs_catio.catio_hardware import SUPPORTED_CONTROLLERS
 
         match node.data.category:
@@ -579,7 +580,13 @@ class CATioServerController(CATioController):
                     f"Implementing I/O terminal '{node.data.name}' as "
                     f"CATioSubController."
                 )
-                ctlr = SUPPORTED_CONTROLLERS[node.data.type](
+                # First check explicit controllers, then fall back to dynamic factory
+                if node.data.type in SUPPORTED_CONTROLLERS:
+                    ctlr_class = SUPPORTED_CONTROLLERS[node.data.type]
+                else:
+                    ctlr_class = get_terminal_controller_class(node.data.type)
+
+                ctlr = ctlr_class(
                     name=node.data.get_type_name(),
                     ecat_name=node.data.name,
                     description=f"Controller for {node.data.category.value} terminal "
