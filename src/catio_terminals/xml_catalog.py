@@ -143,7 +143,23 @@ def parse_terminal_catalog(
                     continue
 
                 terminal_id = extract_terminal_id_from_device(device, xml_file)
-                if not terminal_id or terminal_id in seen_ids:
+                if not terminal_id:
+                    continue
+
+                # Check if PDOs use Ref attribute (no inline entries)
+                # Skip these devices - prefer files with actual PDO entries
+                has_pdo_refs = False
+                for pdo in device.findall(".//TxPdo") + device.findall(".//RxPdo"):
+                    if pdo.get("Ref") is not None:
+                        has_pdo_refs = True
+                        break
+
+                if has_pdo_refs:
+                    # Skip this device if we haven't seen a better version yet
+                    # If we have, we already have the better version
+                    continue
+
+                if terminal_id in seen_ids:
                     continue
 
                 seen_ids.add(terminal_id)

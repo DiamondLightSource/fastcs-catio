@@ -258,6 +258,83 @@ composite_types:
         bit: 3
       - name: Status__TxPDO Toggle
         bit: 4
+  Status__Output functions enabled_7Bits:
+    description: 'Bit fields: Status__Output functions enabled, Status__Status of
+      output, Status__Set counter done, Status__Counter inhibited, Status__Status
+      of input clock, Status__Sync error, Status__TxPDO Toggle'
+    ads_type: 65
+    size: 1
+    members: []
+    bit_fields:
+      - name: Status__Output functions enabled
+        bit: 0
+      - name: Status__Status of output
+        bit: 1
+      - name: Status__Set counter done
+        bit: 2
+      - name: Status__Counter inhibited
+        bit: 3
+      - name: Status__Status of input clock
+        bit: 4
+      - name: Status__Sync error
+        bit: 5
+      - name: Status__TxPDO Toggle
+        bit: 6
+  Status__Output functions enabled_8Bits:
+    description: 'Bit fields: Status__Output functions enabled, Status__Status of
+      output, Status__Set counter done, Status__Counter inhibited, Status__Status
+      of input UD, Status__Status of input clock, Status__Sync error, Status__TxPDO
+      Toggle'
+    ads_type: 65
+    size: 1
+    members: []
+    bit_fields:
+      - name: Status__Output functions enabled
+        bit: 0
+      - name: Status__Status of output
+        bit: 1
+      - name: Status__Set counter done
+        bit: 2
+      - name: Status__Counter inhibited
+        bit: 3
+      - name: Status__Status of input UD
+        bit: 4
+      - name: Status__Status of input clock
+        bit: 5
+      - name: Status__Sync error
+        bit: 6
+      - name: Status__TxPDO Toggle
+        bit: 7
+  Control__Enable output functions_4Bits:
+    description: 'Bit fields: Control__Enable output functions, Control__Set output,
+      Control__Set counter, Control__Inhibit counter'
+    ads_type: 65
+    size: 1
+    members: []
+    bit_fields:
+      - name: Control__Enable output functions
+        bit: 0
+      - name: Control__Set output
+        bit: 1
+      - name: Control__Set counter
+        bit: 2
+      - name: Control__Inhibit counter
+        bit: 3
+  Control__Integrator Reset_4Bits:
+    description: 'Bit fields: Control__Integrator Reset, Control__Peak Hold Reset,
+      Control__Sensor Supply Disable, Control__Invalidate'
+    ads_type: 65
+    size: 1
+    members: []
+    bit_fields:
+      - name: Control__Integrator Reset
+        bit: 0
+      - name: Control__Peak Hold Reset
+        bit: 1
+      - name: Control__Sensor Supply Disable
+        bit: 2
+      - name: Control__Invalidate
+        bit: 3
 terminal_types:
   EK1100:
     description: EtherCAT Coupler
@@ -265,7 +342,17 @@ terminal_types:
       vendor_id: 2
       product_code: 72100946
       revision_number: 1114112
-    symbol_nodes: []
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61488
+        type_name: Channel 1_TYPE
+        channels: 0
+        selected: true
+      - name_template: WcState^WcState
+        index_group: 61473
+        type_name: BIT
+        channels: 1
+        selected: true
     coe_objects: []
     group_type: CpBk
   EK1122:
@@ -334,7 +421,7 @@ terminal_types:
     symbol_nodes:
       - name_template: CNT Inputs Channel {channel}
         index_group: 61488
-        type_name: Output functions enabled_6Bits
+        type_name: Status__Output functions enabled_7Bits
         channels: 2
         access: Read-only
         fastcs_name: cnt_inputs_channel_{channel}
@@ -348,7 +435,7 @@ terminal_types:
         selected: false
       - name_template: CNT Outputs Channel {channel}
         index_group: 61472
-        type_name: Enable output functions_4Bits
+        type_name: Control__Enable output functions_4Bits
         channels: 2
         access: Read/Write
         fastcs_name: cnt_outputs_channel_{channel}
@@ -362,7 +449,7 @@ terminal_types:
         selected: false
       - name_template: CNT Inputs
         index_group: 61488
-        type_name: Output functions enabled_7Bits
+        type_name: Status__Output functions enabled_8Bits
         channels: 1
         access: Read-only
         fastcs_name: cnt_inputs
@@ -376,7 +463,7 @@ terminal_types:
         selected: true
       - name_template: CNT Outputs
         index_group: 61472
-        type_name: Enable output functions_4Bits
+        type_name: Control__Enable output functions_4Bits
         channels: 1
         access: Read/Write
         fastcs_name: cnt_outputs
@@ -429,12 +516,15 @@ terminal_types:
       product_code: 132657252
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Channel {channel}
+      - name_template: DO Output Channel {channel}
+        index_group: 61488
+        type_name: DO Output Channel 1_TYPE
+        channels: 0
+        selected: true
+      - name_template: WcState^WcState
         index_group: 61473
-        type_name: OutputBits
-        channels: 4
-        access: Read/Write
-        fastcs_name: channel_{channel}
+        type_name: BIT
+        channels: 1
         selected: true
     coe_objects: []
     group_type: DigOut
@@ -467,9 +557,23 @@ terminal_types:
         channels: 2
         access: Read/Write
         fastcs_name: pwm_outputs_channel_{channel}_pwm_output
-        selected: true
+        selected: false
     coe_objects: []
     group_type: DigOut
+    pdo_groups:
+      - name: Pulswith (standard)
+        is_default: true
+        symbol_indices: []
+      - name: Pulswith and frequency (16 bit)
+        is_default: false
+        symbol_indices:
+          - 1
+      - name: Pulswith and frequency (-1 Hz) (32 bit)
+        is_default: false
+        symbol_indices:
+          - 0
+          - 2
+    selected_pdo_group: Pulswith (standard)
   EL2595:
     description: 1Ch. LED constant current terminal
     identity:
@@ -759,6 +863,15 @@ terminal_types:
         selected: true
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Standard
+        is_default: true
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+    selected_pdo_group: Standard
   EL3202-0010:
     description: 2Ch. Ana. Input PT100 (RTD), High Precision
     identity:
@@ -798,6 +911,15 @@ terminal_types:
         selected: true
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Standard
+        is_default: true
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+    selected_pdo_group: Standard
   EL3314:
     description: 4Ch. Ana. Input Thermocouple (TC)
     identity:
@@ -811,7 +933,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}
-        selected: true
+        selected: false
       - name_template: TC Inputs Channel {channel}.Limit 1
         index_group: 61489
         type_name: BIT2
@@ -819,7 +941,7 @@ terminal_types:
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
-        selected: true
+        selected: false
       - name_template: TC Inputs Channel {channel}.Limit 2
         index_group: 61489
         type_name: BIT2
@@ -827,23 +949,36 @@ terminal_types:
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
-        selected: true
+        selected: false
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61489
         type_name: INT
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_value
-        selected: true
+        selected: false
       - name_template: TC Outputs Channel {channel}.CJCompensation
         index_group: 61473
         type_name: INT
         channels: 4
         access: Read/Write
         fastcs_name: tc_outputs_channel_{channel}_cjcompensation
-        selected: true
+        selected: false
     coe_objects: []
     group_type: AnaIn
+    pdo_groups:
+      - name: Inputs only
+        is_default: true
+        symbol_indices: []
+      - name: with ColdJunction Compensation
+        is_default: false
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+    selected_pdo_group: Inputs only
   EL3356-0010:
     description: 1Ch. Ana. Input Resistor Bridge Terminal, 24bit, High Precision
     identity:
@@ -976,40 +1111,15 @@ terminal_types:
       product_code: 242626642
       revision_number: 1048576
     symbol_nodes:
-      - name_template: Ch1 CycleCount
-        index_group: 61489
-        type_name: UINT
-        channels: 1
-        access: Read-only
-        fastcs_name: ch1_cyclecount
+      - name_template: AI Input Channel {channel}
+        index_group: 61488
+        type_name: AI Input Channel 1_TYPE
+        channels: 2
         selected: true
-      - name_template: Ch1 Sample.Ch1 Value
-        index_group: 61489
-        type_name: INT
+      - name_template: WcState^WcState
+        index_group: 61473
+        type_name: BIT
         channels: 1
-        access: Read-only
-        fastcs_name: ch1_sample_ch1_value
-        selected: true
-      - name_template: Ch2 CycleCount
-        index_group: 61489
-        type_name: UINT
-        channels: 1
-        access: Read-only
-        fastcs_name: ch2_cyclecount
-        selected: true
-      - name_template: Ch2 Sample.Ch2 Value
-        index_group: 61489
-        type_name: INT
-        channels: 1
-        access: Read-only
-        fastcs_name: ch2_sample_ch2_value
-        selected: true
-      - name_template: NextSync1Time.StartTimeNextLatch
-        index_group: 61489
-        type_name: UDINT
-        channels: 1
-        access: Read-only
-        fastcs_name: nextsync1time_starttimenextlatch
         selected: true
     coe_objects: []
     group_type: AnaIn
@@ -1020,12 +1130,15 @@ terminal_types:
       product_code: 270938194
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AO Output Channel {channel}.Analog output
-        index_group: 61473
-        type_name: INT
+      - name_template: AO Output Channel {channel}
+        index_group: 61488
+        type_name: AO Output Channel 1_TYPE
         channels: 4
-        access: Read/Write
-        fastcs_name: ao_output_channel_{channel}_analog_output
+        selected: true
+      - name_template: WcState^WcState
+        index_group: 61473
+        type_name: BIT
+        channels: 1
         selected: true
     coe_objects: []
     group_type: AnaOut

@@ -262,6 +262,7 @@ class BeckhoffClient:
         xml_content: str,
         terminal_id: str,
         group_type: str | None = None,
+        target_revision: int | None = None,
     ) -> tuple[TerminalType, dict[str, CompositeType]]:
         """Parse terminal XML and create TerminalType.
 
@@ -269,11 +270,14 @@ class BeckhoffClient:
             xml_content: XML content string
             terminal_id: Terminal ID
             group_type: Optional terminal group type
+            target_revision: Optional specific revision number to match
 
         Returns:
             Tuple of (TerminalType instance, dict of composite types)
         """
-        result = parse_terminal_details(xml_content, terminal_id, group_type)
+        result = parse_terminal_details(
+            xml_content, terminal_id, group_type, target_revision
+        )
         if result is None:
             return create_default_terminal(
                 terminal_id, f"Terminal {terminal_id}", group_type

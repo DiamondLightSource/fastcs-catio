@@ -107,8 +107,10 @@ class FileService:
 
         try:
             # Parse XML to get full terminal definition (primitive symbols)
+            # Pass target_revision to match the terminal's existing revision
+            target_revision = terminal.identity.revision_number
             xml_terminal, composite_types = beckhoff_client.parse_terminal_xml(
-                xml_content, terminal_id, terminal.group_type
+                xml_content, terminal_id, terminal.group_type, target_revision
             )
 
             # Merge composite types into the config

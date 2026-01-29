@@ -143,11 +143,12 @@ async def test_new_terminal_coe_selection_yaml_roundtrip(beckhoff_xml_cache):
 
 @pytest.mark.asyncio
 async def test_new_terminal_symbols_default_selected_via_lazy_load(beckhoff_xml_cache):
-    """Test symbols default to selected when adding a new terminal via lazy load.
+    """Test symbols default to selected based on PDO groups when adding a new terminal.
 
     When a terminal is lazy-loaded (the default in the UI), symbols are populated
-    via merge_xml_for_terminal. For new terminals (empty yaml_symbol_map), all
-    symbols should default to selected=True.
+    via merge_xml_for_terminal. For new terminals:
+    - If terminal has PDO groups: only symbols in the default group are selected
+    - If terminal has no PDO groups: all symbols are selected
     """
     from catio_terminals.service_file import FileService
 
@@ -155,7 +156,7 @@ async def test_new_terminal_symbols_default_selected_via_lazy_load(beckhoff_xml_
     config = TerminalConfig()
     beckhoff_client = BeckhoffClient()
 
-    # Get terminal info for EL3004 (4-channel analog input)
+    # Get terminal info for EL3004 (4-channel analog input with PDO groups)
     terminals = await beckhoff_client.search_terminals("EL3004")
     terminal_info = next((t for t in terminals if t.terminal_id == "EL3004"), None)
     assert terminal_info is not None, "Could not find EL3004 in search results"
@@ -177,16 +178,31 @@ async def test_new_terminal_symbols_default_selected_via_lazy_load(beckhoff_xml_
     # Verify symbols were populated
     assert len(terminal.symbol_nodes) > 0, "EL3004 should have symbols after merge"
 
-    # Verify ALL symbols default to selected=True for new terminals
+    # EL3004 has PDO groups - only symbols in the default group should be selected
+    # The default group is "Standard" which excludes "Compact" symbols
     print("\n=== Symbols after lazy-load merge ===")
+    selected_symbols = []
+    unselected_symbols = []
     for sym in terminal.symbol_nodes:
         print(f"Symbol '{sym.name_template}': selected={sym.selected}")
-        assert sym.selected is True, (
-            f"Symbol '{sym.name_template}' should be selected by default "
-            "for new terminals"
+        if sym.selected:
+            selected_symbols.append(sym.name_template)
+        else:
+            unselected_symbols.append(sym.name_template)
+
+    # Verify at least some symbols are selected (the default group)
+    assert len(selected_symbols) > 0, "At least some symbols should be selected"
+
+    # Verify Compact symbols are not selected (they're not in the default group)
+    for name in unselected_symbols:
+        assert "Compact" in name, (
+            f"Non-compact symbol '{name}' should be selected for default group"
         )
 
-    print(f"✓ Verified {len(terminal.symbol_nodes)} symbols default to selected")
+    print(f"✓ Verified {len(selected_symbols)} symbols selected (default group)")
+    print(
+        f"✓ Verified {len(unselected_symbols)} symbols unselected (non-default group)"
+    )
 
 
 if __name__ == "__main__":

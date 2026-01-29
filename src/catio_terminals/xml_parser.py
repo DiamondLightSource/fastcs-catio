@@ -75,6 +75,7 @@ def parse_terminal_details(
     xml_content: str,
     terminal_id: str,
     group_type: str | None = None,
+    target_revision: int | None = None,
 ) -> tuple[TerminalType, dict[str, CompositeType]] | None:
     """Parse terminal XML to create detailed TerminalType.
 
@@ -82,6 +83,8 @@ def parse_terminal_details(
         xml_content: XML content string
         terminal_id: Terminal ID to find
         group_type: Optional group type
+        target_revision: Optional specific revision number to match.
+            If None, selects the device with highest revision number.
 
     Returns:
         Tuple of (TerminalType, composite_types dict) or None if parsing fails
@@ -92,13 +95,25 @@ def parse_terminal_details(
         else:
             root = etree.fromstring(xml_content)
 
-        # Find matching device
+        # Find matching device - prefer highest revision or specific revision
         device = None
+        best_revision = -1
         for dev in root.findall(".//Device"):
             type_elem = dev.find("Type")
             if type_elem is not None and type_elem.text == terminal_id:
-                device = dev
-                break
+                revision_str = type_elem.get("RevisionNo") or "0"
+                revision = parse_hex_value(revision_str)
+
+                if target_revision is not None:
+                    # Match specific revision exactly
+                    if revision == target_revision:
+                        device = dev
+                        break
+                else:
+                    # Select device with highest revision number
+                    if revision > best_revision:
+                        best_revision = revision
+                        device = dev
 
         if device is None:
             logger.warning(f"Device {terminal_id} not found in XML")
