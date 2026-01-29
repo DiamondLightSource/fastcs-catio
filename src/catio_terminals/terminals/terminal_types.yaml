@@ -417,7 +417,70 @@ terminal_types:
         access: Read/Write
         fastcs_name: cnt_outputs_set_counter_value
         selected: true
-    coe_objects: []
+    coe_objects:
+      - index: 4105
+        name: Hardware version
+        type_name: STRING(2)
+        bit_size: 16
+        access: ro
+        subindices: []
+      - index: 4106
+        name: Software version
+        type_name: STRING(2)
+        bit_size: 16
+        access: ro
+        subindices: []
+      - index: 4113
+        name: Restore default parameters
+        type_name: DT1011
+        bit_size: 48
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: '01'
+          - subindex: 1
+            name: SubIndex 001
+            default_data: '00000000'
+      - index: 4120
+        name: Identity
+        type_name: DT1018
+        bit_size: 144
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: '04'
+          - subindex: 1
+            name: Vendor ID
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: '02000000'
+          - subindex: 2
+            name: Product code
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 5230de05
+          - subindex: 3
+            name: Revision
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: '00001200'
+          - subindex: 4
+            name: Serial number
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: '00000000'
     group_type: Measuring
     pdo_groups:
       - name: Per-Channel

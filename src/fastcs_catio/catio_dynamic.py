@@ -177,7 +177,7 @@ def _add_symbol_attribute(
             fastcs_name = _symbol_to_fastcs_name(symbol, ch)
             ads_name = _symbol_to_ads_name(symbol, ch)
 
-            is_readonly = symbol.access is None or "read" in symbol.access.lower()
+            is_readonly = symbol.access is None or "write" not in symbol.access.lower()
             desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
 
             if is_readonly:
@@ -210,7 +210,7 @@ def _add_symbol_attribute(
         fastcs_name = _symbol_to_fastcs_name(symbol)
         ads_name = _symbol_to_ads_name(symbol)
 
-        is_readonly = symbol.access is None or "read" in symbol.access.lower()
+        is_readonly = symbol.access is None or "write" not in symbol.access.lower()
         desc = symbol.tooltip or symbol.name_template
 
         if is_readonly:
