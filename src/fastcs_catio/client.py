@@ -190,10 +190,16 @@ class UDPMessage:
             sock.settimeout(5)
 
             # Send the data to the Beckhoff CX server target
+            time.sleep(1)  # required for simulator somehow
             sock.sendto(message.to_bytes(), (self.target, REMOTE_UDP_PORT))
 
             # Receive the data from the Beckhoff CX server target
-            data, addr = sock.recvfrom(1024)
+            while True:
+                data, addr = sock.recvfrom(1024)
+                if data:
+                    break
+                logging.debug("Waiting for UDP response...")
+
             assert addr[0] == self.target, (
                 "Unintended recipient for the UDP response message."
             )
