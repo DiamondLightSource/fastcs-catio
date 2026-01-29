@@ -54,6 +54,10 @@ When using the `run_in_terminal` tool:
 
 - **MUST** use meaningful, descriptive variable and function names
 - **MUST** follow PEP 8 style guidelines
+- **MUST** place all imports at the top of the file (after module docstring)
+  - Group imports: standard library, third-party, local application imports
+  - **NEVER** place imports inside functions or conditional blocks unless absolutely necessary
+  - If a lazy import is needed (e.g., to avoid circular imports), document why
 - **NEVER** use emoji, or unicode that emulates emoji (e.g. ✓, ✗). The only exception is when writing tests and testing the impact of multibyte characters.
 - Limit line length to 88 characters (ruff formatter standard)
 - **ALWAYS** run `uv ruff check` to format and validated code before committing

@@ -491,7 +491,7 @@ class ADSSimServer:
             invoke_id,
         ) = struct.unpack("<6sH6sHHHIII", ams_header)
 
-        logger.info(
+        logger.debug(
             f"TCP Incoming AMS message: cmd={command_id:#x}, port={target_port}, "
             f"len={length}, invoke_id={invoke_id}"
         )
@@ -568,7 +568,7 @@ class ADSSimServer:
         tcp_header = b"\x00\x00" + frame_length.to_bytes(4, "little")
 
         response = tcp_header + ams_header + payload
-        logger.info(
+        logger.debug(
             f"Built response: cmd={command_id:#x}, invoke={invoke_id}, "
             f"payload_len={len(payload)}"
         )
@@ -647,7 +647,7 @@ class ADSSimServer:
             return struct.pack("<II", ErrorCode.ADSERR_DEVICE_INVALIDSIZE, 0)
 
         index_group, index_offset, read_length = struct.unpack("<III", payload[:12])
-        logger.info(
+        logger.debug(
             f"Read: group={index_group:#x}, offset={index_offset:#x}, len={read_length}"
         )
 
@@ -938,11 +938,25 @@ class ADSSimServer:
             return struct.pack("<I", ErrorCode.ADSERR_DEVICE_INVALIDSIZE)
 
         index_group, index_offset, write_length = struct.unpack("<III", payload[:12])
+        _write_data = payload[12 : 12 + write_length]
 
         logger.debug(
             f"Write: group={index_group:#x}, offset={index_offset:#x}, "
             f"len={write_length}"
         )
+
+        # Symbol value by handle
+        if index_group == IndexGroup.ADSIGR_GET_SYMVAL_BYHANDLE:
+            symbol_name = self._symbol_handles.get(index_offset, "<unknown>")
+            logger.info(f"Client writing to Symbol: {symbol_name}")
+            return struct.pack("<I", ErrorCode.ERR_NOERROR)
+
+        # CoE write
+        if index_group == IndexGroup.ADSIGRP_COE_LINK:
+            coe_index = (index_offset >> 16) & 0xFFFF
+            coe_subindex = index_offset & 0xFF
+            logger.info(f"Client writing to CoE: {coe_index:#06x}:{coe_subindex:#04x}")
+            return struct.pack("<I", ErrorCode.ERR_NOERROR)
 
         # Handle frame counter reset
         if index_group == IndexGroup.ADSIGRP_MASTER_FRAME_COUNTERS:

@@ -14,6 +14,7 @@ Usage:
     controller = controller_class(name="MOD1", node=node)
 """
 
+import glob
 from pathlib import Path
 
 from fastcs.attributes import AttrR, AttrRW
@@ -33,13 +34,11 @@ logger = bind_logger(logger_name=__name__)
 # Cache of dynamically generated controller classes
 _DYNAMIC_CONTROLLER_CACHE: dict[str, type[CATioTerminalController]] = {}
 
-# Path to the terminal types YAML file
-_TERMINAL_TYPES_PATH = (
-    Path(__file__).parent.parent
-    / "catio_terminals"
-    / "terminals"
-    / "terminal_types.yaml"
-)
+# Configurable path(s) to terminal types YAML files (supports glob patterns)
+# Default to terminal_types.yaml in catio_terminals/terminals/
+_TERMINAL_TYPES_PATTERNS: list[str] = [
+    str(Path(__file__).parent.parent / "catio_terminals" / "terminals" / "*.yaml")
+]
 
 # Path to the runtime symbols YAML file
 _RUNTIME_SYMBOLS_PATH = (
@@ -60,17 +59,33 @@ def _load_terminal_config() -> TerminalConfig:
         TerminalConfig instance with all terminal definitions.
 
     Raises:
-        FileNotFoundError: If terminal_types.yaml does not exist.
+        FileNotFoundError: If no terminal YAML files found.
     """
     global _terminal_config
     if _terminal_config is None:
-        if not _TERMINAL_TYPES_PATH.exists():
+        # Expand glob patterns to get list of YAML files
+        yaml_files: list[Path] = []
+        for pattern in _TERMINAL_TYPES_PATTERNS:
+            # Expand the glob pattern
+            matches = glob.glob(str(pattern), recursive=True)
+            yaml_files.extend(Path(m) for m in matches if Path(m).is_file())
+
+        if not yaml_files:
             raise FileNotFoundError(
-                f"Terminal types YAML not found at {_TERMINAL_TYPES_PATH}"
+                f"No terminal YAML files found matching patterns: "
+                f"{_TERMINAL_TYPES_PATTERNS}"
             )
-        _terminal_config = TerminalConfig.from_yaml(_TERMINAL_TYPES_PATH)
+
+        # Load all matching YAML files and merge them
+        _terminal_config = TerminalConfig()
+        for yaml_path in yaml_files:
+            config = TerminalConfig.from_yaml(yaml_path)
+            _terminal_config.terminal_types.update(config.terminal_types)
+            logger.debug(f"Loaded terminal definitions from {yaml_path}")
+
         logger.info(
-            f"Loaded {len(_terminal_config.terminal_types)} terminal definitions"
+            f"Loaded {len(_terminal_config.terminal_types)} terminal definitions "
+            f"from {len(yaml_files)} file(s)"
         )
     return _terminal_config
 
@@ -466,6 +481,19 @@ def get_terminal_controller_class(terminal_id: str) -> type[CATioTerminalControl
     logger.info(f"Created dynamic controller class for {terminal_id}")
 
     return controller_class
+
+
+def set_terminal_types_patterns(patterns: list[str]) -> None:
+    """Set the glob patterns for terminal type YAML files.
+
+    Args:
+        patterns: List of glob patterns (e.g., ['path/to/*.yaml', 'path/**/*.yaml'])
+    """
+    global _TERMINAL_TYPES_PATTERNS, _terminal_config
+    _TERMINAL_TYPES_PATTERNS = patterns
+    # Clear cached config when patterns change
+    _terminal_config = None
+    _DYNAMIC_CONTROLLER_CACHE.clear()
 
 
 def clear_controller_cache() -> None:

@@ -17,6 +17,9 @@ from fastcs.transports.epics.options import (
 )
 from softioc.imports import callbackSetQueueSize
 
+from fastcs_catio.catio_dynamic import (
+    set_terminal_types_patterns,
+)
 from fastcs_catio.client import RemoteRoute
 
 from . import __version__
@@ -105,6 +108,18 @@ def ioc(
             rich_help_panel="Secondary Arguments",
         ),
     ] = 0.2,
+    terminal_defs: Annotated[
+        str | None,
+        typer.Option(
+            help=(
+                "Glob pattern for terminal definition YAML files. "
+                "Can use wildcards like '*.yaml' or '**/*.yaml' for recursive search. "
+                "Defaults to DLS yaml descriptions embedded in the python package. "
+                "May also be a comma separated list of glob patterns or filenames."
+            ),
+            rich_help_panel="Secondary Arguments",
+        ),
+    ] = None,
     screens_dir: Annotated[
         Path,
         typer.Option(
@@ -133,6 +148,14 @@ def ioc(
     )
     logger = logging.getLogger(__name__)
     logger.debug("Logging is configured for the package.")
+
+    # Set up terminal definitions path - can be comma-separated patterns
+    if terminal_defs is not None:
+        terminal_patterns = [p.strip() for p in terminal_defs.split(",")]
+
+        # Configure the dynamic controller factory with terminal definition patterns
+        set_terminal_types_patterns(terminal_patterns)
+        logger.info(f"Using terminal definition patterns: {terminal_patterns}")
 
     # Define EPICS GUI screens path
     default_path = Path(os.path.join(Path.cwd(), "screens"))
