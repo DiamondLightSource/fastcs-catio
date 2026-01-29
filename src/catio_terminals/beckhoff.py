@@ -88,7 +88,7 @@ class BeckhoffClient:
             if progress_callback:
                 progress_callback("Parsing XML files...", 0.2)
 
-            xml_files = self._cache.get_xml_files()
+            xml_files = self._cache.get_terminal_xml_files()
             logger.info(f"Found {len(xml_files)} XML files to parse")
 
             # Wrap progress callback to add offset and yield control
@@ -245,7 +245,7 @@ class BeckhoffClient:
             return None
 
         logger.debug(f"Terminal {terminal_id} not in cache, searching files...")
-        for xml_file in self._cache.get_xml_files():
+        for xml_file in self._cache.get_terminal_xml_files():
             try:
                 content = xml_file.read_text(encoding="utf-8", errors="ignore")
                 if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):

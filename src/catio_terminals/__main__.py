@@ -48,8 +48,8 @@ def update_cache() -> None:
 
         print(f"XML files downloaded and extracted to {cache.xml_dir}")
 
-        # Get XML files
-        xml_files = cache.get_xml_files()
+        # Get XML files (excluding legacy catalog with incomplete PDO definitions)
+        xml_files = cache.get_terminal_xml_files()
         print(f"Found {len(xml_files)} XML files")
 
         # Parse terminals from XML files

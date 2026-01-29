@@ -15,6 +15,10 @@ XML_DOWNLOAD_URL = (
     "io/ethercat/xml-device-description/Beckhoff_EtherCAT_XML.zip"
 )
 
+# Legacy file with incomplete PDO definitions (uses Ref= instead of inline Entry).
+# Only useful for group definitions (DigIn, DigOut, AnaIn, etc.), not terminal parsing.
+LEGACY_CATALOG_FILE = "Beckhoff EtherCAT Terminals.xml"
+
 
 @dataclass
 class BeckhoffTerminalInfo:
@@ -112,6 +116,32 @@ class XmlCache:
         if not self.xml_dir.exists():
             return []
         return list(self.xml_dir.rglob("*.xml"))
+
+    def get_terminal_xml_files(self) -> list[Path]:
+        """Get XML files suitable for terminal definition parsing.
+
+        Excludes the legacy 'Beckhoff EtherCAT Terminals.xml' file which
+        contains incomplete PDO definitions (uses Ref= attributes instead
+        of inline Entry elements). Series-specific files like 'Beckhoff
+        EL1xxx.xml' contain complete definitions.
+
+        Returns:
+            List of Path objects for terminal XML files
+        """
+        return [f for f in self.get_xml_files() if f.name != LEGACY_CATALOG_FILE]
+
+    def get_legacy_catalog_file(self) -> Path | None:
+        """Get the legacy catalog file for group definitions.
+
+        The 'Beckhoff EtherCAT Terminals.xml' file contains useful group
+        definitions (DigIn, DigOut, AnaIn, etc.) but incomplete terminal
+        PDO definitions.
+
+        Returns:
+            Path to legacy catalog file or None if not found
+        """
+        legacy_file = self.xml_dir / LEGACY_CATALOG_FILE
+        return legacy_file if legacy_file.exists() else None
 
     def load_terminals(self) -> list[BeckhoffTerminalInfo] | None:
         """Load terminals from cache file.
