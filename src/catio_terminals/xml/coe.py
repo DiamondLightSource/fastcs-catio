@@ -1,7 +1,7 @@
 """CoE (CANopen over EtherCAT) object parsing for Beckhoff terminal XML files."""
 
 from catio_terminals.models import CoEObject, CoESubIndex
-from catio_terminals.xml_constants import parse_hex_value
+from catio_terminals.xml.constants import parse_hex_value
 
 
 def _build_datatype_map(device) -> dict[str, list[dict]]:

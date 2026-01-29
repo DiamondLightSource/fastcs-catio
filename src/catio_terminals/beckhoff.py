@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from catio_terminals.models import TerminalType
-from catio_terminals.xml_cache import BeckhoffTerminalInfo, XmlCache
-from catio_terminals.xml_parser import (
+from catio_terminals.xml import (
     create_default_terminal,
     parse_terminal_catalog,
     parse_terminal_details,
 )
+from catio_terminals.xml.cache import BeckhoffTerminalInfo, XmlCache
 
 if TYPE_CHECKING:
     from catio_terminals.models import CompositeType

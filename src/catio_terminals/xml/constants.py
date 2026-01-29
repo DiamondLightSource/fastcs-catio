@@ -18,6 +18,7 @@ CHANNEL_NUMBER_PATTERN = re.compile(r"(.+?)\s+(\d+)$")
 ARRAY_ELEMENT_PATTERN = re.compile(r"^(.+?)(?:__|[ ])ARRAY \[(\d+)\]$")
 
 # ADS type mapping
+# TODO cant we extract these from the XML?
 ADS_TYPE_MAP: dict[str, int] = {
     "BOOL": 33,
     "BYTE": 16,

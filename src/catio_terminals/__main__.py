@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from catio_terminals.xml_cache import XmlCache
+from catio_terminals.xml.cache import XmlCache
 
 app = typer.Typer(
     name="catio-terminals",
@@ -34,7 +34,7 @@ def edit(
 @app.command(name="update-cache")
 def update_cache() -> None:
     """Update the terminal database cache from Beckhoff server."""
-    from catio_terminals.xml_parser import parse_terminal_catalog
+    from catio_terminals.xml import parse_terminal_catalog
 
     print("Updating terminal database from Beckhoff server...")
     cache = XmlCache()

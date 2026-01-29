@@ -1,6 +1,6 @@
 """Tests for XML parser PDO entry processing, especially bit field grouping."""
 
-from catio_terminals.xml_parser import parse_terminal_details
+from catio_terminals.xml import parse_terminal_details
 
 # Sample XML for a terminal with bit fields that should be grouped into Status
 COUNTER_TERMINAL_XML = """<?xml version="1.0" encoding="UTF-8"?>

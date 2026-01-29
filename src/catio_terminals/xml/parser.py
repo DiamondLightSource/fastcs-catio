@@ -1,74 +1,16 @@
-"""XML parsing utilities for Beckhoff terminal files.
-
-This module provides a facade for terminal XML parsing functionality,
-re-exporting from specialized submodules:
-
-- xml_constants: Regex patterns, type mappings, utility functions
-- xml_catalog: Terminal catalog parsing (parse_terminal_catalog)
-- xml_pdo: PDO (Process Data Object) parsing
-- xml_pdo_groups: AlternativeSmMapping parsing for dynamic PDO configurations
-- xml_coe: CoE (CANopen over EtherCAT) object parsing
-"""
+"""Main XML parsing functions for terminal definitions."""
 
 import logging
 
 from lxml import etree
 
 from catio_terminals.models import CompositeType, Identity, SymbolNode, TerminalType
-from catio_terminals.xml_catalog import (
-    extract_group_type,
-    extract_terminal_id_from_device,
-    parse_terminal_catalog,
-)
-from catio_terminals.xml_coe import parse_coe_objects
-from catio_terminals.xml_constants import (
-    ADS_TYPE_MAP,
-    ARRAY_ELEMENT_PATTERN,
-    CHANNEL_KEYWORD_PATTERN,
-    CHANNEL_NUMBER_PATTERN,
-    TERMINAL_ID_PATTERN,
-    URL_CATEGORY_MAP,
-    generate_terminal_url,
-    get_ads_type,
-    parse_hex_value,
-)
-from catio_terminals.xml_pdo import (
-    consolidate_array_entries,
-    create_symbol_nodes,
-    extract_channel_pattern,
-    process_pdo_entries,
-)
-from catio_terminals.xml_pdo_groups import (
-    assign_symbols_to_groups,
-    parse_pdo_groups,
-)
+from catio_terminals.xml.coe import parse_coe_objects
+from catio_terminals.xml.constants import parse_hex_value
+from catio_terminals.xml.pdo import create_symbol_nodes, process_pdo_entries
+from catio_terminals.xml.pdo_groups import assign_symbols_to_groups, parse_pdo_groups
 
 logger = logging.getLogger(__name__)
-
-# Re-export public API for backward compatibility
-__all__ = [
-    # Constants
-    "ADS_TYPE_MAP",
-    "ARRAY_ELEMENT_PATTERN",
-    "CHANNEL_KEYWORD_PATTERN",
-    "CHANNEL_NUMBER_PATTERN",
-    "TERMINAL_ID_PATTERN",
-    "URL_CATEGORY_MAP",
-    # Utility functions
-    "parse_hex_value",
-    "get_ads_type",
-    "generate_terminal_url",
-    # Catalog functions
-    "extract_terminal_id_from_device",
-    "extract_group_type",
-    "parse_terminal_catalog",
-    # PDO group functions
-    "parse_pdo_groups",
-    "assign_symbols_to_groups",
-    # Main parsing functions
-    "parse_terminal_details",
-    "create_default_terminal",
-]
 
 
 def parse_terminal_details(
@@ -311,12 +253,3 @@ def create_default_terminal(
         ],
         group_type=group_type,
     )
-
-
-# Keep internal function names as aliases for backward compatibility
-# These were private but may have been imported directly
-_extract_channel_pattern = extract_channel_pattern
-_consolidate_array_entries = consolidate_array_entries
-_process_pdo_entries = process_pdo_entries
-_create_symbol_nodes = create_symbol_nodes
-_parse_coe_objects = parse_coe_objects
