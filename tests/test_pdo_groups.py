@@ -339,6 +339,73 @@ class TestDynamicPdoYamlSerialization:
         assert sym_map["SymB1"].selected is False
         assert sym_map["SymB2"].selected is False
 
+    def test_dynamic_pdo_terminal_forces_inactive_group_to_unselected(self, tmp_path):
+        """Test that symbols in inactive PDO groups are forced to selected=False.
+
+        This tests the case where a symbol in an inactive group somehow has
+        selected=True (e.g., from a previous session or bug). The save should
+        force it to selected=False.
+        """
+        from catio_terminals.models import TerminalConfig
+
+        # Create terminal with symbols in inactive group marked as selected=True
+        # This shouldn't happen in normal use, but we want to ensure save fixes it
+        terminal = TerminalType(
+            description="Test Dynamic Fix",
+            identity=Identity(vendor_id=2, product_code=0x1234, revision_number=0),
+            pdo_groups=[
+                PdoGroup(name="GroupA", is_default=True, symbol_indices=[0, 1]),
+                PdoGroup(name="GroupB", symbol_indices=[2, 3]),
+            ],
+            selected_pdo_group="GroupA",  # GroupA is active
+            symbol_nodes=[
+                SymbolNode(
+                    name_template="SymA1",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=True,
+                ),
+                SymbolNode(
+                    name_template="SymA2",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=False,  # User deselected this one
+                ),
+                SymbolNode(
+                    name_template="SymB1",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=True,  # BUG: This is in GroupB but marked selected
+                ),
+                SymbolNode(
+                    name_template="SymB2",
+                    index_group=0xF020,
+                    type_name="INT",
+                    selected=True,  # BUG: This is in GroupB but marked selected
+                ),
+            ],
+        )
+        config = TerminalConfig()
+        config.add_terminal("TEST_DYNAMIC_FIX", terminal)
+
+        # Save to YAML
+        yaml_path = tmp_path / "test_dynamic_fix.yaml"
+        config.to_yaml(yaml_path)
+
+        # Load and verify inactive group symbols are forced to selected=False
+        loaded = TerminalConfig.from_yaml(yaml_path)
+        loaded_terminal = loaded.terminal_types["TEST_DYNAMIC_FIX"]
+
+        sym_map = {s.name_template: s for s in loaded_terminal.symbol_nodes}
+
+        # GroupA (active): selection preserved
+        assert sym_map["SymA1"].selected is True
+        assert sym_map["SymA2"].selected is False  # User's choice preserved
+
+        # GroupB (inactive): forced to selected=False
+        assert sym_map["SymB1"].selected is False  # Was True, forced to False
+        assert sym_map["SymB2"].selected is False  # Was True, forced to False
+
     def test_static_terminal_saves_all_symbols_with_selected_field(self, tmp_path):
         """Test that static terminals also save ALL symbols with selected field."""
         from catio_terminals.models import TerminalConfig

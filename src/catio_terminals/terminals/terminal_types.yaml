@@ -354,54 +354,6 @@ terminal_types:
     symbol_nodes: []
     coe_objects: []
     group_type: CpBk
-  EL1014:
-    description: 4-channel Digital Input 24V DC
-    identity:
-      vendor_id: 2
-      product_code: 66465874
-      revision_number: 1048576
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61489
-        type_name: InputBits
-        channels: 4
-        access: Read-only
-        fastcs_name: channel_{channel}
-        selected: true
-    coe_objects: []
-    group_type: DigIn
-  EL1084:
-    description: 8-channel Digital Input 24V DC Neg Switching
-    identity:
-      vendor_id: 2
-      product_code: 71053394
-      revision_number: 1048576
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61489
-        type_name: InputBits
-        channels: 4
-        access: Read-only
-        fastcs_name: channel_{channel}
-        selected: true
-    coe_objects: []
-    group_type: DigIn
-  EL1124:
-    description: 4-channel Digital Input 5V DC
-    identity:
-      vendor_id: 2
-      product_code: 73674834
-      revision_number: 1048576
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61489
-        type_name: InputBits
-        channels: 4
-        access: Read-only
-        fastcs_name: channel_{channel}
-        selected: true
-    coe_objects: []
-    group_type: DigIn
   EL1502:
     description: 2-channel Up/Down Counter 24V DC
     identity:

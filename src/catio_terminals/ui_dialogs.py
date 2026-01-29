@@ -278,6 +278,9 @@ async def show_delete_terminal_dialog(
 
         TerminalService.delete_terminal(app.config, terminal_id)
 
+        # Remove from merged tracking so XML will reload if re-added
+        app.merged_terminals.discard(terminal_id)
+
         # Update selected terminal to the next one
         app.selected_terminal_id = next_terminal_to_select
 
@@ -323,6 +326,7 @@ async def show_delete_all_terminals_dialog(app: "TerminalEditorApp") -> None:
 
     if result["confirm"]:
         app.config.terminal_types.clear()
+        app.merged_terminals.clear()  # Reset merged tracking
         app.selected_terminal_id = None
         app.has_unsaved_changes = True
         await app.build_editor_ui()
@@ -373,6 +377,7 @@ async def show_delete_filtered_terminals_dialog(
     if result["confirm"]:
         for terminal_id in terminal_ids:
             app.config.terminal_types.pop(terminal_id, None)
+            app.merged_terminals.discard(terminal_id)  # Reset merged tracking
         app.selected_terminal_id = None
         app.has_unsaved_changes = True
         await app.build_editor_ui()

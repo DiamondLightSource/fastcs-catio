@@ -917,6 +917,9 @@ def _mark_changed(app: "TerminalEditorApp", action) -> None:
     """
     # Set the flag and run JavaScript BEFORE the action, which may clear UI elements
     app.has_unsaved_changes = True
+    # Show the unsaved changes banner
+    if app.unsaved_changes_banner:
+        app.unsaved_changes_banner.visible = True
     try:
         ui.run_javascript("window.hasUnsavedChanges = true;")
     except RuntimeError:

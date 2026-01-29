@@ -390,8 +390,9 @@ class TerminalConfig(BaseModel):
     def to_yaml(self, path: Path) -> None:
         """Save configuration to YAML file.
 
-        All symbols are saved with their 'selected' state preserved. This allows
-        toggling symbols on/off without re-adding them from XML.
+        For terminals with dynamic PDOs, only symbols in the currently selected
+        PDO group are saved with their 'selected' state; symbols in other groups
+        are saved as selected=False.
 
         Args:
             path: Path to save YAML file
@@ -410,8 +411,19 @@ class TerminalConfig(BaseModel):
             data.pop("composite_types", None)
 
         # Process each terminal
-        for _terminal_id, terminal_data in data.get("terminal_types", {}).items():
-            # Save all symbols with 'selected' field
+        for terminal_id, terminal_data in data.get("terminal_types", {}).items():
+            terminal = self.terminal_types.get(terminal_id)
+
+            # For dynamic PDO terminals, enforce that only symbols in the
+            # active PDO group can be selected
+            if terminal and terminal.has_dynamic_pdos:
+                active_indices = terminal.get_active_symbol_indices()
+                if "symbol_nodes" in terminal_data:
+                    for idx, sym in enumerate(terminal_data["symbol_nodes"]):
+                        if idx not in active_indices:
+                            sym["selected"] = False
+
+            # Save all symbols with 'selected' field, excluding computed fields
             if "symbol_nodes" in terminal_data:
                 terminal_data["symbol_nodes"] = [
                     {k: v for k, v in sym.items() if k not in symbol_exclude_fields}
