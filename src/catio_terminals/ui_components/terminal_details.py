@@ -6,20 +6,18 @@ from nicegui import ui
 
 from catio_terminals.models import TerminalType
 from catio_terminals.service_terminal import TerminalService
+from catio_terminals.ui_components.tree_data_builder import build_symbol_tree_data
+from catio_terminals.ui_components.utils import _mark_changed
 
 if TYPE_CHECKING:
     from catio_terminals.ui_app import TerminalEditorApp
 
 
-def _import_cross_module_functions():
+def _import_on_tree_select():
     """Lazy import to avoid circular dependency."""
-    from catio_terminals.ui_components.tree_view import (
-        _build_symbol_tree_data,
-        _on_tree_select,
-    )
-    from catio_terminals.ui_components.utils import _mark_changed
+    from catio_terminals.ui_components.tree_view import _on_tree_select
 
-    return _on_tree_select, _mark_changed, _build_symbol_tree_data
+    return _on_tree_select
 
 
 def show_terminal_details(
@@ -32,12 +30,8 @@ def show_terminal_details(
         terminal_id: Terminal ID
         terminal: Terminal instance
     """
-    # Import cross-module functions
-    (
-        _on_tree_select,
-        _mark_changed,
-        _build_symbol_tree_data,
-    ) = _import_cross_module_functions()
+    # Import _on_tree_select (needed for callbacks)
+    _on_tree_select = _import_on_tree_select()
 
     # Get the URL from cached terminals
     product_url = None
@@ -176,7 +170,7 @@ def show_terminal_details(
 
     # Build symbol tree data (only for active PDO group)
     composite_types = app.config.composite_types if app.config else None
-    symbol_tree_data = _build_symbol_tree_data(
+    symbol_tree_data = build_symbol_tree_data(
         terminal_id, terminal, composite_types, active_symbol_indices
     )
 
