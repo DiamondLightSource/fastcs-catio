@@ -157,7 +157,7 @@ def _process_coe_subindex(
         desc = desc[:40]
 
     is_readonly = (sub.access or coe_obj.access).lower() in ("ro", "read-only")
-    datatype = Int()  # TODO: map sub.type_name to FastCS type
+    datatype = Int()  # TODO: map sub.type_name using src/catio_terminals/ads_types.py
     ads_name = f"CoE:{coe_obj.index:04X}:{sub.subindex:02X}"
 
     _add_attribute(controller, attr_name, ads_name, is_readonly, desc, datatype)

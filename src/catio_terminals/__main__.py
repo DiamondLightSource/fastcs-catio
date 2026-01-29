@@ -127,12 +127,6 @@ async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
             raise typer.Exit(code=1)
 
         for yaml_path in files_to_process:
-            if "original" in yaml_path.name:
-                print(f"Skipping backup file: {yaml_path.name}")
-                continue
-            if "runtime_symbols" in yaml_path.name:
-                print(f"Skipping runtime symbols file: {yaml_path.name}")
-                continue
             await _cleanup_single_yaml(yaml_path, beckhoff_client, FileService)
 
     elif file is not None:

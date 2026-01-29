@@ -43,22 +43,6 @@ class BeckhoffClient:
         self.max_terminals = max_terminals
         self._cache = XmlCache()
 
-    # Expose cache paths for backwards compatibility
-    @property
-    def cache_dir(self) -> Path:
-        """Cache directory path."""
-        return self._cache.cache_dir
-
-    @property
-    def xml_extract_dir(self) -> Path:
-        """XML extraction directory path."""
-        return self._cache.xml_dir
-
-    @property
-    def terminals_cache_file(self) -> Path:
-        """Terminals cache file path."""
-        return self._cache.terminals_file
-
     def get_cached_terminals(self) -> list[BeckhoffTerminalInfo] | None:
         """Get terminals from cache if available."""
         return self._cache.load_terminals()
@@ -163,9 +147,7 @@ class BeckhoffClient:
 
         terminals = self.get_cached_terminals()
 
-        if not terminals:
-            logger.warning("No cached terminals found, using fallback data")
-            terminals = self._get_fallback_terminals()
+        assert terminals, "No cached terminals found"
 
         if query:
             query_lower = query.lower()
@@ -179,35 +161,6 @@ class BeckhoffClient:
 
         logger.info(f"Found {len(terminals)} matching terminals")
         return terminals
-
-    def _get_fallback_terminals(self) -> list[BeckhoffTerminalInfo]:
-        """Get hardcoded fallback terminals when cache is empty."""
-        return [
-            BeckhoffTerminalInfo(
-                terminal_id="EL1008",
-                name="8-channel Digital Input 24V DC",
-                description="8-channel digital input terminal 24V DC, 3ms",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el1008/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL2008",
-                name="8-channel Digital Output 24V DC",
-                description="8-channel digital output terminal 24V DC, 0.5A",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el2008/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL3064",
-                name="4-channel Analog Input 0..10V",
-                description="4-channel analog input terminal 0..10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el3064/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL4004",
-                name="4-channel Analog Output 0..10V",
-                description="4-channel analog output terminal 0..10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el4004/",
-            ),
-        ]
 
     async def fetch_terminal_xml(self, terminal_id: str) -> str | None:
         """Fetch XML description for a terminal.
