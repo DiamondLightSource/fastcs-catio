@@ -274,25 +274,141 @@ def _create_dynamic_controller_class(
         "_terminal_id": terminal_id,
         "_selected_symbols": selected_symbols,
         "_runtime_symbols": runtime_symbols,
+        "_coe_objects": terminal.coe_objects,
     }
 
+    @property
+    def coe_objects(self) -> list:
+        """Return the list of CoE objects for this terminal."""
+        return getattr(self.__class__, "_coe_objects", [])
+
+    class_dict["coe_objects"] = coe_objects
+
     async def get_io_attributes(self: CATioTerminalController) -> None:
-        """Get and create all terminal attributes from YAML definition."""
-        # Get the generic CATio terminal controller attributes
+        """
+        Get and create all terminal attributes from YAML definition, including CoE.
+        """
         initial_attr_count = len(self.attributes)
         await CATioTerminalController.get_io_attributes(self)
 
-        # Get symbols from class attributes
         runtime_syms: list[SymbolNode] = getattr(self.__class__, "_runtime_symbols", [])
         pdo_symbols: list[SymbolNode] = getattr(self.__class__, "_selected_symbols", [])
+        coe_objects = getattr(self.__class__, "_coe_objects", [])
 
-        # Process runtime symbols first (WcState, InputToggle, etc.)
+        # Process runtime symbols first
         for symbol in runtime_syms:
             _add_symbol_attribute(self, symbol)
 
-        # Then process PDO symbols (Channel 1, etc.)
+        # Then process PDO symbols
         for symbol in pdo_symbols:
             _add_symbol_attribute(self, symbol)
+
+        # Add CoE objects and subindices as FastCS attributes
+        # Track created attribute names to detect collisions
+        created_coe_attrs: dict[str, int] = {}
+
+        for coe_obj in coe_objects:
+            # If no subindices, treat as single value
+            if not getattr(coe_obj, "subindices", []):
+                # Use description as attribute name (PascalCase)
+                base_name = coe_obj.name or f"CoE{coe_obj.index:04X}"
+                attr_name = "".join(
+                    word.capitalize() for word in base_name.replace("_", " ").split()
+                )
+                if not attr_name or not attr_name[0].isalpha():
+                    attr_name = f"CoE{coe_obj.index:04X}"
+                # Use the original attribute name as the tooltip/description
+                desc = f"CoE{coe_obj.index:04X}"
+                is_readonly = coe_obj.access.lower() in ("ro", "read-only")
+                datatype = Int()  # TODO: map coe_obj.type_name to FastCS type
+                io_ref = None  # Could be extended for custom IO
+                if is_readonly:
+                    self.add_attribute(
+                        attr_name,
+                        AttrR(
+                            datatype=datatype,
+                            io_ref=io_ref,
+                            group=self.attr_group_name,
+                            initial_value=0,
+                            description=desc,
+                        ),
+                    )
+                else:
+                    self.add_attribute(
+                        attr_name,
+                        AttrRW(
+                            datatype=datatype,
+                            io_ref=io_ref,
+                            group=self.attr_group_name,
+                            initial_value=0,
+                            description=desc,
+                        ),
+                    )
+                self.ads_name_map[attr_name] = f"CoE:{coe_obj.index:04X}:0"
+            else:
+                for sub in coe_obj.subindices:
+                    # Skip subindex 0 (count/descriptor, EtherCAT standard)
+                    if sub.subindex == 0:
+                        continue
+
+                    # Use subindex name only (shorter for EPICS limits)
+                    base_name = sub.name if sub.name else f"Sub{sub.subindex:02X}"
+                    attr_name = "".join(
+                        word.capitalize()
+                        for word in base_name.replace("_", " ").split()
+                    )
+                    if not attr_name or not attr_name[0].isalpha():
+                        attr_name = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
+
+                    # Truncate to 39 chars to leave room for collision suffix
+                    attr_name = attr_name[:39]
+
+                    # Ensure unique names - append letter/digit if collision
+                    original_name = attr_name
+                    suffix = 0
+                    while attr_name in created_coe_attrs:
+                        if suffix < 10:
+                            attr_name = f"{original_name}{suffix}"
+                        else:
+                            # Use letters after digits exhausted
+                            attr_name = f"{original_name}{chr(ord('A') + suffix - 10)}"
+                        suffix += 1
+                    created_coe_attrs[attr_name] = sub.subindex
+                    # Use the original attribute name as the tooltip/description
+                    desc = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
+                    if len(desc) > 40:
+                        desc = desc[:40]
+                    is_readonly = (sub.access or coe_obj.access).lower() in (
+                        "ro",
+                        "read-only",
+                    )
+                    datatype = Int()  # TODO: map sub.type_name to FastCS type
+                    io_ref = None  # Could be extended for custom IO
+                    if is_readonly:
+                        self.add_attribute(
+                            attr_name,
+                            AttrR(
+                                datatype=datatype,
+                                io_ref=io_ref,
+                                group=self.attr_group_name,
+                                initial_value=0,
+                                description=desc,
+                            ),
+                        )
+                    else:
+                        self.add_attribute(
+                            attr_name,
+                            AttrRW(
+                                datatype=datatype,
+                                io_ref=io_ref,
+                                group=self.attr_group_name,
+                                initial_value=0,
+                                description=desc,
+                            ),
+                        )
+                    self.ads_name_map[attr_name] = (
+                        f"CoE:{coe_obj.index:04X}:{sub.subindex:02X}"
+                    )
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(
