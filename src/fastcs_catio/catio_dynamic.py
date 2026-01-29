@@ -124,23 +124,16 @@ def _symbol_to_fastcs_name(symbol: SymbolNode, channel: int | None = None) -> st
         channel: Channel number for multi-channel symbols.
 
     Returns:
-        PascalCase attribute name (e.g., "DICh1Value", "Channel1").
+        a camel case attribute name as supplied in the YAML but expanded if
+        it is multi channel
     """
     if symbol.fastcs_name:
         # Use provided fastcs_name with channel substitution
         if channel is not None and "{channel}" in symbol.fastcs_name:
             return symbol.fastcs_name.replace("{channel}", str(channel))
         return symbol.fastcs_name
-
-    # Generate from name_template
-    name = symbol.name_template
-    if channel is not None and "{channel}" in name:
-        name = name.replace("{channel}", str(channel))
-
-    # Convert to PascalCase: "Channel 1" -> "Channel1", "WcState" -> "WcState"
-    # Remove spaces and capitalize each word
-    words = name.replace("_", " ").split()
-    return "".join(word.capitalize() for word in words)
+    else:
+        raise RuntimeError("Symbol does not have a fastcs_name defined")
 
 
 def _symbol_to_ads_name(symbol: SymbolNode, channel: int | None = None) -> str:
@@ -171,8 +164,97 @@ def _get_datatype_for_symbol(symbol: SymbolNode) -> Int:
         FastCS Int datatype (currently all symbols map to Int).
     """
     # For now, all symbols map to Int
-    # In the future, we could use Float for REAL types, etc.
+    # TODO this needs to be mapped using symbol.type_name
     return Int()
+
+
+def _add_single_attribute(
+    controller: CATioTerminalController,
+    fastcs_name: str,
+    ads_name: str,
+    is_readonly: bool,
+    desc: str,
+    symbol: SymbolNode,
+) -> None:
+    """Add a single FastCS attribute to a controller.
+
+    Args:
+        controller: The controller to add the attribute to.
+        fastcs_name: The FastCS attribute name.
+        ads_name: The ADS symbol name.
+        is_readonly: Whether the attribute is read-only.
+        desc: The attribute description.
+        symbol: The symbol definition (for datatype).
+    """
+    if is_readonly:
+        controller.add_attribute(
+            fastcs_name,
+            AttrR(
+                datatype=_get_datatype_for_symbol(symbol),
+                io_ref=None,
+                group=controller.attr_group_name,
+                initial_value=0,
+                description=desc,
+            ),
+        )
+    else:
+        controller.add_attribute(
+            fastcs_name,
+            AttrRW(
+                datatype=_get_datatype_for_symbol(symbol),
+                io_ref=None,
+                group=controller.attr_group_name,
+                initial_value=0,
+                description=desc,
+            ),
+        )
+
+    # Map FastCS name to ADS name
+    controller.ads_name_map[fastcs_name] = ads_name
+
+
+def _add_coe_attribute(
+    controller: CATioTerminalController,
+    attr_name: str,
+    ads_name: str,
+    is_readonly: bool,
+    desc: str,
+    datatype: Int,
+) -> None:
+    """Add a single CoE attribute to a controller.
+
+    Args:
+        controller: The controller to add the attribute to.
+        attr_name: The FastCS attribute name.
+        ads_name: The ADS CoE symbol name (e.g., "CoE:8000:01").
+        is_readonly: Whether the attribute is read-only.
+        desc: The attribute description.
+        datatype: The FastCS datatype for this CoE object.
+    """
+    io_ref = None  # Could be extended for custom IO
+    if is_readonly:
+        controller.add_attribute(
+            attr_name,
+            AttrR(
+                datatype=datatype,
+                io_ref=io_ref,
+                group=controller.attr_group_name,
+                initial_value=0,
+                description=desc,
+            ),
+        )
+    else:
+        controller.add_attribute(
+            attr_name,
+            AttrRW(
+                datatype=datatype,
+                io_ref=io_ref,
+                group=controller.attr_group_name,
+                initial_value=0,
+                description=desc,
+            ),
+        )
+    controller.ads_name_map[attr_name] = ads_name
 
 
 def _add_symbol_attribute(
@@ -191,69 +273,20 @@ def _add_symbol_attribute(
         for ch in range(1, symbol.channels + 1):
             fastcs_name = _symbol_to_fastcs_name(symbol, ch)
             ads_name = _symbol_to_ads_name(symbol, ch)
-
             is_readonly = symbol.access is None or "write" not in symbol.access.lower()
             desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
-
-            if is_readonly:
-                controller.add_attribute(
-                    fastcs_name,
-                    AttrR(
-                        datatype=_get_datatype_for_symbol(symbol),
-                        io_ref=None,
-                        group=controller.attr_group_name,
-                        initial_value=0,
-                        description=desc,
-                    ),
-                )
-            else:
-                controller.add_attribute(
-                    fastcs_name,
-                    AttrRW(
-                        datatype=_get_datatype_for_symbol(symbol),
-                        io_ref=None,
-                        group=controller.attr_group_name,
-                        initial_value=0,
-                        description=desc,
-                    ),
-                )
-
-            # Map FastCS name to ADS name
-            controller.ads_name_map[fastcs_name] = ads_name
+            _add_single_attribute(
+                controller, fastcs_name, ads_name, is_readonly, desc, symbol
+            )
     else:
         # Single-channel symbol
         fastcs_name = _symbol_to_fastcs_name(symbol)
         ads_name = _symbol_to_ads_name(symbol)
-
         is_readonly = symbol.access is None or "write" not in symbol.access.lower()
         desc = symbol.tooltip or symbol.name_template
-
-        if is_readonly:
-            controller.add_attribute(
-                fastcs_name,
-                AttrR(
-                    datatype=_get_datatype_for_symbol(symbol),
-                    io_ref=None,
-                    group=controller.attr_group_name,
-                    initial_value=0,
-                    description=desc,
-                ),
-            )
-        else:
-            controller.add_attribute(
-                fastcs_name,
-                AttrRW(
-                    datatype=_get_datatype_for_symbol(symbol),
-                    io_ref=None,
-                    group=controller.attr_group_name,
-                    initial_value=0,
-                    description=desc,
-                ),
-            )
-
-        # Map FastCS name to ADS name if different
-        if fastcs_name != ads_name:
-            controller.ads_name_map[fastcs_name] = ads_name
+        _add_single_attribute(
+            controller, fastcs_name, ads_name, is_readonly, desc, symbol
+        )
 
 
 def _create_dynamic_controller_class(
@@ -332,34 +365,13 @@ def _create_dynamic_controller_class(
                 )
                 if not attr_name or not attr_name[0].isalpha():
                     attr_name = f"CoE{coe_obj.index:04X}"
-                # Use the original attribute name as the tooltip/description
                 desc = f"CoE{coe_obj.index:04X}"
                 is_readonly = coe_obj.access.lower() in ("ro", "read-only")
                 datatype = Int()  # TODO: map coe_obj.type_name to FastCS type
-                io_ref = None  # Could be extended for custom IO
-                if is_readonly:
-                    self.add_attribute(
-                        attr_name,
-                        AttrR(
-                            datatype=datatype,
-                            io_ref=io_ref,
-                            group=self.attr_group_name,
-                            initial_value=0,
-                            description=desc,
-                        ),
-                    )
-                else:
-                    self.add_attribute(
-                        attr_name,
-                        AttrRW(
-                            datatype=datatype,
-                            io_ref=io_ref,
-                            group=self.attr_group_name,
-                            initial_value=0,
-                            description=desc,
-                        ),
-                    )
-                self.ads_name_map[attr_name] = f"CoE:{coe_obj.index:04X}:0"
+                ads_name = f"CoE:{coe_obj.index:04X}:0"
+                _add_coe_attribute(
+                    self, attr_name, ads_name, is_readonly, desc, datatype
+                )
             else:
                 for sub in coe_obj.subindices:
                     # Skip subindex 0 (count/descriptor, EtherCAT standard)
@@ -389,7 +401,6 @@ def _create_dynamic_controller_class(
                             attr_name = f"{original_name}{chr(ord('A') + suffix - 10)}"
                         suffix += 1
                     created_coe_attrs[attr_name] = sub.subindex
-                    # Use the original attribute name as the tooltip/description
                     desc = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
                     if len(desc) > 40:
                         desc = desc[:40]
@@ -398,31 +409,9 @@ def _create_dynamic_controller_class(
                         "read-only",
                     )
                     datatype = Int()  # TODO: map sub.type_name to FastCS type
-                    io_ref = None  # Could be extended for custom IO
-                    if is_readonly:
-                        self.add_attribute(
-                            attr_name,
-                            AttrR(
-                                datatype=datatype,
-                                io_ref=io_ref,
-                                group=self.attr_group_name,
-                                initial_value=0,
-                                description=desc,
-                            ),
-                        )
-                    else:
-                        self.add_attribute(
-                            attr_name,
-                            AttrRW(
-                                datatype=datatype,
-                                io_ref=io_ref,
-                                group=self.attr_group_name,
-                                initial_value=0,
-                                description=desc,
-                            ),
-                        )
-                    self.ads_name_map[attr_name] = (
-                        f"CoE:{coe_obj.index:04X}:{sub.subindex:02X}"
+                    ads_name = f"CoE:{coe_obj.index:04X}:{sub.subindex:02X}"
+                    _add_coe_attribute(
+                        self, attr_name, ads_name, is_readonly, desc, datatype
                     )
 
         attr_count = len(self.attributes) - initial_attr_count

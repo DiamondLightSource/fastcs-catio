@@ -27,27 +27,6 @@ class TestSymbolNameConversion:
         assert _symbol_to_fastcs_name(symbol, 1) == "channel_1"
         assert _symbol_to_fastcs_name(symbol, 2) == "channel_2"
 
-    def test_fastcs_name_without_template(self) -> None:
-        """Test fastcs_name without channel placeholder."""
-        symbol = SymbolNode(
-            name_template="WcState",
-            index_group=61489,
-            type_name="UINT",
-            channels=1,
-        )
-        assert _symbol_to_fastcs_name(symbol) == "Wcstate"
-
-    def test_fastcs_name_generated_from_template(self) -> None:
-        """Test fastcs_name generated from name_template when not provided."""
-        symbol = SymbolNode(
-            name_template="Channel {channel}",
-            index_group=61489,
-            type_name="InputBits",
-            channels=4,
-        )
-        assert _symbol_to_fastcs_name(symbol, 1) == "Channel1"
-        assert _symbol_to_fastcs_name(symbol, 4) == "Channel4"
-
     def test_ads_name_with_channel(self) -> None:
         """Test ADS name conversion with channel placeholder."""
         symbol = SymbolNode(
