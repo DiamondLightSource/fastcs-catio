@@ -99,10 +99,10 @@ async def fastcs_catio_controller(simulator_process):
     time.sleep(0.5)
 
     # Create controller instance
-    ip = "172.23.242.39"
+    # ip = "172.23.242.39"
     # ip = "172.23.242.40"
     # ip = "172.23.242.42"
-    # ip = "127.0.0.1"
+    ip = "127.0.0.1"
     target_port = 27905
     poll_period = 1.0
     notification_period = 0.2
