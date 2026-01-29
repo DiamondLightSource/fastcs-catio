@@ -1,9 +1,8 @@
 """Data models for terminal description YAML files."""
 
 from pathlib import Path
-from typing import Any
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, computed_field
 
 from catio_terminals.ads_types import get_type_info
 
@@ -137,17 +136,6 @@ class RuntimeSymbol(BaseModel):
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None
     _ads_type_from_yaml: int | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def capture_legacy_fields(cls, data: Any) -> Any:
-        """Capture size/ads_type from YAML for backwards compatibility."""
-        if isinstance(data, dict):
-            if "size" in data:
-                data["_size_from_yaml"] = data.pop("size")
-            if "ads_type" in data:
-                data["_ads_type_from_yaml"] = data.pop("ads_type")
-        return data
 
     @computed_field
     @property
