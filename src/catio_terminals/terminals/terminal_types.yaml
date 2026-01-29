@@ -342,17 +342,7 @@ terminal_types:
       vendor_id: 2
       product_code: 72100946
       revision_number: 1114112
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61488
-        type_name: Channel 1_TYPE
-        channels: 0
-        selected: true
-      - name_template: WcState^WcState
-        index_group: 61473
-        type_name: BIT
-        channels: 1
-        selected: true
+    symbol_nodes: []
     coe_objects: []
     group_type: CpBk
   EK1122:
@@ -516,15 +506,12 @@ terminal_types:
       product_code: 132657252
       revision_number: 1048576
     symbol_nodes:
-      - name_template: DO Output Channel {channel}
-        index_group: 61488
-        type_name: DO Output Channel 1_TYPE
-        channels: 0
-        selected: true
-      - name_template: WcState^WcState
+      - name_template: Channel {channel}
         index_group: 61473
-        type_name: BIT
-        channels: 1
+        type_name: OutputBits
+        channels: 4
+        access: Read/Write
+        fastcs_name: channel_{channel}
         selected: true
     coe_objects: []
     group_type: DigOut
@@ -1111,15 +1098,40 @@ terminal_types:
       product_code: 242626642
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Input Channel {channel}
-        index_group: 61488
-        type_name: AI Input Channel 1_TYPE
-        channels: 2
-        selected: true
-      - name_template: WcState^WcState
-        index_group: 61473
-        type_name: BIT
+      - name_template: Ch1 CycleCount
+        index_group: 61489
+        type_name: UINT
         channels: 1
+        access: Read-only
+        fastcs_name: ch1_cyclecount
+        selected: true
+      - name_template: Ch1 Sample.Ch1 Value
+        index_group: 61489
+        type_name: INT
+        channels: 1
+        access: Read-only
+        fastcs_name: ch1_sample_ch1_value
+        selected: true
+      - name_template: Ch2 CycleCount
+        index_group: 61489
+        type_name: UINT
+        channels: 1
+        access: Read-only
+        fastcs_name: ch2_cyclecount
+        selected: true
+      - name_template: Ch2 Sample.Ch2 Value
+        index_group: 61489
+        type_name: INT
+        channels: 1
+        access: Read-only
+        fastcs_name: ch2_sample_ch2_value
+        selected: true
+      - name_template: NextSync1Time.StartTimeNextLatch
+        index_group: 61489
+        type_name: UDINT
+        channels: 1
+        access: Read-only
+        fastcs_name: nextsync1time_starttimenextlatch
         selected: true
     coe_objects: []
     group_type: AnaIn
@@ -1130,15 +1142,12 @@ terminal_types:
       product_code: 270938194
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AO Output Channel {channel}
-        index_group: 61488
-        type_name: AO Output Channel 1_TYPE
-        channels: 4
-        selected: true
-      - name_template: WcState^WcState
+      - name_template: AO Output Channel {channel}.Analog output
         index_group: 61473
-        type_name: BIT
-        channels: 1
+        type_name: INT
+        channels: 4
+        access: Read/Write
+        fastcs_name: ao_output_channel_{channel}_analog_output
         selected: true
     coe_objects: []
     group_type: AnaOut

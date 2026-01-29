@@ -413,9 +413,13 @@ def show_terminal_details(
                 _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
 
             # Determine button label based on current state (only active symbols)
+            # Filter to only valid indices to avoid IndexError when XML has more symbols
+            valid_active_indices = [
+                i for i in active_symbol_indices if i < len(terminal.symbol_nodes)
+            ]
             all_symbols_selected = (
-                all(terminal.symbol_nodes[i].selected for i in active_symbol_indices)
-                if active_symbols
+                all(terminal.symbol_nodes[i].selected for i in valid_active_indices)
+                if valid_active_indices
                 else True
             )
             symbol_btn_label = "Deselect All" if all_symbols_selected else "Select All"

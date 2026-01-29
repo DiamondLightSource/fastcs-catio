@@ -95,25 +95,35 @@ def parse_terminal_details(
         else:
             root = etree.fromstring(xml_content)
 
-        # Find matching device - prefer highest revision or specific revision
+        # Find matching device - prefer specific revision, fall back to highest
         device = None
         best_revision = -1
+        best_device = None
+
         for dev in root.findall(".//Device"):
             type_elem = dev.find("Type")
             if type_elem is not None and type_elem.text == terminal_id:
                 revision_str = type_elem.get("RevisionNo") or "0"
                 revision = parse_hex_value(revision_str)
 
-                if target_revision is not None:
-                    # Match specific revision exactly
-                    if revision == target_revision:
-                        device = dev
-                        break
-                else:
-                    # Select device with highest revision number
-                    if revision > best_revision:
-                        best_revision = revision
-                        device = dev
+                # Track highest revision device as fallback
+                if revision > best_revision:
+                    best_revision = revision
+                    best_device = dev
+
+                # Match specific revision exactly if requested
+                if target_revision is not None and revision == target_revision:
+                    device = dev
+                    break
+
+        # Use exact match if found, otherwise fall back to highest revision
+        if device is None and best_device is not None:
+            device = best_device
+            if target_revision is not None:
+                logger.debug(
+                    f"Revision {target_revision} not found for {terminal_id}, "
+                    f"using highest revision {best_revision}"
+                )
 
         if device is None:
             logger.warning(f"Device {terminal_id} not found in XML")
