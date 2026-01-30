@@ -2734,7 +2734,7 @@ class AsyncioADSClient:
                                 size + template_data
                             )
                             streams_dtype = streams.get_combined_notifications_dtype(
-                                self._ecdevices[dev_id].name.replace(" ", ""),
+                                self._ecdevices[dev_id].name,
                                 self.__device_notification_handles,
                             )
                         else:
@@ -2743,7 +2743,7 @@ class AsyncioADSClient:
                             template_data = self.__notif_templates[0]
                             streams = AdsNotificationStream.from_bytes(template_data)
                             streams_dtype = streams.get_notification_dtype(
-                                self._ecdevices[dev_id].name.replace(" ", ""),
+                                self._ecdevices[dev_id].name,
                                 self.__device_notification_handles,
                             )
 
@@ -2768,7 +2768,13 @@ class AsyncioADSClient:
                                 streams_dtype, buffer
                             )
                         )
-                        logging.debug("Notification stream added to the queue.")
+                        assert streams_dtype.fields
+                        logging.info(
+                            f"Notification stream added to the queue: "
+                            f"qsize={self.__notification_queue.qsize()}, "
+                            f"streams_nb={self.__num_notif_streams}, "
+                            f"notifs_fields={len(streams_dtype.fields)}"
+                        )
 
             except AssertionError as err:
                 logging.error(f"Notification flushing error: {err}")
@@ -2822,7 +2828,7 @@ class AsyncioADSClient:
                 notifs = await self.__notification_queue.get()
                 self.__notification_queue.task_done()
                 num_header_fields = 4 * self.__num_notif_streams
-                logging.debug(
+                logging.info(
                     f"Got {len(notifs)} notifications with "
                     + f"{(len(notifs.dtype.fields) - num_header_fields) // 3} "
                     + "I/O terminal values."

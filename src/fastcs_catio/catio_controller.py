@@ -23,6 +23,7 @@ from fastcs_catio._constants import DeviceType
 from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
+    CATioControllerSymbolAttributeIO,
 )
 from fastcs_catio.client import RemoteRoute, get_remote_address
 from fastcs_catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
@@ -104,6 +105,12 @@ class CATioController(Controller, Tracer):
                     self.connection,
                     self.group,
                     self._identifier,
+                ),
+                CATioControllerSymbolAttributeIO(
+                    self.connection,
+                    self.group,
+                    self._identifier,
+                    self.ads_name_map,
                 ),
             ],
         )
@@ -247,7 +254,7 @@ class CATioController(Controller, Tracer):
             if isinstance(self, CATioController):
                 ads_name = self.ads_name_map.get(key, None)
                 key = ads_name if ads_name is not None else key
-            attr_dict[".".join([f"_{self.ecat_name.replace(' ', '')}", key])] = attr
+            attr_dict[".".join([f"_{self.ecat_name}", key])] = attr
         logger.debug(
             f"Extracted {len(attr_dict)} attributes for controller {self.name}."
         )
@@ -645,7 +652,7 @@ class CATioServerController(CATioController):
         assert notifications.dtype.names
 
         # Extract the timestamps from the notification changes
-        pattern = re.compile(r"^_(\w+(\(\w*\))*)+\.timestamp\d*")
+        pattern = re.compile(r"^_([\w ]+(\([\w ]*\))*)+\.timestamp\d*")
         matches = [s for s in notifications.dtype.names if pattern.search(s)]
         timestamps = list(
             chain.from_iterable([notifications[name].tolist() for name in matches])
@@ -677,102 +684,112 @@ class CATioServerController(CATioController):
             the CATio client and updates the relevant FastCS attributes \
                 if any changes are detected.
         """
-        if self.notification_stream is None:
-            # Get a reference to the EtherCAT Master Device which provides notifications
-            dev_ctrl = self.get_device_controller()
-            assert isinstance(dev_ctrl, CATioDeviceController)
-            # Wait until the device controller is ready to provide notifications
-            if not dev_ctrl.notification_ready:
-                logger.debug("Notification setup not ready yet, monitoring off.")
-                return
-            # Request the CATio client to start publishing notifications
-            self.connection.enable_notification_monitoring(
-                True, NOTIFICATION_UPDATE_PERIOD
-            )
-            self.notification_enabled = True
-
-        if self.notification_enabled:
-            # Get the stream of notifications accumulated over the last period
-            notifs = await self.connection.get_notification_streams(timeout=5)
-            # Average the accumulated notification stream values for each element.
-            mean = process_notifications(average, notifs)
-            # logging.debug(f"Mean of accumulated notifications: {mean.dtype}, {mean}")
-
-            # Use the first notification stream as the reference for future updates.
+        try:
             if self.notification_stream is None:
+                # Get a reference to the EtherCAT Master Device which provides notifs
+                dev_ctrl = self.get_device_controller()
+                assert isinstance(dev_ctrl, CATioDeviceController)
+                # Wait until the device controller is ready to provide notifications
+                if not dev_ctrl.notification_ready:
+                    logger.debug("Notification setup not ready yet, monitoring off.")
+                    return
+                # Request the CATio client to start publishing notifications
+                self.connection.enable_notification_monitoring(
+                    True, NOTIFICATION_UPDATE_PERIOD
+                )
+                self.notification_enabled = True
+
+            if self.notification_enabled:
+                # Get the stream of notifications accumulated over the last period
+                notifs = await self.connection.get_notification_streams(timeout=5)
+                # Average the accumulated notification stream values for each element.
+                mean = process_notifications(average, notifs)
+
+                # Use the first notif stream as the reference for future updates.
+                if self.notification_stream is None:
+                    self.notification_stream = mean
+                    return
+
+                # Get the changes between the current and previous notif streams
+                diff = get_notification_changes(mean, self.notification_stream)
+                assert diff.dtype.names, (
+                    "Expected a numpy structured array with fields."
+                )
+                logger.info(
+                    f"Notification fields which show changes: "
+                    f"{diff.dtype.names}, {diff}"
+                )
+
+                # Update the previous notif stream value to the latest one received
                 self.notification_stream = mean
-                return
 
-            # Get the changes between the current and previous notification streams
-            diff = get_notification_changes(mean, self.notification_stream)
-            assert diff.dtype.names, "Expected a numpy structured array with fields."
-            logger.debug(
-                f"Notification fields which show changes: {diff.dtype.names}, {diff}"
-            )
+                # Extract and set the timestamp attribute from the notif changes
+                await self.update_notification_timestamp(diff)
 
-            # Update the previous notification stream value to the latest one received
-            self.notification_stream = mean
+                # Filter out any non-value fields from the notification changes
+                non_value_names = [
+                    name for name in diff.dtype.names if "value" not in name
+                ]
+                if len(non_value_names) == len(diff.dtype.names):
+                    return
 
-            # Extract and set the timestamp attribute from the notification changes
-            await self.update_notification_timestamp(diff)
-
-            # Filter out any non-value fields from the notification changes
-            non_value_names = [name for name in diff.dtype.names if "value" not in name]
-            if len(non_value_names) == len(diff.dtype.names):
-                return
-
-            # Remove the notification fields that have changed which aren't relevant
-            filtered_diff = rfn.drop_fields(
-                diff, drop_names=non_value_names, usemask=False, asrecarray=True
-            )
-            logger.debug(
-                f"Value field notifications which have changed: {filtered_diff}, "
-                + f"{filtered_diff.size}, {filtered_diff.shape}"
-            )
-
-            assert filtered_diff.dtype.names
-            for name in filtered_diff.dtype.names:
-                # Remove the '.value' from the notification name
-                attr_name = name.rsplit(".", 1)[0]
-                ############### Assertion not valid until all terminal attributes have
-                ############### been defined;
-                ############### use if statement instead
-                assert attr_name in self.attribute_map.keys(), (
-                    f"No reference to {attr_name} in the CATio attribute map; "
-                    + "implementation of terminal attributes may be missing."
+                # Remove the notif fields that have changed which aren't relevant
+                filtered_diff = rfn.drop_fields(
+                    diff, drop_names=non_value_names, usemask=False, asrecarray=True
                 )
-                ############### if attr_name in self.attribute_map.keys():
-                notif_attribute = self.attribute_map[attr_name]
-
-                # Extract the new value from the notification field
-                if isinstance(filtered_diff[name], np.ndarray):
-                    # Handle the oversampling arrays (must be 1D numpy arrays)
-                    # e.g. shape of 'sample' with n values is: (1, n)
-                    if filtered_diff[name].ndim > 1:
-                        assert filtered_diff[name].shape[0] == 1, (
-                            "Bad array format received from the notification stream"
-                        )
-                        val = filtered_diff[name].flatten()
-                    else:
-                        # Handle 1D arrays with multiple values
-                        # e.g. shape of X with n elements is: (n,)
-                        if filtered_diff[name].shape[0] > 1:
-                            val = filtered_diff[name]
-                        else:
-                            # Handle single discrete value expressed as 1D array
-                            # e.g. shape of 'cyclecount' with single value is: (1,)
-                            val = filtered_diff[name][0]
-                    new_value = notif_attribute.datatype.validate(val)
-
-                else:
-                    # Handle single discrete value
-                    new_value = notif_attribute.datatype.validate(filtered_diff[name])
-
-                assert isinstance(notif_attribute, AttrR)
-                await notif_attribute.update(new_value)
                 logger.debug(
-                    f"Updated notification attribute {attr_name} to value {new_value}."
+                    f"Value field notifications which have changed: {filtered_diff}, "
+                    + f"{filtered_diff.size}, {filtered_diff.shape}"
                 )
+
+                assert filtered_diff.dtype.names
+                for name in filtered_diff.dtype.names:
+                    # Remove the '.value' from the notification name
+                    attr_name = name.rsplit(".", 1)[0]
+
+                    if attr_name not in self.attribute_map.keys():
+                        logger.warning(
+                            f"No reference to {attr_name} in the CATio attribute map; "
+                            + "implementation of terminal attributes may be missing."
+                        )
+                        continue
+
+                    notif_attribute = self.attribute_map[attr_name]
+
+                    # Extract the new value from the notification field
+                    if isinstance(filtered_diff[name], np.ndarray):
+                        # Handle the oversampling arrays (must be 1D numpy arrays)
+                        # e.g. shape of 'sample' with n values is: (1, n)
+                        if filtered_diff[name].ndim > 1:
+                            assert filtered_diff[name].shape[0] == 1, (
+                                "Bad array format received from notification stream"
+                            )
+                            val = filtered_diff[name].flatten()
+                        else:
+                            # Handle 1D arrays with multiple values
+                            # e.g. shape of X with n elements is: (n,)
+                            if filtered_diff[name].shape[0] > 1:
+                                val = filtered_diff[name]
+                            else:
+                                # Handle single discrete value expressed as 1D array
+                                # e.g. shape of 'cyclecount' with single value is: (1,)
+                                val = filtered_diff[name][0]
+                        new_value = notif_attribute.datatype.validate(val)
+
+                    else:
+                        # Handle single discrete value
+                        new_value = notif_attribute.datatype.validate(
+                            filtered_diff[name]
+                        )
+
+                    assert isinstance(notif_attribute, AttrR)
+                    await notif_attribute.update(new_value)
+                    logger.debug(
+                        f"Updated notification attribute {attr_name} "
+                        f"to value {new_value}."
+                    )
+        except Exception:
+            logger.exception("Error processing notification stream")
 
 
 class CATioDeviceController(CATioController):

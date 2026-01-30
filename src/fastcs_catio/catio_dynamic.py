@@ -58,9 +58,9 @@ def _add_attribute(
             attr_name,
             AttrR(
                 datatype=datatype,
-                io_ref=io_ref,
+                io_ref=None,
                 group=controller.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description=desc,
             ),
         )
@@ -71,7 +71,7 @@ def _add_attribute(
                 datatype=datatype,
                 io_ref=io_ref,
                 group=controller.attr_group_name,
-                initial_value=0,
+                initial_value=None,
                 description=desc,
             ),
         )

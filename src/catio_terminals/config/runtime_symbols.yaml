@@ -28,7 +28,7 @@ runtime_symbols:
     type_name: BIT
     channels: 1
     access: Read-only
-    fastcs_name: WcstateWcstate
+    fastcs_name: wcstate
     description: >
       Working Counter State - EtherCAT diagnostic indicating if the terminal
       is communicating properly on the bus. A non-zero value indicates a
@@ -43,7 +43,7 @@ runtime_symbols:
     type_name: BIT
     channels: 1
     access: Read-only
-    fastcs_name: Inputtoggle
+    fastcs_name: input_toggle
     description: >
       Toggles on each EtherCAT cycle to indicate that input data has been
       updated. Can be used to detect stale data.
@@ -80,8 +80,8 @@ runtime_symbols:
     type_name: BIT
     channels: 1
     access: Read-only
-    fastcs_name: SyncunitsWcstate
+    fastcs_name: sync_units_wc_state
     description: >
       Working Counter State for TwinCAT's default synchronization unit.
       Part of TwinCAT's distributed clock (DC) synchronization system.
-    is_global: true  # Not tied to specific terminals
+    is_global: true # Not tied to specific terminals

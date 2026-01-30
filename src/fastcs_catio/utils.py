@@ -105,6 +105,8 @@ def average(array: np.ndarray) -> np.ndarray:
     :returns: a 1D numpy array with averaged values
     """
     mean_array = np.empty(1, dtype=array.dtype)
+    # TODO: Vectorize - call numpy once to do all the averaging
+    # See https://github.com/DiamondLightSource/fastcs-catio/issues/22
     assert array.dtype.fields is not None
     for field in array.dtype.fields:
         mean_array[field] = np.mean(array[field])

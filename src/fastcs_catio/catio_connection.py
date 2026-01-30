@@ -228,7 +228,9 @@ class CATioStreamConnection:
         self._subscribed_symbols = list(subscription_symbols)
 
         await self.client.add_notifications(
-            subscription_symbols,  # max_delay_ms=1000, cycle_time_ms=1000
+            subscription_symbols,
+            max_delay_ms=10,
+            cycle_time_ms=10,
         )
         logging.info(
             f"Subscribed to {len(subscription_symbols)} symbols "
