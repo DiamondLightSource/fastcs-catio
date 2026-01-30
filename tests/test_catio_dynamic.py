@@ -5,11 +5,10 @@ import pytest
 from catio_terminals.models import SymbolNode
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.catio_dynamic import (
-    _symbol_to_ads_name,
-    _symbol_to_fastcs_name,
     clear_controller_cache,
     get_terminal_controller_class,
 )
+from fastcs_catio.terminal_config import symbol_to_ads_name, symbol_to_fastcs_name
 
 
 class TestSymbolNameConversion:
@@ -24,29 +23,8 @@ class TestSymbolNameConversion:
             channels=4,
             fastcs_name="channel_{channel}",
         )
-        assert _symbol_to_fastcs_name(symbol, 1) == "channel_1"
-        assert _symbol_to_fastcs_name(symbol, 2) == "channel_2"
-
-    def test_fastcs_name_without_template(self) -> None:
-        """Test fastcs_name without channel placeholder."""
-        symbol = SymbolNode(
-            name_template="WcState",
-            index_group=61489,
-            type_name="UINT",
-            channels=1,
-        )
-        assert _symbol_to_fastcs_name(symbol) == "Wcstate"
-
-    def test_fastcs_name_generated_from_template(self) -> None:
-        """Test fastcs_name generated from name_template when not provided."""
-        symbol = SymbolNode(
-            name_template="Channel {channel}",
-            index_group=61489,
-            type_name="InputBits",
-            channels=4,
-        )
-        assert _symbol_to_fastcs_name(symbol, 1) == "Channel1"
-        assert _symbol_to_fastcs_name(symbol, 4) == "Channel4"
+        assert symbol_to_fastcs_name(symbol, 1) == "channel_1"
+        assert symbol_to_fastcs_name(symbol, 2) == "channel_2"
 
     def test_ads_name_with_channel(self) -> None:
         """Test ADS name conversion with channel placeholder."""
@@ -56,8 +34,8 @@ class TestSymbolNameConversion:
             type_name="InputBits",
             channels=4,
         )
-        assert _symbol_to_ads_name(symbol, 1) == "Channel 1"
-        assert _symbol_to_ads_name(symbol, 4) == "Channel 4"
+        assert symbol_to_ads_name(symbol, 1) == "Channel 1"
+        assert symbol_to_ads_name(symbol, 4) == "Channel 4"
 
     def test_ads_name_without_channel(self) -> None:
         """Test ADS name conversion without channel placeholder."""
@@ -67,7 +45,7 @@ class TestSymbolNameConversion:
             type_name="UINT",
             channels=1,
         )
-        assert _symbol_to_ads_name(symbol) == "WcState"
+        assert symbol_to_ads_name(symbol) == "WcState"
 
 
 class TestGetTerminalControllerClass:

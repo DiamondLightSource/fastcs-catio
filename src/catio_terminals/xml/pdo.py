@@ -2,7 +2,7 @@
 
 from catio_terminals.models import BitField, CompositeType, SymbolNode
 from catio_terminals.utils import to_snake_case
-from catio_terminals.xml_constants import (
+from catio_terminals.xml.constants import (
     ARRAY_ELEMENT_PATTERN,
     CHANNEL_KEYWORD_PATTERN,
     CHANNEL_NUMBER_PATTERN,

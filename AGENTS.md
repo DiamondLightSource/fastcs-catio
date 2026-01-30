@@ -14,6 +14,8 @@ All code you write MUST be fully optimized.
 - using parallelization and vectorization where appropriate
 - following proper style conventions for the code language (e.g. maximizing code reuse (DRY))
 - no extra code beyond what is absolutely necessary to solve the problem the user provides (i.e. no technical debt)
+- check all code for repeated functionality that can be factored out
+- (I know I've said this 3 ways but DRY seems to be agent's weakest area)
 
 ## Preferred Tools
 
@@ -54,9 +56,12 @@ When using the `run_in_terminal` tool:
 
 - **MUST** use meaningful, descriptive variable and function names
 - **MUST** follow PEP 8 style guidelines
+- **MUST** place all imports at the top of the file (after module docstring)
+  - Group imports: standard library, third-party, local application imports
+  - **NEVER** place imports inside functions or conditional blocks unless absolutely necessary
+  - If a lazy import is needed (e.g., to avoid circular imports), document why
 - **NEVER** use emoji, or unicode that emulates emoji (e.g. ✓, ✗). The only exception is when writing tests and testing the impact of multibyte characters.
 - Limit line length to 88 characters (ruff formatter standard)
-- **ALWAYS** run `uv ruff check` to format and validated code before committing
 
 ## Documentation
 
@@ -159,16 +164,16 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 
 ## Tools
 
-- **MUST** use uv to run all the tools below
-- **MUST** use Ruff for code formatting and linting
-- **MUST** use pyright for static type checking
+
 - **MUST** use `uv` for package management
-- Use pytest for testing
+- do `uv ruff check --fix; uv run pyright src tests` after code changes
+- or `uv ruff check --fix; uv run mypy src tests` for projects that use mypy
+- Use `uv run pytest` for testing
 
 ## Before Committing
 
 - [ ] All tests pass
-- [ ] Type checking passes (mypy)
+- [ ] Type checking passes (mypy or pyright)
 - [ ] Code formatter and linter pass (Ruff)
 - [ ] All functions have docstrings and type hints
 - [ ] No commented-out code or debug statements
@@ -205,7 +210,7 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
 
 - **Terminal YAML Files Are Generated**: **NEVER manually edit** terminal YAML files in `src/catio_terminals/terminals/`. These files are generated from Beckhoff XML by the code in `src/catio_terminals/xml_parser.py` and `src/catio_terminals/xml_pdo.py`. If the YAML has incorrect values:
   1. Fix the XML parsing code that generates the YAML
-  2. Regenerate the YAML using `uv run catio-terminals clean-yaml <file>`
+  2. Regenerate the YAML using `uv run catio-terminals clean-yaml <file>` (default is src/catio_terminals/terminals/terminal_types.yaml)
   3. Manual edits will be lost on next regeneration
 
   **Special cases:**
@@ -215,7 +220,9 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
 
 ## Agent Skills
 
-Skills are specialized knowledge that can be loaded on demand. Use these prompts to activate a skill:
+Skills are specialized knowledge that can be loaded on demand. Use these prompts to activate a skill.
+
+**Note:** Generic, reusable skills (not specific to this repo) are in [SKILLS.md](SKILLS.md). Repository-specific skills are below.
 
 ### Beckhoff XML Skill
 
@@ -305,16 +312,31 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 - ❌ `EtherCATChain.from_config(path)` → AttributeError (method doesn't exist)
 - ✅ Create instance first, then call `load_config()` on it
 
-**Testing against hardware:**
-- Hardware output is in `hardware-output.txy` (550 symbols)
-- Simulator output can be generated: `./tests/diagnose_hardware.py --ip 127.0.0.1 --dump-symbols`
-- Compare with: `diff simulator-output.txy hardware-output.txy`
+**Testing against hardware and simulator:**
+- Simulator or hardware output can be generated: `./tests/diagnose_hardware.py --ip 127.0.0.1 --dump-symbols`
+- A YAML representation can be generated and compared
+  - `./tests/diagnose_hardware.py --ip 127.0.0.1 --dump-symbols --output /tmp/sim.yaml`
+  - `./tests/diagnose_hardware.py --ip 172.23.242.42 --dump-symbols --compare /tmp/sim.yaml`
+  -
+
 
 **Related files:**
 - `tests/ads_sim/ethercat_chain.py` - Chain and device/slave models
 - `tests/ads_sim/server.py` - ADS protocol server
-- `tests/ads_sim/server_config.yaml` - Device/slave configuration
+- `tests/ads_sim/server_config.yaml` - default YAML representation of the Simulator
 - `tests/test_system.py` - Integration tests against simulator
+
+---
+
+### Mermaid Diagrams in Documentation Skill
+
+See [SKILLS.md](SKILLS.md#mermaid-diagrams-in-documentation-skill) for the full generic skill.
+
+**Repo-specific notes:**
+
+- Mermaid is already configured in this project (`docs/conf.py`, `docs/_static/custom.css`)
+- Example Mermaid diagrams: `docs/explanations/architecture-overview.md`
+- Do NOT convert TwinCAT device tree views (nomenclature.md) - keep as ASCII art
 
 ---
 

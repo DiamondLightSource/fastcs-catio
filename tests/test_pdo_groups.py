@@ -3,7 +3,7 @@
 from lxml import etree
 
 from catio_terminals.models import Identity, PdoGroup, SymbolNode, TerminalType
-from catio_terminals.xml_pdo_groups import (
+from catio_terminals.xml.pdo_groups import (
     assign_symbols_to_groups,
     build_pdo_to_group_map,
     parse_pdo_groups,

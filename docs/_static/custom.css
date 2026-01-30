@@ -1,0 +1,56 @@
+/* Make mermaid diagrams use full width */
+.mermaid {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.mermaid svg {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Make expanded/fullscreen mermaid diagrams prioritize width with vertical scroll */
+.mermaid-modal,
+.mermaid-fullscreen,
+[class*="modal"] .mermaid,
+[class*="fullscreen"] .mermaid,
+[class*="expanded"] .mermaid,
+.mermaid-zoom-modal,
+.sd-modal .mermaid,
+.modal-content .mermaid,
+dialog .mermaid {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.mermaid-modal svg,
+.mermaid-fullscreen svg,
+[class*="modal"] .mermaid svg,
+[class*="fullscreen"] .mermaid svg,
+[class*="expanded"] .mermaid svg,
+.mermaid-zoom-modal svg,
+.mermaid-zoom-modal .mermaid svg,
+.sd-modal .mermaid svg,
+.modal-content .mermaid svg,
+dialog .mermaid svg {
+    width: 95vw !important;
+    min-width: 95vw !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+/* Target the modal/dialog container itself to allow scrolling */
+.mermaid-zoom-modal,
+.sd-modal,
+.modal-content,
+dialog {
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}

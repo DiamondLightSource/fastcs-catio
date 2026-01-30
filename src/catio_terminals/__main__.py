@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from catio_terminals.xml_cache import XmlCache
+from catio_terminals.xml.cache import XmlCache
 
 app = typer.Typer(
     name="catio-terminals",
@@ -34,7 +34,7 @@ def edit(
 @app.command(name="update-cache")
 def update_cache() -> None:
     """Update the terminal database cache from Beckhoff server."""
-    from catio_terminals.xml_parser import parse_terminal_catalog
+    from catio_terminals.xml import parse_terminal_catalog
 
     print("Updating terminal database from Beckhoff server...")
     cache = XmlCache()
@@ -127,12 +127,6 @@ async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
             raise typer.Exit(code=1)
 
         for yaml_path in files_to_process:
-            if "original" in yaml_path.name:
-                print(f"Skipping backup file: {yaml_path.name}")
-                continue
-            if "runtime_symbols" in yaml_path.name:
-                print(f"Skipping runtime symbols file: {yaml_path.name}")
-                continue
             await _cleanup_single_yaml(yaml_path, beckhoff_client, FileService)
 
     elif file is not None:

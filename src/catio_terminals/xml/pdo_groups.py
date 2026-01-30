@@ -13,7 +13,7 @@ from collections import defaultdict
 from lxml.etree import _Element
 
 from catio_terminals.models import PdoGroup
-from catio_terminals.xml_constants import parse_hex_value
+from catio_terminals.xml.constants import parse_hex_value
 
 logger = logging.getLogger(__name__)
 

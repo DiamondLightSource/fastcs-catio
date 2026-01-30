@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from catio_terminals.xml_cache import BeckhoffTerminalInfo, XmlCache
-from catio_terminals.xml_parser import (
+from catio_terminals.xml import (
     generate_terminal_url,
     get_ads_type,
     parse_hex_value,
     parse_terminal_catalog,
 )
+from catio_terminals.xml.cache import BeckhoffTerminalInfo, XmlCache
 
 
 class TestParseHexValue:

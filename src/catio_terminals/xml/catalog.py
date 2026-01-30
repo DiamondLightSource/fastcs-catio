@@ -5,8 +5,8 @@ from pathlib import Path
 
 from lxml import etree
 
-from catio_terminals.xml_cache import BeckhoffTerminalInfo
-from catio_terminals.xml_constants import (
+from catio_terminals.xml.cache import BeckhoffTerminalInfo
+from catio_terminals.xml.constants import (
     TERMINAL_ID_PATTERN,
     generate_terminal_url,
     parse_hex_value,
