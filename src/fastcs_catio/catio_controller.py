@@ -25,7 +25,9 @@ from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
     CATioControllerCoEAttributeIO,
+    CATioControllerCoEAttributeIORef,
     CATioControllerSymbolAttributeIO,
+    CATioControllerSymbolAttributeIORef,
 )
 from fastcs_catio.client import RemoteRoute, get_remote_address
 from fastcs_catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
@@ -96,6 +98,12 @@ class CATioController(Controller, Tracer):
             str, str
         ] = {}  # key is FastCS attribute name, value is complex ads symbol name
         """Map of FastCS attribute names to ADS symbol names."""
+        self._symbol_attributes: dict[
+            str, Any
+        ] = {}  # key is ads symbol name, value is current symbol value
+        """Map of ADS symbol names to their current values."""
+        self._coe_attribute_names: list[str] = []
+        """"""
 
         logger.debug(
             f"CATio controller '{self.ecat_name}' instantiated with PV suffix "
@@ -207,6 +215,9 @@ class CATioController(Controller, Tracer):
             + "was successful."
         )
 
+        # Initialise all controller attribute values from the CATio client
+        await self.initialise_attribute_values()
+
     async def read_configuration(
         self, connection: CATioConnection, ams_address: AmsAddress, io_name: str
     ) -> None:
@@ -248,6 +259,58 @@ class CATioController(Controller, Tracer):
     async def get_io_attributes(self) -> None:
         """Base method to create subcontroller-specific attributes."""
         ...
+
+    async def initialise_attribute_values(self):
+        """Initialise all controller attribute values from the CATio client."""
+        for name, attribute in self.attributes.items():
+            if attribute.has_io_ref():
+                if isinstance(attribute.io_ref, CATioControllerSymbolAttributeIORef):
+                    symbol_name = self.ads_name_map.get(name, None)
+                    if symbol_name is not None:
+                        self._symbol_attributes[symbol_name] = None
+                    else:
+                        logger.warning(
+                            f"Symbol attribute '{name}' is missing from controller "
+                            f"{self.name} attribute map."
+                        )
+                elif isinstance(attribute.io_ref, CATioControllerCoEAttributeIORef):
+                    self._coe_attribute_names.append(name)
+                    # TO DO: implement CoE parameter initialisation here maybe?
+
+        if self._symbol_attributes:
+            await self.get_symbol_attribute_values()
+            await self.update_symbol_attribute_initial_value()
+
+        logger.debug(
+            f"{len(self.attributes)} attributes "
+            f"are registered with controller {self.name}"
+            f"of which {len(self._symbol_attributes)} are ADS symbols "
+            f"and {len(self._coe_attribute_names)} are CoE parameters."
+        )
+
+    async def get_symbol_attribute_values(self):
+        """Get the current values of all symbol attributes from the CATio client."""
+        symbol_names = list(self._symbol_attributes.keys())
+        symbol_values: dict[str, Any] = await self.connection.send_query(
+            CATioFastCSRequest("SUM_SYMBOLS", self._identifier, symbol_names)
+        )
+        assert self._symbol_attributes.keys() == symbol_values.keys()
+        self._symbol_attributes = {k: symbol_values[k] for k in self._symbol_attributes}
+
+    async def update_symbol_attribute_initial_value(self):
+        """Update all symbol attribute initial values."""
+        # Get dictionary where keys are symbol names and values are attribute names
+        d = {v: k for k, v in self.ads_name_map.items()}
+        # Update all the symbol attribute values
+        for name, value in self._symbol_attributes.items():
+            attr = self.attributes[d[name]]
+            assert isinstance(attr, AttrR)
+            await attr.update(value)
+            logger.debug(
+                f"Controller {self.name}: "
+                f"initialised attribute {attr.name} "
+                f"to value: {value}"
+            )
 
     async def get_root_node(self) -> IOTreeNode:
         """

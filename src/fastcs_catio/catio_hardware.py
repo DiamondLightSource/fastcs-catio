@@ -1870,6 +1870,7 @@ class EL3104Controller(CATioTerminalController):
         if coe_attributes:
             for name, attr in coe_attributes.items():
                 self.add_attribute(name, attr)
+
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
 

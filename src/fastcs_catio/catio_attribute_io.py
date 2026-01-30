@@ -146,7 +146,7 @@ class CATioControllerSymbolAttributeIORef(AttributeIORef):
     name: str
     """Name of the attribute in the CATio API"""
     _: KW_ONLY  # Additional keyword-only arguments
-    update_period: float | None = ONCE
+    update_period: float | None = None
     """Update period for the FastCS attribute"""
 
 
@@ -216,8 +216,6 @@ class CATioControllerSymbolAttributeIO(
             f"write operation failed."
         )
 
-    # TO DO: can we implement a sum read for the initial fastCS poll at IOC start?
-    # using 'len(self.symbol_map)' registered symbols in controller 'self.controller_id'
     async def update(
         self, attr: AttrR[AnyT, CATioControllerSymbolAttributeIORef]
     ) -> None:
@@ -227,50 +225,7 @@ class CATioControllerSymbolAttributeIO(
 
         :param attr: The attribute to be updated.
         """
-        if (attr.io_ref.update_period is ONCE) or (self._value.get(attr.name) is None):
-            logger.debug(
-                f"Symbol initialisation handler has been called for {attr.group} "
-                f"-> {attr.name}."
-            )
-            symbol_name = self.symbol_map.get(attr.name, None)
-            if symbol_name is not None:
-                response = await self._connection.send_query(
-                    CATioFastCSRequest(
-                        command=self.query,
-                        controller_id=self.controller_id,
-                        symbol_name=symbol_name,
-                        dtype=attr.dtype,
-                    )
-                )
-                # If array, symbol read operation returns ndarray with shape (1, X)
-                # i.e. response = [[a, b, c...]]
-                if isinstance(response, np.ndarray):
-                    response = response.flatten()
-                    self._value[attr.name] = response
-                else:
-                    self._value[attr.name] = attr.dtype(response)
-                await attr.update(self._value[attr.name])
-                logger.debug(
-                    f"Symbol attribute '{attr.name}' was initialised to "
-                    f"value {self._value[attr.name]}"
-                )
-            else:
-                logger.error(
-                    f"Attribute {attr.name} has no ADS symbol correspondance; "
-                    f"read operation failed."
-                )
-
-        else:
-            # Symbol update handler is taken care of by scan routine for notifications.
-            logger.warning("Update of symbol attributes shouldn't be called!")
-            pass
-
-        self.log_event(
-            "Get query for ADS Symbol attribute",
-            topic=attr,
-            query=self.query,
-            response=self._value,
-        )
+        pass
 
 
 @dataclass

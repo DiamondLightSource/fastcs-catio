@@ -3291,6 +3291,10 @@ class AsyncioADSClient:
         :param controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: the sum of CRC errors across all ports for the terminal
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
         if controller_id is not None:
             terminal = self.fastcs_io_map.get(controller_id, None)
@@ -3315,6 +3319,10 @@ class AsyncioADSClient:
         :param controller_id: the unique identifier of the fastCS terminal controller
 
         :returns: an array comprising the EtherCAT state and link status of the terminal
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        :raises ValueError: if the controller id is not provided
         """
         if controller_id is not None:
             terminal = self.fastcs_io_map.get(controller_id, None)
@@ -3342,6 +3350,9 @@ class AsyncioADSClient:
         :param dtype: the data type of the ADS symbol
 
         :returns: the value of the ADS symbol
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
         """
         # Currently have to find symbol within the list of symbols which are
         # registered with the EtherCAT (Master) device
@@ -3384,6 +3395,9 @@ class AsyncioADSClient:
         :param symbol_name: the name of the ADS symbol to write to
         :param dtype: the data type of the ADS symbol
         :param value: the value to assign to the ADS symbol
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
         """
         ctlr = self.fastcs_io_map.get(controller_id, None)
         if ctlr is not None:
@@ -3404,6 +3418,54 @@ class AsyncioADSClient:
                     f"No match for controller {controller_id} and "
                     f"ADS  Symbol '{symbol_name}'"
                 )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
+
+    async def get_sum_symbols(
+        self, controller_id: int, symbol_names: list[str]
+    ) -> dict[str, Any]:
+        """
+        Read the current value of multiple ADS symbols in one go.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_names: a list of names comprising the various ADS symbols to read
+
+        :returns: a dictionary mapping the various ADS symbols and their value
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            symbols = []
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            for name in symbol_names:
+                full_symbol_name = ".".join([ctlr.name, name])
+                symbol = next(
+                    (s for s in dev_symbols if s.name == full_symbol_name), None
+                )
+                if symbol is not None:
+                    symbols.append(symbol)
+
+            response = await self.sumread_ads_symbols(symbols)
+            if len(response) != len(symbol_names):
+                logging.debug(
+                    f"Controller {ctlr.name} sum read: failed to read all symbols."
+                )
+
+            result = {}
+            for k, v in response.items():
+                # Remove the controller name from the full symbol name
+                result[(k.split(".", maxsplit=1))[1]] = (
+                    v.item() if isinstance(v, np.ndarray) and v.size == 1 else v
+                )
+            return result
+
         else:
             raise KeyError(
                 "No EtherCAT object registered against "
@@ -3447,6 +3509,9 @@ class AsyncioADSClient:
         :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
         :param dtype: the data type of the CoE parameter
         :param value: the value to assign to the CoE parameter
+
+        :raises ValueError: if the provided value type is incorrect \
+            for the CoE parameter
         """
         try:
             val = np.array(value, dtype=dtype)
