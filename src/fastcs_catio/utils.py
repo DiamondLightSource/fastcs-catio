@@ -114,7 +114,7 @@ def average(array: np.ndarray) -> np.ndarray:
 
 
 def get_notification_changes(
-    new_array: np.ndarray, old_array: np.ndarray
+    new_array: np.ndarray, old_array: np.ndarray | None
 ) -> np.ndarray:
     """
     Compare two notification arrays and return the differences.
@@ -126,6 +126,9 @@ def get_notification_changes(
 
     :returns: a numpy array containing the differences between the two arrays
     """
+    if old_array is None:
+        return new_array
+
     assert new_array.shape == old_array.shape
     assert new_array.dtype == old_array.dtype
     assert new_array[0].size == old_array[0].size

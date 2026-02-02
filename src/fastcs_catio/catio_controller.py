@@ -705,20 +705,30 @@ class CATioServerController(CATioController):
                 # Average the accumulated notification stream values for each element.
                 mean = process_notifications(average, notifs)
 
-                # Use the first notif stream as the reference for future updates.
-                if self.notification_stream is None:
-                    self.notification_stream = mean
-                    return
+                # Track whether this is the first notification processing
+                is_first_notification = self.notification_stream is None
+                if is_first_notification:
+                    logger.info(
+                        f"FIRST NOTIFICATION: notification_stream is None, "
+                        f"mean has {len(mean.dtype.names)} fields: {mean.dtype.names}"
+                    )
 
                 # Get the changes between the current and previous notif streams
                 diff = get_notification_changes(mean, self.notification_stream)
                 assert diff.dtype.names, (
                     "Expected a numpy structured array with fields."
                 )
-                logger.info(
-                    f"Notification fields which show changes: "
-                    f"{diff.dtype.names}, {diff}"
-                )
+
+                if is_first_notification:
+                    logger.info(
+                        f"FIRST NOTIFICATION: diff returned {len(diff.dtype.names)} "
+                        f"fields: {diff.dtype.names}"
+                    )
+                else:
+                    logger.info(
+                        f"Notification fields which show changes: "
+                        f"{diff.dtype.names}, {diff}"
+                    )
 
                 # Update the previous notif stream value to the latest one received
                 self.notification_stream = mean
@@ -730,27 +740,44 @@ class CATioServerController(CATioController):
                 non_value_names = [
                     name for name in diff.dtype.names if "value" not in name
                 ]
+                if is_first_notification:
+                    logger.info(
+                        f"FIRST NOTIFICATION: {len(non_value_names)} non-value fields, "
+                        f"{len(diff.dtype.names) - len(non_value_names)} value fields"
+                    )
                 if len(non_value_names) == len(diff.dtype.names):
+                    if is_first_notification:
+                        logger.error(
+                            "FIRST NOTIFICATION: Early return - no value fields found!"
+                        )
                     return
 
                 # Remove the notif fields that have changed which aren't relevant
                 filtered_diff = rfn.drop_fields(
                     diff, drop_names=non_value_names, usemask=False, asrecarray=True
                 )
-                logger.debug(
-                    f"Value field notifications which have changed: {filtered_diff}, "
-                    + f"{filtered_diff.size}, {filtered_diff.shape}"
-                )
+                if is_first_notification:
+                    assert filtered_diff.dtype.names
+                    logger.info(
+                        f"FIRST NOTIFICATION: filtered_diff has "
+                        f"{len(filtered_diff.dtype.names)} fields: "
+                        f"{filtered_diff.dtype.names}"
+                    )
+                else:
+                    logger.debug(
+                        f"Value field notifications which have changed: "
+                        f"{filtered_diff} {filtered_diff.size}, {filtered_diff.shape}"
+                    )
 
                 assert filtered_diff.dtype.names
+                updates_count = 0
                 for name in filtered_diff.dtype.names:
                     # Remove the '.value' from the notification name
                     attr_name = name.rsplit(".", 1)[0]
 
                     if attr_name not in self.attribute_map.keys():
                         logger.warning(
-                            f"No reference to {attr_name} in the CATio attribute map; "
-                            + "implementation of terminal attributes may be missing."
+                            f"No reference to {attr_name} in the CATio attribute map"
                         )
                         continue
 
@@ -784,9 +811,17 @@ class CATioServerController(CATioController):
 
                     assert isinstance(notif_attribute, AttrR)
                     await notif_attribute.update(new_value)
+                    updates_count += 1
                     logger.debug(
                         f"Updated notification attribute {attr_name} "
                         f"to value {new_value}."
+                    )
+
+                if is_first_notification:
+                    logger.info(
+                        f"FIRST NOTIFICATION: Successfully updated {updates_count} "
+                        f"attributes out of {len(filtered_diff.dtype.names)} "
+                        f"value fields"
                     )
         except Exception:
             logger.exception("Error processing notification stream")

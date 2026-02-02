@@ -9,6 +9,8 @@ from typing import Annotated, Optional
 
 import typer
 from fastcs.launch import FastCS
+from fastcs.logging import LogLevel as FastCSLogLevel
+from fastcs.logging import configure_logging
 from fastcs.transports.epics.ca.transport import EpicsCATransport
 from fastcs.transports.epics.options import (
     EpicsDocsOptions,
@@ -90,7 +92,7 @@ def ioc(
             case_sensitive=False,
             rich_help_panel="Secondary Arguments",
         ),
-    ] = LogLevel.info,
+    ] = LogLevel.warning,
     poll_period: Annotated[
         float,
         typer.Option(
@@ -146,6 +148,10 @@ def ioc(
     )
     logger = logging.getLogger(__name__)
     logger.debug("Logging is configured for the package.")
+
+    # Configure fastcs loguru logger with the same log level
+    fastcs_level = FastCSLogLevel[log_level.upper()]
+    configure_logging(level=fastcs_level)
 
     # Set up terminal definitions path - can be comma-separated patterns
     if terminal_defs is not None:
