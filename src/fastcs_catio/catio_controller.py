@@ -712,7 +712,7 @@ class CATioServerController(CATioController):
                 # Track whether this is the first notification processing
                 is_first_notification = self.notification_stream is None
                 if is_first_notification and mean.dtype.names is not None:
-                    logger.info(
+                    logger.debug(
                         f"FIRST NOTIFICATION: notification_stream is None, "
                         f"mean has {len(mean.dtype.names)} fields: {mean.dtype.names}"
                     )

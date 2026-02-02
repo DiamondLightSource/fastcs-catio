@@ -3302,3 +3302,136 @@ class AsyncioADSClient:
                 )
         else:
             raise ValueError("Missing information about controller identification.")
+
+    async def get_symbol_param(
+        self, controller_id: int, symbol_name: str, dtype: npt.DTypeLike
+    ) -> Any:
+        """
+        Read a value from a given ADS symbol.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_name: the name of the ADS symbol to read from
+        :param dtype: the data type of the ADS symbol
+
+        :returns: the value of the ADS symbol
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        # Currently have to find symbol within the list of symbols which are
+        # registered with the EtherCAT (Master) device
+        # Each Device/Slave doesn't have its own symbols attributes
+        # TO DO: add symbol list to each Device/Slave
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            full_symbol_name = ".".join([ctlr.name, symbol_name])
+            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            print(f"SYMBOL: {full_symbol_name}")
+            if symbol is not None:
+                _, response = await self.read_ads_symbol(symbol)
+                result = (
+                    response[0].item()
+                    if isinstance(response, np.ndarray) and response.size == 1
+                    else response
+                )
+                return result
+            else:
+                logger.debug(
+                    f"No match for controller {controller_id} and "
+                    f"ADS  Symbol '{symbol_name}'"
+                )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
+
+    async def set_symbol_param(
+        self, controller_id: int, symbol_name: str, dtype: npt.DTypeLike, value: Any
+    ) -> None:
+        """
+        Write a value to a given ADS symbol.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_name: the name of the ADS symbol to write to
+        :param dtype: the data type of the ADS symbol
+        :param value: the value to assign to the ADS symbol
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            full_symbol_name = ".".join([ctlr.name, symbol_name])
+            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            if symbol is not None:
+                status = await self.write_ads_symbol(symbol, value)
+                if not status:
+                    logger.warning(
+                        f"Write failed for controller {controller_id} and "
+                        f"ADS Symbol '{symbol_name}'"
+                    )
+            else:
+                logger.debug(
+                    f"No match for controller {controller_id} and "
+                    f"ADS  Symbol '{symbol_name}'"
+                )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
+
+    async def get_sum_symbols(
+        self, controller_id: int, symbol_names: list[str]
+    ) -> dict[str, Any]:
+        """
+        Read the current value of multiple ADS symbols in one go.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_names: a list of names comprising the various ADS symbols to read
+
+        :returns: a dictionary mapping the various ADS symbols and their value
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            symbols = []
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            for name in symbol_names:
+                full_symbol_name = ".".join([ctlr.name, name])
+                symbol = next(
+                    (s for s in dev_symbols if s.name == full_symbol_name), None
+                )
+                if symbol is not None:
+                    symbols.append(symbol)
+
+            response = await self.sumread_ads_symbols(symbols)
+            if len(response) != len(symbol_names):
+                logger.debug(
+                    f"Controller {ctlr.name} sum read: failed to read all symbols."
+                )
+
+            result = {}
+            for k, v in response.items():
+                # Remove the controller name from the full symbol name
+                result[(k.split(".", maxsplit=1))[1]] = (
+                    v.item() if isinstance(v, np.ndarray) and v.size == 1 else v
+                )
+            return result
+
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
