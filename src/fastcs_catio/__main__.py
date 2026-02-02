@@ -19,6 +19,7 @@ from fastcs.transports.epics.options import (
 )
 from softioc.imports import callbackSetQueueSize
 
+from fastcs_catio.logging import VERBOSE  # noqa: F401 - registers VERBOSE level
 from fastcs_catio.terminal_config import set_terminal_types_patterns
 
 from . import __version__
@@ -42,6 +43,7 @@ class LogLevel(str, Enum):
     warning = "WARNING"
     info = "INFO"
     debug = "DEBUG"
+    verbose = "VERBOSE"
 
 
 def version_callback(value: bool):
@@ -140,18 +142,27 @@ def ioc(
 
     (use '[command] --help' for more details)
     """
-    # Configure the root logger and create a logger for the package
-    logging.basicConfig(
-        datefmt="%H:%M:%S",
-        format="%(asctime)s.%(msecs)03d --%(name)s-- %(levelname)s: %(message)s",
-        level=getattr(logging, log_level.upper(), None),
-    )
+    # Configure fastcs loguru logger first - map VERBOSE to DEBUG since fastcs doesn't
+    # have it. This gives us colored output via loguru.
+    level_name = log_level.upper()
+    fastcs_level_name = "DEBUG" if level_name == "VERBOSE" else level_name
+    fastcs_level = FastCSLogLevel[fastcs_level_name]
+    configure_logging(level=fastcs_level)
+
+    # Configure standard library logging to forward to loguru for colored output
+    # Handle VERBOSE level which is custom to fastcs-catio
+    level_value = getattr(logging, level_name, None)
+    if level_value is None and level_name == "VERBOSE":
+        level_value = VERBOSE
+    logging.basicConfig(level=level_value, handlers=[])
+
+    # Intercept our package's logger to forward to loguru
+    from fastcs.logging import intercept_std_logger
+
+    intercept_std_logger("fastcs_catio")
+
     logger = logging.getLogger(__name__)
     logger.debug("Logging is configured for the package.")
-
-    # Configure fastcs loguru logger with the same log level
-    fastcs_level = FastCSLogLevel[log_level.upper()]
-    configure_logging(level=fastcs_level)
 
     # Set up terminal definitions path - can be comma-separated patterns
     if terminal_defs is not None:

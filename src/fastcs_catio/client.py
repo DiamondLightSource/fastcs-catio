@@ -2769,7 +2769,7 @@ class AsyncioADSClient:
                             )
                         )
                         assert streams_dtype.fields
-                        logging.info(
+                        logging.debug(
                             f"Notification stream added to the queue: "
                             f"qsize={self.__notification_queue.qsize()}, "
                             f"streams_nb={self.__num_notif_streams}, "
@@ -2828,7 +2828,7 @@ class AsyncioADSClient:
                 notifs = await self.__notification_queue.get()
                 self.__notification_queue.task_done()
                 num_header_fields = 4 * self.__num_notif_streams
-                logging.info(
+                logging.debug(
                     f"Got {len(notifs)} notifications with "
                     + f"{(len(notifs.dtype.fields) - num_header_fields) // 3} "
                     + "I/O terminal values."
