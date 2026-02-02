@@ -2108,3 +2108,28 @@ terminal_types:
         selected: true
     coe_objects: []
     group_type: DigIn
+  EK1110:
+    description: EtherCAT extension
+    identity:
+      vendor_id: 2
+      product_code: 72756306
+      revision_number: 1048576
+    symbol_nodes: []
+    coe_objects: []
+    group_type: SystemBk
+  EL1084:
+    description: 4Ch. Dig. Input 24V, 3ms, negative
+    identity:
+      vendor_id: 2
+      product_code: 71053394
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61489
+        type_name: InputBits
+        channels: 4
+        access: Read-only
+        fastcs_name: channel_{channel}
+        selected: true
+    coe_objects: []
+    group_type: DigIn

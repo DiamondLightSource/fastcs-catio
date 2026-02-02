@@ -724,7 +724,7 @@ class CATioServerController(CATioController):
                 )
 
                 if is_first_notification:
-                    logger.info(
+                    logger.debug(
                         f"FIRST NOTIFICATION: diff returned {len(diff.dtype.names)} "
                         f"fields: {diff.dtype.names}"
                     )
