@@ -14,12 +14,16 @@ Usage:
     controller = controller_class(name="MOD1", node=node)
 """
 
+from dataclasses import dataclass
+
 from fastcs.attributes import AttrR, AttrRW
 from fastcs.datatypes import Int
 from fastcs.logging import bind_logger
 
 from catio_terminals.models import SymbolNode
-from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
+from fastcs_catio.catio_attribute_io import (
+    CATioControllerSymbolAttributeIORef,
+)
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.terminal_config import (
     get_datatype_for_symbol,
@@ -31,6 +35,73 @@ from fastcs_catio.terminal_config import (
 
 logger = bind_logger(logger_name=__name__)
 
+
+@dataclass
+class SymbolAdsItem:
+    """ADS item for processing data symbols.
+
+    Stores the symbol name for use with CATioControllerSymbolAttributeIORef.
+
+    Args:
+        name: The symbol name (e.g., "Channel 1").
+    """
+
+    name: str
+    type_name: str
+
+    def __str__(self) -> str:
+        """Return the symbol name."""
+        return self.name
+
+    @property
+    def is_coe(self) -> bool:
+        """Return False since this is not a CoE item."""
+        return False
+
+
+@dataclass
+class CoEAdsItem(SymbolAdsItem):
+    """ADS item for CoE (CANopen over EtherCAT) objects.
+
+    Stores the index and subindex as integers for use with
+    CATioControllerCoEAttributeIORef.
+
+    Args:
+        index: The CoE object index (e.g., 0x8000).
+        subindex: The CoE object subindex (e.g., 0x01).
+    """
+
+    index: int
+    subindex: int
+
+    def __str__(self) -> str:
+        """Return the string representation like 'CoE:8000:01'."""
+        return f"CoE:{self.index:04X}:{self.subindex:02X}"
+
+    @property
+    def is_coe(self) -> bool:
+        """Return True since this is a CoE item."""
+        return True
+
+    @property
+    def index_hex(self) -> str:
+        """Return the index as a hex string (e.g., '8000')."""
+        return f"{self.index:04X}"
+
+    @property
+    def subindex_hex(self) -> str:
+        """Return the subindex as a hex string (e.g., '01')."""
+        return f"{self.subindex:02X}"
+
+
+# Type alias for either ADS item type
+AdsItem = SymbolAdsItem | CoEAdsItem
+
+
+# -----------------------------------------------------------------------------
+# Dynamic Controller Cache and Helpers
+# -----------------------------------------------------------------------------
+
 # Cache of dynamically generated controller classes
 _DYNAMIC_CONTROLLER_CACHE: dict[str, type[CATioTerminalController]] = {}
 
@@ -38,17 +109,17 @@ _DYNAMIC_CONTROLLER_CACHE: dict[str, type[CATioTerminalController]] = {}
 def _add_attribute(
     controller: CATioTerminalController,
     attr_name: str,
-    ads_name: str,
+    ads_item: AdsItem,
     is_readonly: bool,
     desc: str,
-    datatype: Int,
+    type_name: Int,
 ) -> None:
     """Add a FastCS attribute to a controller.
 
     Args:
         controller: The controller to add the attribute to.
         attr_name: The FastCS attribute name.
-        ads_name: The ADS symbol name (e.g., "Channel 1" or "CoE:8000:01").
+        ads_item: The ADS item (CoEAdsItem or SymbolAdsItem).
         is_readonly: Whether the attribute is read-only.
         desc: The attribute description.
         datatype: The FastCS datatype.
@@ -57,7 +128,7 @@ def _add_attribute(
         controller.add_attribute(
             attr_name,
             AttrR(
-                datatype=datatype,
+                datatype=type_name,
                 io_ref=None,
                 group=controller.attr_group_name,
                 initial_value=None,
@@ -65,17 +136,43 @@ def _add_attribute(
             ),
         )
     else:
+        match ads_item:
+            case CoEAdsItem():
+                # CoE attributes need address and dtype which aren't available yet.
+                # Store the CoEAdsItem; io_ref created when device connects.
+                # For now, create without io_ref - populated by bind_io_refs.
+                io_ref = None
+                # TODO - we will want to make an IORef something like this
+                # can we collect enough info from the YAML and the current
+                # client to build this?????
+                #
+                # io_ref = CATioControllerCoEAttributeIORef(
+                #     name=ads_item.name,
+                #     index=ads_item.index_hex,
+                #     subindex=ads_item.subindex_hex,
+                #     address=AmsAddress.from_string(
+                #         "5.166.203.208.2.1:88"
+                #     ),  # Placeholder, real address set later
+                #     dtype=np.dtype("uint32"),  # Placeholder, real dtype set later
+                # )
+            case SymbolAdsItem(name=name):
+                io_ref = CATioControllerSymbolAttributeIORef(name)
         controller.add_attribute(
             attr_name,
             AttrRW(
-                datatype=datatype,
-                io_ref=CATioControllerSymbolAttributeIORef(ads_name),
+                datatype=type_name,
+                io_ref=io_ref,
                 group=controller.attr_group_name,
                 initial_value=None,
                 description=desc,
             ),
         )
-    controller.ads_name_map[attr_name] = ads_name
+    controller.ads_name_map[attr_name] = str(ads_item)
+    # Store the typed AdsName for later io_ref binding
+    ads_names_attr = "ads_names"
+    if not hasattr(controller, ads_names_attr):
+        setattr(controller, ads_names_attr, {})
+    getattr(controller, ads_names_attr)[attr_name] = ads_item
 
 
 def _generate_coe_attr_name(base_name: str, fallback: str) -> str:
@@ -157,8 +254,14 @@ def _process_coe_subindex(
         desc = desc[:40]
 
     is_readonly = (sub.access or coe_obj.access).lower() in ("ro", "read-only")
-    datatype = Int()  # TODO: map sub.type_name using src/catio_terminals/ads_types.py
-    ads_name = f"CoE:{coe_obj.index:04X}:{sub.subindex:02X}"
+
+    datatype = Int()  # TODO: map sub.type_name to FastCS type
+    ads_name = CoEAdsItem(
+        name=coe_obj.name,
+        type_name=coe_obj.type_name,
+        index=coe_obj.index,
+        subindex=sub.subindex,
+    )
 
     _add_attribute(controller, attr_name, ads_name, is_readonly, desc, datatype)
 
@@ -179,7 +282,9 @@ def _add_symbol_attribute(
         # Multi-channel symbol - create one attribute per channel
         for ch in range(1, symbol.channels + 1):
             fastcs_name = symbol_to_fastcs_name(symbol, ch)
-            ads_name = symbol_to_ads_name(symbol, ch)
+            ads_name = SymbolAdsItem(
+                symbol_to_ads_name(symbol, ch), type_name=symbol.type_name
+            )
             is_readonly = symbol.access is None or "write" not in symbol.access.lower()
             desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
             _add_attribute(
@@ -188,7 +293,7 @@ def _add_symbol_attribute(
     else:
         # Single-channel symbol
         fastcs_name = symbol_to_fastcs_name(symbol)
-        ads_name = symbol_to_ads_name(symbol)
+        ads_name = SymbolAdsItem(symbol_to_ads_name(symbol), type_name=symbol.type_name)
         is_readonly = symbol.access is None or "write" not in symbol.access.lower()
         desc = symbol.tooltip or symbol.name_template
         _add_attribute(controller, fastcs_name, ads_name, is_readonly, desc, datatype)
@@ -270,7 +375,9 @@ def _create_dynamic_controller_class(
                 desc = f"CoE{coe_obj.index:04X}"
                 is_readonly = coe_obj.access.lower() in ("ro", "read-only")
                 datatype = Int()  # TODO: map coe_obj.type_name to FastCS type
-                ads_name = f"CoE:{coe_obj.index:04X}:0"
+                ads_name = CoEAdsItem(
+                    coe_obj.name, coe_obj.type_name, index=coe_obj.index, subindex=0
+                )
                 _add_attribute(self, attr_name, ads_name, is_readonly, desc, datatype)
             else:
                 # Process each subindex

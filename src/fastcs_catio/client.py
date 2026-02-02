@@ -82,6 +82,7 @@ from .messages import (
 from .symbols import symbol_lookup
 from .utils import (
     bytes_to_string,
+    check_coe_indices_format,
     get_local_netid_str,
     get_localhost_ip,
     get_localhost_name,
@@ -3371,6 +3372,7 @@ class AsyncioADSClient:
             full_symbol_name = ".".join([ctlr.name, symbol_name])
             symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
             if symbol is not None:
+                logger.info(f"sending ADS symbol: '{symbol.name}' value: '{value}'")
                 status = await self.write_ads_symbol(symbol, value)
                 if not status:
                     logger.warning(
@@ -3378,7 +3380,7 @@ class AsyncioADSClient:
                         f"ADS Symbol '{symbol_name}'"
                     )
             else:
-                logger.debug(
+                logger.warning(
                     f"No match for controller {controller_id} and "
                     f"ADS  Symbol '{symbol_name}'"
                 )
@@ -3435,3 +3437,81 @@ class AsyncioADSClient:
                 "No EtherCAT object registered against "
                 + f"controller id {controller_id}."
             )
+
+    # #################################################################
+    # ### DEVICE CoE SETTINGS ----------------------------------------
+    # #################################################################
+
+    def get_coe_ams_address(self, device: IODevice | IOSlave) -> AmsAddress:
+        """"""
+        if isinstance(device, IODevice):
+            return AmsAddress.from_string(
+                ":".join([self.__target_ams_net_id.to_string(), str(ADS_MASTER_PORT)])
+            )
+        elif isinstance(device, IOSlave):
+            return AmsAddress.from_string(
+                ":".join(
+                    [
+                        self._ecdevices[self.master_device_id].netid.to_string(),
+                        str(device.address),
+                    ]
+                )
+            )
+
+    async def read_io_coe_parameter(
+        self, address: AmsAddress, index: str, subindex: str, dtype: npt.DTypeLike
+    ) -> npt.NDArray[Any]:
+        """
+        Read the value of a CANopen-over-EtherCAT parameter.
+
+        :param address: the AMS address of the EtherCAT master device \
+            or one of its slave terminals
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param dtype: the data type of the CoE parameter
+
+        :returns: the value of the CoE parameter
+        """
+        index, subindex = check_coe_indices_format(index, subindex)
+        response = await self._ads_command(
+            AdsReadRequest.read_coe_value(index, subindex, dtype),
+            netid=address.net_id,
+            port=address.port,
+        )
+        # Adjust dtype for byte string types of variable length
+        if (
+            np.dtype(dtype).kind == "S"
+            and len(response.data) != np.dtype(dtype).itemsize
+        ):
+            dtype = f"S{len(response.data)}"
+
+        result = np.frombuffer(response.data, dtype)
+        # logging.debug(
+        #     f"CoE parameter at index '{index}:{subindex}' has value: {result}."
+        # )
+        return result
+
+    async def write_io_coe_parameter(
+        self, address: AmsAddress, index: str, subindex: str, value: npt.NDArray[Any]
+    ) -> ErrorCode:
+        """
+        Write a given value to a CANopen-over-EtherCAT parameter.
+
+        :param address: the AMS address of the EtherCAT master device \
+            or one of its slave terminals
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param value: the value to assign to the CoE parameter
+
+        :returns: the NO_ERROR ADS code resulting from the write operation
+        """
+        index, subindex = check_coe_indices_format(index, subindex)
+        response = await self._ads_command(
+            AdsWriteRequest.write_coe_value(index, subindex, value.tobytes()),
+            netid=address.net_id,
+            port=address.port,
+        )
+        logger.info(
+            f"CoE parameter at index '{index}:{subindex}' was changed to value {value}."
+        )
+        return response.result
