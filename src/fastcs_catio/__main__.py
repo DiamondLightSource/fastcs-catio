@@ -94,7 +94,7 @@ def ioc(
             case_sensitive=False,
             rich_help_panel="Secondary Arguments",
         ),
-    ] = LogLevel.warning,
+    ] = LogLevel.info,
     poll_period: Annotated[
         float,
         typer.Option(

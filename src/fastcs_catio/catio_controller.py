@@ -712,7 +712,7 @@ class CATioServerController(CATioController):
                 # Track whether this is the first notification processing
                 is_first_notification = self.notification_stream is None
                 if is_first_notification and mean.dtype.names is not None:
-                    logger.debug(
+                    logger.info(
                         f"FIRST NOTIFICATION: notification_stream is None, "
                         f"mean has {len(mean.dtype.names)} fields: {mean.dtype.names}"
                     )
@@ -724,7 +724,7 @@ class CATioServerController(CATioController):
                 )
 
                 if is_first_notification:
-                    logger.debug(
+                    logger.info(
                         f"FIRST NOTIFICATION: diff returned {len(diff.dtype.names)} "
                         f"fields: {diff.dtype.names}"
                     )
@@ -745,7 +745,7 @@ class CATioServerController(CATioController):
                     name for name in diff.dtype.names if "value" not in name
                 ]
                 if is_first_notification:
-                    logger.debug(
+                    logger.info(
                         f"FIRST NOTIFICATION: {len(non_value_names)} non-value fields, "
                         f"{len(diff.dtype.names) - len(non_value_names)} value fields"
                     )
@@ -827,6 +827,11 @@ class CATioServerController(CATioController):
                         f"attributes out of {len(filtered_diff.dtype.names)} "
                         f"value fields"
                     )
+        except TimeoutError:
+            # Timeout waiting for notifications (e.g., debugger pause) - just retry
+            logger.warning(
+                "Timeout waiting for notifications, will retry on next scan cycle"
+            )
         except Exception:
             logger.exception("Error processing notification stream")
 

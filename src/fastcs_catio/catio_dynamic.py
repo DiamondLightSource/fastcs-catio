@@ -19,6 +19,7 @@ from fastcs.datatypes import Int
 from fastcs.logging import bind_logger
 
 from catio_terminals.models import SymbolNode
+from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.terminal_config import (
     get_datatype_for_symbol,
@@ -52,7 +53,6 @@ def _add_attribute(
         desc: The attribute description.
         datatype: The FastCS datatype.
     """
-    io_ref = None  # Could be extended for custom IO
     if is_readonly:
         controller.add_attribute(
             attr_name,
@@ -69,7 +69,7 @@ def _add_attribute(
             attr_name,
             AttrRW(
                 datatype=datatype,
-                io_ref=io_ref,
+                io_ref=CATioControllerSymbolAttributeIORef(ads_name),
                 group=controller.attr_group_name,
                 initial_value=None,
                 description=desc,

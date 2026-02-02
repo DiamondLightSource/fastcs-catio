@@ -1,8 +1,8 @@
 import asyncio
-import logging
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from logging import getLogger
 from typing import Any, Self, SupportsInt
 
 import numpy.typing as npt
@@ -11,6 +11,8 @@ from fastcs.tracer import Tracer
 from fastcs_catio.devices import AdsSymbol
 
 from .client import AsyncioADSClient
+
+logger = getLogger(__name__)
 
 
 class CATioFastCSRequest:
@@ -188,7 +190,7 @@ class CATioStreamConnection:
         try:
             await self.client.command(command, *args, **kwargs)
         except ValueError as err:
-            logging.debug(f"API call failed with error: {err}")
+            logger.error(f"API command failed: {err}")
 
     async def query(self, message: CATioFastCSRequest) -> CATioFastCSResponse:
         """
@@ -205,10 +207,10 @@ class CATioStreamConnection:
                 message.command, *message.args, **message.kwargs
             )
         except ValueError as err:
-            logging.debug(f"API call failed with error: {err}")
+            logger.debug(f"API call failed with error: {err}")
 
         # # Very verbose logging!
-        # logging.debug(f"CATio client response to '{message}' query: {response}")
+        # logger.debug(f"CATio client response to '{message}' query: {response}")
         return CATioFastCSResponse(response)
 
     async def add_notifications(self, device_id: int) -> None:
@@ -232,7 +234,7 @@ class CATioStreamConnection:
             max_delay_ms=10,
             cycle_time_ms=10,
         )
-        logging.info(
+        logger.info(
             f"Subscribed to {len(subscription_symbols)} symbols "
             + f"for device id {device_id}."
         )
@@ -271,7 +273,7 @@ class CATioStreamConnection:
 
         :param device_id: the id of the EtherCAT device to subscribe to
         """
-        logging.info("...deleting active notifications...")
+        logger.info("...deleting active notifications...")
         await self.client.delete_notifications(self._subscribed_symbols)
 
     async def close(self) -> None:
@@ -346,7 +348,7 @@ class CATioConnection(Tracer):
         :param settings: the connection settings to use for connecting to the server
         """
         self._connection = await CATioStreamConnection.connect(settings)
-        logging.info(
+        logger.info(
             f"Opened stream communication with ADS server at {time.strftime('%X')}"
         )
 
@@ -394,7 +396,7 @@ class CATioConnection(Tracer):
         async with self._connection as connection:
             await connection.close()
             self._connection = None
-        logging.info(
+        logger.info(
             f"Closed stream communication with ADS server at {time.strftime('%X')}"
         )
 
@@ -431,7 +433,7 @@ class CATioConnection(Tracer):
         """
         if enabled:
             self._connection.monitor_notifications(True, flush_period)
-            logging.debug("Notification monitoring enabled.")
+            logger.debug("Notification monitoring enabled.")
         else:
             self._connection.monitor_notifications(False)
-            logging.debug("Notification monitoring disabled.")
+            logger.debug("Notification monitoring disabled.")

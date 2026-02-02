@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import inspect
-import logging
 import re
 import socket
 from collections.abc import Callable
+from logging import getLogger
 
 import numpy as np
 import numpy.typing as npt
 
 from ._constants import TWINCAT_STRING_ENCODING
+
+logger = getLogger(__name__)
 
 
 def get_localhost_name() -> str:
@@ -89,7 +91,7 @@ def process_notifications(
         f"The processing function {func.__name__} requires a numpy array as argument."
     )
     data = func(notifications)
-    logging.debug(
+    logger.debug(
         f"Applied '{func.__name__}' function "
         + f"to notification data comprising {len(data[0])} fields"
     )
