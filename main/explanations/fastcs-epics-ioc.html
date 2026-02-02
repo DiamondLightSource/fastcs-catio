@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a4.dev4+g4e5852a56 documentation</title>
+    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a4.dev72+g141ddaec2 documentation</title>
   
   
   
@@ -34,6 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=1bcb340c"></script>
+    <script src="../_static/documentation_options.js?v=41b5fff2"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -401,9 +402,11 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nomenclature.html">EtherCAT and TwinCAT Nomenclature</a></li>
 <li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic-pdos.html">Dynamic PDOs in EtherCAT Terminals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="useful_notes_ads_twincat.html">Useful Notes on ADS and TwinCAT</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
@@ -488,12 +491,12 @@
 <h2>The Controller Hierarchy<a class="headerlink" href="#the-controller-hierarchy" title="Link to this heading">#</a></h2>
 <p>CATio organizes its FastCS controllers in a tree structure that reflects the physical EtherCAT network:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>CATioServerController (root)
-    └── CATioDeviceController (EtherCAT Master)
-            ├── CATioTerminalController (EK1100 Coupler)
-            │       ├── CATioTerminalController (EL3064 Analog Input)
-            │       └── CATioTerminalController (EL2008 Digital Output)
-            └── CATioTerminalController (EK1101 Coupler)
-                    └── ...
+└── CATioDeviceController (EtherCAT Master)
+    ├── CATioTerminalController (EK1100 Coupler)
+    │   ├── CATioTerminalController (EL3064 Analog Input)
+    │   └── CATioTerminalController (EL2008 Digital Output)
+    └── CATioTerminalController (EK1101 Coupler)
+        └── ...
 </pre></div>
 </div>
 <p>This hierarchy is significant because:</p>
@@ -554,7 +557,7 @@
         <span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># key is FastCS attribute name, value is complex ads symbol name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Map of FastCS attribute names to ADS symbol names.&quot;&quot;&quot;</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">verbose</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;CATio controller &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ecat_name</span><span class="si">}</span><span class="s2">&#39; instantiated with PV suffix &quot;</span>
             <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> and registered with id </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
@@ -566,6 +569,12 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">CATioControllerSymbolAttributeIO</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ads_name_map</span><span class="p">,</span>
                 <span class="p">),</span>
             <span class="p">],</span>
         <span class="p">)</span>

@@ -1,0 +1,823 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Using the Terminal Editor &#8212; fastcs-catio 1.1a4.dev72+g141ddaec2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=41b5fff2"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'how-to/use-terminal-editor';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Explanations" href="../explanations.html" />
+    <link rel="prev" title="Run in a container" href="run-container.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribute to the project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get-all-pdos-in-chain.html">How to Get All PDOs in an EtherCAT Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run-container.html">Run in a container</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Using the Terminal Editor</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../how-to.html" class="nav-link">How-to Guides</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Using the Terminal Editor</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="using-the-terminal-editor">
+<h1>Using the Terminal Editor<a class="headerlink" href="#using-the-terminal-editor" title="Link to this heading">#</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> GUI editor allows you to create and edit terminal description YAML files used in the fastcs-catio project.</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>File Management</strong>: Open existing YAML files or create new ones</p></li>
+<li><p><strong>Tree View</strong>: Navigate terminal types and their symbols in an intuitive tree structure</p></li>
+<li><p><strong>Terminal Management</strong>:</p>
+<ul>
+<li><p>Add new terminal types by searching Beckhoff’s catalog</p></li>
+<li><p>Delete existing terminal types</p></li>
+<li><p>Edit terminal properties and symbol definitions</p></li>
+</ul>
+</li>
+<li><p><strong>Beckhoff Integration</strong>:</p>
+<ul>
+<li><p>Search for Beckhoff terminal types</p></li>
+<li><p>Automatically populate terminal information from XML descriptions</p></li>
+</ul>
+</li>
+<li><p><strong>Live Editing</strong>: Edit symbol properties with immediate feedback</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
+<p>Install the package with the terminals extra:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[terminals]&quot;</span>
+</pre></div>
+</div>
+<p>Or install the required dependencies separately:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>nicegui<span class="w"> </span>pydantic<span class="w"> </span>pyyaml<span class="w"> </span>httpx
+</pre></div>
+</div>
+</section>
+<section id="launching-the-editor">
+<h2>Launching the Editor<a class="headerlink" href="#launching-the-editor" title="Link to this heading">#</a></h2>
+<p>Launch the terminal editor:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Open GUI without a file (choose Open or Create New at startup)</span>
+catio-terminals<span class="w"> </span>edit
+
+<span class="c1"># Open GUI with a specific file</span>
+catio-terminals<span class="w"> </span>edit<span class="w"> </span>path/to/terminals.yaml
+</pre></div>
+</div>
+<p>Or run as a Python module:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>catio_terminals
+</pre></div>
+</div>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>At Startup</strong>: Choose to open an existing YAML file or create a new one</p></li>
+<li><p><strong>Tree View</strong>: Browse terminal types in the left panel</p></li>
+<li><p><strong>Details Panel</strong>: Click on a terminal or symbol to view/edit details in the right panel</p></li>
+<li><p><strong>Add Terminal</strong>: Click “Add Terminal” to search Beckhoff’s catalog or create manually</p></li>
+<li><p><strong>Save</strong>: Click “Save” to write changes back to the YAML file</p></li>
+</ol>
+</section>
+<section id="main-interface">
+<h2>Main Interface<a class="headerlink" href="#main-interface" title="Link to this heading">#</a></h2>
+<p>The editor has three main sections:</p>
+<ol class="arabic simple">
+<li><p><strong>Header</strong>: Contains Save and Add Terminal buttons</p></li>
+<li><p><strong>Left Panel</strong>: Tree view of terminal types and their symbols</p></li>
+<li><p><strong>Right Panel</strong>: Details and editing interface for selected items</p></li>
+</ol>
+</section>
+<section id="adding-a-terminal">
+<h2>Adding a Terminal<a class="headerlink" href="#adding-a-terminal" title="Link to this heading">#</a></h2>
+<ol class="arabic">
+<li><p>Click <strong>“Add Terminal”</strong> button in the header</p></li>
+<li><p>Choose one of two methods:</p>
+<p><strong>Method 1: Search Beckhoff Catalog</strong></p>
+<ul class="simple">
+<li><p>Enter search terms in the search box</p></li>
+<li><p>Click “Search”</p></li>
+<li><p>Browse results and click “Add” on your chosen terminal</p></li>
+<li><p>The terminal information will be populated automatically</p></li>
+</ul>
+<p><strong>Method 2: Create Manually</strong></p>
+<ul class="simple">
+<li><p>Scroll to the bottom of the dialog</p></li>
+<li><p>Enter Terminal ID (e.g., “EL4004”)</p></li>
+<li><p>Enter Description</p></li>
+<li><p>Click “Create Manually”</p></li>
+<li><p>Edit the default values as needed</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="editing-terminal-details">
+<h2>Editing Terminal Details<a class="headerlink" href="#editing-terminal-details" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Select a Terminal</strong> in the tree view</p></li>
+<li><p>View terminal information in the right panel:</p>
+<ul class="simple">
+<li><p>Description</p></li>
+<li><p>Identity (Vendor ID, Product Code, Revision)</p></li>
+<li><p>List of symbols</p></li>
+</ul>
+</li>
+<li><p>Click <strong>“Delete Terminal”</strong> to remove it</p></li>
+</ol>
+</section>
+<section id="editing-symbol-details">
+<h2>Editing Symbol Details<a class="headerlink" href="#editing-symbol-details" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Expand a terminal</strong> in the tree view</p></li>
+<li><p><strong>Click on a symbol</strong> to edit it</p></li>
+<li><p>Modify the fields:</p>
+<ul class="simple">
+<li><p><strong>Name Template</strong>: Pattern for symbol names (use <code class="docutils literal notranslate"><span class="pre">{channel}</span></code> for channel number)</p></li>
+<li><p><strong>FastCS Name</strong>: The PascalCase attribute name for FastCS (use <code class="docutils literal notranslate"><span class="pre">{channel}</span></code> for multi-channel)</p></li>
+<li><p><strong>Index Group</strong>: ADS index group (hex format)</p></li>
+<li><p><strong>Size</strong>: Data size in bytes</p></li>
+<li><p><strong>ADS Type</strong>: ADS data type code</p></li>
+<li><p><strong>Channels</strong>: Number of channels for this symbol</p></li>
+<li><p><strong>Type Name</strong>: The type name string</p></li>
+<li><p><strong>Access</strong>: Read-only, write-only, or read-write</p></li>
+<li><p><strong>Tooltip</strong>: Description for the symbol</p></li>
+</ul>
+</li>
+<li><p>Changes are saved automatically in memory</p></li>
+</ol>
+</section>
+<section id="yaml-file-structure">
+<h2>YAML File Structure<a class="headerlink" href="#yaml-file-structure" title="Link to this heading">#</a></h2>
+<p>Terminal YAML files follow this structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">terminal_types</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">EL4004</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;4-channel</span><span class="nv"> </span><span class="s">Analog</span><span class="nv"> </span><span class="s">Output</span><span class="nv"> </span><span class="s">0..10V</span><span class="nv"> </span><span class="s">12-bit&quot;</span>
+<span class="w">    </span><span class="nt">identity</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">vendor_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">      </span><span class="nt">product_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x0FA43052</span>
+<span class="w">      </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0x00100000</span>
+<span class="w">    </span><span class="nt">symbol_nodes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AO</span><span class="nv"> </span><span class="s">Output</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}&quot;</span>
+<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AoOutputChannel{channel}&quot;</span>
+<span class="w">        </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0xF030</span>
+<span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">        </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65</span>
+<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AO</span><span class="nv"> </span><span class="s">Output</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">1_TYPE&quot;</span>
+<span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;read-write&quot;</span>
+<span class="w">        </span><span class="nt">tooltip</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Analog</span><span class="nv"> </span><span class="s">output</span><span class="nv"> </span><span class="s">channel</span><span class="nv"> </span><span class="s">value&quot;</span>
+<span class="w">        </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;WcState^WcState&quot;</span>
+<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;WcState&quot;</span>
+<span class="w">        </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0xF021</span>
+<span class="w">        </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">        </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">33</span>
+<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;BIT&quot;</span>
+<span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;read-only&quot;</span>
+<span class="w">        </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</section>
+<section id="tips">
+<h2>Tips<a class="headerlink" href="#tips" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Use meaningful Terminal IDs</strong>: Follow Beckhoff naming conventions (e.g., EL4004, EL2008)</p></li>
+<li><p><strong>Channels</strong>: Set the channels field to generate multiple instances of a symbol</p></li>
+<li><p><strong>Hex Values</strong>: Index groups are displayed and entered in hexadecimal (0xF030)</p></li>
+<li><p><strong>Name Templates</strong>: Use <code class="docutils literal notranslate"><span class="pre">{channel}</span></code> placeholder for channel-based naming in both <code class="docutils literal notranslate"><span class="pre">name_template</span></code> and <code class="docutils literal notranslate"><span class="pre">fastcs_name</span></code></p></li>
+<li><p><strong>FastCS Names</strong>: Use PascalCase for FastCS attribute names (e.g., <code class="docutils literal notranslate"><span class="pre">AoOutputChannel{channel}</span></code>)</p></li>
+<li><p><strong>Selection</strong>: The <code class="docutils literal notranslate"><span class="pre">selected</span></code> field controls which symbols are included in dynamic controllers</p></li>
+<li><p><strong>Auto-save</strong>: The app doesn’t auto-save; remember to click Save before closing</p></li>
+</ul>
+</section>
+<section id="saving-your-work">
+<h2>Saving Your Work<a class="headerlink" href="#saving-your-work" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p>Click <strong>“Save”</strong> in the header</p></li>
+<li><p>The file is written to disk in YAML format</p></li>
+<li><p>A notification confirms the save</p></li>
+</ol>
+</section>
+<section id="integration-with-fastcs-catio">
+<h2>Integration with fastcs-catio<a class="headerlink" href="#integration-with-fastcs-catio" title="Link to this heading">#</a></h2>
+<p>The YAML files created by this tool are designed to work with the fastcs-catio project. Place them in:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">src</span><span class="o">/</span><span class="n">catio_terminals</span><span class="o">/</span><span class="n">terminals</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>These files are automatically loaded by the dynamic controller system to generate FastCS controllers at runtime.</p>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">catio_terminals</span></code> package consists of several modules:</p>
+<ul class="simple">
+<li><p><strong>models.py</strong>: Pydantic data models for YAML structure</p></li>
+<li><p><strong>beckhoff.py</strong>: Client for fetching Beckhoff terminal information</p></li>
+<li><p><strong>xml_cache.py</strong>: Caching system for Beckhoff XML files</p></li>
+<li><p><strong>xml_parser.py</strong>: Parser for Beckhoff ESI XML files</p></li>
+<li><p><strong>app.py</strong>: Main NiceGUI application</p></li>
+<li><p><strong><strong>main</strong>.py</strong>: Entry point for the application</p></li>
+</ul>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="file-not-loading">
+<h3>File Not Loading<a class="headerlink" href="#file-not-loading" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ensure the YAML file is valid YAML format</p></li>
+<li><p>Check file permissions</p></li>
+<li><p>View error message in notification</p></li>
+</ul>
+</section>
+<section id="terminal-not-saving">
+<h3>Terminal Not Saving<a class="headerlink" href="#terminal-not-saving" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ensure file path is writable</p></li>
+<li><p>Check disk space</p></li>
+<li><p>View error in notification</p></li>
+</ul>
+</section>
+<section id="beckhoff-search-not-working">
+<h3>Beckhoff Search Not Working<a class="headerlink" href="#beckhoff-search-not-working" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The app downloads and caches Beckhoff XML files on first use</p></li>
+<li><p>Check internet connectivity</p></li>
+<li><p>View cache status in <code class="docutils literal notranslate"><span class="pre">~/.cache/catio_terminals/</span></code></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="run-container.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Run in a container</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../explanations.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Explanations</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#launching-the-editor">Launching the Editor</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting Started</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#main-interface">Main Interface</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-terminal">Adding a Terminal</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-terminal-details">Editing Terminal Details</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-symbol-details">Editing Symbol Details</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#yaml-file-structure">YAML File Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tips">Tips</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-your-work">Saving Your Work</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-with-fastcs-catio">Integration with fastcs-catio</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#architecture">Architecture</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#file-not-loading">File Not Loading</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminal-not-saving">Terminal Not Saving</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#beckhoff-search-not-working">Beckhoff Search Not Working</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/how-to/use-terminal-editor.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/how-to/use-terminal-editor.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

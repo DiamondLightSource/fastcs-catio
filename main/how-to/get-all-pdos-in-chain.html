@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev4+g4e5852a56 documentation</title>
+    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev72+g141ddaec2 documentation</title>
   
   
   
@@ -34,6 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=1bcb340c"></script>
+    <script src="../_static/documentation_options.js?v=41b5fff2"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -400,6 +401,7 @@
 <li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribute to the project</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">How to Get All PDOs in an EtherCAT Chain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run-container.html">Run in a container</a></li>
+<li class="toctree-l1"><a class="reference internal" href="use-terminal-editor.html">Using the Terminal Editor</a></li>
 </ul>
 </div>
 </nav></div>
@@ -1017,6 +1019,72 @@
 <li><p><a class="reference internal" href="../explanations/terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a> - How terminal definitions are structured</p></li>
 </ul>
 </section>
+<section id="appendix-identifying-dynamic-pdos-in-esi-xml">
+<h2>Appendix: Identifying Dynamic PDOs in ESI XML<a class="headerlink" href="#appendix-identifying-dynamic-pdos-in-esi-xml" title="Link to this heading">#</a></h2>
+<p>The need for runtime discovery can often be identified by inspecting the <code class="docutils literal notranslate"><span class="pre">VendorSpecific</span></code> section of the Beckhoff ESI XML file for the terminal.</p>
+<section id="the-alternativesmmapping-tag">
+<h3>The <code class="docutils literal notranslate"><span class="pre">&lt;AlternativeSmMapping&gt;</span></code> Tag<a class="headerlink" href="#the-alternativesmmapping-tag" title="Link to this heading">#</a></h3>
+<p>For many terminals (Type 2, Type 3, and Type 4 above), the XML explicitly defines mutually exclusive PDO configurations using the <code class="docutils literal notranslate"><span class="pre">&lt;AlternativeSmMapping&gt;</span></code> tag within the <code class="docutils literal notranslate"><span class="pre">&lt;TwinCAT&gt;</span></code> vendor-specific section.</p>
+<p><strong>Example from EL3104 (Type 2):</strong></p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;VendorSpecific&gt;</span>
+<span class="w">  </span><span class="nt">&lt;TwinCAT&gt;</span>
+<span class="w">    </span><span class="nt">&lt;AlternativeSmMapping</span><span class="w"> </span><span class="na">Default=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Name&gt;</span>Standard<span class="nt">&lt;/Name&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Sm</span><span class="w"> </span><span class="na">No=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a00<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Standard Channel 1 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a02<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Standard Channel 2 --&gt;</span>
+<span class="w">        </span>...
+<span class="w">      </span><span class="nt">&lt;/Sm&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/AlternativeSmMapping&gt;</span>
+<span class="w">    </span><span class="nt">&lt;AlternativeSmMapping&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Name&gt;</span>Compact<span class="nt">&lt;/Name&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Sm</span><span class="w"> </span><span class="na">No=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a01<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Compact Channel 1 --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a03<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- AI Compact Channel 2 --&gt;</span>
+<span class="w">        </span>...
+<span class="w">      </span><span class="nt">&lt;/Sm&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/AlternativeSmMapping&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/TwinCAT&gt;</span>
+<span class="nt">&lt;/VendorSpecific&gt;</span>
+</pre></div>
+</div>
+<p><strong>Example from EL3356 (Type 3):</strong></p>
+<p>In Type 3 terminals, this mechanism is used to switch between completely different data types (e.g., Integer vs Float) for the same process data.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;VendorSpecific&gt;</span>
+<span class="w">  </span><span class="nt">&lt;TwinCAT&gt;</span>
+<span class="w">    </span><span class="nt">&lt;AlternativeSmMapping</span><span class="w"> </span><span class="na">Default=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Name&gt;</span>Standard<span class="w"> </span>(INT32)<span class="nt">&lt;/Name&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Sm</span><span class="w"> </span><span class="na">No=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a00<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Uses DINT (32-bit Integer) --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a01<span class="nt">&lt;/Pdo&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/Sm&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/AlternativeSmMapping&gt;</span>
+<span class="w">    </span><span class="nt">&lt;AlternativeSmMapping&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Name&gt;</span>Standard<span class="w"> </span>(REAL)<span class="nt">&lt;/Name&gt;</span>
+<span class="w">      </span><span class="nt">&lt;Sm</span><span class="w"> </span><span class="na">No=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a00<span class="nt">&lt;/Pdo&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Pdo&gt;</span>#x1a02<span class="nt">&lt;/Pdo&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Uses REAL (32-bit Float) --&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/Sm&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/AlternativeSmMapping&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/TwinCAT&gt;</span>
+<span class="nt">&lt;/VendorSpecific&gt;</span>
+</pre></div>
+</div>
+<p>This structure indicates that the terminal has exclusive modes that fundamentally change which PDOs (and thus which data types and offsets) are assigned to Sync Manager 3 (Inputs).</p>
+</section>
+<section id="multiple-pdos-for-the-same-function">
+<h3>Multiple PDOs for the Same Function<a class="headerlink" href="#multiple-pdos-for-the-same-function" title="Link to this heading">#</a></h3>
+<p>For terminals like the EL1502 (Type 1), the indication is subtler. You will find multiple PDO definitions that cover overlapping functionality, and the CoE objects for PDO assignment (0x1C12 for RxPDOs, 0x1C13 for TxPDOs) will have a default value but allow modification.</p>
+<p><strong>Example from EL1502:</strong>
+The XML defines three TxPDO maps for inputs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0x1A00</span></code>: CNT TxPDO-Map Ch.1 (Channel 1 only)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0x1A01</span></code>: CNT TxPDO-Map Ch.2 (Channel 2 only)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0x1A02</span></code>: CNT TxPDO-Map (Both channels combined)</p></li>
+</ul>
+<p>All three target the input memory, but TwinCAT will only allow one valid combination (either 0x1A00 + 0x1A01 OR 0x1A02) to be assigned to the Sync Manager at any time. The presence of “Combined” versus “Split” PDOs in the XML is a strong indicator of this dynamic behavior.</p>
+</section>
+</section>
 </section>
 
 
@@ -1091,6 +1159,11 @@
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recommendations">Recommendations</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#appendix-identifying-dynamic-pdos-in-esi-xml">Appendix: Identifying Dynamic PDOs in ESI XML</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-alternativesmmapping-tag">The <code class="docutils literal notranslate"><span class="pre">&lt;AlternativeSmMapping&gt;</span></code> Tag</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#multiple-pdos-for-the-same-function">Multiple PDOs for the Same Function</a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 

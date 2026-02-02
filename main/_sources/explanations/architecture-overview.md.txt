@@ -7,72 +7,38 @@ CATio is a Python-based control system integration for EtherCAT I/O devices runn
 
 ## High-Level Architecture Diagram
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                          EPICS Clients / Control Systems                     │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        │ Channel Access / PVAccess
-                                        ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                          FastCS EPICS IOC Layer                              │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │                       CATioServerController                            │  │
-│  │  ┌──────────────────────────────────────────────────────────────────┐  │  │
-│  │  │  CATioDeviceController (EtherCAT Master)                         │  │  │
-│  │  │  ┌────────────────────────────────────────────────────────────┐  │  │  │
-│  │  │  │  CATioTerminalController (EK1100, EL3xxx, etc.)            │  │  │  │
-│  │  │  └────────────────────────────────────────────────────────────┘  │  │  │
-│  │  └──────────────────────────────────────────────────────────────────┘  │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  Components: catio_controller.py, catio_hardware.py, catio_attribute_io.py   │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        │ CATioConnection API
-                                        │ (CATioFastCSRequest/Response)
-                                        ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                            CATio API Bridge                                  │
-│                                                                              │
-│  CATioConnection  ─────►  CATioStreamConnection  ─────►  AsyncioADSClient    │
-│                                                                              │
-│  Components: catio_connection.py                                             │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        │ ADS Protocol (TCP/UDP)
-                                        ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                            ADS Client Layer                                  │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  AsyncioADSClient                                                      │  │
-│  │  • Route management (UDP)                                              │  │
-│  │  • TCP connection handling                                             │  │
-│  │  • AMS message send/receive                                            │  │
-│  │  • I/O introspection                                                   │  │
-│  │  • Symbol management                                                   │  │
-│  │  • Notification subscriptions                                          │  │
-│  │  • API query/command dispatch                                          │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  Components: client.py, messages.py, devices.py, symbols.py                  │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        │ ADS/AMS Protocol
-                                        │ (TCP Port 48898, UDP Port 48899)
-                                        ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                       Beckhoff TwinCAT ADS Server                            │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  I/O Server (Port 300)                                                 │  │
-│  │  ┌──────────────────────────────────────────────────────────────────┐  │  │
-│  │  │  EtherCAT Master Device (Port 65535)                             │  │  │
-│  │  │  ┌────────────────────────────────────────────────────────────┐  │  │  │
-│  │  │  │  EtherCAT Slave Terminals (EK/EL modules)                  │  │  │  │
-│  │  │  └────────────────────────────────────────────────────────────┘  │  │  │
-│  │  └──────────────────────────────────────────────────────────────────┘  │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
+flowchart TB
+    clients["EPICS Clients / Control Systems"]
+
+    subgraph fastcs["FastCS EPICS IOC Layer"]
+        direction LR
+        server["CATioServerController"] --> device["CATioDeviceController<br/>(EtherCAT Master)"] --> terminal["CATioTerminalController<br/>(EK1100, EL3xxx, etc.)"]
+        fastcs_files["catio_controller.py<br/>catio_hardware.py<br/>catio_attribute_io.py"]
+    end
+
+    subgraph bridge["CATio API Bridge"]
+        direction LR
+        conn["CATioConnection"] --> stream["CATioStreamConnection"] --> adsbridge["AsyncioADSClient"]
+        bridge_files["catio_connection.py"]
+    end
+
+    subgraph adslayer["ADS Client Layer"]
+        direction LR
+        adsclient["AsyncioADSClient<br/>Route management (UDP)<br/>TCP connection handling<br/>AMS message send/receive<br/>I/O introspection<br/>Symbol management<br/>Notification subscriptions<br/>API query/command dispatch"]
+        ads_files["client.py, messages.py<br/>devices.py, symbols.py"]
+    end
+
+    subgraph twincat["TwinCAT ADS Server"]
+        direction LR
+        ioserver["I/O Server<br/>(Port 300)"] --> master["EtherCAT Master<br/>(Port 65535)"] --> slaves["EtherCAT Slaves<br/>(EK/EL modules)"]
+    end
+
+    clients -->|"Channel Access / PVAccess"| fastcs
+    fastcs -->|"CATioConnection API<br/>(CATioFastCSRequest/Response)"| bridge
+    bridge -->|"ADS Protocol (TCP/UDP)"| adslayer
+    adslayer -->|"ADS/AMS Protocol<br/>(TCP 48898, UDP 48899)"| twincat
 ```
 
 ## Component Overview
@@ -116,32 +82,16 @@ The bottom layer implements the TwinCAT ADS protocol:
 
 ### Runtime Data Flow
 
-```
-EPICS Client Request
-        │
-        ▼
-FastCS Attribute Access
-        │
-        ▼
-CATioControllerAttributeIO.update()
-        │
-        ▼
-CATioConnection.send_query()
-        │
-        ▼
-AsyncioADSClient.query() / command()
-        │
-        ▼
-API method dispatch (get_* / set_*)
-        │
-        ▼
-ADS Read/Write/ReadWrite commands
-        │
-        ▼
-TwinCAT Server Response
-        │
-        ▼
-Response propagation back to EPICS
+```mermaid
+flowchart TB
+    A["EPICS Client Request"] --> B["FastCS Attribute Access"]
+    B --> C["CATioControllerAttributeIO.update()"]
+    C --> D["CATioConnection.send_query()"]
+    D --> E["AsyncioADSClient.query() / command()"]
+    E --> F["API method dispatch (get_* / set_*)"]
+    F --> G["ADS Read/Write/ReadWrite commands"]
+    G --> H["TwinCAT Server Response"]
+    H --> I["Response propagation back to EPICS"]
 ```
 
 ## Key Design Decisions

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Beckhoff ESI XML File Format &#8212; fastcs-catio 1.1a4.dev4+g4e5852a56 documentation</title>
+    <title>Beckhoff ESI XML File Format &#8212; fastcs-catio 1.1a4.dev72+g141ddaec2 documentation</title>
   
   
   
@@ -34,6 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=1bcb340c"></script>
+    <script src="../_static/documentation_options.js?v=41b5fff2"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -402,6 +403,8 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Beckhoff ESI XML File Format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ethercat-composite-types.html">EtherCAT Composite Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plans/todo.html">TODO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plans/simulator-symbol-alignment.html">Plan: Align Simulator Symbols with Real Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
 </ul>
@@ -513,6 +516,68 @@
 </tbody>
 </table>
 </div>
+<section id="legacy-file-beckhoff-ethercat-terminals-xml">
+<h3>Legacy File: <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EtherCAT</span> <span class="pre">Terminals.xml</span></code><a class="headerlink" href="#legacy-file-beckhoff-ethercat-terminals-xml" title="Link to this heading">#</a></h3>
+<p>The ZIP archive also contains a file named <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EtherCAT</span> <span class="pre">Terminals.xml</span></code>. This is a <strong>legacy/simplified catalog file</strong> that is mostly redundant for <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> purposes.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EtherCAT</span> <span class="pre">Terminals.xml</span></code></p></th>
+<th class="head"><p>Series-specific files (e.g., <code class="docutils literal notranslate"><span class="pre">EL1xxx.xml</span></code>)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Size</strong></p></td>
+<td><p>~54 KB</p></td>
+<td><p>6-36 MB each</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Devices</strong></p></td>
+<td><p>~41 devices (old subset)</p></td>
+<td><p>Comprehensive (all revisions)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>PDO Detail</strong></p></td>
+<td><p>Uses <code class="docutils literal notranslate"><span class="pre">Ref=&quot;DigInputBit&quot;</span></code> references</p></td>
+<td><p>Full inline <code class="docutils literal notranslate"><span class="pre">&lt;Entry&gt;</span></code> definitions</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CoE Objects</strong></p></td>
+<td><p>Missing <code class="docutils literal notranslate"><span class="pre">&lt;Profile&gt;</span></code> sections</p></td>
+<td><p>Full <code class="docutils literal notranslate"><span class="pre">&lt;Profile&gt;&lt;Dictionary&gt;</span></code> with types and objects</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Revisions</strong></p></td>
+<td><p>Single revision per terminal</p></td>
+<td><p>Multiple revisions per terminal</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Example difference for EL1004:</strong></p>
+<p>In <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EtherCAT</span> <span class="pre">Terminals.xml</span></code> (incomplete - just a reference):</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Ref=</span><span class="s">&quot;DigInputBit&quot;</span><span class="w"> </span><span class="na">Chn=</span><span class="s">&quot;0&quot;</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">Mandatory=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">Sm=</span><span class="s">&quot;0&quot;</span><span class="nt">&gt;&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+<p>In <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EL1xxx.xml</span></code> (complete - full entry details):</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;TxPdo</span><span class="w"> </span><span class="na">Fixed=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">Mandatory=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">Sm=</span><span class="s">&quot;0&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Index&gt;</span>#x1a00<span class="nt">&lt;/Index&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Name&gt;</span>Channel<span class="w"> </span>1<span class="nt">&lt;/Name&gt;</span>
+<span class="w">    </span><span class="nt">&lt;Entry&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Index&gt;</span>#x3101<span class="nt">&lt;/Index&gt;</span>
+<span class="w">        </span><span class="nt">&lt;SubIndex&gt;</span>1<span class="nt">&lt;/SubIndex&gt;</span>
+<span class="w">        </span><span class="nt">&lt;BitLen&gt;</span>1<span class="nt">&lt;/BitLen&gt;</span>
+<span class="w">        </span><span class="nt">&lt;Name&gt;</span>Input<span class="nt">&lt;/Name&gt;</span>
+<span class="w">        </span><span class="nt">&lt;DataType&gt;</span>BOOL<span class="nt">&lt;/DataType&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/Entry&gt;</span>
+<span class="nt">&lt;/TxPdo&gt;</span>
+</pre></div>
+</div>
+<p><strong>Always use the series-specific files</strong> (e.g., <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EL1xxx.xml</span></code>) because they contain:</p>
+<ul class="simple">
+<li><p>Complete PDO Entry definitions (required for symbol generation)</p></li>
+<li><p>CoE object dictionaries</p></li>
+<li><p>All firmware revisions</p></li>
+</ul>
+<p>The only useful content in <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EtherCAT</span> <span class="pre">Terminals.xml</span></code> is the Group definitions (DigIn, DigOut, AnaIn descriptions).</p>
+<p>The xml_parser reads Group Definitions from this file.</p>
+</section>
 <section id="cache-location">
 <h3>Cache Location<a class="headerlink" href="#cache-location" title="Link to this heading">#</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> tool caches downloaded XML files at:</p>
@@ -712,17 +777,16 @@
 <h2>What XML Does NOT Contain<a class="headerlink" href="#what-xml-does-not-contain" title="Link to this heading">#</a></h2>
 <p>The ESI XML files do <strong>not</strong> include:</p>
 <ol class="arabic simple">
-<li><p><strong>Composite type names</strong>: TwinCAT generates names like <code class="docutils literal notranslate"><span class="pre">&quot;AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE&quot;</span></code> at compile time</p></li>
+<li><p><strong>Composite type names</strong>: TwinCAT generates names like <code class="docutils literal notranslate"><span class="pre">&quot;AI</span> <span class="pre">Standard</span> <span class="pre">Channel</span> <span class="pre">1_TYPE&quot;</span></code> at compile time. Catio-terminals ignores these in favor of primitive types.</p></li>
 <li><p><strong>ADS index offsets</strong>: Runtime memory layout is determined by TwinCAT</p></li>
 <li><p><strong>Symbol table structure</strong>: ADS symbols are TwinCAT constructs, not EtherCAT standard</p></li>
 </ol>
-<p>These must be obtained from a live TwinCAT system or defined in <code class="docutils literal notranslate"><span class="pre">composite_types.yaml</span></code>.</p>
+<p>These must be obtained from a live TwinCAT system.</p>
 </section>
 <section id="related-documentation">
 <h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../explanations/terminal-definitions.html"><span class="std std-doc">Terminal Definitions</span></a> - YAML file structure</p></li>
-<li><p><a class="reference internal" href="../explanations/composite-types.html"><span class="std std-doc">Composite Types</span></a> - TwinCAT type generation</p></li>
 <li><p><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/tree/main/src/catio_terminals">catio-terminals README</a> - Tool usage</p></li>
 </ul>
 </section>
@@ -776,6 +840,7 @@
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#xml-file-organization">XML File Organization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#legacy-file-beckhoff-ethercat-terminals-xml">Legacy File: <code class="docutils literal notranslate"><span class="pre">Beckhoff</span> <span class="pre">EtherCAT</span> <span class="pre">Terminals.xml</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cache-location">Cache Location</a></li>
 </ul>
 </li>
