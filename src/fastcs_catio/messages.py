@@ -1291,9 +1291,9 @@ class AdsCombinedNotificationStream(Message):
                 symbol = symbols[sample.handle]
                 assert symbol.nbytes == sample.size
                 dtypes += [
-                    (f"_{symbol.name.replace(' ', '')}.handle", np.uint32),
-                    (f"_{symbol.name.replace(' ', '')}.size", np.uint32),
-                    (f"_{symbol.name.replace(' ', '')}.value", symbol.datatype),
+                    (f"_{symbol.name}.handle", np.uint32),
+                    (f"_{symbol.name}.size", np.uint32),
+                    (f"_{symbol.name}.value", symbol.datatype),
                 ]
                 notif_data = notif_data[8 + sample.size :]
 
@@ -1357,9 +1357,9 @@ class AdsNotificationStream(Message):
             symbol = symbols[sample.handle]
             assert symbol.nbytes == sample.size
             dtypes += [
-                (f"_{symbol.name.replace(' ', '')}.handle", np.uint32),
-                (f"_{symbol.name.replace(' ', '')}.size", np.uint32),
-                (f"_{symbol.name.replace(' ', '')}.value", symbol.datatype),
+                (f"_{symbol.name}.handle", np.uint32),
+                (f"_{symbol.name}.size", np.uint32),
+                (f"_{symbol.name}.value", symbol.datatype),
             ]
             data = data[8 + sample.size :]
         assert data == b"", (

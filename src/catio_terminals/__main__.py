@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from catio_terminals.xml_cache import XmlCache
+from catio_terminals.xml.cache import XmlCache
 
 app = typer.Typer(
     name="catio-terminals",
@@ -34,7 +34,7 @@ def edit(
 @app.command(name="update-cache")
 def update_cache() -> None:
     """Update the terminal database cache from Beckhoff server."""
-    from catio_terminals.xml_parser import parse_terminal_catalog
+    from catio_terminals.xml import parse_terminal_catalog
 
     print("Updating terminal database from Beckhoff server...")
     cache = XmlCache()
@@ -48,8 +48,8 @@ def update_cache() -> None:
 
         print(f"XML files downloaded and extracted to {cache.xml_dir}")
 
-        # Get XML files
-        xml_files = cache.get_xml_files()
+        # Get XML files (excluding legacy catalog with incomplete PDO definitions)
+        xml_files = cache.get_terminal_xml_files()
         print(f"Found {len(xml_files)} XML files")
 
         # Parse terminals from XML files
@@ -127,12 +127,6 @@ async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
             raise typer.Exit(code=1)
 
         for yaml_path in files_to_process:
-            if "original" in yaml_path.name:
-                print(f"Skipping backup file: {yaml_path.name}")
-                continue
-            if "runtime_symbols" in yaml_path.name:
-                print(f"Skipping runtime symbols file: {yaml_path.name}")
-                continue
             await _cleanup_single_yaml(yaml_path, beckhoff_client, FileService)
 
     elif file is not None:
@@ -166,14 +160,30 @@ async def _cleanup_single_yaml(
     await file_service.merge_xml_data(config, beckhoff_client, prefer_xml=True)
 
     # Select ALL symbols, but no CoE objects
+    # For dynamic PDO terminals, only select symbols in the default group
     for terminal_id, terminal in config.terminal_types.items():
         selected_count = 0
-        for symbol in terminal.symbol_nodes:
-            symbol.selected = True
-            selected_count += 1
+
+        if terminal.has_dynamic_pdos:
+            # Get the active (or default) group's symbol indices
+            active_indices = terminal.get_active_symbol_indices()
+            for idx, symbol in enumerate(terminal.symbol_nodes):
+                symbol.selected = idx in active_indices
+                if symbol.selected:
+                    selected_count += 1
+            group_name = terminal.selected_pdo_group or "default"
+            print(
+                f"  {terminal_id}: selected {selected_count} symbols "
+                f"(PDO group: {group_name}), 0 CoE"
+            )
+        else:
+            for symbol in terminal.symbol_nodes:
+                symbol.selected = True
+                selected_count += 1
+            print(f"  {terminal_id}: selected {selected_count} symbols, 0 CoE")
+
         for coe in terminal.coe_objects:
             coe.selected = False
-        print(f"  {terminal_id}: selected {selected_count} symbols, 0 CoE")
 
     # Save the cleaned file
     config.to_yaml(yaml_path)

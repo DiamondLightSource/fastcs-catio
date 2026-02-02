@@ -13,7 +13,6 @@ For background on the underlying Beckhoff technologies, see:
 Terminal definitions are YAML files that describe:
 - **Terminal identity** - Vendor ID, product code, revision
 - **Symbol nodes** - Process data (I/O values) accessible via ADS
-- **Composite types** - Structured types that group primitive fields
 - **CoE objects** - Configuration parameters (optional)
 - **Runtime symbols** - Diagnostic symbols added by the EtherCAT master
 
@@ -35,7 +34,6 @@ Supporting configuration files in `src/catio_terminals/config/`:
 
 | File | Purpose |
 |------|---------|
-| `composite_types.yaml` | Composite type definitions (BIGTYPE structures) |
 | `runtime_symbols.yaml` | EtherCAT master diagnostic symbols |
 
 ## Terminal Definition Structure
@@ -52,12 +50,12 @@ terminal_types:
       revision_number: 1048576
     group_type: AnaIn
     symbol_nodes:
-      - name_template: "AI Standard Channel {channel}"
+      - name_template: "AI Standard Channel {channel}.Value"
         index_group: 61472
-        type_name: "AI Standard Channel 1_TYPE"
+        type_name: INT
         channels: 4
         access: Read-only
-        fastcs_name: "AiStandardChannel{channel}"
+        fastcs_name: "AiStandardChannel{channel}Value"
     coe_objects: []
 ```
 
@@ -80,19 +78,19 @@ Symbol nodes define the ADS symbols for process data. Each symbol maps to memory
 
 ```yaml
 symbol_nodes:
-  - name_template: "AI Standard Channel {channel}"
+  - name_template: "AI Standard Channel {channel}.Value"
     index_group: 61472       # 0xF020 - input data
-    type_name: "AI Standard Channel 1_TYPE"
+    type_name: INT
     channels: 4
     access: Read-only
-    fastcs_name: "AiStandardChannel{channel}"
+    fastcs_name: "AiStandardChannel{channel}Value"
 ```
 
 | Field | Description |
 |-------|-------------|
 | `name_template` | Symbol name pattern. Use `{channel}` for multi-channel terminals |
 | `index_group` | ADS index group (see table below) |
-| `type_name` | Data type - primitive (INT, BOOL) or composite type name |
+| `type_name` | Data type - primitive (INT, BOOL, etc.) |
 | `channels` | Number of channels using this pattern |
 | `access` | `Read-only` (inputs) or `Read/Write` (outputs) |
 | `fastcs_name` | PascalCase name for FastCS attributes |
@@ -121,79 +119,6 @@ The `size` and `ads_type` fields are computed from `type_name`:
 ```
 
 Type mappings are defined in `src/catio_terminals/ads_types.py`.
-
-## Composite Types
-
-When a symbol's `type_name` references a composite type (like `"AI Standard Channel 1_TYPE"`), the system looks it up in `composite_types.yaml`.
-
-### Why Composite Types?
-
-Beckhoff's ESI XML defines PDO entries as individual primitives, but TwinCAT groups them into composite types at runtime. For example:
-
-**XML defines:**
-- `Status__Underrange` (BOOL)
-- `Status__Overrange` (BOOL)
-- `Value` (INT)
-
-**TwinCAT groups as:**
-- `AI Standard Channel 1` with type `AI Standard Channel 1_TYPE` (4 bytes total)
-
-We define these groupings in `composite_types.yaml` so the simulator can return accurate type information.
-
-### Composite Type Definition
-
-```yaml
-# src/catio_terminals/config/composite_types.yaml
-
-composite_types:
-  "AI Standard Channel 1_TYPE":
-    description: "16-bit analog input channel (status + value)"
-    ads_type: 65  # BIGTYPE
-    size: 4
-    members:
-      - name: Status
-        offset: 0
-        type_name: UINT
-        size: 2
-        fastcs_attr: Status
-        access: read-only
-      - name: Value
-        offset: 2
-        type_name: INT
-        size: 2
-        fastcs_attr: Value
-        access: read-only
-```
-
-| Field | Description |
-|-------|-------------|
-| `description` | Human-readable description |
-| `ads_type` | Always 65 for composite types (BIGTYPE) |
-| `size` | Total size in bytes |
-| `members` | List of member fields |
-
-**Member fields:**
-
-| Field | Description |
-|-------|-------------|
-| `name` | Member name |
-| `offset` | Byte offset within the structure |
-| `type_name` | Primitive type (UINT, INT, DINT, etc.) |
-| `size` | Size in bytes |
-| `fastcs_attr` | FastCS attribute name |
-| `access` | `read-only` or `read-write` |
-
-### Common Composite Types
-
-| Type Name | Used By | Size | Members |
-|-----------|---------|------|---------|
-| `AI Standard Channel 1_TYPE` | EL3004, EL3104, etc. | 4 | Status + Value (16-bit) |
-| `AI Inputs Channel 1_TYPE` | EL3602, EL3612 | 6 | Status + Value (32-bit) |
-| `AO Output Channel 1_TYPE` | EL4002, EL4004 | 2 | AnalogOutput |
-| `CNT Inputs_TYPE` | EL1502 | 6 | Status + CounterValue |
-| `Inputs_TYPE` | EL1004, EL1008 | 1 | Packed digital inputs |
-
-See [EtherCAT Composite Types](../reference/ethercat-composite-types.md) for the full list.
 
 ## Runtime Symbols
 
@@ -282,31 +207,7 @@ The editor merges your selections with XML data, ensuring symbols match Beckhoff
 
 1. Find the terminal in Beckhoff's XML (see [Beckhoff XML Format](../reference/beckhoff-xml-format.md))
 2. Extract identity, PDO names, and data types
-3. Check if symbols use existing composite types
-4. If needed, add new composite types to `composite_types.yaml`
-5. Add the terminal definition to the appropriate YAML file
-
-### Adding a New Composite Type
-
-If the terminal uses a composite type not yet defined:
-
-1. Look at the PDO structure in the XML
-2. Determine the TwinCAT type name (PDO name + `_TYPE`)
-3. Add to `composite_types.yaml`:
-
-```yaml
-"New Type 1_TYPE":
-  description: "Description of the type"
-  ads_type: 65
-  size: <total bytes>
-  members:
-    - name: <member1>
-      offset: 0
-      type_name: <primitive type>
-      size: <bytes>
-      fastcs_attr: <FastCS name>
-      access: read-only
-```
+3. Add the terminal definition to the appropriate YAML file
 
 ## How Definitions Are Used
 
@@ -321,7 +222,6 @@ The test simulator uses terminal definitions to:
 
 (Future) Terminal definitions will generate FastCS controllers:
 - Each symbol becomes a FastCS attribute
-- Composite type members become individual attributes
 - Channel templates expand to numbered attributes
 
 ### catio-terminals UI

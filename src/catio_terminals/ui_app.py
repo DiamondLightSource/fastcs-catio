@@ -58,6 +58,7 @@ class TerminalEditorApp:
         self.details_header_label: ui.label | None = None  # Header label for details
         self.details_product_link: ui.link | None = None  # Product info link
         self.delete_terminal_button: ui.button | None = None  # Delete terminal button
+        self.unsaved_changes_banner: ui.row | None = None  # Unsaved changes banner
         self._load_runtime_symbols()
 
     def _load_runtime_symbols(self) -> None:
@@ -95,6 +96,9 @@ class TerminalEditorApp:
         try:
             FileService.save_file(self.config, self.current_file)
             self.has_unsaved_changes = False
+            # Hide the unsaved changes banner
+            if self.unsaved_changes_banner:
+                self.unsaved_changes_banner.visible = False
             ui.run_javascript("window.hasUnsavedChanges = false;")
             ui.notify(f"Saved: {self.current_file.name}", type="positive")
         except Exception as e:
@@ -244,14 +248,15 @@ def run(file_path: Path | None = None) -> None:
 
         with ui.column().classes("main-container w-full"):
             # Unsaved changes indicator
-            if editor.has_unsaved_changes:
-                with ui.row().classes(
-                    "w-full justify-center bg-orange-900 py-1 flex-shrink-0"
-                ):
-                    ui.icon("warning").classes("text-orange-300")
-                    ui.label("You have unsaved changes").classes(
-                        "text-sm text-orange-300 font-bold"
-                    )
+            with ui.row().classes(
+                "w-full justify-center bg-orange-900 py-1 flex-shrink-0"
+            ) as unsaved_banner:
+                ui.icon("warning").classes("text-orange-300")
+                ui.label("You have unsaved changes").classes(
+                    "text-sm text-orange-300 font-bold"
+                )
+            unsaved_banner.visible = editor.has_unsaved_changes
+            editor.unsaved_changes_banner = unsaved_banner
 
             with (
                 ui.splitter(value=30)

@@ -13,7 +13,6 @@ import numpy.typing as npt
 from fastcs.attributes import Attribute, AttrR
 from fastcs.controllers import Controller
 from fastcs.datatypes import Int, String, Waveform
-from fastcs.logging import bind_logger
 from fastcs.methods import scan
 from fastcs.tracer import Tracer
 from fastcs.util import ONCE
@@ -23,9 +22,11 @@ from fastcs_catio._constants import DeviceType
 from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
+    CATioControllerSymbolAttributeIO,
 )
 from fastcs_catio.client import RemoteRoute, get_remote_address
 from fastcs_catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
+from fastcs_catio.logging import get_logger
 from fastcs_catio.utils import (
     average,
     check_ndarray,
@@ -46,7 +47,7 @@ STANDARD_POLL_UPDATE_PERIOD: float = 1.0
 
 
 tracer = Tracer(name=__name__)
-logger = bind_logger(logger_name=__name__)
+logger = get_logger(__name__)
 
 
 class CATioController(Controller, Tracer):
@@ -92,7 +93,7 @@ class CATioController(Controller, Tracer):
         ] = {}  # key is FastCS attribute name, value is complex ads symbol name
         """Map of FastCS attribute names to ADS symbol names."""
 
-        logger.debug(
+        logger.verbose(
             f"CATio controller '{self.ecat_name}' instantiated with PV suffix "
             + f"{self.name} and registered with id {self._identifier}"
         )
@@ -104,6 +105,12 @@ class CATioController(Controller, Tracer):
                     self.connection,
                     self.group,
                     self._identifier,
+                ),
+                CATioControllerSymbolAttributeIO(
+                    self.connection,
+                    self.group,
+                    self._identifier,
+                    self.ads_name_map,
                 ),
             ],
         )
@@ -194,7 +201,7 @@ class CATioController(Controller, Tracer):
                 description="I/O controller function",
             ),
         )
-        logger.debug(f"Generic attributes for controller {self.name} created.")
+        logger.verbose(f"Generic attributes for controller {self.name} created.")
 
     @abstractmethod
     async def get_io_attributes(self) -> None:
@@ -225,7 +232,7 @@ class CATioController(Controller, Tracer):
         """
         if subcontrollers:
             for subctrl in subcontrollers:
-                logger.debug(
+                logger.verbose(
                     f"Registering sub-controller {subctrl.name} with controller "
                     + f"{self.name}."
                 )
@@ -247,8 +254,8 @@ class CATioController(Controller, Tracer):
             if isinstance(self, CATioController):
                 ads_name = self.ads_name_map.get(key, None)
                 key = ads_name if ads_name is not None else key
-            attr_dict[".".join([f"_{self.ecat_name.replace(' ', '')}", key])] = attr
-        logger.debug(
+            attr_dict[".".join([f"_{self.ecat_name}", key])] = attr
+        logger.verbose(
             f"Extracted {len(attr_dict)} attributes for controller {self.name}."
         )
         yield attr_dict
@@ -266,7 +273,7 @@ class CATioController(Controller, Tracer):
             for name, subctlr in self.sub_controllers.items():
                 assert isinstance(subctlr, CATioController)
                 await subctlr.connect()
-                logger.debug(f"Connection to subcontroller {name} completed.")
+                logger.verbose(f"Connection to subcontroller {name} completed.")
 
     async def query_api(self, function_name: str) -> Any:
         """
@@ -282,7 +289,7 @@ class CATioController(Controller, Tracer):
                 CATioFastCSRequest(command=query, controller_id=self._identifier)
             )
             if response is None:
-                logger.debug(
+                logger.verbose(
                     f"No corresponding API method was found for command '{query}'"
                 )
             return response
@@ -332,7 +339,7 @@ class CATioController(Controller, Tracer):
                     assert isinstance(attr, AttrR)
                     await attr.update(new_value)
 
-                logger.debug(
+                logger.verbose(
                     f"{fn_name} attributes for device {self.name} have been updated."
                 )
 
@@ -446,7 +453,9 @@ class CATioServerController(CATioController):
 
     async def get_io_attributes(self) -> None:
         """Create and get all server controller attributes."""
-        logger.debug("No specific attributes are defined for a CATio server controller")
+        logger.verbose(
+            "No specific attributes are defined for a CATio server controller"
+        )
         await self.get_server_generic_attributes()
 
     async def get_server_generic_attributes(self) -> None:
@@ -501,7 +510,7 @@ class CATioServerController(CATioController):
                 description="I/O server registered device count",
             ),
         )
-        logger.debug(f"Generic attributes for the controller {self.name} created.")
+        logger.verbose(f"Generic attributes for the controller {self.name} created.")
 
     async def register_subcontrollers(self) -> None:
         """Register all subcontrollers available in the EtherCAT system tree."""
@@ -529,7 +538,7 @@ class CATioServerController(CATioController):
                 assert (ctlr is not None) and (isinstance(ctlr, CATioController))
                 subcontrollers.append(ctlr)
 
-            logger.debug(
+            logger.verbose(
                 f"{len(subcontrollers)} subcontrollers were found for {node.data.name}."
             )
 
@@ -550,6 +559,7 @@ class CATioServerController(CATioController):
         :returns: the subcontroller object created for the current node.
         """
         # Lazy import to prevent circular import reference
+        from fastcs_catio.catio_dynamic import get_terminal_controller_class
         from fastcs_catio.catio_hardware import SUPPORTED_CONTROLLERS
 
         match node.data.category:
@@ -565,7 +575,9 @@ class CATioServerController(CATioController):
                     if node.data.type == DeviceType.IODEVICETYPE_ETHERCAT
                     else node.data.name
                 )
-                logger.debug(f"Implementing I/O device '{key}' as CATioSubController.")
+                logger.verbose(
+                    f"Implementing I/O device '{key}' as CATioSubController."
+                )
                 ctlr = SUPPORTED_CONTROLLERS[key](
                     name=node.data.get_type_name(),
                     ecat_name=node.data.name,
@@ -575,11 +587,17 @@ class CATioServerController(CATioController):
 
             case IONodeType.Coupler | IONodeType.Slave:
                 assert isinstance(node.data, IOSlave)
-                logger.debug(
+                logger.verbose(
                     f"Implementing I/O terminal '{node.data.name}' as "
                     f"CATioSubController."
                 )
-                ctlr = SUPPORTED_CONTROLLERS[node.data.type](
+                # First check explicit controllers, then fall back to dynamic factory
+                if node.data.type in SUPPORTED_CONTROLLERS:
+                    ctlr_class = SUPPORTED_CONTROLLERS[node.data.type]
+                else:
+                    ctlr_class = get_terminal_controller_class(node.data.type)
+
+                ctlr = ctlr_class(
                     name=node.data.get_type_name(),
                     ecat_name=node.data.name,
                     description=f"Controller for {node.data.category.value} terminal "
@@ -607,7 +625,7 @@ class CATioServerController(CATioController):
             for value in gen_obj:
                 attribute_refs.update(value)
         self.attribute_map = attribute_refs
-        logger.debug(
+        logger.verbose(
             "Full map of attributes available to the CATio server controller: "
             + f"{self.attribute_map.keys()}"
         )
@@ -638,7 +656,7 @@ class CATioServerController(CATioController):
         assert notifications.dtype.names
 
         # Extract the timestamps from the notification changes
-        pattern = re.compile(r"^_(\w+(\(\w*\))*)+\.timestamp\d*")
+        pattern = re.compile(r"^_([\w ]+(\([\w ]*\))*)+\.timestamp\d*")
         matches = [s for s in notifications.dtype.names if pattern.search(s)]
         timestamps = list(
             chain.from_iterable([notifications[name].tolist() for name in matches])
@@ -656,7 +674,7 @@ class CATioServerController(CATioController):
         )
         assert isinstance(timestamp_attr, AttrR)
         await timestamp_attr.update(timestamp_value)
-        # logger.debug(
+        # logger.verbose(
         #     f"Updated notification attribute {timestamp_attr_name} "
         #     + f"to value {timestamp_value}"
         # )
@@ -670,102 +688,152 @@ class CATioServerController(CATioController):
             the CATio client and updates the relevant FastCS attributes \
                 if any changes are detected.
         """
-        if self.notification_stream is None:
-            # Get a reference to the EtherCAT Master Device which provides notifications
-            dev_ctrl = self.get_device_controller()
-            assert isinstance(dev_ctrl, CATioDeviceController)
-            # Wait until the device controller is ready to provide notifications
-            if not dev_ctrl.notification_ready:
-                logger.debug("Notification setup not ready yet, monitoring off.")
-                return
-            # Request the CATio client to start publishing notifications
-            self.connection.enable_notification_monitoring(
-                True, NOTIFICATION_UPDATE_PERIOD
-            )
-            self.notification_enabled = True
-
-        if self.notification_enabled:
-            # Get the stream of notifications accumulated over the last period
-            notifs = await self.connection.get_notification_streams(timeout=5)
-            # Average the accumulated notification stream values for each element.
-            mean = process_notifications(average, notifs)
-            # logging.debug(f"Mean of accumulated notifications: {mean.dtype}, {mean}")
-
-            # Use the first notification stream as the reference for future updates.
+        try:
             if self.notification_stream is None:
-                self.notification_stream = mean
-                return
-
-            # Get the changes between the current and previous notification streams
-            diff = get_notification_changes(mean, self.notification_stream)
-            assert diff.dtype.names, "Expected a numpy structured array with fields."
-            logger.debug(
-                f"Notification fields which show changes: {diff.dtype.names}, {diff}"
-            )
-
-            # Update the previous notification stream value to the latest one received
-            self.notification_stream = mean
-
-            # Extract and set the timestamp attribute from the notification changes
-            await self.update_notification_timestamp(diff)
-
-            # Filter out any non-value fields from the notification changes
-            non_value_names = [name for name in diff.dtype.names if "value" not in name]
-            if len(non_value_names) == len(diff.dtype.names):
-                return
-
-            # Remove the notification fields that have changed which aren't relevant
-            filtered_diff = rfn.drop_fields(
-                diff, drop_names=non_value_names, usemask=False, asrecarray=True
-            )
-            logger.debug(
-                f"Value field notifications which have changed: {filtered_diff}, "
-                + f"{filtered_diff.size}, {filtered_diff.shape}"
-            )
-
-            assert filtered_diff.dtype.names
-            for name in filtered_diff.dtype.names:
-                # Remove the '.value' from the notification name
-                attr_name = name.rsplit(".", 1)[0]
-                ############### Assertion not valid until all terminal attributes have
-                ############### been defined;
-                ############### use if statement instead
-                assert attr_name in self.attribute_map.keys(), (
-                    f"No reference to {attr_name} in the CATio attribute map; "
-                    + "implementation of terminal attributes may be missing."
+                # Get a reference to the EtherCAT Master Device which provides notifs
+                dev_ctrl = self.get_device_controller()
+                assert isinstance(dev_ctrl, CATioDeviceController)
+                # Wait until the device controller is ready to provide notifications
+                if not dev_ctrl.notification_ready:
+                    logger.verbose("Notification setup not ready yet, monitoring off.")
+                    return
+                # Request the CATio client to start publishing notifications
+                self.connection.enable_notification_monitoring(
+                    True, NOTIFICATION_UPDATE_PERIOD
                 )
-                ############### if attr_name in self.attribute_map.keys():
-                notif_attribute = self.attribute_map[attr_name]
+                self.notification_enabled = True
 
-                # Extract the new value from the notification field
-                if isinstance(filtered_diff[name], np.ndarray):
-                    # Handle the oversampling arrays (must be 1D numpy arrays)
-                    # e.g. shape of 'sample' with n values is: (1, n)
-                    if filtered_diff[name].ndim > 1:
-                        assert filtered_diff[name].shape[0] == 1, (
-                            "Bad array format received from the notification stream"
-                        )
-                        val = filtered_diff[name].flatten()
-                    else:
-                        # Handle 1D arrays with multiple values
-                        # e.g. shape of X with n elements is: (n,)
-                        if filtered_diff[name].shape[0] > 1:
-                            val = filtered_diff[name]
-                        else:
-                            # Handle single discrete value expressed as 1D array
-                            # e.g. shape of 'cyclecount' with single value is: (1,)
-                            val = filtered_diff[name][0]
-                    new_value = notif_attribute.datatype.validate(val)
+            if self.notification_enabled:
+                # Get the stream of notifications accumulated over the last period
+                notifs = await self.connection.get_notification_streams(timeout=5)
+                # Average the accumulated notification stream values for each element.
+                mean = process_notifications(average, notifs)
 
+                # Track whether this is the first notification processing
+                is_first_notification = self.notification_stream is None
+                if is_first_notification and mean.dtype.names is not None:
+                    logger.debug(
+                        f"FIRST NOTIFICATION: notification_stream is None, "
+                        f"mean has {len(mean.dtype.names)} fields: {mean.dtype.names}"
+                    )
+
+                # Get the changes between the current and previous notif streams
+                diff = get_notification_changes(mean, self.notification_stream)
+                assert diff.dtype.names, (
+                    "Expected a numpy structured array with fields."
+                )
+
+                if is_first_notification:
+                    logger.info(
+                        f"FIRST NOTIFICATION: diff returned {len(diff.dtype.names)} "
+                        f"fields: {diff.dtype.names}"
+                    )
                 else:
-                    # Handle single discrete value
-                    new_value = notif_attribute.datatype.validate(filtered_diff[name])
+                    logger.debug(
+                        f"Notification fields which show changes: "
+                        f"{diff.dtype.names}, {diff}"
+                    )
 
-                assert isinstance(notif_attribute, AttrR)
-                await notif_attribute.update(new_value)
-                logger.debug(
-                    f"Updated notification attribute {attr_name} to value {new_value}."
+                # Update the previous notif stream value to the latest one received
+                self.notification_stream = mean
+
+                # Extract and set the timestamp attribute from the notif changes
+                await self.update_notification_timestamp(diff)
+
+                # Filter out any non-value fields from the notification changes
+                non_value_names = [
+                    name for name in diff.dtype.names if "value" not in name
+                ]
+                if is_first_notification:
+                    logger.info(
+                        f"FIRST NOTIFICATION: {len(non_value_names)} non-value fields, "
+                        f"{len(diff.dtype.names) - len(non_value_names)} value fields"
+                    )
+                if len(non_value_names) == len(diff.dtype.names):
+                    if is_first_notification:
+                        logger.error(
+                            "FIRST NOTIFICATION: Early return - no value fields found!"
+                        )
+                    return
+
+                # Remove the notif fields that have changed which aren't relevant
+                filtered_diff = rfn.drop_fields(
+                    diff, drop_names=non_value_names, usemask=False, asrecarray=True
                 )
+                if is_first_notification:
+                    assert filtered_diff.dtype.names
+                    logger.debug(
+                        f"FIRST NOTIFICATION: filtered_diff has "
+                        f"{len(filtered_diff.dtype.names)} fields: "
+                        f"{filtered_diff.dtype.names}"
+                    )
+                else:
+                    logger.verbose(
+                        f"Value field notifications which have changed: "
+                        f"{filtered_diff} {filtered_diff.size}, {filtered_diff.shape}"
+                    )
+
+                assert filtered_diff.dtype.names
+                updates_count = 0
+                for name in filtered_diff.dtype.names:
+                    # Remove the '.value' from the notification name
+                    attr_name = name.rsplit(".", 1)[0]
+
+                    if attr_name not in self.attribute_map.keys():
+                        logger.warning(
+                            f"No reference to {attr_name} in the CATio attribute map"
+                        )
+                        continue
+
+                    notif_attribute = self.attribute_map[attr_name]
+
+                    # Extract the new value from the notification field
+                    if isinstance(filtered_diff[name], np.ndarray):
+                        # Handle the oversampling arrays (must be 1D numpy arrays)
+                        # e.g. shape of 'sample' with n values is: (1, n)
+                        if filtered_diff[name].ndim > 1:
+                            assert filtered_diff[name].shape[0] == 1, (
+                                "Bad array format received from notification stream"
+                            )
+                            val = filtered_diff[name].flatten()
+                        else:
+                            # Handle 1D arrays with multiple values
+                            # e.g. shape of X with n elements is: (n,)
+                            if filtered_diff[name].shape[0] > 1:
+                                val = filtered_diff[name]
+                            else:
+                                # Handle single discrete value expressed as 1D array
+                                # e.g. shape of 'cyclecount' with single value is: (1,)
+                                val = filtered_diff[name][0]
+                        new_value = notif_attribute.datatype.validate(val)
+
+                    else:
+                        # Handle single discrete value
+                        new_value = notif_attribute.datatype.validate(
+                            filtered_diff[name]
+                        )
+
+                    assert isinstance(notif_attribute, AttrR)
+                    await notif_attribute.update(new_value)
+                    updates_count += 1
+                    logger.verbose(
+                        f"Updated notification attribute {attr_name} "
+                        f"to value {new_value}."
+                    )
+
+                if is_first_notification:
+                    logger.debug(
+                        f"FIRST NOTIFICATION: Successfully updated {updates_count} "
+                        f"attributes out of {len(filtered_diff.dtype.names)} "
+                        f"value fields"
+                    )
+        except TimeoutError:
+            # Timeout waiting for notifications (e.g., debugger pause) - just retry
+            logger.warning(
+                "Timeout waiting for notifications, will retry on next scan cycle"
+            )
+        except Exception:
+            logger.exception("Error processing notification stream")
 
 
 class CATioDeviceController(CATioController):
@@ -965,7 +1033,7 @@ class CATioDeviceController(CATioController):
             ),
         )
         attr_count = len(self.attributes) - initial_attr_count
-        logger.debug(
+        logger.verbose(
             f"Created {attr_count} generic attributes "
             + f"for the controller {self.name}."
         )
@@ -1003,7 +1071,7 @@ class CATioDeviceController(CATioController):
             if done earlier, the notification setup process will somehow fail."""
         await self.setup_symbol_notifications()
         self.notification_ready = True
-        logger.debug("Setup of notification subscriptions completed.")
+        logger.verbose("Setup of notification subscriptions completed.")
 
     @scan(STANDARD_POLL_UPDATE_PERIOD)
     async def frame_counters(self) -> None:
@@ -1195,7 +1263,7 @@ class CATioTerminalController(CATioController):
             ),
         )
         attr_count = len(self.attributes) - initial_attr_count
-        logger.debug(
+        logger.verbose(
             f"Created {attr_count} generic attributes "
             + f"for the controller {self.name}."
         )

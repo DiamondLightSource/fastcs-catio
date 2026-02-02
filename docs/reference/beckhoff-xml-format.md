@@ -17,6 +17,49 @@ Beckhoff distributes ESI files as a single ZIP archive (`Beckhoff_EtherCAT_XML.z
 | `Beckhoff EL6xxx.xml` | Communication | EL6001, EL6021 |
 | `Beckhoff EL9xxx.xml` | Power Supply | EL9100, EL9410 |
 
+### Legacy File: `Beckhoff EtherCAT Terminals.xml`
+
+The ZIP archive also contains a file named `Beckhoff EtherCAT Terminals.xml`. This is a **legacy/simplified catalog file** that is mostly redundant for `catio-terminals` purposes.
+
+| Aspect | `Beckhoff EtherCAT Terminals.xml` | Series-specific files (e.g., `EL1xxx.xml`) |
+|--------|-----------------------------------|-------------------------------------------|
+| **Size** | ~54 KB | 6-36 MB each |
+| **Devices** | ~41 devices (old subset) | Comprehensive (all revisions) |
+| **PDO Detail** | Uses `Ref="DigInputBit"` references | Full inline `<Entry>` definitions |
+| **CoE Objects** | Missing `<Profile>` sections | Full `<Profile><Dictionary>` with types and objects |
+| **Revisions** | Single revision per terminal | Multiple revisions per terminal |
+
+**Example difference for EL1004:**
+
+In `Beckhoff EtherCAT Terminals.xml` (incomplete - just a reference):
+```xml
+<TxPdo Ref="DigInputBit" Chn="0" Fixed="1" Mandatory="1" Sm="0"></TxPdo>
+```
+
+In `Beckhoff EL1xxx.xml` (complete - full entry details):
+```xml
+<TxPdo Fixed="1" Mandatory="1" Sm="0">
+    <Index>#x1a00</Index>
+    <Name>Channel 1</Name>
+    <Entry>
+        <Index>#x3101</Index>
+        <SubIndex>1</SubIndex>
+        <BitLen>1</BitLen>
+        <Name>Input</Name>
+        <DataType>BOOL</DataType>
+    </Entry>
+</TxPdo>
+```
+
+**Always use the series-specific files** (e.g., `Beckhoff EL1xxx.xml`) because they contain:
+- Complete PDO Entry definitions (required for symbol generation)
+- CoE object dictionaries
+- All firmware revisions
+
+The only useful content in `Beckhoff EtherCAT Terminals.xml` is the Group definitions (DigIn, DigOut, AnaIn descriptions).
+
+The xml_parser reads Group Definitions from this file.
+
 ### Cache Location
 
 The `catio-terminals` tool caches downloaded XML files at:
@@ -185,14 +228,13 @@ The parser detects channel patterns in PDO names:
 
 The ESI XML files do **not** include:
 
-1. **Composite type names**: TwinCAT generates names like `"AI Standard Channel 1_TYPE"` at compile time
+1. **Composite type names**: TwinCAT generates names like `"AI Standard Channel 1_TYPE"` at compile time. Catio-terminals ignores these in favor of primitive types.
 2. **ADS index offsets**: Runtime memory layout is determined by TwinCAT
 3. **Symbol table structure**: ADS symbols are TwinCAT constructs, not EtherCAT standard
 
-These must be obtained from a live TwinCAT system or defined in `composite_types.yaml`.
+These must be obtained from a live TwinCAT system.
 
 ## Related Documentation
 
 - [Terminal Definitions](../explanations/terminal-definitions.md) - YAML file structure
-- [Composite Types](../explanations/composite-types.md) - TwinCAT type generation
 - [catio-terminals README](https://github.com/DiamondLightSource/fastcs-catio/tree/main/src/catio_terminals) - Tool usage

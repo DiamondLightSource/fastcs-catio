@@ -23,12 +23,12 @@
 
 runtime_symbols:
   # Working Counter State - indicates if terminal is communicating on EtherCAT bus
-  - name_template: WcState^WcState
-    index_group: 61473 # 0xF021 - RWIX (input bits)
+  - name_template: WcState.WcState
+    index_group: 61489 # 0xF031 - Terminal input/status area
     type_name: BIT
     channels: 1
     access: Read-only
-    fastcs_name: WcstateWcstate
+    fastcs_name: wcstate
     description: >
       Working Counter State - EtherCAT diagnostic indicating if the terminal
       is communicating properly on the bus. A non-zero value indicates a
@@ -37,36 +37,51 @@ runtime_symbols:
     group_blacklist:
       - CpBk # Bus Couplers
 
-  # InfoData State - device state from EtherCAT state machine
-  - name_template: InfoData^State
-    index_group: 61472 # 0xF020 - RWIB (input bytes)
-    type_name: UINT
-    channels: 1
-    access: Read-only
-    fastcs_name: InfodataState
-    description: >
-      Device state information from the EtherCAT state machine.
-      Values: 1=Init, 2=Pre-Op, 3=Bootstrap, 4=Safe-Op, 8=Op
-    # May not apply to all terminal types - TBD based on testing
-    group_whitelist:
-      - DigIn
-      - DigOut
-      - AnaIn
-      - AnaOut
-      - Measuring
-
   # Input Toggle - indicates data freshness
-  - name_template: InputToggle
-    index_group: 61473 # 0xF021 - RWIX (input bits)
+  - name_template: WcState.InputToggle
+    index_group: 61489 # 0xF031 - Terminal input/status area
     type_name: BIT
     channels: 1
     access: Read-only
-    fastcs_name: Inputtoggle
+    fastcs_name: input_toggle
     description: >
       Toggles on each EtherCAT cycle to indicate that input data has been
       updated. Can be used to detect stale data.
-    # Typically only on terminals with inputs
+    # Typically only on terminals with inputs (and power supplies per hardware observation)
     group_whitelist:
       - DigIn
       - AnaIn
       - Measuring
+      - PowerSupply
+
+  # InfoData State - device state from EtherCAT state machine
+  # NOTE: Disabled - hardware testing shows this symbol does not appear in ADS symbol table
+  # - name_template: InfoData.State
+  #   index_group: 61472 # 0xF020 - RWIB (input bytes)
+  #   type_name: UINT
+  #   channels: 1
+  #   access: Read-only
+  #   fastcs_name: InfodataState
+  #   description: >
+  #     Device state information from the EtherCAT state machine.
+  #     Values: 1=Init, 2=Pre-Op, 3=Bootstrap, 4=Safe-Op, 8=Op
+  #   # May not apply to all terminal types - TBD based on testing
+  #   group_whitelist:
+  #     - DigIn
+  #     - DigOut
+  #     - AnaIn
+  #     - AnaOut
+  #     - Measuring
+
+  # SyncUnits - TwinCAT synchronization unit WcState
+  # This is a global symbol not tied to specific terminals
+  - name_template: SyncUnits._default_._unreferenced_.WcState.WcState
+    index_group: 61489 # 0xF031 - Input/status area
+    type_name: BIT
+    channels: 1
+    access: Read-only
+    fastcs_name: sync_units_wc_state
+    description: >
+      Working Counter State for TwinCAT's default synchronization unit.
+      Part of TwinCAT's distributed clock (DC) synchronization system.
+    is_global: true # Not tied to specific terminals

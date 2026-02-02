@@ -49,10 +49,27 @@ extensions = [
     "sphinx_design",
     # So we can write markdown files
     "myst_parser",
+    # For Mermaid diagrams
+    "sphinxcontrib.mermaid",
 ]
 
-# So we can use the ::: syntax
+# Mermaid diagram configuration - use raw HTML for JS-based rendering
+mermaid_output_format = "raw"
+mermaid_init_js = """
+mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    theme: 'default',
+    flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true
+    }
+});
+"""
+
+# So we can use the ::: syntax and mermaid diagrams
 myst_enable_extensions = ["colon_fence"]
+myst_fence_as_directive = ["mermaid"]
 
 # If true, Sphinx will warn about all references where the target cannot
 # be found.
@@ -185,6 +202,10 @@ html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 html_show_copyright = False
+
+# Static files
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # Logo
 html_logo = "images/dls-logo.svg"

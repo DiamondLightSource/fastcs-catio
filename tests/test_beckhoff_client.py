@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from catio_terminals.xml_cache import BeckhoffTerminalInfo, XmlCache
-from catio_terminals.xml_parser import (
+from catio_terminals.xml import (
     generate_terminal_url,
     get_ads_type,
     parse_hex_value,
     parse_terminal_catalog,
 )
+from catio_terminals.xml.cache import BeckhoffTerminalInfo, XmlCache
 
 
 class TestParseHexValue:
@@ -116,6 +116,44 @@ class TestXmlCache:
         xml_files = cache.get_xml_files()
         assert len(xml_files) == 2
         assert all(f.suffix == ".xml" for f in xml_files)
+        cache.close()
+
+    def test_get_terminal_xml_files_excludes_legacy(self, tmp_path: Path):
+        """Test that get_terminal_xml_files excludes the legacy catalog file."""
+        cache = XmlCache(cache_dir=tmp_path)
+        cache.xml_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create series-specific files and the legacy file
+        (cache.xml_dir / "Beckhoff EL1xxx.xml").write_text("<root/>")
+        (cache.xml_dir / "Beckhoff EL2xxx.xml").write_text("<root/>")
+        (cache.xml_dir / "Beckhoff EtherCAT Terminals.xml").write_text("<root/>")
+
+        # get_xml_files should return all 3
+        all_files = cache.get_xml_files()
+        assert len(all_files) == 3
+
+        # get_terminal_xml_files should exclude the legacy file
+        terminal_files = cache.get_terminal_xml_files()
+        assert len(terminal_files) == 2
+        assert all("EtherCAT Terminals" not in f.name for f in terminal_files)
+        cache.close()
+
+    def test_get_legacy_catalog_file(self, tmp_path: Path):
+        """Test getting the legacy catalog file for group definitions."""
+        cache = XmlCache(cache_dir=tmp_path)
+        cache.xml_dir.mkdir(parents=True, exist_ok=True)
+
+        # No legacy file yet
+        assert cache.get_legacy_catalog_file() is None
+
+        # Create the legacy file
+        legacy_path = cache.xml_dir / "Beckhoff EtherCAT Terminals.xml"
+        legacy_path.write_text("<root/>")
+
+        # Now it should be found
+        result = cache.get_legacy_catalog_file()
+        assert result is not None
+        assert result.name == "Beckhoff EtherCAT Terminals.xml"
         cache.close()
 
     def test_save_and_load_terminals(self, tmp_path: Path):

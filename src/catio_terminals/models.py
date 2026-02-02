@@ -1,9 +1,8 @@
 """Data models for terminal description YAML files."""
 
 from pathlib import Path
-from typing import Any
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, computed_field
 
 from catio_terminals.ads_types import get_type_info
 
@@ -60,6 +59,9 @@ class SymbolNode(BaseModel):
     fastcs_name: str | None = Field(
         default=None, description="PascalCase name for FastCS"
     )
+    tooltip: str | None = Field(
+        default=None, description="Tooltip description from XML Comment element"
+    )
     selected: bool = Field(
         default=True, description="Whether to include in YAML output"
     )
@@ -67,18 +69,6 @@ class SymbolNode(BaseModel):
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None
     _ads_type_from_yaml: int | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def capture_legacy_fields(cls, data: Any) -> Any:
-        """Capture size/ads_type from YAML for backwards compatibility."""
-        if isinstance(data, dict):
-            # Store legacy values if present, then remove them
-            if "size" in data:
-                data["_size_from_yaml"] = data.pop("size")
-            if "ads_type" in data:
-                data["_ads_type_from_yaml"] = data.pop("ads_type")
-        return data
 
     @computed_field
     @property
@@ -138,21 +128,14 @@ class RuntimeSymbol(BaseModel):
         default_factory=list,
         description="Exclude terminals in these groups (e.g., Coupler)",
     )
+    is_global: bool = Field(
+        default=False,
+        description="Global symbol not tied to specific terminals (e.g., SyncUnits)",
+    )
 
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None
     _ads_type_from_yaml: int | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def capture_legacy_fields(cls, data: Any) -> Any:
-        """Capture size/ads_type from YAML for backwards compatibility."""
-        if isinstance(data, dict):
-            if "size" in data:
-                data["_size_from_yaml"] = data.pop("size")
-            if "ads_type" in data:
-                data["_ads_type_from_yaml"] = data.pop("ads_type")
-        return data
 
     @computed_field
     @property
@@ -182,6 +165,10 @@ class RuntimeSymbol(BaseModel):
         Returns:
             True if the symbol should be applied to this terminal
         """
+        # Global symbols are not applied to individual terminals
+        if self.is_global:
+            return False
+
         # Check terminal ID whitelist first (most specific)
         if self.whitelist:
             return terminal_id in self.whitelist
@@ -260,6 +247,27 @@ class RuntimeSymbolsConfig(BaseModel):
         ]
 
 
+class PdoGroup(BaseModel):
+    """A group of PDOs that can be active together.
+
+    Terminals with dynamic PDO configurations (AlternativeSmMapping in XML)
+    have mutually exclusive PDO groups. Only one group can be selected at a time.
+    """
+
+    name: str = Field(description="Group name (e.g., 'Standard', 'Compact')")
+    is_default: bool = Field(
+        default=False, description="Whether this is the default group"
+    )
+    pdo_indices: list[int] = Field(
+        default_factory=list,
+        description="List of PDO indices (hex values) in this group",
+    )
+    symbol_indices: list[int] = Field(
+        default_factory=list,
+        description="Indices into symbol_nodes that belong to this group",
+    )
+
+
 class TerminalType(BaseModel):
     """Terminal type definition."""
 
@@ -272,11 +280,69 @@ class TerminalType(BaseModel):
         default_factory=list, description="CoE object dictionary"
     )
     group_type: str | None = Field(default=None, description="Terminal group type")
+    pdo_groups: list[PdoGroup] = Field(
+        default_factory=list,
+        description="Mutually exclusive PDO groups (empty = static PDOs)",
+    )
+    selected_pdo_group: str | None = Field(
+        default=None,
+        description="Currently selected PDO group name (None = all symbols available)",
+    )
+
+    @property
+    def has_dynamic_pdos(self) -> bool:
+        """Check if this terminal has dynamic PDO configurations."""
+        return len(self.pdo_groups) > 0
+
+    @property
+    def default_pdo_group(self) -> PdoGroup | None:
+        """Get the default PDO group if any."""
+        for group in self.pdo_groups:
+            if group.is_default:
+                return group
+        return self.pdo_groups[0] if self.pdo_groups else None
+
+    def get_pdo_group(self, name: str) -> PdoGroup | None:
+        """Get a PDO group by name."""
+        for group in self.pdo_groups:
+            if group.name == name:
+                return group
+        return None
+
+    def get_active_symbol_indices(self) -> set[int]:
+        """Get indices of symbols in the currently selected PDO group.
+
+        Returns:
+            Set of symbol indices that are active, or all indices if no groups.
+        """
+        if not self.pdo_groups:
+            # No dynamic PDOs - all symbols are available
+            return set(range(len(self.symbol_nodes)))
+
+        # Find the selected group
+        group = None
+        if self.selected_pdo_group:
+            group = self.get_pdo_group(self.selected_pdo_group)
+        if not group:
+            group = self.default_pdo_group
+
+        if group:
+            return set(group.symbol_indices)
+        return set(range(len(self.symbol_nodes)))
 
 
+# Forward reference for TerminalConfig (defined after CompositeType models)
 class TerminalConfig(BaseModel):
-    """Root configuration for terminal types."""
+    """Root configuration for terminal types.
 
+    Includes optional composite_types for defining bit field structures
+    that can be referenced by symbol_nodes.
+    """
+
+    composite_types: dict[str, "CompositeType"] = Field(
+        default_factory=dict,
+        description="Dictionary of composite types (bit field structures)",
+    )
     terminal_types: dict[str, TerminalType] = Field(
         default_factory=dict, description="Dictionary of terminal types by ID"
     )
@@ -300,6 +366,10 @@ class TerminalConfig(BaseModel):
     def to_yaml(self, path: Path) -> None:
         """Save configuration to YAML file.
 
+        For terminals with dynamic PDOs, only symbols in the currently selected
+        PDO group are saved with their 'selected' state; symbols in other groups
+        are saved as selected=False.
+
         Args:
             path: Path to save YAML file
         """
@@ -307,25 +377,51 @@ class TerminalConfig(BaseModel):
         from ruamel.yaml import YAML
 
         # Fields to exclude from symbol_nodes (computed or internal)
-        symbol_exclude_fields = {"selected", "size", "ads_type"}
+        symbol_exclude_fields = {"size", "ads_type"}
 
-        # Convert to dict, excluding 'selected' field and filtering items
+        # Convert to dict, excluding None values
         data = self.model_dump(exclude_none=True)
 
-        # Filter symbol_nodes and coe_objects based on 'selected' field
-        for _terminal_id, terminal_data in data.get("terminal_types", {}).items():
+        # Remove empty composite_types
+        if not data.get("composite_types"):
+            data.pop("composite_types", None)
+
+        # Process each terminal
+        for terminal_id, terminal_data in data.get("terminal_types", {}).items():
+            terminal = self.terminal_types.get(terminal_id)
+
+            # For dynamic PDO terminals, enforce that only symbols in the
+            # active PDO group can be selected
+            if terminal and terminal.has_dynamic_pdos:
+                active_indices = terminal.get_active_symbol_indices()
+                if "symbol_nodes" in terminal_data:
+                    for idx, sym in enumerate(terminal_data["symbol_nodes"]):
+                        if idx not in active_indices:
+                            sym["selected"] = False
+
+            # Save all symbols with 'selected' field, excluding computed fields
             if "symbol_nodes" in terminal_data:
                 terminal_data["symbol_nodes"] = [
                     {k: v for k, v in sym.items() if k not in symbol_exclude_fields}
                     for sym in terminal_data["symbol_nodes"]
-                    if sym.get("selected", True)
                 ]
+
             if "coe_objects" in terminal_data:
                 terminal_data["coe_objects"] = [
                     {k: v for k, v in coe.items() if k != "selected"}
                     for coe in terminal_data["coe_objects"]
                     if coe.get("selected", False)
                 ]
+            # Remove empty pdo_groups
+            if not terminal_data.get("pdo_groups"):
+                terminal_data.pop("pdo_groups", None)
+            else:
+                # Exclude pdo_indices (only needed during XML parsing)
+                for group in terminal_data["pdo_groups"]:
+                    group.pop("pdo_indices", None)
+            # Remove selected_pdo_group if no pdo_groups
+            if not terminal_data.get("pdo_groups"):
+                terminal_data.pop("selected_pdo_group", None)
 
         yaml = YAML()
         yaml.default_flow_style = False
@@ -369,6 +465,18 @@ class TerminalConfig(BaseModel):
 # ============================================================
 
 
+class BitField(BaseModel):
+    """A single bit field within a composite type.
+
+    Bit fields represent individual boolean flags packed into a
+    byte-sized composite type (USINT, UINT, UDINT).
+    """
+
+    name: str = Field(description="Bit field name (e.g., 'Input', 'Error')")
+    bit: int = Field(description="Bit position (0-based)")
+    description: str | None = Field(default=None, description="Bit field description")
+
+
 class CompositeTypeMember(BaseModel):
     """A member field within a composite type.
 
@@ -389,7 +497,10 @@ class CompositeTypeMember(BaseModel):
 class CompositeType(BaseModel):
     """A composite type definition (TwinCAT BIGTYPE structure).
 
-    These are structured types that contain multiple primitive members.
+    These are structured types that contain either:
+    - Byte-level members (for complex structures like analog channels)
+    - Bit-level fields (for digital I/O status/control bytes)
+
     They are referenced by type_name in terminal YAML files.
     """
 
@@ -397,7 +508,10 @@ class CompositeType(BaseModel):
     ads_type: int = Field(default=65, description="ADS data type ID (65 = BIGTYPE)")
     size: int = Field(description="Total size in bytes")
     members: list[CompositeTypeMember] = Field(
-        default_factory=list, description="List of member fields"
+        default_factory=list, description="List of byte-level member fields"
+    )
+    bit_fields: list[BitField] = Field(
+        default_factory=list, description="List of bit-level fields"
     )
     array_size: int | None = Field(
         default=None, description="Array size if this is an array type"

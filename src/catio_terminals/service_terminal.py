@@ -1,6 +1,5 @@
 """Terminal management service."""
 
-import asyncio
 import logging
 
 from catio_terminals.beckhoff import BeckhoffClient, BeckhoffTerminalInfo
@@ -71,67 +70,32 @@ class TerminalService:
         config: TerminalConfig,
         terminal_info: BeckhoffTerminalInfo,
         beckhoff_client: BeckhoffClient,
-        lazy_load: bool = True,
     ) -> TerminalType:
-        """Add terminal from Beckhoff information.
+        """Add terminal from Beckhoff information with lazy loading.
+
+        Creates a minimal terminal with no symbols initially. Symbols and CoE objects
+        are loaded on-demand when the terminal is first viewed or accessed.
 
         Args:
             config: Configuration to add terminal to
             terminal_info: BeckhoffTerminalInfo instance
-            beckhoff_client: Beckhoff client for fetching XML
-            lazy_load: If True, create minimal terminal; XML data loaded on-demand
+            beckhoff_client: Beckhoff client (unused in lazy load mode)
 
         Returns:
             The added TerminalType
         """
-        if lazy_load:
-            # Create minimal terminal with no symbols - XML will be loaded on-demand
-            terminal = TerminalType(
-                description=terminal_info.description,
-                identity=Identity(
-                    vendor_id=2,  # Beckhoff
-                    product_code=terminal_info.product_code or 0,
-                    revision_number=terminal_info.revision_number or 0x00100000,
-                ),
-                symbol_nodes=[],  # Empty - will be populated from XML on first view
-                group_type=terminal_info.group_type,
-            )
-            logger.info(
-                f"Created minimal terminal {terminal_info.terminal_id} (lazy load)"
-            )
-        else:
-            # Eager load: fetch and parse XML now
-            xml_content = await beckhoff_client.fetch_terminal_xml(
-                terminal_info.terminal_id
-            )
-
-            if xml_content:
-                try:
-                    terminal = beckhoff_client.parse_terminal_xml(
-                        xml_content, terminal_info.terminal_id, terminal_info.group_type
-                    )
-                    # Yield control after parsing
-                    await asyncio.sleep(0)
-                except ValueError:
-                    logger.error("Failed to parse XML, using default")
-                    terminal = beckhoff_client.create_default_terminal(
-                        terminal_info.terminal_id,
-                        terminal_info.description,
-                        terminal_info.group_type,
-                    )
-            else:
-                terminal = beckhoff_client.create_default_terminal(
-                    terminal_info.terminal_id,
-                    terminal_info.description,
-                    terminal_info.group_type,
-                )
-
-            # Mark all symbols as selected for new terminals
-            for sym in terminal.symbol_nodes:
-                sym.selected = True
-
-        config.add_terminal(terminal_info.terminal_id, terminal)
-        return terminal
+        # Create minimal terminal with no symbols - XML will be loaded on-demand
+        terminal = TerminalType(
+            description=terminal_info.description,
+            identity=Identity(
+                vendor_id=2,  # Beckhoff
+                product_code=terminal_info.product_code or 0,
+                revision_number=terminal_info.revision_number or 0x00100000,
+            ),
+            symbol_nodes=[],  # Empty - will be populated from XML on first view
+            group_type=terminal_info.group_type,
+        )
+        logger.info(f"Created minimal terminal {terminal_info.terminal_id} (lazy load)")
 
         config.add_terminal(terminal_info.terminal_id, terminal)
         return terminal

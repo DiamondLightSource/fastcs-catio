@@ -1,16 +1,22 @@
 """Beckhoff terminal client - simplified facade over XML cache and parser modules."""
 
+from __future__ import annotations
+
 import logging
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from catio_terminals.models import TerminalType
-from catio_terminals.xml_cache import BeckhoffTerminalInfo, XmlCache
-from catio_terminals.xml_parser import (
+from catio_terminals.xml import (
     create_default_terminal,
     parse_terminal_catalog,
     parse_terminal_details,
 )
+from catio_terminals.xml.cache import BeckhoffTerminalInfo, XmlCache
+
+if TYPE_CHECKING:
+    from catio_terminals.models import CompositeType
 
 logger = logging.getLogger(__name__)
 
@@ -36,22 +42,6 @@ class BeckhoffClient:
         """
         self.max_terminals = max_terminals
         self._cache = XmlCache()
-
-    # Expose cache paths for backwards compatibility
-    @property
-    def cache_dir(self) -> Path:
-        """Cache directory path."""
-        return self._cache.cache_dir
-
-    @property
-    def xml_extract_dir(self) -> Path:
-        """XML extraction directory path."""
-        return self._cache.xml_dir
-
-    @property
-    def terminals_cache_file(self) -> Path:
-        """Terminals cache file path."""
-        return self._cache.terminals_file
 
     def get_cached_terminals(self) -> list[BeckhoffTerminalInfo] | None:
         """Get terminals from cache if available."""
@@ -82,7 +72,7 @@ class BeckhoffClient:
             if progress_callback:
                 progress_callback("Parsing XML files...", 0.2)
 
-            xml_files = self._cache.get_xml_files()
+            xml_files = self._cache.get_terminal_xml_files()
             logger.info(f"Found {len(xml_files)} XML files to parse")
 
             # Wrap progress callback to add offset and yield control
@@ -157,9 +147,7 @@ class BeckhoffClient:
 
         terminals = self.get_cached_terminals()
 
-        if not terminals:
-            logger.warning("No cached terminals found, using fallback data")
-            terminals = self._get_fallback_terminals()
+        assert terminals, "No cached terminals found"
 
         if query:
             query_lower = query.lower()
@@ -173,35 +161,6 @@ class BeckhoffClient:
 
         logger.info(f"Found {len(terminals)} matching terminals")
         return terminals
-
-    def _get_fallback_terminals(self) -> list[BeckhoffTerminalInfo]:
-        """Get hardcoded fallback terminals when cache is empty."""
-        return [
-            BeckhoffTerminalInfo(
-                terminal_id="EL1008",
-                name="8-channel Digital Input 24V DC",
-                description="8-channel digital input terminal 24V DC, 3ms",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el1008/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL2008",
-                name="8-channel Digital Output 24V DC",
-                description="8-channel digital output terminal 24V DC, 0.5A",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el2008/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL3064",
-                name="4-channel Analog Input 0..10V",
-                description="4-channel analog input terminal 0..10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el3064/",
-            ),
-            BeckhoffTerminalInfo(
-                terminal_id="EL4004",
-                name="4-channel Analog Output 0..10V",
-                description="4-channel analog output terminal 0..10V, 12-bit",
-                url=f"{self.BASE_URL}/en-us/products/i-o/ethercat-terminals/el4004/",
-            ),
-        ]
 
     async def fetch_terminal_xml(self, terminal_id: str) -> str | None:
         """Fetch XML description for a terminal.
@@ -239,7 +198,7 @@ class BeckhoffClient:
             return None
 
         logger.debug(f"Terminal {terminal_id} not in cache, searching files...")
-        for xml_file in self._cache.get_xml_files():
+        for xml_file in self._cache.get_terminal_xml_files():
             try:
                 content = xml_file.read_text(encoding="utf-8", errors="ignore")
                 if re.search(rf"\b{terminal_id}\b", content, re.IGNORECASE):
@@ -256,23 +215,29 @@ class BeckhoffClient:
         xml_content: str,
         terminal_id: str,
         group_type: str | None = None,
-    ) -> TerminalType:
+        target_revision: int | None = None,
+    ) -> tuple[TerminalType, dict[str, CompositeType]]:
         """Parse terminal XML and create TerminalType.
 
         Args:
             xml_content: XML content string
             terminal_id: Terminal ID
             group_type: Optional terminal group type
+            target_revision: Optional specific revision number to match
 
         Returns:
-            TerminalType instance
+            Tuple of (TerminalType instance, dict of composite types)
         """
-        result = parse_terminal_details(xml_content, terminal_id, group_type)
+        result = parse_terminal_details(
+            xml_content, terminal_id, group_type, target_revision
+        )
         if result is None:
             return create_default_terminal(
                 terminal_id, f"Terminal {terminal_id}", group_type
-            )
-        return result
+            ), {}
+        # Unpack tuple - parse_terminal_details returns (TerminalType, composite_types)
+        terminal, composite_types = result
+        return terminal, composite_types
 
     def create_default_terminal(
         self,

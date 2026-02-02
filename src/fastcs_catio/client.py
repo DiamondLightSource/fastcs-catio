@@ -6,13 +6,13 @@ https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/1129
 from __future__ import annotations
 
 import asyncio
-import logging
 import re
 import socket
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from contextlib import closing
 from copy import deepcopy
+from logging import getLogger
 from typing import Any, SupportsInt, TypeVar, dataclass_transform, overload
 
 import numpy as np
@@ -21,7 +21,7 @@ import numpy.typing as npt
 from ._constants import (
     TWINCAT_STRING_ENCODING,
     AdsState,
-    CoEIndex,
+    CoEIndexRange,
     CommandId,
     DeviceStateMachine,
     DeviceType,
@@ -86,6 +86,8 @@ from .utils import (
     get_localhost_ip,
     get_localhost_name,
 )
+
+logger = getLogger(__name__)
 
 # https://infosys.beckhoff.com/content/1033/ipc_security_win7/11019143435.html
 ADS_TCP_PORT: int = 48898
@@ -230,7 +232,7 @@ class UDPMessage:
             return AmsNetId.from_bytes(response.netid.tobytes())
 
         except TimeoutError:
-            logging.error("UDP communication with Beckhoff CX target timed out.")
+            logger.error("UDP communication with Beckhoff CX target timed out.")
             raise
 
     def add_route(self, message: AdsUDPMessage) -> bool:
@@ -253,17 +255,17 @@ class UDPMessage:
             for _ in range(response.count):
                 info = UDPInfo.from_bytes(response.data)
                 if info.tag_id != 1:
-                    logging.warning(f"Ignoring tag {info.tag_id}")
+                    logger.warning(f"Ignoring tag {info.tag_id}")
                     continue
                 if info.length != 4:
-                    logging.error("Invalid tag length")
+                    logger.error("Invalid tag length")
                     return False
                 error_code = int.from_bytes(info.data, byteorder="little", signed=False)
                 return error_code == ErrorCode.ERR_NOERROR
             return False
 
         except TimeoutError:
-            logging.error("UDP communication with Beckhoff CX target timed out.")
+            logger.error("UDP communication with Beckhoff CX target timed out.")
             raise
 
     def delete_route(self, message: AdsUDPMessage):
@@ -285,7 +287,7 @@ class UDPMessage:
             return error_code == ErrorCode.ERR_NOERROR
 
         except TimeoutError:
-            logging.error("UDP communication with Beckhoff CX target timed out.")
+            logger.error("UDP communication with Beckhoff CX target timed out.")
             raise
 
 
@@ -366,11 +368,11 @@ class RemoteRoute:
 
         status = UDPMessage(self.remote).add_route(request)
         if status:
-            logging.debug(
+            logger.debug(
                 f"Successfully added host {self.hostname} to remote {self.remote}"
             )
         else:
-            logging.error(
+            logger.error(
                 f"Failed to add host machine {self.hostname} to remote {self.remote}"
             )
 
@@ -390,11 +392,11 @@ class RemoteRoute:
 
         status = UDPMessage(self.remote).delete_route(request)
         if status:
-            logging.debug(
+            logger.debug(
                 f"Successfully deleted route {self.routename} from remote {self.remote}"
             )
         else:
-            logging.error(
+            logger.error(
                 f"Failed to delete route {self.routename} from remote {self.remote}"
             )
 
@@ -499,7 +501,7 @@ class AsyncioADSClient:
         :returns: an asynchronous ADS client connection
         """
         reader, writer = await asyncio.open_connection(target_ip, ads_port)
-        logging.info(
+        logger.info(
             f"Opened client communication with ADS server at {time.strftime('%X')}"
         )
         return cls(
@@ -518,7 +520,7 @@ class AsyncioADSClient:
         self.__receive_task.cancel()
         self.__writer.close()
         await self.__writer.wait_closed()
-        logging.info(
+        logger.info(
             f"Closed client communication with ADS server at {time.strftime('%X')}"
         )
 
@@ -561,14 +563,14 @@ class AsyncioADSClient:
         total_length = len(header_raw) + len(payload)
         length_bytes = total_length.to_bytes(4, byteorder="little", signed=False)
 
-        logging.debug(
+        logger.debug(
             f"Sending AMS packet: len:{total_length}, cmd:{command}, "
             f"invoke_id:{self.__current_invoke_id}, target:{ams_netid}:{ams_port}"
         )
         self.__writer.write(b"\x00\x00" + length_bytes + header_raw + payload)
 
         await self.__writer.drain()
-        logging.debug(f"Sent AMS packet len:{total_length}.")
+        logger.debug(f"Sent AMS packet len:{total_length}.")
 
         response_ev = ResponseEvent()
         self.__response_events[self.__current_invoke_id] = response_ev
@@ -591,7 +593,7 @@ class AsyncioADSClient:
         communication_timeout_sec = 120
         try:
             async with asyncio.timeout(communication_timeout_sec):
-                logging.debug("Waiting to receive AMS message...")
+                logger.debug("Waiting to receive AMS message...")
                 msg_bytes = await self.__reader.readexactly(6)
                 assert msg_bytes[:2] == b"\x00\x00", (
                     f"Received an invalid TCP header: {msg_bytes.hex()}"
@@ -600,9 +602,9 @@ class AsyncioADSClient:
                     msg_bytes[-4:], byteorder="little", signed=False
                 )
 
-                logging.debug(f"Expecting AMS message of length: {length} bytes")
+                logger.debug(f"Expecting AMS message of length: {length} bytes")
                 packet = await self.__reader.readexactly(length)
-                logging.debug(f"Received packet of length {length} bytes")
+                logger.debug(f"Received packet of length {length} bytes")
 
                 ams_header_length = 32
                 header = AmsHeader.from_bytes(packet[:ams_header_length])
@@ -685,13 +687,13 @@ class AsyncioADSClient:
                     self.__response_events[header.invoke_id].set(response)
 
             except AssertionError as err:
-                logging.error(err)
+                logger.error(err)
                 break
             except ConnectionAbortedError as err:
-                logging.warning(err)
+                logger.warning(err)
                 break
             except Exception as err:
-                logging.error(err)
+                logger.error(err)
                 break
 
     @overload
@@ -842,7 +844,7 @@ class AsyncioADSClient:
             except AssertionError as err:
                 # Type request for 'Onboard I/O Device' device returns an error
                 # e.g. the CX7000 will return ErrorCode.ADSERR_DEVICE_INVALIDINTERFACE
-                logging.warning(
+                logger.warning(
                     f"Device {id} will be ignored as not an EtherCAT Master ({err})"
                 )
                 types.append(DeviceType(0))
@@ -1041,13 +1043,13 @@ class AsyncioADSClient:
         for netid, slave_addresses in zip(dev_netids, dev_slave_addresses, strict=True):
             identities: Sequence[IOIdentity] = []
             for address in slave_addresses:
-                logging.debug(f"READING slave: address={address} ...")
+                logger.debug(f"READING slave: address={address} ...")
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_identity(address),
                     netid=netid,
                     port=ADS_MASTER_PORT,
                 )
-                logging.debug(
+                logger.debug(
                     f"READ slave: address={address}, response={{response.data.hex()}}"
                 )
                 identities.append(IOIdentity.from_bytes(response.data))
@@ -1072,7 +1074,7 @@ class AsyncioADSClient:
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             types: Sequence[str] = []
             for n in range(slave_count):
-                coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
+                coe_index = hex(CoEIndexRange.ADS_COE_OPERATIONAL_PARAMS + n)
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_type(coe_index),
                     netid=netid,
@@ -1100,7 +1102,7 @@ class AsyncioADSClient:
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             names: Sequence[str] = []
             for n in range(slave_count):
-                coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
+                coe_index = hex(CoEIndexRange.ADS_COE_OPERATIONAL_PARAMS + n)
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_name(coe_index),
                     netid=netid,
@@ -1256,12 +1258,12 @@ class AsyncioADSClient:
             if tp != DeviceType.IODEVICETYPE_INVALID
         ]
         if len(ids) != len(dev_ids):
-            logging.warning(
+            logger.warning(
                 "EtherCAT devices introspection was hacked. "
                 + "Incompatible I/O devices have been omitted."
             )
-            logging.debug(f"Initial list of device ids: {dev_ids}")
-            logging.debug(f"Initial list of device types: {dev_types}")
+            logger.debug(f"Initial list of device ids: {dev_ids}")
+            logger.debug(f"Initial list of device types: {dev_types}")
             dev_ids = ids
             types: Sequence[DeviceType] = [
                 type for type in dev_types if type != DeviceType.IODEVICETYPE_INVALID
@@ -1282,64 +1284,64 @@ class AsyncioADSClient:
         devices: dict[SupportsInt, IODevice] = {}
         try:
             dev_ids, dev_types = await self.get_ethercat_master_device()
-            logging.debug(f"List of device ids: {dev_ids}")
-            logging.debug(f"List of device types: {dev_types}")
+            logger.debug(f"List of device ids: {dev_ids}")
+            logger.debug(f"List of device types: {dev_types}")
 
             dev_names = await self._get_device_names(dev_ids)
-            logging.debug(f"List of device names: {dev_names}")
+            logger.debug(f"List of device names: {dev_names}")
 
             dev_netids = await self._get_device_netids(dev_ids)
-            logging.debug(f"List of device netids: {dev_netids}")
+            logger.debug(f"List of device netids: {dev_netids}")
 
             dev_identities = await self._get_device_identities(dev_netids)
-            logging.debug(f"List of device identities: {dev_identities}")
+            logger.debug(f"List of device identities: {dev_identities}")
 
             dev_frames = await self._get_device_frame_counters(dev_netids)
-            logging.debug(f"List of device frame counters at start: {dev_frames}")
+            logger.debug(f"List of device frame counters at start: {dev_frames}")
 
             dev_slave_counts = await self._get_slave_count(dev_netids)
-            logging.debug(f"List of device slave counts: {dev_slave_counts}")
+            logger.debug(f"List of device slave counts: {dev_slave_counts}")
 
             dev_slave_crc_counters = await self._get_slaves_crc_counters(
                 dev_netids, dev_slave_counts
             )
-            logging.debug(
+            logger.debug(
                 f"List of device slave CRC counters at start: {dev_slave_crc_counters}"
             )
 
             dev_slave_addresses = await self._get_slave_addresses(
                 dev_netids, dev_slave_counts
             )
-            logging.debug(f"List of device slave addresses: {dev_slave_addresses}")
+            logger.debug(f"List of device slave addresses: {dev_slave_addresses}")
 
             dev_slave_identities = await self._get_slave_identities(
                 dev_netids, dev_slave_addresses
             )
-            logging.debug(f"List of device slave identities: {dev_slave_identities}")
+            logger.debug(f"List of device slave identities: {dev_slave_identities}")
 
             dev_slave_types = await self._get_slave_types(
                 dev_netids,
                 dev_slave_counts,
             )
-            logging.debug(f"List of device slave types: {dev_slave_types}")
+            logger.debug(f"List of device slave types: {dev_slave_types}")
 
             dev_slave_names = await self._get_slave_names(
                 dev_netids,
                 dev_slave_counts,
             )
-            logging.debug(f"List of device slave names: {dev_slave_names}")
+            logger.debug(f"List of device slave names: {dev_slave_names}")
 
             dev_slave_states = await self._get_slave_states(
                 dev_netids,
                 dev_slave_addresses,
             )
-            logging.debug(f"List of device slave states at start: {dev_slave_states}")
+            logger.debug(f"List of device slave states at start: {dev_slave_states}")
 
             dev_slave_crcs = await self._get_slave_crcs(
                 dev_netids,
                 dev_slave_addresses,
             )
-            logging.debug(f"List of device slave crcs at start: {dev_slave_crcs}")
+            logger.debug(f"List of device slave crcs at start: {dev_slave_crcs}")
 
             dev_slaves = await self._make_slave_objects(
                 dev_ids,
@@ -1350,7 +1352,7 @@ class AsyncioADSClient:
                 dev_slave_states,
                 dev_slave_crcs,
             )
-            logging.debug(f"List of device slaves: {dev_slaves}")
+            logger.debug(f"List of device slaves: {dev_slaves}")
 
             for params in list(
                 zip(
@@ -1371,7 +1373,7 @@ class AsyncioADSClient:
                 devices[device.id] = device
 
         except AssertionError as err:
-            logging.critical(f"Problem during EtherCAT devices introspection -> {err}")
+            logger.critical(f"Problem during EtherCAT devices introspection -> {err}")
 
         return devices
 
@@ -1452,7 +1454,7 @@ class AsyncioADSClient:
                     else:
                         parent_path = deepcopy(device_node.path)
                         device_node.add_child(IOTreeNode(slave, parent_path))
-        logging.debug(f"EtherCAT system tree has {server_node.tree_height()} levels.")
+        logger.debug(f"EtherCAT system tree has {server_node.tree_height()} levels.")
 
         return server_node
 
@@ -1466,20 +1468,20 @@ class AsyncioADSClient:
             in the list of devices registered with the I/O server.
         """
         self.ioserver: IOServer = await self._get_io_server()
-        logging.info(
+        logger.info(
             f"ADS device info: \tname={self.ioserver.name}, "
             + f"version={self.ioserver.version}, build={self.ioserver.build}"
         )
-        logging.info(f"Number of I/O devices: {self.ioserver.num_devices}")
+        logger.info(f"Number of I/O devices: {self.ioserver.num_devices}")
         assert self.ioserver.num_devices != 0, (
             "No device is registered with the I/O server"
         )
 
         self._ecdevices = await self._get_ethercat_devices()
-        logging.info(f"Available I/O devices: {self._ecdevices}")
+        logger.info(f"Available I/O devices: {self._ecdevices}")
 
         self.master_device_id = next(iter(self._ecdevices))
-        logging.info(
+        logger.info(
             f"Device id {self.master_device_id} registered as EtherCAT Master device."
         )
 
@@ -1528,7 +1530,7 @@ class AsyncioADSClient:
             )
         try:
             io_adsstate, io_devstate = await self._get_ioserver_states()
-            logging.debug(f"IO states: ads={io_adsstate}, dev={io_devstate}")
+            logger.debug(f"IO states: ads={io_adsstate}, dev={io_devstate}")
             assert io_adsstate == AdsState.ADSSTATE_RUN, "IO device is not in run mode"
 
             for device in self._ecdevices.values():
@@ -1536,7 +1538,7 @@ class AsyncioADSClient:
                     netid=device.netid,
                     port=ADS_MASTER_PORT,
                 )
-                logging.debug(
+                logger.debug(
                     f"DEV{device.id} states: ads={ec_adsstate}, dev={ec_devstate}"
                 )
                 assert ec_devstate == SlaveLinkState.SLAVE_LINK_STATE_OK, (
@@ -1544,7 +1546,7 @@ class AsyncioADSClient:
                 )
 
         except AssertionError as err:
-            logging.critical(f"Problem during ADS communication status check -> {err}")
+            logger.critical(f"Problem during ADS communication status check -> {err}")
             raise
 
     async def check_slave_states(
@@ -1592,7 +1594,7 @@ class AsyncioADSClient:
             )
 
         except AssertionError as err:
-            logging.critical(
+            logger.critical(
                 f"Problem during status check of an EtherCAT slave -> {err}"
             )
             raise
@@ -1636,7 +1638,7 @@ class AsyncioADSClient:
         # Only update slave attributes if the states values have changed.
         if not np.array_equal(device.slaves_states, slaves_states):
             device.slaves_states = slaves_states
-            logging.warning(
+            logger.warning(
                 f"{device.name}: slaves states have changed and been updated."
             )
 
@@ -1674,7 +1676,7 @@ class AsyncioADSClient:
             assert bad_ecat.size
             for idx in bad_ecat:
                 slave: IOSlave = slaves[int(idx)]
-                logging.critical(
+                logger.critical(
                     f"Slave terminal '{slave.name}' isn't in operational state."
                 )
 
@@ -1686,7 +1688,7 @@ class AsyncioADSClient:
             assert bad_link.size
             for idx in bad_link:
                 slave: IOSlave = slaves[int(idx)]
-                logging.critical(
+                logger.critical(
                     f"EtherCAT link for slave terminal '{slave.name}' isn't "
                     + "in a good state."
                 )
@@ -1700,7 +1702,7 @@ class AsyncioADSClient:
         Read the current ADS state of the EtherCAT devices and their associated slaves.
         """
         while not self._ecdevices:
-            logging.warning(
+            logger.warning(
                 "... waiting for EtherCAT devices initialisation before polling states"
             )
             await asyncio.sleep(1)
@@ -1715,7 +1717,7 @@ class AsyncioADSClient:
                 dev_state = int.from_bytes(
                     bytes=dev_response.data, byteorder="little", signed=False
                 )
-                logging.debug(f"{device.name} state: {dev_state}")
+                logger.debug(f"{device.name} state: {dev_state}")
                 assert dev_state == DeviceStateMachine.DEVSTATE_OP, (
                     f"{device.name} is not operational, {DeviceStateMachine(dev_state)}"
                 )
@@ -1740,7 +1742,7 @@ class AsyncioADSClient:
                     assert bad_ecat.size
                     for idx in bad_ecat:
                         slave: IOSlave = (device.slaves)[int(idx)]
-                        logging.critical(
+                        logger.critical(
                             f"Slave terminal '{slave.name}' isn't in operational state."
                         )
                         slave.states.ecat_state = states["ecat_state"][idx]
@@ -1753,14 +1755,14 @@ class AsyncioADSClient:
                     assert bad_link.size
                     for idx in bad_link:
                         slave: IOSlave = (device.slaves)[int(idx)]
-                        logging.critical(
+                        logger.critical(
                             f"EtherCAT link for slave terminal '{slave.name}' isn't "
                             + "in a good state."
                         )
                         slave.states.link_status = states["link_status"][idx]
 
         except AssertionError as err:
-            logging.critical(f"Problem polling an EtherCAT device state -> {err}")
+            logger.critical(f"Problem polling an EtherCAT device state -> {err}")
             raise
 
     async def check_slave_crc(
@@ -1803,7 +1805,7 @@ class AsyncioADSClient:
             return SlaveCRC.from_bytes(response.data.ljust(32, b"\0"))
 
         except AssertionError as err:
-            logging.critical(f"Problem reading a slave CRC value -> {err}")
+            logger.critical(f"Problem reading a slave CRC value -> {err}")
             raise
 
     async def get_slave_crc_error_counters(
@@ -1860,7 +1862,7 @@ class AsyncioADSClient:
         # Only update slave attributes if the crc values have changed.
         if not np.array_equal(device.slaves_crc_counters, slaves_crcs):
             device.slaves_crc_counters = slaves_crcs
-            logging.warning(
+            logger.warning(
                 f"{device.name}: slave CRC sum counters have changed and been updated."
             )
 
@@ -1874,7 +1876,7 @@ class AsyncioADSClient:
         Read the current error sum counter values of the slaves' CRC for each device.
         """
         while not self._ecdevices:
-            logging.warning(
+            logger.warning(
                 "... waiting for EtherCAT devices initialisation before "
                 + "polling CRC counters"
             )
@@ -1916,7 +1918,7 @@ class AsyncioADSClient:
             device.frame_counters = DeviceFrames.from_bytes(response.data)
 
         except AssertionError as err:
-            logging.critical(f"Problem reading a device frame counter value -> {err}")
+            logger.critical(f"Problem reading a device frame counter value -> {err}")
             raise
 
     async def poll_frame_counters(self) -> None:
@@ -1924,14 +1926,14 @@ class AsyncioADSClient:
         Get the current frame counter values of all registered EtherCAT devices.
         """
         while not self._ecdevices:
-            logging.warning(
+            logger.warning(
                 "... waiting for EtherCAT devices initialisation before polling states"
             )
             await asyncio.sleep(1)
         try:
             for device in self._ecdevices.values():
                 await self.get_device_frames(device.id)
-                logging.debug(
+                logger.debug(
                     f"{device.name} frame counters: "
                     + f"cyclic_sent={device.frame_counters.cyclic_sent}, "
                     + f"cyclic_lost={device.frame_counters.cyclic_lost}, "
@@ -1939,7 +1941,7 @@ class AsyncioADSClient:
                     + f"acyclic_lost={device.frame_counters.acyclic_lost}, "
                 )
         except AssertionError as err:
-            logging.critical(f"Problem polling device frame counter values -> {err}")
+            logger.critical(f"Problem polling device frame counter values -> {err}")
             raise
 
     async def reset_device_frames(self, device_id: SupportsInt) -> None:
@@ -1976,7 +1978,7 @@ class AsyncioADSClient:
             )
 
         except AssertionError as err:
-            logging.critical(f"Problem resetting a device frame counter value -> {err}")
+            logger.critical(f"Problem resetting a device frame counter value -> {err}")
             raise
 
     async def reset_frame_counters(self) -> None:
@@ -1984,16 +1986,16 @@ class AsyncioADSClient:
         Reset the frame counters of all EtherCAT devices registered with the I/O server.
         """
         while not self._ecdevices:
-            logging.warning(
+            logger.warning(
                 "... waiting for EtherCAT devices initialisation before polling states"
             )
             await asyncio.sleep(1)
         try:
             for device in self._ecdevices.values():
                 await self.reset_device_frames(device.id)
-                logging.info(f"Frame counters for {device.name} have been reset.")
+                logger.info(f"Frame counters for {device.name} have been reset.")
         except AssertionError as err:
-            logging.critical(f"Problem resetting device frame counter values -> {err}")
+            logger.critical(f"Problem resetting device frame counter values -> {err}")
             raise
 
     # #################################################################
@@ -2081,7 +2083,7 @@ class AsyncioADSClient:
                 symbol.name = f"{device_name}.{symbol.name}"
 
         self._ecsymbols[device_id] = symbols
-        logging.info(
+        logger.info(
             f"{symbol_table.symbol_count} entries in the symbol table returned "
             + f"a total of {len(symbols)} available symbols."
         )
@@ -2116,7 +2118,7 @@ class AsyncioADSClient:
 
         :returns: a tuple comprising the symbol name and its current value
         """
-        logging.debug(f"Reading current value of symbol '{symbol.name}'.")
+        logger.debug(f"Reading current value of symbol '{symbol.name}'.")
         response = await self._ads_command(
             AdsReadRequest.read_symbol(symbol.group, symbol.offset, symbol.nbytes),
         )
@@ -2133,9 +2135,9 @@ class AsyncioADSClient:
         :param symbol: the ADS symbol to write to
         :param value: the value to write to the ADS symbol
         """
-        logging.debug(f"Writing value {value} to symbol '{symbol.name}'.")
+        logger.debug(f"Writing value {value} to symbol '{symbol.name}'.")
         if isinstance(value, Sequence) and not (len(value) == symbol.size):
-            logging.error(
+            logger.error(
                 f"Symbol Write Value Error: value for '{symbol.name}' expects a "
                 + f"collection of {symbol.size} elements, got {len(value)} instead."
             )
@@ -2146,7 +2148,7 @@ class AsyncioADSClient:
             )
             return True
         except ValueError:
-            logging.error(
+            logger.error(
                 f"Symbol Write Type Error: wrong value type provided for {symbol.name}:"
                 + f" expected '{symbol.dtype}' but got '{type(value)}'."
             )
@@ -2164,12 +2166,12 @@ class AsyncioADSClient:
 
         :returns: a tuple comprising the symbol name and its current value
         """
-        logging.debug(
+        logger.debug(
             f"Reading current value of symbol '{symbol.name}' "
             + f"and writing new value {value}."
         )
         if isinstance(value, Sequence) and not (len(value) == symbol.size):
-            logging.error(
+            logger.error(
                 f"Symbol ReadWrite Value Error: value for '{symbol.name}' expects a "
                 + f"collection of {symbol.size} elements, got {len(value)} instead."
             )
@@ -2186,11 +2188,11 @@ class AsyncioADSClient:
                 old_val,
             )
         except ValueError:
-            logging.error(
+            logger.error(
                 f"Symbol Write Type Error: wrong value type provided for {symbol.name}:"
                 + f" expected '{symbol.dtype}' but got '{type(value)}'."
             )
-        logging.warning(
+        logger.warning(
             f"ReadWrite command failed on symbol '{symbol.name}'. "
             + "Reverting to read only."
         )
@@ -2237,7 +2239,7 @@ class AsyncioADSClient:
         """
         read_subcommands: list[AdsReadRequest] = []
         for symbol in symbols:
-            logging.debug(f"SUM read symbol: {symbol.name}")
+            logger.debug(f"SUM read symbol: {symbol.name}")
             read_subcommands.append(
                 AdsReadRequest.read_symbol(symbol.group, symbol.offset, symbol.nbytes),
             )
@@ -2255,7 +2257,7 @@ class AsyncioADSClient:
         reads = {}
         for symbol, read in zipped:
             if not (read.result == ErrorCode.ERR_NOERROR):
-                logging.error(
+                logger.error(
                     f"ADS Read error with '{symbol.name}': {ErrorCode(read.result)}"
                 )
             reads[symbol.name] = np.frombuffer(read.data, symbol.datatype, count=1)
@@ -2296,9 +2298,9 @@ class AsyncioADSClient:
         write_subcommands: list[AdsWriteRequest] = []
 
         for symbol, value in targets:
-            logging.debug(f"SUM write symbol: {symbol.name}, {value}")
+            logger.debug(f"SUM write symbol: {symbol.name}, {value}")
             if isinstance(value, Sequence) and not (len(value) == symbol.size):
-                logging.error(
+                logger.error(
                     f"Symbol Write Value Error: value for '{symbol.name}' expects a "
                     + f"collection of {symbol.size} elements, got {len(value)} instead."
                 )
@@ -2315,7 +2317,7 @@ class AsyncioADSClient:
                     ),
                 )
             except ValueError:
-                logging.error(
+                logger.error(
                     f"Write error: wrong value type provided for {symbol.name}: "
                     + f"expected '{symbol.dtype}' but got '{type(value)}'."
                 )
@@ -2395,9 +2397,9 @@ class AsyncioADSClient:
         readwrite_status = {}
         rw_subcommands: list[AdsReadWriteRequest] = []
         for symbol, value in targets:
-            logging.debug(f"SUM readwrite symbol: {symbol.name}, {value}")
+            logger.debug(f"SUM readwrite symbol: {symbol.name}, {value}")
             if isinstance(value, Sequence) and not (len(value) == symbol.size):
-                logging.error(
+                logger.error(
                     f"Symbol ReadWrite Value Error: value for '{symbol.name}' "
                     + f"expects a collection of {symbol.size} elements, "
                     + f"got {len(value)} instead."
@@ -2415,7 +2417,7 @@ class AsyncioADSClient:
                     ),
                 )
             except ValueError:
-                logging.error(
+                logger.error(
                     f"ReadWrite error: wrong value type provided for {symbol.name}: "
                     + f"expected '{symbol.dtype}' but got '{type(value)}'."
                 )
@@ -2452,7 +2454,7 @@ class AsyncioADSClient:
                 response.data, target[0].datatype, count=1
             )
 
-        logging.debug(f"ReadWrite command statuses: {readwrite_status}")
+        logger.debug(f"ReadWrite command statuses: {readwrite_status}")
 
         return reads
 
@@ -2539,7 +2541,7 @@ class AsyncioADSClient:
         # TO DO: check that notification handles don't get duplicated between devices,
         # otherwise dictionary must be separated further by device id
         self.__device_notification_handles[response.handle] = symbol
-        logging.debug(
+        logger.debug(
             f"Notification subscription for Device{symbol.parent_id} symbol "
             + f"'{symbol.name}' completed with handle {symbol.handle}."
         )
@@ -2587,7 +2589,7 @@ class AsyncioADSClient:
         for symbol in all_symbols:
             await self.add_device_notification(symbol, max_delay_ms, cycle_time_ms)
 
-        logging.info(
+        logger.info(
             f"Successfully added {len(self.__device_notification_handles)} "
             + "notification handles"
         )
@@ -2619,7 +2621,7 @@ class AsyncioADSClient:
         assert response.result == ErrorCode.ERR_NOERROR, ErrorCode(response.result)
 
         del self.__device_notification_handles[symbol.handle]
-        logging.debug(
+        logger.debug(
             f"Deleted notification handle {symbol.handle} for symbol '{symbol.name}' "
             + f"on device '{self._ecdevices[symbol.parent_id].name}'"
         )
@@ -2658,17 +2660,17 @@ class AsyncioADSClient:
             except ValueError:
                 err_counter += 1
             except KeyError as err:
-                logging.error(
+                logger.error(
                     f"Notification deletion for {symbol.name} failed -> {err}."
                 )
 
         if err_counter:
-            logging.error(
+            logger.error(
                 f"Failed to unsubscribe notifications for {err_counter} "
                 + f"symbols out of {len(all_symbols)}."
             )
         else:
-            logging.info(
+            logger.info(
                 f"Successfully deleted client subscription to {len(all_symbols)} "
                 + "symbol notifications."
             )
@@ -2734,7 +2736,7 @@ class AsyncioADSClient:
                                 size + template_data
                             )
                             streams_dtype = streams.get_combined_notifications_dtype(
-                                self._ecdevices[dev_id].name.replace(" ", ""),
+                                self._ecdevices[dev_id].name,
                                 self.__device_notification_handles,
                             )
                         else:
@@ -2743,7 +2745,7 @@ class AsyncioADSClient:
                             template_data = self.__notif_templates[0]
                             streams = AdsNotificationStream.from_bytes(template_data)
                             streams_dtype = streams.get_notification_dtype(
-                                self._ecdevices[dev_id].name.replace(" ", ""),
+                                self._ecdevices[dev_id].name,
                                 self.__device_notification_handles,
                             )
 
@@ -2768,10 +2770,16 @@ class AsyncioADSClient:
                                 streams_dtype, buffer
                             )
                         )
-                        logging.debug("Notification stream added to the queue.")
+                        assert streams_dtype.fields
+                        logger.debug(
+                            f"Notification stream added to the queue: "
+                            f"qsize={self.__notification_queue.qsize()}, "
+                            f"streams_nb={self.__num_notif_streams}, "
+                            f"notifs_fields={len(streams_dtype.fields)}"
+                        )
 
             except AssertionError as err:
-                logging.error(f"Notification flushing error: {err}")
+                logger.error(f"Notification flushing error: {err}")
                 self.__buffer = None
                 break
             except asyncio.CancelledError:
@@ -2783,7 +2791,7 @@ class AsyncioADSClient:
                     self.__notification_queue.put_nowait(
                         await self._get_notifications_from_buffer(streams_dtype, buffer)
                     )
-                logging.info("...periodic flushing of notifications has ended.")
+                logger.info("...periodic flushing of notifications has ended.")
                 break
 
     async def _get_notifications_from_buffer(
@@ -2822,7 +2830,7 @@ class AsyncioADSClient:
                 notifs = await self.__notification_queue.get()
                 self.__notification_queue.task_done()
                 num_header_fields = 4 * self.__num_notif_streams
-                logging.info(
+                logger.debug(
                     f"Got {len(notifs)} notifications with "
                     + f"{(len(notifs.dtype.fields) - num_header_fields) // 3} "
                     + "I/O terminal values."
@@ -2874,7 +2882,7 @@ class AsyncioADSClient:
                     netid=netid,
                     port=port,
                 )
-                logging.debug(
+                logger.debug(
                     f"Converting byte stream '{response.data.hex(' ')}' to {dtype}."
                 )
                 old_value = np.frombuffer(response.data, dtype)
@@ -2896,12 +2904,12 @@ class AsyncioADSClient:
                     netid=netid,
                     port=port,
                 )
-                logging.debug(
+                logger.debug(
                     f"Converting byte stream '{response.data.hex(' ')}' to {dtype}."
                 )
                 new_value = np.frombuffer(response.data, dtype)
 
-                logging.info(
+                logger.info(
                     f"{device.name}: CoE parameter at index '{index}:{subindex}' was "
                     + f"changed from value {old_value} to value {new_value}."
                 )
@@ -2909,13 +2917,13 @@ class AsyncioADSClient:
                 return True
 
         except ValueError:
-            logging.error(
+            logger.error(
                 "Write Type Error: wrong value type provided for CoE parameter "
                 + f"at index '{index}:{subindex}' for device {device.name}."
             )
 
         except TimeoutError:
-            logging.error(
+            logger.error(
                 f"{device.name}:Timeout: CoE parameter at index "
                 + f"'{index}:{subindex}' couldn't be modified."
             )
@@ -2947,7 +2955,7 @@ class AsyncioADSClient:
 
         async def wrapper(self, *args, **kwargs):
             if not self._ecdevices:
-                logging.error("Problem with CATio client, no EtherCAT device found.")
+                logger.error("Problem with CATio client, no EtherCAT device found.")
                 raise RuntimeError
             return await function(self, *args, **kwargs)
 
@@ -3088,7 +3096,7 @@ class AsyncioADSClient:
             device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
-                logging.debug(
+                logger.debug(
                     f"Reading frame counters for EtherCAT device '{device.name}'"
                 )
                 await self.get_device_frames(device.id)
@@ -3123,7 +3131,7 @@ class AsyncioADSClient:
             device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
-                logging.debug(
+                logger.debug(
                     "Reading the total number of slaves registered with "
                     + f"EtherCAT device '{device.name}'"
                 )
@@ -3132,7 +3140,7 @@ class AsyncioADSClient:
                 current_count = count[0]
 
                 if current_count != expected_count:
-                    logging.critical(
+                    logger.critical(
                         f"Number of configured slaves on {device.name} "
                         + f"has changed from {expected_count} to {current_count}"
                     )
@@ -3161,7 +3169,7 @@ class AsyncioADSClient:
             device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
-                logging.debug(
+                logger.debug(
                     "Reading states values for all slaves registered with "
                     + f"EtherCAT device '{device.name}'"
                 )
@@ -3196,7 +3204,7 @@ class AsyncioADSClient:
             device = self.fastcs_io_map.get(controller_id, None)
             assert isinstance(device, IODevice)
             if device is not None:
-                logging.debug(
+                logger.debug(
                     "Reading crc error counters for all slaves registered with "
                     + f"EtherCAT device '{device.name}'"
                 )
@@ -3294,3 +3302,136 @@ class AsyncioADSClient:
                 )
         else:
             raise ValueError("Missing information about controller identification.")
+
+    async def get_symbol_param(
+        self, controller_id: int, symbol_name: str, dtype: npt.DTypeLike
+    ) -> Any:
+        """
+        Read a value from a given ADS symbol.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_name: the name of the ADS symbol to read from
+        :param dtype: the data type of the ADS symbol
+
+        :returns: the value of the ADS symbol
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        # Currently have to find symbol within the list of symbols which are
+        # registered with the EtherCAT (Master) device
+        # Each Device/Slave doesn't have its own symbols attributes
+        # TO DO: add symbol list to each Device/Slave
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            full_symbol_name = ".".join([ctlr.name, symbol_name])
+            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            print(f"SYMBOL: {full_symbol_name}")
+            if symbol is not None:
+                _, response = await self.read_ads_symbol(symbol)
+                result = (
+                    response[0].item()
+                    if isinstance(response, np.ndarray) and response.size == 1
+                    else response
+                )
+                return result
+            else:
+                logger.debug(
+                    f"No match for controller {controller_id} and "
+                    f"ADS  Symbol '{symbol_name}'"
+                )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
+
+    async def set_symbol_param(
+        self, controller_id: int, symbol_name: str, dtype: npt.DTypeLike, value: Any
+    ) -> None:
+        """
+        Write a value to a given ADS symbol.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_name: the name of the ADS symbol to write to
+        :param dtype: the data type of the ADS symbol
+        :param value: the value to assign to the ADS symbol
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            full_symbol_name = ".".join([ctlr.name, symbol_name])
+            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            if symbol is not None:
+                status = await self.write_ads_symbol(symbol, value)
+                if not status:
+                    logger.warning(
+                        f"Write failed for controller {controller_id} and "
+                        f"ADS Symbol '{symbol_name}'"
+                    )
+            else:
+                logger.debug(
+                    f"No match for controller {controller_id} and "
+                    f"ADS  Symbol '{symbol_name}'"
+                )
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )
+
+    async def get_sum_symbols(
+        self, controller_id: int, symbol_names: list[str]
+    ) -> dict[str, Any]:
+        """
+        Read the current value of multiple ADS symbols in one go.
+
+        :param controller_id: the unique identifier of the fastCS device controller
+        :param symbol_names: a list of names comprising the various ADS symbols to read
+
+        :returns: a dictionary mapping the various ADS symbols and their value
+
+        :raises KeyError: if no EtherCAT object is registered against \
+            the given controller id
+        """
+        ctlr = self.fastcs_io_map.get(controller_id, None)
+        if ctlr is not None:
+            assert isinstance(ctlr, IOSlave) or isinstance(ctlr, IODevice)
+            symbols = []
+            dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
+            dev_symbols = self._ecsymbols[dev_id]
+            for name in symbol_names:
+                full_symbol_name = ".".join([ctlr.name, name])
+                symbol = next(
+                    (s for s in dev_symbols if s.name == full_symbol_name), None
+                )
+                if symbol is not None:
+                    symbols.append(symbol)
+
+            response = await self.sumread_ads_symbols(symbols)
+            if len(response) != len(symbol_names):
+                logger.debug(
+                    f"Controller {ctlr.name} sum read: failed to read all symbols."
+                )
+
+            result = {}
+            for k, v in response.items():
+                # Remove the controller name from the full symbol name
+                result[(k.split(".", maxsplit=1))[1]] = (
+                    v.item() if isinstance(v, np.ndarray) and v.size == 1 else v
+                )
+            return result
+
+        else:
+            raise KeyError(
+                "No EtherCAT object registered against "
+                + f"controller id {controller_id}."
+            )

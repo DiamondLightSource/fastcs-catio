@@ -18,6 +18,7 @@ pytest tests/test_system.py -v --external-simulator
 from __future__ import annotations
 
 import asyncio
+import socket
 import subprocess
 import sys
 import time
@@ -31,6 +32,19 @@ from ads_sim.ethercat_chain import EtherCATChain
 
 # To enable debug logging
 # instead of doing this use `pytest --log-cli-level=DEBUG`
+
+
+def _is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
+    """Check if a port is already in use by trying to connect to it."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        try:
+            # Try to connect - if successful, something is listening
+            s.connect((host, port))
+            return True
+        except (TimeoutError, ConnectionRefusedError, OSError):
+            # Connection refused or timeout means nothing is listening
+            return False
 
 
 @pytest.fixture(scope="session")
@@ -61,6 +75,15 @@ def simulator_process(request):
         # No cleanup needed
         return
 
+    # Check if simulator port is already in use
+    simulator_port = 48898  # ADS_TCP_PORT
+    if _is_port_in_use(simulator_port):
+        pytest.fail(
+            f"Port {simulator_port} is already in use. "
+            "A simulator may already be running. "
+            "Stop it before running tests or use --external-simulator flag."
+        )
+
     # Launch the simulator subprocess with verbose logging
     cmd = [
         sys.executable,
@@ -69,6 +92,8 @@ def simulator_process(request):
         "--log-level",
         "DEBUG",
         "--disable-notifications",
+        "--port",
+        str(simulator_port),
     ]
     process = subprocess.Popen(cmd)
 
@@ -99,6 +124,7 @@ async def fastcs_catio_controller(simulator_process):
     time.sleep(0.5)
 
     # Create controller instance
+    # ip = "172.23.242.40"
     # ip = "172.23.242.42"
     ip = "127.0.0.1"
     target_port = 27905
@@ -156,8 +182,13 @@ class TestFastcsCatioConnection:
 
         # Validate IO server info was retrieved
         assert hasattr(client, "ioserver"), "IO server not discovered"
-        assert client.ioserver.num_devices == 1, (
-            f"Expected 1 device, got {client.ioserver.num_devices}"
+
+        # Validate EtherCAT device count
+        # Note: num_devices from the IO server may include non-EtherCAT devices
+        # We verify the number of discovered EtherCAT devices matches expected
+        assert len(client._ecdevices) == expected_chain.device_count, (
+            f"Expected {expected_chain.device_count} EtherCAT device(s), "
+            f"got {len(client._ecdevices)}"
         )
 
         assert client.ioserver.name == expected_chain.server_info.name, (

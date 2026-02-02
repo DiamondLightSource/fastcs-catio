@@ -1,9 +1,9 @@
-import logging
 import re
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
+from logging import getLogger
 
 import numpy as np
 
@@ -15,6 +15,8 @@ from .devices import (
     AdsSymbolNode,
 )
 from .utils import add_comment
+
+logger = getLogger(__name__)
 
 
 class AdsSymbolTypePattern:
@@ -590,7 +592,7 @@ def symbol_lookup(node: AdsSymbolNode):
                         )
                     )
                 case _:
-                    logging.warning(
+                    logger.warning(
                         "Definition for the structured symbol node type "
                         + f"'{node.type_name}' in terminal {node.name} is missing. "
                         + "Symbol node will be ignored."
@@ -613,7 +615,7 @@ def symbol_lookup(node: AdsSymbolNode):
                 )
             )
         case _:
-            logging.warning(
+            logger.warning(
                 f"Definition for the symbol node type '{node.ads_type}' in terminal "
                 + f"{node.name} is missing. Symbol node will be ignored."
             )

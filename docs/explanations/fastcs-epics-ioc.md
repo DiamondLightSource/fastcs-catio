@@ -19,12 +19,12 @@ CATio organizes its FastCS controllers in a tree structure that reflects the phy
 
 ```
 CATioServerController (root)
-    └── CATioDeviceController (EtherCAT Master)
-            ├── CATioTerminalController (EK1100 Coupler)
-            │       ├── CATioTerminalController (EL3064 Analog Input)
-            │       └── CATioTerminalController (EL2008 Digital Output)
-            └── CATioTerminalController (EK1101 Coupler)
-                    └── ...
+└── CATioDeviceController (EtherCAT Master)
+    ├── CATioTerminalController (EK1100 Coupler)
+    │   ├── CATioTerminalController (EL3064 Analog Input)
+    │   └── CATioTerminalController (EL2008 Digital Output)
+    └── CATioTerminalController (EK1101 Coupler)
+        └── ...
 ```
 
 This hierarchy is significant because:

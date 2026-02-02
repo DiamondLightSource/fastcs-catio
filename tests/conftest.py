@@ -76,11 +76,9 @@ async def beckhoff_xml_cache() -> list[Any]:
     client = BeckhoffClient()
     try:
         # Check if cache already exists
-        if client.terminals_cache_file.exists():
-            # Load from existing cache
-            cached = client.get_cached_terminals()
-            if cached:
-                return cached
+        cached = client.get_cached_terminals()
+        if cached:
+            return cached
 
         # Download and parse all XML files into the cache
         terminals = await client.fetch_and_parse_xml()
