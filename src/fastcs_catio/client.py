@@ -21,7 +21,7 @@ import numpy.typing as npt
 from ._constants import (
     TWINCAT_STRING_ENCODING,
     AdsState,
-    CoEIndex,
+    CoEIndexRange,
     CommandId,
     DeviceStateMachine,
     DeviceType,
@@ -1074,7 +1074,7 @@ class AsyncioADSClient:
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             types: Sequence[str] = []
             for n in range(slave_count):
-                coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
+                coe_index = hex(CoEIndexRange.ADS_COE_OPERATIONAL_PARAMS + n)
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_type(coe_index),
                     netid=netid,
@@ -1102,7 +1102,7 @@ class AsyncioADSClient:
         for netid, slave_count in zip(dev_netids, dev_slave_counts, strict=True):
             names: Sequence[str] = []
             for n in range(slave_count):
-                coe_index = hex(CoEIndex.ADS_COE_OPERATIONAL_PARAMS + n)
+                coe_index = hex(CoEIndexRange.ADS_COE_OPERATIONAL_PARAMS + n)
                 response = await self._ads_command(
                     AdsReadRequest.read_slave_name(coe_index),
                     netid=netid,
