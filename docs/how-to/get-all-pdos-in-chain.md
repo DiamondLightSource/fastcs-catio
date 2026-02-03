@@ -79,7 +79,7 @@ The YAML file includes **both** configurations, but only one will be active in T
 ```python
 # Query actual symbols for an EL1502
 symbols = await client.get_all_symbols()
-el1502_symbols = [s for s in symbols[device_id] if "EL1502" in s.name]
+el1502_symbols = [symbol for name, symbol in symbols[device_id].items() if "EL1502" in name]
 
 # Check which configuration is active
 has_per_channel = any("Channel 1" in s.name for s in el1502_symbols)
@@ -101,7 +101,7 @@ The TwinCAT project selects one format per channel. Both are defined in XML as o
 ```python
 # Query actual symbols for analog input terminals
 symbols = await client.get_all_symbols()
-ai_symbols = [s for s in symbols[device_id] if "AI" in s.name]
+ai_symbols = [s for name, symbol in symbols[device_id].items() if "AI" in name]
 
 # Determine which format is active
 has_standard = any("Standard" in s.name for s in ai_symbols)
@@ -130,7 +130,7 @@ Additionally, it has optional `RMB Status`, `RMB Timestamp`, and `RMB Control` P
 ```python
 # Query actual symbols for EL3356
 symbols = await client.get_all_symbols()
-el3356_symbols = [s for s in symbols[device_id] if "EL3356" in s.name]
+el3356_symbols = [s for name, symbol in symbols[device_id].items() if "EL3356" in name]
 
 # Determine which value format is active
 has_int32 = any("RMB Value (INT32)" in s.name for s in el3356_symbols)
@@ -159,8 +159,8 @@ has_control = any("RMB Control" in s.name for s in el3356_symbols)
 ```python
 # Query actual symbols for an EL3702
 symbols = await client.get_all_symbols()
-el3702_ch1 = [s for s in symbols[device_id]
-              if "EL3702" in s.name and "Ch1" in s.name and "Value" in s.name]
+el3702_ch1 = [s for name, symbol in symbols[device_id].items()
+              if "EL3702" in name and "Ch1" in name and "Value" in name]
 
 oversampling_factor = len(el3702_ch1)
 print(f"EL3702 configured for {oversampling_factor}x oversampling")
@@ -174,7 +174,7 @@ print(f"EL3702 configured for {oversampling_factor}x oversampling")
 ```python
 # Query actual symbols for an EL4732
 symbols = await client.get_all_symbols()
-el4732_symbols = [s for s in symbols[device_id] if "EL4732" in s.name and "Value" in s.name]
+el4732_symbols = [s for name, symbol in symbols[device_id].items() if "EL4732" in name and "Value" in name]
 
 # Count array elements to determine oversampling factor
 sample_count = len(el4732_symbols)
@@ -203,7 +203,7 @@ The XML defines 192 TxPDOs (48 per channel) covering all combinations!
 ```python
 # Query actual symbols for ELM3704
 symbols = await client.get_all_symbols()
-elm3704_symbols = [s for s in symbols[device_id] if "ELM3704" in s.name]
+elm3704_symbols = [s for name, symbol in symbols[device_id].items() if "ELM3704" in name]
 
 for ch in range(1, 5):
     ch_symbols = [s for s in elm3704_symbols if f"Channel {ch}" in s.name]
@@ -279,8 +279,8 @@ async with CatioClient(target_ip="192.168.1.100") as client:
 
     # Symbols are keyed by device ID
     for device_id, symbols in all_symbols.items():
-        for symbol in symbols:
-            print(f"{symbol.name}: {symbol.type_name} @ {symbol.index_group:#x}:{symbol.index_offset}")
+        for name, symbol in symbols.items():
+            print(f"{name}: {symbol.type_name} @ {symbol.index_group:#x}:{symbol.index_offset}")
 ```
 
 ## Recommendations

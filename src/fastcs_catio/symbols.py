@@ -1,11 +1,11 @@
 import re
 import sys
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
 
 import numpy as np
+import numpy.typing as npt
 
 from ._constants import AdsDataType
 from .devices import (
@@ -17,6 +17,24 @@ from .devices import (
 from .utils import add_comment
 
 logger = getLogger(__name__)
+
+
+@dataclass(kw_only=True)
+class SymbolGroupParam:
+    """
+    Parameters for defining symbols within a structured AdsSymbolNode.
+    """
+
+    name: str
+    """Name of the symbol within the structured node"""
+    description: str
+    """Description of the symbol within the structured node"""
+    dtype: npt.DTypeLike
+    """Data type of the symbol within the structured node"""
+    offset_shift: int = 0
+    """Offset shift of the symbol within the structured node"""
+    size: int = 1
+    """Size of the symbol within the structured node"""
 
 
 class AdsSymbolTypePattern:
@@ -123,7 +141,7 @@ class RegexIn:
         return self.match[group] if self.match else None
 
 
-def symbol_lookup(node: AdsSymbolNode):
+def symbol_lookup(node: AdsSymbolNode) -> dict[str, AdsSymbol]:
     """
     Get the symbol(s) associated with the AdsSymbolNode object.
     Lookup is implemented as a function of the symbol node type which will differ
@@ -131,29 +149,25 @@ def symbol_lookup(node: AdsSymbolNode):
 
     ! This LUT may need updating for functionality to expand to new I/O terminals.
 
-    :return: a list of AdsSymbol objects associated to this node
+    :return: a dictionary of AdsSymbol objects associated to this node
     """
-    symbols: Sequence[AdsSymbol] = []
+    symbols: dict[str, AdsSymbol] = {}
+    params: list[SymbolGroupParam] = []
+
     match node.ads_type:
         case AdsDataType.ADS_TYPE_BIT:
             # This will include most parameters for standard terminals:
             # e.g. EL1502, EL1004, EL9410, EL2024, EL1014, EL1084, EL3602, EL9512,
             # EL9505, EL1124, EL2124...
-            symbols.append(
-                AdsSymbol(
-                    parent_id=node.parent_id,
-                    name=node.name,
+            params = [
+                SymbolGroupParam(
+                    name="",
                     dtype=np.uint8,
-                    size=1,
-                    group=node.index_group,
-                    offset=node.index_offset,
-                    comment=add_comment(
-                        "Value symbol for a 1 byte memory block which includes "
-                        + "distinct data on given bits.",
-                        node.comment,
-                    ),
-                )
-            )
+                    description="Value symbol for a 1 byte memory block "
+                    "which includes distinct data on given bits.",
+                ),
+            ]
+
         case AdsDataType.ADS_TYPE_BIGTYPE:
             # This will be a structured data type which may comprise multiple symbols.
             # This will apply to few parameters for more complex terminals:
@@ -162,462 +176,296 @@ def symbol_lookup(node: AdsSymbolNode):
 
             match RegexIn(node.type_name):
                 case AdsSymbolTypePattern.BIT:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
+                    params = [
+                        SymbolGroupParam(
+                            name="",
                             dtype=np.uint8,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Value symbol for a 1 byte memory block which includes "
-                                + "distinct data on given bits.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Value symbol for a 1 byte memory block "
+                            "which includes distinct data on given bits "
+                            "as part of a combined type.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.ID:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
+                    params = [
+                        SymbolGroupParam(
+                            name="",
                             dtype=np.uint16,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "ID symbol for an extension coupler terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="ID symbol for an extension coupler terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.PWR12_STATUS:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
+                    params = [
+                        SymbolGroupParam(
+                            name="",
                             dtype=np.uint8,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Power Status symbol for a 12Vdc power supply unit "
-                                + "terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Power Status symbol "
+                            "for a 12Vdc power supply unit terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.PWR24_STATUS:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
+                    params = [
+                        SymbolGroupParam(
+                            name="",
                             dtype=np.uint8,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Power Status symbol for a 24Vdc power supply unit "
-                                + "terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Power Status symbol "
+                            "for a 24Vdc power supply unit terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.DEV_INPUTS:
                     # !!! This will vary depending on the nb of used communication ports
                     # TO DO: REVIEW
-                    symbols.extend(
-                        [
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Frm0State"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=node.index_offset,
-                                comment=add_comment(
-                                    "Input Frame status symbol for the EtherCAT "
-                                    + "Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Frm0WcState"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 2,
-                                comment=add_comment(
-                                    "Input Frame working counter status symbol for the "
-                                    + "EtherCAT Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Frm0InputToggle"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 4,
-                                comment=add_comment(
-                                    "Input Frame input toggle symbol for the EtherCAT "
-                                    + "Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "SlaveCount"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 10,
-                                comment=add_comment(
-                                    "SlaveCount symbol for the EtherCAT Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "DevState"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 14,
-                                comment=add_comment(
-                                    "Device Input Status symbol for the EtherCAT "
-                                    + "Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                        ]
-                    )
+                    params = [
+                        SymbolGroupParam(
+                            name="Frm0State",
+                            dtype=np.uint16,
+                            description="Input Frame status symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                        SymbolGroupParam(
+                            name="Frm0WcState",
+                            dtype=np.uint16,
+                            offset_shift=2,
+                            description="Input Frame working counter status symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                        SymbolGroupParam(
+                            name="Frm0InputToggle",
+                            dtype=np.uint16,
+                            offset_shift=4,
+                            description="Input Frame input toggle symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                        SymbolGroupParam(
+                            name="SlaveCount",
+                            dtype=np.uint16,
+                            offset_shift=10,
+                            description="SlaveCount symbol for the EtherCAT "
+                            "Master device.",
+                        ),
+                        SymbolGroupParam(
+                            name="DevState",
+                            dtype=np.uint16,
+                            offset_shift=14,
+                            description="Device Input Status symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.DEV_OUTPUTS:
                     # !!! This will vary depending on the nb of used communication ports
                     # TO DO: REVIEW
-                    symbols.extend(
-                        [
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Frm0Ctrl"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=node.index_offset,
-                                comment=add_comment(
-                                    "Output Frame control symbol for the EtherCAT "
-                                    + "Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Frm0WcCtrl"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 2,
-                                comment=add_comment(
-                                    "Output Frame working counter control symbol for "
-                                    + "the EtherCAT Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "DevCtrl"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 4,
-                                comment=add_comment(
-                                    "Device Output status symbol for the EtherCAT "
-                                    + "Master device.",
-                                    node.comment,
-                                ),
-                            ),
-                        ]
-                    )
-                case AdsSymbolTypePattern.DI_COUNTER:
-                    symbols.extend(
-                        [
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=node.name,
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=node.index_offset,
-                                comment=add_comment(
-                                    "Status symbol for a digital input counter "
-                                    + "terminal.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Counter value"]),
-                                dtype=np.uint32,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 2,
-                                comment=add_comment(
-                                    "Value symbol for a digital input counter "
-                                    + "terminal.",
-                                    node.comment,
-                                ),
-                            ),
-                        ]
-                    )
-                case AdsSymbolTypePattern.DO_COUNTER:
-                    symbols.extend(
-                        [
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=node.name,
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=node.index_offset,
-                                comment=add_comment(
-                                    "Status symbol for a digital output counter "
-                                    + "terminal.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Set counter value"]),
-                                dtype=np.uint32,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 2,
-                                comment=add_comment(
-                                    "Value symbol for a digital output counter "
-                                    + "terminal.",
-                                    node.comment,
-                                ),
-                            ),
-                        ]
-                    )
-                case AdsSymbolTypePattern.DI_CHANNEL:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
-                            dtype=np.uint8,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Value symbol for a digital input channel terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
-                case AdsSymbolTypePattern.AI16_CHANNEL:
-                    symbols.extend(
-                        [
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Status"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=node.index_offset,
-                                comment=add_comment(
-                                    "Status symbol for a 16-bit analog input terminal.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Value"]),
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 2,
-                                comment=add_comment(
-                                    "Value symbol for a 16-bit analog input terminal "
-                                    + "channel.",
-                                    node.comment,
-                                ),
-                            ),
-                        ]
-                    )
-                case AdsSymbolTypePattern.AO16_CHANNEL:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=".".join([node.name, "Analog output"]),
-                            dtype=np.int16,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Value symbol for a 16-bit analog output terminal "
-                                + "channel.",
-                                node.comment,
-                            ),
-                        )
-                    )
-                case AdsSymbolTypePattern.AI24_CHANNEL:
-                    symbols.extend(
-                        [
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=node.name,
-                                dtype=np.uint16,
-                                size=1,
-                                group=node.index_group,
-                                offset=node.index_offset,
-                                comment=add_comment(
-                                    "Status symbol for a 24-bit analog input terminal.",
-                                    node.comment,
-                                ),
-                            ),
-                            AdsSymbol(
-                                parent_id=node.parent_id,
-                                name=".".join([node.name, "Value"]),
-                                dtype=np.int32,
-                                size=1,
-                                group=node.index_group,
-                                offset=int(node.index_offset) + 2,
-                                comment=add_comment(
-                                    "Value symbol for a 24-bit analog input terminal "
-                                    + "channel.",
-                                    node.comment,
-                                ),
-                            ),
-                        ]
-                    )
-                case AdsSymbolTypePattern.AI16_OVSMPL_CYCLE:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
+                    params = [
+                        SymbolGroupParam(
+                            name="Frm0Ctrl",
                             dtype=np.uint16,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "CycleCount symbol for a 16-bit analog input "
-                                + "oversampling terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Output Frame control symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                        SymbolGroupParam(
+                            name="Frm0WcCtrl",
+                            dtype=np.uint16,
+                            offset_shift=2,
+                            description="Output Frame working counter control symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                        SymbolGroupParam(
+                            name="DevCtrl",
+                            dtype=np.uint16,
+                            offset_shift=4,
+                            description="Device Output status symbol "
+                            "for the EtherCAT Master device.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.DI_COUNTER:
+                    params = [
+                        SymbolGroupParam(
+                            name="",
+                            dtype=np.uint16,
+                            description="Status symbol "
+                            "for a digital input counter terminal.",
+                        ),
+                        SymbolGroupParam(
+                            name="Counter value",
+                            dtype=np.uint32,
+                            offset_shift=2,
+                            description="Value symbol "
+                            "for a digital input counter terminal.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.DO_COUNTER:
+                    params = [
+                        SymbolGroupParam(
+                            name="",
+                            dtype=np.uint16,
+                            description="Status symbol "
+                            "for a digital output counter terminal.",
+                        ),
+                        SymbolGroupParam(
+                            name="Set counter value",
+                            dtype=np.uint32,
+                            offset_shift=2,
+                            description="Value symbol "
+                            "for a digital output counter terminal.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.DI_CHANNEL:
+                    params = [
+                        SymbolGroupParam(
+                            name="",
+                            dtype=np.uint8,
+                            description="Value symbol "
+                            "for a digital input channel terminal.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.AI16_CHANNEL:
+                    params = [
+                        SymbolGroupParam(
+                            name="Status",
+                            dtype=np.uint16,
+                            description="Status symbol "
+                            "for a 16-bit analog input terminal.",
+                        ),
+                        SymbolGroupParam(
+                            name="Value",
+                            dtype=np.uint16,
+                            offset_shift=2,
+                            description="Value symbol "
+                            "for a 16-bit analog input terminal channel.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.AO16_CHANNEL:
+                    params = [
+                        SymbolGroupParam(
+                            name="Analog output",
+                            dtype=np.int16,
+                            description="Value symbol "
+                            "for a 16-bit analog output terminal channel.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.AI24_CHANNEL:
+                    params = [
+                        SymbolGroupParam(
+                            name="",
+                            dtype=np.uint16,
+                            description="Status symbol "
+                            "for a 24-bit analog input terminal.",
+                        ),
+                        SymbolGroupParam(
+                            name="Value",
+                            dtype=np.int32,
+                            offset_shift=2,
+                            description="Value symbol "
+                            "for a 24-bit analog input terminal channel.",
+                        ),
+                    ]
+
+                case AdsSymbolTypePattern.AI16_OVSMPL_CYCLE:
+                    params = [
+                        SymbolGroupParam(
+                            name="",
+                            dtype=np.uint16,
+                            description="CycleCount symbol "
+                            "for a 16-bit analog input oversampling terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.AI16_OVSMPL_CHANNEL:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=node.name,
+                    params = [
+                        SymbolGroupParam(
+                            name="",
                             dtype=np.int16,
                             size=OVERSAMPLING_FACTOR,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Sample symbol for a 16-bit analog input oversampling "
-                                + "terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Sample symbol "
+                            "for a 16-bit analog input oversampling terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.AI24_MF_STATUS:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=".".join([node.name, "Status"]),
+                    params = [
+                        SymbolGroupParam(
+                            name="Status",
                             dtype=np.int32,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Status symbol for a 24-bit multi-function analog "
-                                + "input terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Status symbol "
+                            "for a 24-bit multi-function analog input terminal.",
+                        ),
+                    ]
 
                 case AdsSymbolTypePattern.AI24_MF_TIMESTAMP:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=".".join([node.name, "StartTimeNextLatch"]),
+                    params = [
+                        SymbolGroupParam(
+                            name="StartTimeNextLatch",
                             dtype=np.uint32,
                             size=2,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Timing symbol for a 24-bit multi-function analog "
-                                + "input terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Timing symbol "
+                            "for a 24-bit multi-function analog input terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.AI24_MF_SAMPLE:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=".".join([node.name, "Samples"]),
+                    params = [
+                        SymbolGroupParam(
+                            name="Samples",
                             dtype=np.int32,
                             size=ELM_OVERSAMPLING_FACTOR,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Sample symbol for a 24-bit multi-function analog "
-                                + "input terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Sample symbol "
+                            "for a 24-bit multi-function analog input terminal.",
+                        ),
+                    ]
+
                 case AdsSymbolTypePattern.AI24_MF_SYNCHRON:
-                    symbols.append(
-                        AdsSymbol(
-                            parent_id=node.parent_id,
-                            name=".".join([node.name, "SM-Synchron"]),
+                    params = [
+                        SymbolGroupParam(
+                            name="SM-Synchron",
                             dtype=np.uint16,
-                            size=1,
-                            group=node.index_group,
-                            offset=node.index_offset,
-                            comment=add_comment(
-                                "Synchronisation symbol for a 24-bit multi-function "
-                                + "analog input terminal.",
-                                node.comment,
-                            ),
-                        )
-                    )
+                            description="Synchronisation symbol "
+                            "for a 24-bit multi-function analog input terminal.",
+                        ),
+                    ]
+
                 case _:
                     logger.warning(
                         "Definition for the structured symbol node type "
                         + f"'{node.type_name}' in terminal {node.name} is missing. "
                         + "Symbol node will be ignored."
                     )
+
         case AdsDataType.ADS_TYPE_UINT8:
             """This will include some parameters for standard terminals:
             e.g. Status_Uo for EL9512, EL9505..."""
-            symbols.append(
-                AdsSymbol(
-                    parent_id=node.parent_id,
-                    name=node.name,
+            params = [
+                SymbolGroupParam(
+                    name="",
                     dtype=np.uint8,
-                    size=1,
-                    group=node.index_group,
-                    offset=node.index_offset,
-                    comment=add_comment(
-                        "Value symbol for a 1 byte unsigned integer.",
-                        node.comment,
-                    ),
-                )
-            )
+                    description="Value symbol for a 1 byte unsigned integer.",
+                ),
+            ]
+
         case _:
             logger.warning(
                 f"Definition for the symbol node type '{node.ads_type}' in terminal "
                 + f"{node.name} is missing. Symbol node will be ignored."
             )
+
+    for var in params:
+        node_name = ".".join([node.name, var.name]) if var.name else node.name
+        symbols[node_name] = AdsSymbol(
+            parent_id=node.parent_id,
+            name=node_name,
+            dtype=var.dtype,
+            size=var.size,
+            group=node.index_group,
+            offset=int(node.index_offset) + var.offset_shift,
+            comment=add_comment(var.description, node.comment),
+        )
 
     return symbols
