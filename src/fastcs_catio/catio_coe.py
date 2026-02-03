@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from fastcs.attributes import AttrR, AttrRW
-from fastcs.datatypes import DataType, Float, Int, String
+from fastcs.datatypes import Bool, DataType, Float, Int, String
 
 from fastcs_catio.catio_attribute_io import CATioControllerCoEAttributeIORef
 from fastcs_catio.catio_controller import CATioTerminalController
@@ -37,7 +37,34 @@ TWINCAT_TO_NUMPY: dict[str, np.dtype] = {
     # Boolean/bit types (stored as uint8)
     "BOOL": np.dtype(np.uint8),
     "BIT": np.dtype(np.uint8),
+    "OutputBits": np.dtype(np.uint8),
 }
+
+# TWINCAT_TO_FASTCS: dict[str, DataType] = {
+#     # Signed integer types
+#     "SINT": Int(),
+#     "INT": Int(),
+#     "DINT": Int(),
+#     "LINT": Int(),
+#     # Unsigned integer types
+#     "USINT": Int(),
+#     "UINT": Int(),
+#     "UDINT": Int(),
+#     "ULINT": Int(),
+#     # Byte/Word aliases (unsigned)
+#     "BYTE": Int(),
+#     "WORD": Int(),
+#     "DWORD": Int(),
+#     "LWORD": Int(),
+#     # Floating point types
+#     "REAL": Float(),
+#     "LREAL": Float(),
+#     # Boolean/bit types (stored as uint8)
+#     "BOOL": Bool(),
+#     "BIT": Bool(),
+# }
+
+STRING_MATCH = re.compile(r"STRING\((\d+)\)")
 
 
 def twincat_type_to_numpy(type_name: str, bit_size: int | None = None) -> np.dtype:
@@ -58,9 +85,9 @@ def twincat_type_to_numpy(type_name: str, bit_size: int | None = None) -> np.dty
         ValueError: If the type name is not recognized and no bit_size given.
     """
     # Handle STRING(n) types
-    string_match = re.match(r"STRING\((\d+)\)", type_name.upper())
-    if string_match:
-        length = int(string_match.group(1))
+    match = STRING_MATCH.match(type_name.upper())
+    if match:
+        length = int(match.group(1))
         return np.dtype(f"<S{length}")
 
     upper_name = type_name.upper()
@@ -72,10 +99,11 @@ def twincat_type_to_numpy(type_name: str, bit_size: int | None = None) -> np.dty
         byte_count = (bit_size + 7) // 8  # Round up to whole bytes
         return np.dtype((np.uint8, byte_count))
 
-    raise ValueError(f"Unknown TwinCAT type: {type_name}")
+    # default to Int for unknown types
+    return np.dtype(np.int8)
 
 
-def numpy_dtype_to_fastcs(dtype: np.dtype) -> DataType:
+def numpy_dtype_to_fastcs(dtype: np.dtype, type_name: str) -> DataType:
     """Convert a numpy dtype to a FastCS DataType.
 
     Args:
@@ -87,6 +115,9 @@ def numpy_dtype_to_fastcs(dtype: np.dtype) -> DataType:
     Raises:
         ValueError: If the dtype is not supported.
     """
+    if type_name.upper() in ["BOOL", "BIT", "OUTPUTBITS"]:
+        return Bool()
+
     # Handle byte array types (compound types like DT8020)
     # These have shape > () and subdtype of uint8
     if dtype.subdtype is not None:
@@ -99,10 +130,6 @@ def numpy_dtype_to_fastcs(dtype: np.dtype) -> DataType:
     # Add 1 to accommodate null terminator from CoE reads
     if dtype.kind == "S":
         return String(dtype.itemsize + 1)
-
-    # Handle boolean types
-    if dtype == np.bool_:
-        return Int()
 
     # Handle signed integer types
     if dtype.kind == "i":  # signed integer
@@ -183,7 +210,7 @@ class AdsItemBase:
             ValueError: If the type_name cannot be converted.
         """
         try:
-            return numpy_dtype_to_fastcs(self.numpy_dtype)
+            return numpy_dtype_to_fastcs(self.numpy_dtype, self.type_name)
         except ValueError:
             return Int()  # Fall back for unknown types
 
@@ -270,14 +297,6 @@ def add_coe_attribute(
         # TODO: Add support for compound CoE types later
         return
 
-    attr_name = ads_item.fastcs_name
-
-    # Get datatype from the ads_item's type conversion
-    try:
-        datatype = ads_item.fastcs_datatype
-    except ValueError:
-        datatype = Int()  # Fall back for unknown types
-
     # Get AmsAddress from the client using the controller's IOSlave
     address = controller.connection.client.get_coe_ams_address(controller.io)
 
@@ -286,7 +305,7 @@ def add_coe_attribute(
         return
 
     io_ref = CATioControllerCoEAttributeIORef(
-        name=attr_name,
+        name=ads_item.fastcs_name,
         index=ads_item.index_hex,
         subindex=ads_item.subindex_hex,
         address=address,
@@ -295,9 +314,9 @@ def add_coe_attribute(
 
     if ads_item.readonly:
         controller.add_attribute(
-            attr_name,
+            ads_item.fastcs_name,
             AttrR(
-                datatype=datatype,
+                datatype=ads_item.fastcs_datatype,
                 io_ref=io_ref,
                 group=controller.attr_group_name,
                 initial_value=None,
@@ -306,13 +325,13 @@ def add_coe_attribute(
         )
     else:
         controller.add_attribute(
-            attr_name,
+            ads_item.fastcs_name,
             AttrRW(
-                datatype=datatype,
+                datatype=ads_item.fastcs_datatype,
                 io_ref=io_ref,
                 group=controller.attr_group_name,
                 initial_value=None,
                 description=str(ads_item),
             ),
         )
-    controller.ads_name_map[attr_name] = str(ads_item)
+    controller.ads_name_map[ads_item.fastcs_name] = str(ads_item)
