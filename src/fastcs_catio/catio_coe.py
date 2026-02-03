@@ -119,7 +119,76 @@ def numpy_dtype_to_fastcs(dtype: np.dtype) -> DataType:
 
 
 @dataclass
-class CoEAdsItem:
+class AdsItemBase:
+    """Base class for ADS items (symbols and CoE objects).
+
+    Provides common fields and properties for type conversion.
+
+    Args:
+        name: The item name (e.g., "Channel 1" or "Hardware version").
+        type_name: The TwinCAT type name (e.g., "UINT", "INT").
+        fastcs_name: The FastCS attribute name (snake_case).
+        access: Access type (e.g., "Read-only", "ro", "rw").
+    """
+
+    name: str
+    type_name: str
+    fastcs_name: str
+    access: str | None = None
+
+    @property
+    def readonly(self) -> bool:
+        """Return True if this item is read-only.
+
+        Subclasses may override for specific access string formats.
+        """
+        if self.access is None:
+            return True
+        access_lower = self.access.lower()
+        # Handle both "Read-only"/"Read/Write" and "ro"/"rw" formats
+        return "write" not in access_lower and access_lower not in ("rw", "wo")
+
+    @property
+    def is_primitive_type(self) -> bool:
+        """Return True if this is a primitive TwinCAT type.
+
+        Primitive types are those in TWINCAT_TO_NUMPY or STRING(n) types.
+        Compound types (like DT8020, DT0800EN02) are not primitive.
+        """
+        if re.match(r"STRING\(\d+\)", self.type_name.upper()):
+            return True
+        return self.type_name.upper() in TWINCAT_TO_NUMPY
+
+    @property
+    def numpy_dtype(self) -> np.dtype:
+        """Return the numpy dtype for this item's type_name.
+
+        Returns:
+            numpy dtype corresponding to the TwinCAT type.
+
+        Raises:
+            ValueError: If the type_name is not recognized.
+        """
+        return twincat_type_to_numpy(self.type_name)
+
+    @property
+    def fastcs_datatype(self) -> DataType:
+        """Return the FastCS DataType for this item's type_name.
+
+        Returns:
+            FastCS DataType (Int, Float, or String).
+
+        Raises:
+            ValueError: If the type_name cannot be converted.
+        """
+        try:
+            return numpy_dtype_to_fastcs(self.numpy_dtype)
+        except ValueError:
+            return Int()  # Fall back for unknown types
+
+
+@dataclass
+class CoEAdsItem(AdsItemBase):
     """ADS item for CoE (CANopen over EtherCAT) objects.
 
     Stores the index and subindex as integers for use with
@@ -128,31 +197,20 @@ class CoEAdsItem:
     Args:
         name: The CoE object name (e.g., "Hardware version").
         type_name: The TwinCAT type name (e.g., "UINT").
-        index: The CoE object index (e.g., 0x8000).
-        subindex: The CoE object subindex (e.g., 0x01).
         fastcs_name: The FastCS attribute name (snake_case).
         access: Access type (e.g., "ro", "rw").
+        index: The CoE object index (e.g., 0x8000).
+        subindex: The CoE object subindex (e.g., 0x01).
         bit_size: Size in bits (for compound types like DT8020).
     """
 
-    name: str
-    type_name: str
-    index: int
-    subindex: int
-    fastcs_name: str
-    access: str | None = None
+    index: int = 0
+    subindex: int = 0
     bit_size: int | None = None
 
     def __str__(self) -> str:
         """Return the string representation like 'CoE:8000:01'."""
         return f"CoE:{self.index:04X}:{self.subindex:02X}"
-
-    @property
-    def readonly(self) -> bool:
-        """Return True if this CoE parameter is read-only."""
-        if self.access is None:
-            return True
-        return self.access.lower() in ("ro", "read-only")
 
     @property
     def is_coe(self) -> bool:
@@ -170,20 +228,6 @@ class CoEAdsItem:
         return f"0x{self.subindex:02X}"
 
     @property
-    def is_primitive_type(self) -> bool:
-        """Return True if this is a primitive TwinCAT type (not a compound type).
-
-        Primitive types are those in TWINCAT_TO_NUMPY or STRING(n) types.
-        Compound types (like DT8020, DT0800EN02) start with 'DT' or are otherwise
-        not in the known type mapping.
-        """
-        # Check for STRING(n) types
-        if re.match(r"STRING\(\d+\)", self.type_name.upper()):
-            return True
-        # Check if it's in the known type mapping
-        return self.type_name.upper() in TWINCAT_TO_NUMPY
-
-    @property
     def numpy_dtype(self) -> np.dtype:
         """Return the numpy dtype for this CoE item's type_name.
 
@@ -196,18 +240,6 @@ class CoEAdsItem:
             ValueError: If the type_name is not recognized and no bit_size.
         """
         return twincat_type_to_numpy(self.type_name, self.bit_size)
-
-    @property
-    def fastcs_datatype(self) -> DataType:
-        """Return the FastCS DataType for this CoE item's type_name.
-
-        Returns:
-            FastCS DataType (Int, Float, or String).
-
-        Raises:
-            ValueError: If the type_name cannot be converted.
-        """
-        return numpy_dtype_to_fastcs(self.numpy_dtype)
 
 
 def generate_coe_attr_name(base_name: str, fallback: str) -> str:

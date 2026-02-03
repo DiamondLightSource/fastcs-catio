@@ -14,24 +14,19 @@ Usage:
     controller = controller_class(name="MOD1", node=node)
 """
 
-import re
 from dataclasses import dataclass
 
-import numpy as np
 from fastcs.attributes import AttrR, AttrRW
-from fastcs.datatypes import DataType, Int
 from fastcs.logging import bind_logger
 
 from catio_terminals.models import SymbolNode
 from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
 from fastcs_catio.catio_coe import (
-    TWINCAT_TO_NUMPY,
+    AdsItemBase,
     CoEAdsItem,
     add_coe_attribute,
     generate_coe_attr_name,
-    numpy_dtype_to_fastcs,
     process_coe_subindex,
-    twincat_type_to_numpy,
 )
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.terminal_config import (
@@ -46,7 +41,7 @@ logger = bind_logger(logger_name=__name__)
 
 
 @dataclass
-class SymbolAdsItem:
+class SymbolAdsItem(AdsItemBase):
     """ADS item for processing data symbols.
 
     Stores the symbol name and type information for use with
@@ -59,57 +54,9 @@ class SymbolAdsItem:
         access: Access type (e.g., "Read-only", "Read/Write").
     """
 
-    name: str
-    type_name: str
-    fastcs_name: str
-    access: str | None = None
-
     def __str__(self) -> str:
         """Return the symbol name."""
         return self.name
-
-    @property
-    def readonly(self) -> bool:
-        """Return True if this symbol is read-only."""
-        return self.access is None or "write" not in self.access.lower()
-
-    @property
-    def is_primitive_type(self) -> bool:
-        """Return True if this is a primitive TwinCAT type.
-
-        Primitive types are those in TWINCAT_TO_NUMPY or STRING(n) types.
-        """
-        if re.match(r"STRING\(\d+\)", self.type_name.upper()):
-            return True
-        return self.type_name.upper() in TWINCAT_TO_NUMPY
-
-    @property
-    def numpy_dtype(self) -> np.dtype:
-        """Return the numpy dtype for this symbol's type_name.
-
-        Returns:
-            numpy dtype corresponding to the TwinCAT type.
-
-        Raises:
-            ValueError: If the type_name is not recognized.
-        """
-        return twincat_type_to_numpy(self.type_name)
-
-    @property
-    def fastcs_datatype(self) -> DataType:
-        """Return the FastCS DataType for this symbol's type_name.
-
-        Returns:
-            FastCS DataType (Int, Float, or String).
-
-        Raises:
-            ValueError: If the type_name cannot be converted.
-        """
-        try:
-            datatype = numpy_dtype_to_fastcs(self.numpy_dtype)
-        except ValueError:
-            datatype = Int()  # Fall back for unknown types
-        return datatype
 
 
 # -----------------------------------------------------------------------------
