@@ -24,6 +24,12 @@ from catio_terminals.models import SymbolNode
 from fastcs_catio.catio_attribute_io import (
     CATioControllerSymbolAttributeIORef,
 )
+from fastcs_catio.catio_coe import (
+    CoEAdsItem,
+    add_coe_attribute,
+    generate_coe_attr_name,
+    process_coe_subindex,
+)
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.terminal_config import (
     get_datatype_for_symbol,
@@ -52,46 +58,6 @@ class SymbolAdsItem:
     def __str__(self) -> str:
         """Return the symbol name."""
         return self.name
-
-    @property
-    def is_coe(self) -> bool:
-        """Return False since this is not a CoE item."""
-        return False
-
-
-@dataclass
-class CoEAdsItem(SymbolAdsItem):
-    """ADS item for CoE (CANopen over EtherCAT) objects.
-
-    Stores the index and subindex as integers for use with
-    CATioControllerCoEAttributeIORef.
-
-    Args:
-        index: The CoE object index (e.g., 0x8000).
-        subindex: The CoE object subindex (e.g., 0x01).
-    """
-
-    index: int
-    subindex: int
-
-    def __str__(self) -> str:
-        """Return the string representation like 'CoE:8000:01'."""
-        return f"CoE:{self.index:04X}:{self.subindex:02X}"
-
-    @property
-    def is_coe(self) -> bool:
-        """Return True since this is a CoE item."""
-        return True
-
-    @property
-    def index_hex(self) -> str:
-        """Return the index as a hex string (e.g., '8000')."""
-        return f"{self.index:04X}"
-
-    @property
-    def subindex_hex(self) -> str:
-        """Return the subindex as a hex string (e.g., '01')."""
-        return f"{self.subindex:02X}"
 
 
 # Type alias for either ADS item type
@@ -138,23 +104,10 @@ def _add_attribute(
     else:
         match ads_item:
             case CoEAdsItem():
-                # CoE attributes need address and dtype which aren't available yet.
-                # Store the CoEAdsItem; io_ref created when device connects.
-                # For now, create without io_ref - populated by bind_io_refs.
-                io_ref = None
-                # TODO - we will want to make an IORef something like this
-                # can we collect enough info from the YAML and the current
-                # client to build this?????
-                #
-                # io_ref = CATioControllerCoEAttributeIORef(
-                #     name=ads_item.name,
-                #     index=ads_item.index_hex,
-                #     subindex=ads_item.subindex_hex,
-                #     address=AmsAddress.from_string(
-                #         "5.166.203.208.2.1:88"
-                #     ),  # Placeholder, real address set later
-                #     dtype=np.dtype("uint32"),  # Placeholder, real dtype set later
-                # )
+                add_coe_attribute(
+                    controller, attr_name, ads_item, is_readonly, desc, type_name
+                )
+                return
             case SymbolAdsItem(name=name):
                 io_ref = CATioControllerSymbolAttributeIORef(name)
         controller.add_attribute(
@@ -173,97 +126,6 @@ def _add_attribute(
     if not hasattr(controller, ads_names_attr):
         setattr(controller, ads_names_attr, {})
     getattr(controller, ads_names_attr)[attr_name] = ads_item
-
-
-def _generate_coe_attr_name(base_name: str, fallback: str) -> str:
-    """Generate a PascalCase attribute name from a base name.
-
-    Args:
-        base_name: The base name to convert (e.g., "max_velocity").
-        fallback: Fallback name if base_name is invalid (e.g., "CoE8000").
-
-    Returns:
-        PascalCase attribute name (e.g., "MaxVelocity").
-    """
-    attr_name = "".join(
-        word.capitalize() for word in base_name.replace("_", " ").split()
-    )
-    if not attr_name or not attr_name[0].isalpha():
-        attr_name = fallback
-    return attr_name
-
-
-def _ensure_unique_coe_name(
-    attr_name: str, created_attrs: dict[str, int], max_length: int = 39
-) -> str:
-    """Ensure CoE attribute name is unique by adding suffix if needed.
-
-    Args:
-        attr_name: The proposed attribute name.
-        created_attrs: Dict of already-created attribute names.
-        max_length: Maximum length before truncation (leaves room for suffix).
-
-    Returns:
-        Unique attribute name with suffix if collision detected.
-    """
-    # Truncate to max_length to leave room for collision suffix
-    attr_name = attr_name[:max_length]
-
-    original_name = attr_name
-    suffix = 0
-    while attr_name in created_attrs:
-        if suffix < 10:
-            attr_name = f"{original_name}{suffix}"
-        else:
-            # Use letters after digits exhausted
-            attr_name = f"{original_name}{chr(ord('A') + suffix - 10)}"
-        suffix += 1
-    return attr_name
-
-
-def _process_coe_subindex(
-    coe_obj,
-    sub,
-    created_coe_attrs: dict[str, int],
-    controller: CATioTerminalController,
-) -> None:
-    """Process a single CoE subindex and add it as an attribute.
-
-    Args:
-        coe_obj: The parent CoE object.
-        sub: The subindex to process.
-        created_coe_attrs: Dict tracking created attribute names.
-        controller: The controller to add the attribute to.
-    """
-    # Skip subindex 0 (count/descriptor, EtherCAT standard)
-    if sub.subindex == 0:
-        return
-
-    # Generate attribute name from subindex name
-    base_name = sub.name if sub.name else f"Sub{sub.subindex:02X}"
-    fallback = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
-    attr_name = _generate_coe_attr_name(base_name, fallback)
-
-    # Ensure unique name with collision handling
-    attr_name = _ensure_unique_coe_name(attr_name, created_coe_attrs)
-    created_coe_attrs[attr_name] = sub.subindex
-
-    # Generate description and ADS name
-    desc = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
-    if len(desc) > 40:
-        desc = desc[:40]
-
-    is_readonly = (sub.access or coe_obj.access).lower() in ("ro", "read-only")
-
-    datatype = Int()  # TODO: map sub.type_name to FastCS type
-    ads_name = CoEAdsItem(
-        name=coe_obj.name,
-        type_name=coe_obj.type_name,
-        index=coe_obj.index,
-        subindex=sub.subindex,
-    )
-
-    _add_attribute(controller, attr_name, ads_name, is_readonly, desc, datatype)
 
 
 def _add_symbol_attribute(
@@ -369,20 +231,20 @@ def _create_dynamic_controller_class(
             # If no subindices, treat as single value
             if not getattr(coe_obj, "subindices", []):
                 base_name = coe_obj.name or f"CoE{coe_obj.index:04X}"
-                attr_name = _generate_coe_attr_name(
-                    base_name, f"CoE{coe_obj.index:04X}"
-                )
+                attr_name = generate_coe_attr_name(base_name, f"CoE{coe_obj.index:04X}")
                 desc = f"CoE{coe_obj.index:04X}"
                 is_readonly = coe_obj.access.lower() in ("ro", "read-only")
                 datatype = Int()  # TODO: map coe_obj.type_name to FastCS type
-                ads_name = CoEAdsItem(
+                ads_item = CoEAdsItem(
                     coe_obj.name, coe_obj.type_name, index=coe_obj.index, subindex=0
                 )
-                _add_attribute(self, attr_name, ads_name, is_readonly, desc, datatype)
+                _add_attribute(self, attr_name, ads_item, is_readonly, desc, datatype)
             else:
                 # Process each subindex
                 for sub in coe_obj.subindices:
-                    _process_coe_subindex(coe_obj, sub, created_coe_attrs, self)
+                    process_coe_subindex(
+                        coe_obj, sub, created_coe_attrs, self, _add_attribute
+                    )
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(
