@@ -387,7 +387,7 @@ terminal_types:
         type_name: UDINT
         channels: 2
         access: Read-only
-        fastcs_name: cnt_inputs_channel_{channel}_counter_value
+        fastcs_name: cnt_inputs_ch_{channel}_cnt_val
         selected: false
       - name_template: CNT Outputs Channel {channel}
         index_group: 61472
@@ -401,7 +401,7 @@ terminal_types:
         type_name: UDINT
         channels: 2
         access: Read/Write
-        fastcs_name: cnt_outputs_channel_{channel}_set_counter_value
+        fastcs_name: cnt_outputs_ch_{channel}_set_cnt_val
         selected: false
       - name_template: CNT Inputs
         index_group: 61488
@@ -472,14 +472,14 @@ terminal_types:
             bit_size: 8
             access: ro
             default_data: "06"
-            fastcs_name: subindex_000
-          - subindex: 6
-            name: Exclude RxPDOs
-            type_name: ARRAY [0..3] OF BYTE
-            bit_size: 32
-            access: ro
-            default_data: "02160000"
-            fastcs_name: exclude_rxpdos
+            fastcs_name: cnt_rxpdo_par_ch_1_subindex_000
+          # - subindex: 6
+          #   name: Exclude RxPDOs
+          #   type_name: ARRAY [0..3] OF BYTE
+          #   bit_size: 32
+          #   access: ro
+          #   default_data: "02160000"
+          #   fastcs_name: cnt_rxpdo_par_ch_1_exclude_rxpdos
         fastcs_name: cnt_rxpdo_par_ch_1
     group_type: Measuring
     pdo_groups:
@@ -588,7 +588,7 @@ terminal_types:
         type_name: UINT
         channels: 2
         access: Read-only
-        fastcs_name: dox_synchron_info_data_info_data_{channel}
+        fastcs_name: dox_sync_info_data_info_data_{channel}
         selected: false
       - name_template: DOX Status
         index_group: 61489
@@ -727,7 +727,7 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: ai_standard_channel_{channel}_status_limit_1
+        fastcs_name: ai_standard_ch_{channel}_sts_limit_1
         tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
@@ -735,7 +735,7 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: ai_standard_channel_{channel}_status_limit_2
+        fastcs_name: ai_standard_ch_{channel}_sts_limit_2
         tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI Standard Channel {channel}.Value
@@ -786,7 +786,7 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: ai_standard_channel_{channel}_status_limit_1
+        fastcs_name: ai_standard_ch_{channel}_sts_limit_1
         tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
@@ -794,7 +794,7 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: ai_standard_channel_{channel}_status_limit_2
+        fastcs_name: ai_standard_ch_{channel}_sts_limit_2
         tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI Standard Channel {channel}.Value
@@ -964,7 +964,7 @@ terminal_types:
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: tc_outputs_channel_{channel}_cjcompensation
+        fastcs_name: tc_outputs_ch_{channel}_cjcompensation
         selected: false
     coe_objects: []
     group_type: AnaIn
@@ -1162,7 +1162,7 @@ terminal_types:
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: ao_output_channel_{channel}_analog_output
+        fastcs_name: ao_out_ch_{channel}_analog_out
         selected: true
     coe_objects: []
     group_type: AnaOut
@@ -1294,14 +1294,14 @@ terminal_types:
         type_name: USINT
         channels: 4
         access: Read-only
-        fastcs_name: pai_status_channel_{channel}_status_no_of_samples
+        fastcs_name: pai_sts_ch_{channel}_sts_no_of_samples
         selected: false
       - name_template: PAI Status Channel {channel}.Status__Input cycle counter
         index_group: 61489
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: pai_status_channel_{channel}_status_input_cycle_counter
+        fastcs_name: pai_sts_ch_{channel}_sts_in_cycle_cnt
         selected: false
       - name_template: PAI Samples 1 Channel {channel}.Samples
         index_group: 61489
@@ -1406,126 +1406,126 @@ terminal_types:
         type_name: ARRAY [0..99] OF DINT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples_100_channel_{channel}_samples
+        fastcs_name: pai_samples_100_ch_{channel}_samples
         selected: false
       - name_template: PAI Timestamp Channel {channel}.StartTimeNextLatch__Low
         index_group: 61489
         type_name: UDINT
         channels: 4
         access: Read-only
-        fastcs_name: pai_timestamp_channel_{channel}_starttimenextlatch_low
+        fastcs_name: pai_timestamp_ch_{channel}
         selected: false
       - name_template: PAI Timestamp Channel {channel}.StartTimeNextLatch__Hi
         index_group: 61489
         type_name: UDINT
         channels: 4
         access: Read-only
-        fastcs_name: pai_timestamp_channel_{channel}_starttimenextlatch_hi
+        fastcs_name: pai_timestamp_ch_{channel}
         selected: false
       - name_template: PAI Samples16 1 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..0] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_1_channel_{channel}_samples
+        fastcs_name: pai_samples16_1_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 2 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..1] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_2_channel_{channel}_samples
+        fastcs_name: pai_samples16_2_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 4 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..3] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_4_channel_{channel}_samples
+        fastcs_name: pai_samples16_4_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 5 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..4] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_5_channel_{channel}_samples
+        fastcs_name: pai_samples16_5_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 8 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..7] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_8_channel_{channel}_samples
+        fastcs_name: pai_samples16_8_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 10 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..9] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_10_channel_{channel}_samples
+        fastcs_name: pai_samples16_10_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 16 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..15] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_16_channel_{channel}_samples
+        fastcs_name: pai_samples16_16_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 20 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..19] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_20_channel_{channel}_samples
+        fastcs_name: pai_samples16_20_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 25 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..24] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_25_channel_{channel}_samples
+        fastcs_name: pai_samples16_25_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 32 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..31] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_32_channel_{channel}_samples
+        fastcs_name: pai_samples16_32_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 40 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..39] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_40_channel_{channel}_samples
+        fastcs_name: pai_samples16_40_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 50 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..49] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_50_channel_{channel}_samples
+        fastcs_name: pai_samples16_50_ch_{channel}_samples
         selected: true
       - name_template: PAI Samples16 64 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..63] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_64_channel_{channel}_samples
+        fastcs_name: pai_samples16_64_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 80 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..79] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_80_channel_{channel}_samples
+        fastcs_name: pai_samples16_80_ch_{channel}_samples
         selected: false
       - name_template: PAI Samples16 100 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..99] OF INT
         channels: 4
         access: Read-only
-        fastcs_name: pai_samples16_100_channel_{channel}_samples
+        fastcs_name: pai_samples16_100_ch_{channel}_samples
         selected: false
       - name_template: PAI Synchronous Oversampling Channel
           {channel}.SM-Synchron__Internal Buffer
@@ -1533,112 +1533,112 @@ terminal_types:
         type_name: UINT
         channels: 4
         access: Read-only
-        fastcs_name: pai_synchronous_oversampling_channel_{channel}_sm_synchron_internal_buffer
+        fastcs_name: pai_synchronous_oversampling_ch
         selected: false
       - name_template: PAI SamplesR32 1 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..0] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_1_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_1_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 2 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..1] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_2_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_2_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 4 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..3] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_4_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_4_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 5 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..4] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_5_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_5_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 8 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..7] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_8_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_8_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 10 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..9] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_10_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_10_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 16 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..15] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_16_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_16_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 20 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..19] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_20_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_20_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 25 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..24] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_25_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_25_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 32 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..31] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_32_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_32_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 40 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..39] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_40_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_40_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 50 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..49] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_50_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_50_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 64 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..63] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_64_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_64_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 80 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..79] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_80_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_80_ch_{channel}_samples
         selected: false
       - name_template: PAI SamplesR32 100 Channel {channel}.Samples
         index_group: 61489
         type_name: ARRAY [0..99] OF REAL
         channels: 4
         access: Read-only
-        fastcs_name: pai_samplesr32_100_channel_{channel}_samples
+        fastcs_name: pai_samplesr32_100_ch_{channel}_samples
         selected: false
       - name_template: PAI Control Channel {channel}
         index_group: 61473
@@ -1652,7 +1652,7 @@ terminal_types:
         type_name: REAL
         channels: 4
         access: Read/Write
-        fastcs_name: pai_tc_channel_{channel}_cold_junction_temperature
+        fastcs_name: pai_tc_ch_{channel}_cold_junction
         selected: false
     coe_objects: []
     group_type: AnaIn
@@ -1816,7 +1816,7 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: ai_standard_channel_{channel}_status_limit_1
+        fastcs_name: ai_standard_ch_{channel}_sts_limit_1
         tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI Standard Channel {channel}.Status__Limit 2
@@ -1824,7 +1824,7 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: ai_standard_channel_{channel}_status_limit_2
+        fastcs_name: ai_standard_ch_{channel}_sts_limit_2
         tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI Standard Channel {channel}.Value
@@ -1862,14 +1862,14 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: rtd_rtdinputs_channel_{channel}_status_limit_1
+        fastcs_name: rtd_rtdinputs_ch_{channel}_sts_limit_1
         selected: true
       - name_template: RTD RTDInputs Channel {channel}.Status__Limit 2
         index_group: 61489
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: rtd_rtdinputs_channel_{channel}_status_limit_2
+        fastcs_name: rtd_rtdinputs_ch_{channel}_sts_limit_2
         selected: true
       - name_template: RTD RTDInputs Channel {channel}.Value
         index_group: 61489
@@ -1899,14 +1899,14 @@ terminal_types:
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: tc_tcinputs_channel_{channel}_status_limit_1
+        fastcs_name: tc_tcinputs_ch_{channel}_sts_limit_1
         selected: true
       - name_template: TC TCInputs Channel {channel}.Status__Limit 2
         index_group: 61489
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: tc_tcinputs_channel_{channel}_status_limit_2
+        fastcs_name: tc_tcinputs_ch_{channel}_sts_limit_2
         selected: true
       - name_template: TC TCInputs Channel {channel}.Value
         index_group: 61489
@@ -1920,7 +1920,7 @@ terminal_types:
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: tc_outputs_channel_{channel}_cjcompensation
+        fastcs_name: tc_outputs_ch_{channel}_cjcompensation
         selected: true
     coe_objects: []
     group_type: AnaIn
@@ -1936,7 +1936,7 @@ terminal_types:
         type_name: INT
         channels: 4
         access: Read/Write
-        fastcs_name: ao_outputs_channel_{channel}_analog_output
+        fastcs_name: ao_outputs_ch_{channel}_analog_out
         tooltip: analog Output
         selected: true
     coe_objects: []
@@ -1961,7 +1961,7 @@ terminal_types:
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_1
+        fastcs_name: ai_txpdo_map_standard_ch_{channel}_sts
         tooltip: "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
@@ -1969,7 +1969,7 @@ terminal_types:
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_channel_{channel}_status_limit_2
+        fastcs_name: ai_txpdo_map_standard_ch_{channel}_sts
         tooltip: "Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2"
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
@@ -1977,21 +1977,21 @@ terminal_types:
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_channel_{channel}_value
+        fastcs_name: ai_txpdo_map_standard_ch_{channel}_val
         selected: true
       - name_template: AI TxPDO-Map Compact Channel {channel}.Value
         index_group: 61489
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_compact_channel_{channel}_value
+        fastcs_name: ai_txpdo_map_compact_ch_{channel}_val
         selected: true
       - name_template: AO RxPDO-Map Channel {channel}.Analog output
         index_group: 61473
         type_name: INT
         channels: 2
         access: Read/Write
-        fastcs_name: ao_rxpdo_map_channel_{channel}_analog_output
+        fastcs_name: ao_rxpdo_map_ch_{channel}_analog_out
         selected: true
     coe_objects: []
     group_type: AnaOut

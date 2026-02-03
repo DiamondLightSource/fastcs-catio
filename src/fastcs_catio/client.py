@@ -3491,7 +3491,7 @@ class AsyncioADSClient:
         ):
             dtype = f"S{len(response.data)}"
 
-        result = np.frombuffer(response.data, dtype)
+        result = np.frombuffer(response.data, dtype).flatten()
         # logging.debug(
         #     f"CoE parameter at index '{index}:{subindex}' has value: {result}."
         # )

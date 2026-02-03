@@ -9,10 +9,13 @@ from dataclasses import dataclass
 
 import numpy as np
 from fastcs.attributes import AttrR, AttrRW
-from fastcs.datatypes import Bool, DataType, Float, Int, String
+from fastcs.datatypes import Bool, DataType, Float, Int, String, Waveform
 
 from fastcs_catio.catio_attribute_io import CATioControllerCoEAttributeIORef
 from fastcs_catio.catio_controller import CATioTerminalController
+from fastcs_catio.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Mapping from TwinCAT/IEC 61131-3 type names to numpy dtypes
 TWINCAT_TO_NUMPY: dict[str, np.dtype] = {
@@ -65,6 +68,7 @@ TWINCAT_TO_NUMPY: dict[str, np.dtype] = {
 # }
 
 STRING_MATCH = re.compile(r"STRING\((\d+)\)")
+BYTE_ARRAY_MATCH = re.compile(r"ARRAY\s*\[(\d+)\.\.(\d+)\]\s*OF\s*BYTE")
 
 
 def twincat_type_to_numpy(type_name: str, bit_size: int | None = None) -> np.dtype:
@@ -89,6 +93,14 @@ def twincat_type_to_numpy(type_name: str, bit_size: int | None = None) -> np.dty
     if match:
         length = int(match.group(1))
         return np.dtype(f"<S{length}")
+
+    # Handle ARRAY [0..n] OF BYTE types
+    match = BYTE_ARRAY_MATCH.match(type_name.upper())
+    if match:
+        start = int(match.group(1))
+        end = int(match.group(2))
+        byte_count = end - start + 1
+        return np.dtype((np.uint8, (byte_count,)))
 
     upper_name = type_name.upper()
     if upper_name in TWINCAT_TO_NUMPY:
@@ -124,7 +136,7 @@ def numpy_dtype_to_fastcs(dtype: np.dtype, type_name: str) -> DataType:
         base_dtype, shape = dtype.subdtype
         if base_dtype == np.uint8 and len(shape) == 1:
             # Treat as array of ints (byte array)
-            return Int()
+            return Waveform(array_dtype=np.uint8, shape=shape)
 
     # Handle string types (fixed-length byte strings)
     # Add 1 to accommodate null terminator from CoE reads
@@ -183,7 +195,9 @@ class AdsItemBase:
         Primitive types are those in TWINCAT_TO_NUMPY or STRING(n) types.
         Compound types (like DT8020, DT0800EN02) are not primitive.
         """
-        if re.match(r"STRING\(\d+\)", self.type_name.upper()):
+        if STRING_MATCH.match(self.type_name.upper()):
+            return True
+        if BYTE_ARRAY_MATCH.match(self.type_name.upper()):
             return True
         return self.type_name.upper() in TWINCAT_TO_NUMPY
 
@@ -294,7 +308,7 @@ def add_coe_attribute(
     # Skip io_ref for compound types - only create for primitive types
     if not ads_item.is_primitive_type:
         # For compound types, just record the mapping without creating an attribute
-        # TODO: Add support for compound CoE types later
+        logger.warning(f"Skipping creation of CoE item {ads_item}")
         return
 
     # Get AmsAddress from the client using the controller's IOSlave
