@@ -3515,3 +3515,46 @@ class AsyncioADSClient:
             f"CoE parameter at index '{index}:{subindex}' was changed to value {value}."
         )
         return response.result
+
+    async def get_coe_param(
+        self, address: AmsAddress, index: str, subindex: str, dtype: npt.DTypeLike
+    ) -> Any:
+        """
+        Read a CoE parameter (query interface for COE_PARAM).
+
+        :param address: the AMS address of the target device
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param dtype: the data type of the CoE parameter
+
+        :returns: the value of the CoE parameter
+        """
+        response = await self.read_io_coe_parameter(address, index, subindex, dtype)
+        result = (
+            response[0].item()
+            if isinstance(response, np.ndarray) and response.size == 1
+            else response
+        )
+        return result
+
+    async def set_coe_param(
+        self,
+        address: AmsAddress,
+        index: str,
+        subindex: str,
+        dtype: npt.DTypeLike,
+        value: Any,
+    ) -> None:
+        """
+        Write a CoE parameter (command interface for COE_PARAM).
+
+        :param address: the AMS address of the target device
+        :param index: the CoE index assigned to the parameter (HIWORD=0xYYYY____)
+        :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
+        :param dtype: the data type of the CoE parameter
+        :param value: the value to assign to the CoE parameter
+
+        :raises ValueError: if the provided value type is incorrect
+        """
+        val = np.array(value, dtype=dtype)
+        await self.write_io_coe_parameter(address, index, subindex, val)

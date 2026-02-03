@@ -96,8 +96,9 @@ def numpy_dtype_to_fastcs(dtype: np.dtype) -> DataType:
             return Int()
 
     # Handle string types (fixed-length byte strings)
+    # Add 1 to accommodate null terminator from CoE reads
     if dtype.kind == "S":
-        return String(dtype.itemsize)
+        return String(dtype.itemsize + 1)
 
     # Handle boolean types
     if dtype == np.bool_:
@@ -224,8 +225,8 @@ class CoEAdsItem(AdsItemBase):
 
     @property
     def subindex_hex(self) -> str:
-        """Return the subindex as a hex string with 0x prefix (e.g., '0x01')."""
-        return f"0x{self.subindex:02X}"
+        """Return the subindex as a hex string with 0x prefix (e.g., '0x0001')."""
+        return f"0x{self.subindex:04X}"
 
     @property
     def numpy_dtype(self) -> np.dtype:
