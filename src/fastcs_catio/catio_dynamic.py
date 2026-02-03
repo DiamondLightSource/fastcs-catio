@@ -14,8 +14,10 @@ Usage:
     controller = controller_class(name="MOD1", node=node)
 """
 
+import re
 from dataclasses import dataclass
 
+import numpy as np
 from fastcs.attributes import AttrR, AttrRW
 from fastcs.datatypes import DataType, Int
 from fastcs.logging import bind_logger
@@ -23,14 +25,17 @@ from fastcs.logging import bind_logger
 from catio_terminals.models import SymbolNode
 from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
 from fastcs_catio.catio_coe import (
+    TWINCAT_TO_NUMPY,
     CoEAdsItem,
     add_coe_attribute,
     generate_coe_attr_name,
+    numpy_dtype_to_fastcs,
     process_coe_subindex,
+    twincat_type_to_numpy,
 )
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.terminal_config import (
-    get_datatype_for_symbol,
+    clear_config_cache,
     get_terminal_type,
     load_runtime_symbols,
     symbol_to_ads_name,
@@ -44,18 +49,67 @@ logger = bind_logger(logger_name=__name__)
 class SymbolAdsItem:
     """ADS item for processing data symbols.
 
-    Stores the symbol name for use with CATioControllerSymbolAttributeIORef.
+    Stores the symbol name and type information for use with
+    CATioControllerSymbolAttributeIORef.
 
     Args:
-        name: The symbol name (e.g., "Channel 1").
+        name: The ADS symbol name (e.g., "Channel 1").
+        type_name: The TwinCAT type name (e.g., "UINT", "INT").
+        fastcs_name: The FastCS attribute name (snake_case).
+        access: Access type (e.g., "Read-only", "Read/Write").
     """
 
     name: str
     type_name: str
+    fastcs_name: str
+    access: str | None = None
 
     def __str__(self) -> str:
         """Return the symbol name."""
         return self.name
+
+    @property
+    def readonly(self) -> bool:
+        """Return True if this symbol is read-only."""
+        return self.access is None or "write" not in self.access.lower()
+
+    @property
+    def is_primitive_type(self) -> bool:
+        """Return True if this is a primitive TwinCAT type.
+
+        Primitive types are those in TWINCAT_TO_NUMPY or STRING(n) types.
+        """
+        if re.match(r"STRING\(\d+\)", self.type_name.upper()):
+            return True
+        return self.type_name.upper() in TWINCAT_TO_NUMPY
+
+    @property
+    def numpy_dtype(self) -> np.dtype:
+        """Return the numpy dtype for this symbol's type_name.
+
+        Returns:
+            numpy dtype corresponding to the TwinCAT type.
+
+        Raises:
+            ValueError: If the type_name is not recognized.
+        """
+        return twincat_type_to_numpy(self.type_name)
+
+    @property
+    def fastcs_datatype(self) -> DataType:
+        """Return the FastCS DataType for this symbol's type_name.
+
+        Returns:
+            FastCS DataType (Int, Float, or String).
+
+        Raises:
+            ValueError: If the type_name cannot be converted.
+        """
+        try:
+            datatype = numpy_dtype_to_fastcs(self.numpy_dtype)
+        except ValueError:
+            datatype = Int()  # Fall back for unknown types
+        return datatype
 
 
 # -----------------------------------------------------------------------------
@@ -68,27 +122,21 @@ _DYNAMIC_CONTROLLER_CACHE: dict[str, type[CATioTerminalController]] = {}
 
 def _add_attribute(
     controller: CATioTerminalController,
-    attr_name: str,
     ads_item: SymbolAdsItem,
-    is_readonly: bool,
     desc: str,
-    datatype: DataType,
 ) -> None:
     """Add a FastCS attribute to a controller.
 
     Args:
         controller: The controller to add the attribute to.
-        attr_name: The FastCS attribute name.
-        ads_item: The ADS item (CoEAdsItem or SymbolAdsItem).
-        is_readonly: Whether the attribute is read-only.
+        ads_item: The ADS item containing name, type, fastcs_name, and access.
         desc: The attribute description.
-        datatype: The FastCS datatype.
     """
-    if is_readonly:
+    if ads_item.readonly:
         controller.add_attribute(
-            attr_name,
+            ads_item.fastcs_name,
             AttrR(
-                datatype=datatype,
+                datatype=ads_item.fastcs_datatype,
                 io_ref=None,
                 group=controller.attr_group_name,
                 initial_value=None,
@@ -96,30 +144,18 @@ def _add_attribute(
             ),
         )
     else:
-        match ads_item:
-            case CoEAdsItem():
-                add_coe_attribute(
-                    controller, attr_name, ads_item, is_readonly, desc, datatype
-                )
-                return
-            case SymbolAdsItem(name=name):
-                io_ref = CATioControllerSymbolAttributeIORef(name)
+        io_ref = CATioControllerSymbolAttributeIORef(ads_item.name)
         controller.add_attribute(
-            attr_name,
+            ads_item.fastcs_name,
             AttrRW(
-                datatype=datatype,
+                datatype=ads_item.fastcs_datatype,
                 io_ref=io_ref,
                 group=controller.attr_group_name,
                 initial_value=None,
                 description=desc,
             ),
         )
-    controller.ads_name_map[attr_name] = str(ads_item)
-    # Store the typed AdsName for later io_ref binding
-    ads_names_attr = "ads_names"
-    if not hasattr(controller, ads_names_attr):
-        setattr(controller, ads_names_attr, {})
-    getattr(controller, ads_names_attr)[attr_name] = ads_item
+    controller.ads_name_map[ads_item.fastcs_name] = str(ads_item)
 
 
 def _add_symbol_attribute(
@@ -133,26 +169,31 @@ def _add_symbol_attribute(
         controller: The controller to add attributes to.
         symbol: The symbol definition.
     """
-    datatype = get_datatype_for_symbol(symbol)
     if symbol.channels > 1:
         # Multi-channel symbol - create one attribute per channel
         for ch in range(1, symbol.channels + 1):
             fastcs_name = symbol_to_fastcs_name(symbol, ch)
-            ads_name = SymbolAdsItem(
-                symbol_to_ads_name(symbol, ch), type_name=symbol.type_name
+            ads_name = symbol_to_ads_name(symbol, ch)
+            ads_item = SymbolAdsItem(
+                name=ads_name,
+                type_name=symbol.type_name,
+                fastcs_name=fastcs_name,
+                access=symbol.access,
             )
-            is_readonly = symbol.access is None or "write" not in symbol.access.lower()
             desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
-            _add_attribute(
-                controller, fastcs_name, ads_name, is_readonly, desc, datatype
-            )
+            _add_attribute(controller, ads_item, desc)
     else:
-        # Single-channel symbol
+        # Single-channel symbol - use fastcs_name from YAML
         fastcs_name = symbol_to_fastcs_name(symbol)
-        ads_name = SymbolAdsItem(symbol_to_ads_name(symbol), type_name=symbol.type_name)
-        is_readonly = symbol.access is None or "write" not in symbol.access.lower()
+        ads_name = symbol_to_ads_name(symbol)
+        ads_item = SymbolAdsItem(
+            name=ads_name,
+            type_name=symbol.type_name,
+            fastcs_name=fastcs_name,
+            access=symbol.access,
+        )
         desc = symbol.tooltip or symbol.name_template
-        _add_attribute(controller, fastcs_name, ads_name, is_readonly, desc, datatype)
+        _add_attribute(controller, ads_item, desc)
 
 
 def _create_dynamic_controller_class(
@@ -224,23 +265,21 @@ def _create_dynamic_controller_class(
         for coe_obj in coe_objects:
             # If no subindices, treat as single value
             if not getattr(coe_obj, "subindices", []):
+                # Use fastcs_name from YAML, or generate one as fallback
                 fallback = f"coe_{coe_obj.index:04x}"
-                base_name = coe_obj.name or fallback
-                attr_name = generate_coe_attr_name(base_name, fallback)
-                is_readonly = coe_obj.access.lower() in ("ro", "read-only")
+                fastcs_name = coe_obj.fastcs_name or generate_coe_attr_name(
+                    coe_obj.name or fallback, fallback
+                )
                 ads_item = CoEAdsItem(
                     name=coe_obj.name,
                     type_name=coe_obj.type_name,
                     index=coe_obj.index,
                     subindex=0,
+                    fastcs_name=fastcs_name,
+                    access=coe_obj.access,
                     bit_size=coe_obj.bit_size,
                 )
-                # Get FastCS datatype from the type_name
-                try:
-                    datatype = ads_item.fastcs_datatype
-                except ValueError:
-                    datatype = Int()  # Fall back for unknown types
-                add_coe_attribute(self, attr_name, ads_item, is_readonly, datatype)
+                add_coe_attribute(self, ads_item)
             else:
                 # Process each subindex
                 # TODO handle sub indices
@@ -305,7 +344,6 @@ def clear_controller_cache() -> None:
 
     Useful for testing or when terminal definitions change.
     """
-    from fastcs_catio.terminal_config import clear_config_cache
 
     _DYNAMIC_CONTROLLER_CACHE.clear()
     clear_config_cache()

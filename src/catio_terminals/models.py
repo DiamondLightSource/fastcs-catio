@@ -24,6 +24,9 @@ class CoESubIndex(BaseModel):
     bit_size: int | None = Field(default=None, description="Size in bits")
     access: str | None = Field(default=None, description="Access type (ro, rw, wo)")
     default_data: str | None = Field(default=None, description="Default data value")
+    fastcs_name: str | None = Field(
+        default=None, description="snake_case name for FastCS attribute"
+    )
 
 
 class CoEObject(BaseModel):
@@ -39,6 +42,9 @@ class CoEObject(BaseModel):
     )
     selected: bool = Field(
         default=False, description="Whether to include in YAML output"
+    )
+    fastcs_name: str | None = Field(
+        default=None, description="snake_case name for FastCS attribute"
     )
 
 

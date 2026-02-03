@@ -424,24 +424,49 @@ terminal_types:
         bit_size: 32
         access: ro
         subindices: []
+        fastcs_name: device_type
       - index: 4104
         name: Device name
         type_name: STRING(6)
         bit_size: 48
         access: ro
         subindices: []
+        fastcs_name: device_name
       - index: 4105
         name: Hardware version
         type_name: STRING(2)
         bit_size: 16
         access: ro
         subindices: []
+        fastcs_name: hardware_version
       - index: 4106
         name: Software version
         type_name: STRING(2)
         bit_size: 16
         access: ro
         subindices: []
+        fastcs_name: software_version
+      - index: 5120
+        name: CNT RxPDO-Par Ch.1
+        type_name: DT1400
+        bit_size: 48
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: '06'
+            fastcs_name: subindex_000
+          - subindex: 6
+            name: Exclude RxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: '02160000'
+            fastcs_name: exclude_rxpdos
+        fastcs_name: cnt_rxpdo_par_ch_1
     group_type: Measuring
     pdo_groups:
       - name: Per-Channel

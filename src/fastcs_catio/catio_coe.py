@@ -126,10 +126,12 @@ class CoEAdsItem:
     CATioControllerCoEAttributeIORef.
 
     Args:
-        name: The symbol name (e.g., "Channel 1").
-        type_name: The type name (e.g., "UINT").
+        name: The CoE object name (e.g., "Hardware version").
+        type_name: The TwinCAT type name (e.g., "UINT").
         index: The CoE object index (e.g., 0x8000).
         subindex: The CoE object subindex (e.g., 0x01).
+        fastcs_name: The FastCS attribute name (snake_case).
+        access: Access type (e.g., "ro", "rw").
         bit_size: Size in bits (for compound types like DT8020).
     """
 
@@ -137,11 +139,20 @@ class CoEAdsItem:
     type_name: str
     index: int
     subindex: int
+    fastcs_name: str
+    access: str | None = None
     bit_size: int | None = None
 
     def __str__(self) -> str:
         """Return the string representation like 'CoE:8000:01'."""
         return f"CoE:{self.index:04X}:{self.subindex:02X}"
+
+    @property
+    def readonly(self) -> bool:
+        """Return True if this CoE parameter is read-only."""
+        if self.access is None:
+            return True
+        return self.access.lower() in ("ro", "read-only")
 
     @property
     def is_coe(self) -> bool:
@@ -265,21 +276,25 @@ def process_coe_subindex(
     if sub.subindex == 0:
         return
 
-    # Generate attribute name from subindex name
-    base_name = sub.name if sub.name else f"sub_{sub.subindex:02x}"
+    # Use fastcs_name from YAML if available, otherwise generate one
     fallback = f"coe_{coe_obj.index:04x}_{sub.subindex:02x}"
-    attr_name = generate_coe_attr_name(base_name, fallback)
+    if sub.fastcs_name:
+        fastcs_name = sub.fastcs_name
+    else:
+        base_name = sub.name if sub.name else f"sub_{sub.subindex:02x}"
+        fastcs_name = generate_coe_attr_name(base_name, fallback)
 
     # Ensure unique name with collision handling
-    attr_name = ensure_unique_coe_name(attr_name, created_coe_attrs)
-    created_coe_attrs[attr_name] = sub.subindex
+    fastcs_name = ensure_unique_coe_name(fastcs_name, created_coe_attrs)
+    created_coe_attrs[fastcs_name] = sub.subindex
 
-    # Generate description and ADS name
+    # Generate description
     desc = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
     if len(desc) > 40:
         desc = desc[:40]
 
-    is_readonly = (sub.access or coe_obj.access).lower() in ("ro", "read-only")
+    # Determine access - use subindex access if available, otherwise parent
+    access = sub.access or coe_obj.access
 
     # Use subindex type_name if available, otherwise fall back to parent object type
     type_name = sub.type_name if sub.type_name else coe_obj.type_name
@@ -290,25 +305,17 @@ def process_coe_subindex(
         type_name=type_name,
         index=coe_obj.index,
         subindex=sub.subindex,
+        fastcs_name=fastcs_name,
+        access=access,
         bit_size=bit_size,
     )
 
-    # Get FastCS datatype from the type_name via numpy dtype conversion
-    try:
-        datatype = ads_item.fastcs_datatype
-    except ValueError:
-        # Fall back to Int for unknown types
-        datatype = Int()
-
-    add_attribute_fn(controller, attr_name, ads_item, is_readonly, desc, datatype)
+    add_attribute_fn(controller, ads_item)
 
 
 def add_coe_attribute(
     controller: CATioTerminalController,
-    attr_name: str,
     ads_item: CoEAdsItem,
-    is_readonly: bool,
-    datatype: DataType,
 ) -> None:
     """Add a CoE FastCS attribute to a controller.
 
@@ -319,11 +326,8 @@ def add_coe_attribute(
 
     Args:
         controller: The controller to add the attribute to.
-        attr_name: The FastCS attribute name.
-        ads_item: The CoE ADS item containing index, subindex, and type info.
-        is_readonly: Whether the attribute is read-only.
-        desc: The attribute description.
-        datatype: The FastCS datatype.
+        ads_item: The CoE ADS item containing index, subindex, type, fastcs_name,
+            and access.
 
     Raises:
         AssertionError: If controller.io is not an IOSlave.
@@ -341,25 +345,27 @@ def add_coe_attribute(
         # TODO: Add support for compound CoE types later
         return
 
+    attr_name = ads_item.fastcs_name
+
+    # Get datatype from the ads_item's type conversion
+    try:
+        datatype = ads_item.fastcs_datatype
+    except ValueError:
+        datatype = Int()  # Fall back for unknown types
+
     # Get AmsAddress from the client using the controller's IOSlave
     address = controller.connection.client.get_coe_ams_address(controller.io)
 
-    # Skip io_ref for compound types - only create for primitive types
-    if not ads_item.is_primitive_type:
-        # For compound types, just record the mapping without creating an attribute
-        # TODO add support for compound types with subindcies
-        io_ref = None
-    else:
-        # Create the CoE io_ref with all required information
-        io_ref = CATioControllerCoEAttributeIORef(
-            name=attr_name,
-            index=ads_item.index_hex,
-            subindex=ads_item.subindex_hex,
-            address=address,
-            dtype=ads_item.numpy_dtype,
-        )
+    # Create the CoE io_ref with all required information
+    io_ref = CATioControllerCoEAttributeIORef(
+        name=attr_name,
+        index=ads_item.index_hex,
+        subindex=ads_item.subindex_hex,
+        address=address,
+        dtype=ads_item.numpy_dtype,
+    )
 
-    if is_readonly:
+    if ads_item.readonly:
         controller.add_attribute(
             attr_name,
             AttrR(
