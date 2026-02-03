@@ -418,6 +418,18 @@ terminal_types:
         fastcs_name: cnt_outputs_set_counter_value
         selected: true
     coe_objects:
+      - index: 4096
+        name: Device type
+        type_name: UDINT
+        bit_size: 32
+        access: ro
+        subindices: []
+      - index: 4104
+        name: Device name
+        type_name: STRING(6)
+        bit_size: 48
+        access: ro
+        subindices: []
       - index: 4105
         name: Hardware version
         type_name: STRING(2)
@@ -430,137 +442,6 @@ terminal_types:
         bit_size: 16
         access: ro
         subindices: []
-      - index: 4113
-        name: Restore default parameters
-        type_name: DT1011
-        bit_size: 48
-        access: ro
-        subindices:
-          - subindex: 0
-            name: SubIndex 000
-            type_name: USINT
-            bit_size: 8
-            access: ro
-            default_data: '01'
-          - subindex: 1
-            name: SubIndex 001
-            default_data: '00000000'
-      - index: 4120
-        name: Identity
-        type_name: DT1018
-        bit_size: 144
-        access: ro
-        subindices:
-          - subindex: 0
-            name: SubIndex 000
-            type_name: USINT
-            bit_size: 8
-            access: ro
-            default_data: '04'
-          - subindex: 1
-            name: Vendor ID
-            type_name: UDINT
-            bit_size: 32
-            access: ro
-            default_data: '02000000'
-          - subindex: 2
-            name: Product code
-            type_name: UDINT
-            bit_size: 32
-            access: ro
-            default_data: 5230de05
-          - subindex: 3
-            name: Revision
-            type_name: UDINT
-            bit_size: 32
-            access: ro
-            default_data: '00001200'
-          - subindex: 4
-            name: Serial number
-            type_name: UDINT
-            bit_size: 32
-            access: ro
-            default_data: '00000000'
-      - index: 32800
-        name: CNT Settings
-        type_name: DT8020
-        bit_size: 128
-        access: rw
-        subindices:
-          - subindex: 0
-            name: SubIndex 000
-            type_name: USINT
-            bit_size: 8
-            access: ro
-            default_data: '13'
-          - subindex: 1
-            name: Enable function to set output
-            type_name: BOOL
-            bit_size: 1
-            access: rw
-            default_data: '00'
-          - subindex: 2
-            name: Enable function to reset output
-            type_name: BOOL
-            bit_size: 1
-            access: rw
-            default_data: '00'
-          - subindex: 3
-            name: Enable reload
-            type_name: BOOL
-            bit_size: 1
-            access: rw
-            default_data: '00'
-          - subindex: 4
-            name: Count down
-            type_name: BOOL
-            bit_size: 1
-            access: rw
-            default_data: '00'
-          - subindex: 5
-            name: Operating mode
-            type_name: DT0800EN02
-            bit_size: 2
-            access: rw
-            default_data: '00'
-          - subindex: 17
-            name: Switch on treshold value
-            type_name: UDINT
-            bit_size: 32
-            access: rw
-            default_data: '00000000'
-          - subindex: 18
-            name: Switch off treshold value
-            type_name: UDINT
-            bit_size: 32
-            access: rw
-            default_data: '00000000'
-          - subindex: 19
-            name: Counter reload value
-            type_name: UDINT
-            bit_size: 32
-            access: rw
-      - index: 61456
-        name: Module list
-        type_name: DTF010
-        bit_size: 112
-        access: rw
-        subindices:
-          - subindex: 0
-            name: SubIndex 000
-            type_name: USINT
-            bit_size: 8
-            access: rw
-            default_data: '03'
-          - subindex: 1
-            name: SubIndex 001
-            default_data: '96000000'
-          - subindex: 2
-            name: SubIndex 002
-            default_data: '96000000'
-          - subindex: 3
-            name: SubIndex 003
-            default_data: '96000000'
     group_type: Measuring
     pdo_groups:
       - name: Per-Channel

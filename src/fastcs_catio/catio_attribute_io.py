@@ -316,7 +316,13 @@ class CATioControllerCoEAttributeIO(
         """
         if isinstance(response, np.ndarray):
             assert isinstance(attr.datatype, Waveform)
-        self._value[attr.name] = attr.dtype(response)
+        try:
+            self._value[attr.name] = attr.dtype(response)
+        except Exception as e:
+            logger.warning(
+                f"Error converting response for attribute '{attr.name}': {e}"
+            )
+            self._value[attr.name] = response
         await attr.update(self._value[attr.name])
         logger.debug(
             f"CoE attribute '{attr.name}' of type {attr.datatype} was initialised "

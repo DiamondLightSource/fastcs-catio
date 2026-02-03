@@ -22,6 +22,7 @@ from fastcs_catio._constants import DeviceType
 from fastcs_catio.catio_attribute_io import (
     CATioControllerAttributeIO,
     CATioControllerAttributeIORef,
+    CATioControllerCoEAttributeIO,
     CATioControllerSymbolAttributeIO,
 )
 from fastcs_catio.client import RemoteRoute, get_remote_address
@@ -111,6 +112,10 @@ class CATioController(Controller, Tracer):
                     self.group,
                     self._identifier,
                     self.ads_name_map,
+                ),
+                CATioControllerCoEAttributeIO(
+                    self.connection,
+                    self.group,
                 ),
             ],
         )

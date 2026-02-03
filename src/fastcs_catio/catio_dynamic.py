@@ -17,13 +17,11 @@ Usage:
 from dataclasses import dataclass
 
 from fastcs.attributes import AttrR, AttrRW
-from fastcs.datatypes import Int
+from fastcs.datatypes import DataType, Int
 from fastcs.logging import bind_logger
 
 from catio_terminals.models import SymbolNode
-from fastcs_catio.catio_attribute_io import (
-    CATioControllerSymbolAttributeIORef,
-)
+from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
 from fastcs_catio.catio_coe import (
     CoEAdsItem,
     add_coe_attribute,
@@ -60,10 +58,6 @@ class SymbolAdsItem:
         return self.name
 
 
-# Type alias for either ADS item type
-AdsItem = SymbolAdsItem | CoEAdsItem
-
-
 # -----------------------------------------------------------------------------
 # Dynamic Controller Cache and Helpers
 # -----------------------------------------------------------------------------
@@ -75,10 +69,10 @@ _DYNAMIC_CONTROLLER_CACHE: dict[str, type[CATioTerminalController]] = {}
 def _add_attribute(
     controller: CATioTerminalController,
     attr_name: str,
-    ads_item: AdsItem,
+    ads_item: SymbolAdsItem,
     is_readonly: bool,
     desc: str,
-    type_name: Int,
+    datatype: DataType,
 ) -> None:
     """Add a FastCS attribute to a controller.
 
@@ -94,7 +88,7 @@ def _add_attribute(
         controller.add_attribute(
             attr_name,
             AttrR(
-                datatype=type_name,
+                datatype=datatype,
                 io_ref=None,
                 group=controller.attr_group_name,
                 initial_value=None,
@@ -105,7 +99,7 @@ def _add_attribute(
         match ads_item:
             case CoEAdsItem():
                 add_coe_attribute(
-                    controller, attr_name, ads_item, is_readonly, desc, type_name
+                    controller, attr_name, ads_item, is_readonly, desc, datatype
                 )
                 return
             case SymbolAdsItem(name=name):
@@ -113,7 +107,7 @@ def _add_attribute(
         controller.add_attribute(
             attr_name,
             AttrRW(
-                datatype=type_name,
+                datatype=datatype,
                 io_ref=io_ref,
                 group=controller.attr_group_name,
                 initial_value=None,
@@ -230,20 +224,30 @@ def _create_dynamic_controller_class(
         for coe_obj in coe_objects:
             # If no subindices, treat as single value
             if not getattr(coe_obj, "subindices", []):
-                base_name = coe_obj.name or f"CoE{coe_obj.index:04X}"
-                attr_name = generate_coe_attr_name(base_name, f"CoE{coe_obj.index:04X}")
-                desc = f"CoE{coe_obj.index:04X}"
+                fallback = f"coe_{coe_obj.index:04x}"
+                base_name = coe_obj.name or fallback
+                attr_name = generate_coe_attr_name(base_name, fallback)
                 is_readonly = coe_obj.access.lower() in ("ro", "read-only")
-                datatype = Int()  # TODO: map coe_obj.type_name to FastCS type
                 ads_item = CoEAdsItem(
-                    coe_obj.name, coe_obj.type_name, index=coe_obj.index, subindex=0
+                    name=coe_obj.name,
+                    type_name=coe_obj.type_name,
+                    index=coe_obj.index,
+                    subindex=0,
+                    bit_size=coe_obj.bit_size,
                 )
-                _add_attribute(self, attr_name, ads_item, is_readonly, desc, datatype)
+                # Get FastCS datatype from the type_name
+                try:
+                    datatype = ads_item.fastcs_datatype
+                except ValueError:
+                    datatype = Int()  # Fall back for unknown types
+                add_coe_attribute(self, attr_name, ads_item, is_readonly, datatype)
             else:
                 # Process each subindex
+                # TODO handle sub indices
+                continue
                 for sub in coe_obj.subindices:
                     process_coe_subindex(
-                        coe_obj, sub, created_coe_attrs, self, _add_attribute
+                        coe_obj, sub, created_coe_attrs, self, _add_symbol_attribute
                     )
 
         attr_count = len(self.attributes) - initial_attr_count
