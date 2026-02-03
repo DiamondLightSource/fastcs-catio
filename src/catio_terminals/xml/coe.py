@@ -1,6 +1,7 @@
 """CoE (CANopen over EtherCAT) object parsing for Beckhoff terminal XML files."""
 
 from catio_terminals.models import CoEObject, CoESubIndex
+from catio_terminals.utils import to_snake_case
 from catio_terminals.xml.constants import parse_hex_value
 
 
@@ -103,6 +104,7 @@ def _parse_subindices(info_section, datatype_subitems: list[dict]) -> list[CoESu
                 bit_size=subitem_bitsize,
                 access=subitem_access,
                 default_data=default_data,
+                fastcs_name=to_snake_case(subitem_name),
             )
         )
 
@@ -153,6 +155,7 @@ def parse_coe_objects(device) -> list[CoEObject]:
                 bit_size=bit_size,
                 access=access,
                 subindices=subindices,
+                fastcs_name=to_snake_case(obj_name),
             )
         )
 

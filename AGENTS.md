@@ -194,6 +194,8 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 
 This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protocol. Key concepts:
 
+- **Testing with Hardware**: **NEVER** run `fastcs-catio ioc` commands yourself. Let the user run the IOC and report any errors back to you. The IOC requires network access to real hardware that may not be available or may have specific configuration requirements.
+
 - **Terminal Definitions**: YAML files describing Beckhoff terminal types, their symbols, and CoE objects. See [docs/explanations/terminal-definitions.md](docs/explanations/terminal-definitions.md) for:
   - How to generate terminal YAML files using `catio-terminals`
   - Understanding ADS symbol nodes and index groups

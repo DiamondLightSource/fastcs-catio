@@ -810,6 +810,32 @@ class ADSSimServer:
         coe_index = (index_offset >> 16) & 0xFFFF
         coe_subindex = index_offset & 0xFF
 
+        # Standard CANopen identification indices
+        # 0x1000 = Device type (UDINT)
+        if coe_index == 0x1000 and coe_subindex == 0x00:
+            # Return product code as device type
+            data = device.identity.product_code_bytes()
+            return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
+
+        # 0x1008 = Device name (STRING)
+        if coe_index == 0x1008 and coe_subindex == 0x00:
+            # Return device name as null-terminated string
+            name = device.name.encode("ascii") + b"\x00"
+            data = name.ljust(read_length, b"\x00")[:read_length]
+            return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
+
+        # 0x1009 = Hardware version (STRING)
+        if coe_index == 0x1009 and coe_subindex == 0x00:
+            data = b"01\x00"  # Placeholder hardware version
+            data = data.ljust(read_length, b"\x00")[:read_length]
+            return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
+
+        # 0x100A = Software/Firmware version (STRING)
+        if coe_index == 0x100A and coe_subindex == 0x00:
+            data = b"01\x00"  # Placeholder firmware version
+            data = data.ljust(read_length, b"\x00")[:read_length]
+            return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
+
         # Device identity (0x1018)
         if coe_index == 0x1018:
             device_identity = device.identity
