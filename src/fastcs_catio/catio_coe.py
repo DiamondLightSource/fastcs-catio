@@ -214,11 +214,6 @@ class CoEAdsItem(AdsItemBase):
         return f"CoE:{self.index:04X}:{self.subindex:02X}"
 
     @property
-    def is_coe(self) -> bool:
-        """Return True since this is a CoE item."""
-        return True
-
-    @property
     def index_hex(self) -> str:
         """Return the index as a hex string with 0x prefix (e.g., '0x8000')."""
         return f"0x{self.index:04X}"
