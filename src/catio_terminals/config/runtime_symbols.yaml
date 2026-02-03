@@ -72,16 +72,3 @@ runtime_symbols:
   #     - AnaIn
   #     - AnaOut
   #     - Measuring
-
-  # SyncUnits - TwinCAT synchronization unit WcState
-  # This is a global symbol not tied to specific terminals
-  - name_template: SyncUnits._default_._unreferenced_.WcState.WcState
-    index_group: 61489 # 0xF031 - Input/status area
-    type_name: BIT
-    channels: 1
-    access: Read-only
-    fastcs_name: sync_units_wc_state
-    description: >
-      Working Counter State for TwinCAT's default synchronization unit.
-      Part of TwinCAT's distributed clock (DC) synchronization system.
-    is_global: true # Not tied to specific terminals
