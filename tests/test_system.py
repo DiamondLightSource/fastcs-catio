@@ -148,7 +148,14 @@ async def fastcs_catio_controller(simulator_process):
 
     # make sure the notification system is enabled
     # meaning the scan routine has started
+    timeout = 60.0  # 60 seconds timeout for startup
+    start_time = asyncio.get_event_loop().time()
     while controller.notification_enabled is False:
+        if asyncio.get_event_loop().time() - start_time > timeout:
+            pytest.fail(
+                f"Controller startup timed out after {timeout}s waiting for "
+                "notification_enabled to become True"
+            )
         await asyncio.sleep(0.5)
     yield controller
 
