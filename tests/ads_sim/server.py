@@ -867,7 +867,14 @@ class ADSSimServer:
                     data = b"\x00" * read_length
                 return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
 
-        return struct.pack("<II", ErrorCode.ADSERR_DEVICE_INVALIDOFFSET, 0)
+        # Fallback: return zeros for any other CoE index
+        # This allows the IOC to start even if we don't have specific CoE data
+        logger.debug(
+            f"CoE read for unknown index 0x{coe_index:04X}:0x{coe_subindex:02X}, "
+            f"returning {read_length} zero bytes"
+        )
+        data = b"\x00" * read_length
+        return struct.pack("<II", ErrorCode.ERR_NOERROR, len(data)) + data
 
     async def _handle_symbol_upload_info(self, read_length: int) -> bytes:
         """Handle symbol upload info request (index group 0xF00F).
