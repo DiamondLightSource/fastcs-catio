@@ -243,109 +243,6 @@ class CoEAdsItem(AdsItemBase):
         return twincat_type_to_numpy(self.type_name, self.bit_size)
 
 
-def generate_coe_attr_name(base_name: str, fallback: str) -> str:
-    """Generate a snake_case attribute name from a base name.
-
-    Args:
-        base_name: The base name to convert (e.g., "Max Velocity").
-        fallback: Fallback name if base_name is invalid (e.g., "coe_8000").
-
-    Returns:
-        snake_case attribute name (e.g., "max_velocity").
-    """
-    # Replace non-alphanumeric chars with spaces, then convert to snake_case
-    cleaned = re.sub(r"[^a-zA-Z0-9]", " ", base_name)
-    attr_name = "_".join(word.lower() for word in cleaned.split() if word)
-    if not attr_name or not attr_name[0].isalpha():
-        attr_name = fallback
-    return attr_name
-
-
-def ensure_unique_coe_name(
-    attr_name: str, created_attrs: dict[str, int], max_length: int = 39
-) -> str:
-    """Ensure CoE attribute name is unique by adding suffix if needed.
-
-    Args:
-        attr_name: The proposed attribute name.
-        created_attrs: Dict of already-created attribute names.
-        max_length: Maximum length before truncation (leaves room for suffix).
-
-    Returns:
-        Unique attribute name with suffix if collision detected.
-    """
-    # Truncate to max_length to leave room for collision suffix
-    attr_name = attr_name[:max_length]
-
-    original_name = attr_name
-    suffix = 0
-    while attr_name in created_attrs:
-        if suffix < 10:
-            attr_name = f"{original_name}{suffix}"
-        else:
-            # Use letters after digits exhausted
-            attr_name = f"{original_name}{chr(ord('A') + suffix - 10)}"
-        suffix += 1
-    return attr_name
-
-
-def process_coe_subindex(
-    coe_obj,
-    sub,
-    created_coe_attrs: dict[str, int],
-    controller: CATioTerminalController,
-    add_attribute_fn,
-) -> None:
-    """Process a single CoE subindex and add it as an attribute.
-
-    Args:
-        coe_obj: The parent CoE object.
-        sub: The subindex to process.
-        created_coe_attrs: Dict tracking created attribute names.
-        controller: The controller to add the attribute to.
-        add_attribute_fn: Function to add attributes to the controller.
-    """
-    # Skip subindex 0 (count/descriptor, EtherCAT standard)
-    if sub.subindex == 0:
-        return
-
-    # Use fastcs_name from YAML if available, otherwise generate one
-    fallback = f"coe_{coe_obj.index:04x}_{sub.subindex:02x}"
-    if sub.fastcs_name:
-        fastcs_name = sub.fastcs_name
-    else:
-        base_name = sub.name if sub.name else f"sub_{sub.subindex:02x}"
-        fastcs_name = generate_coe_attr_name(base_name, fallback)
-
-    # Ensure unique name with collision handling
-    fastcs_name = ensure_unique_coe_name(fastcs_name, created_coe_attrs)
-    created_coe_attrs[fastcs_name] = sub.subindex
-
-    # Generate description
-    desc = f"CoE{coe_obj.index:04X}{sub.subindex:02X}"
-    if len(desc) > 40:
-        desc = desc[:40]
-
-    # Determine access - use subindex access if available, otherwise parent
-    access = sub.access or coe_obj.access
-
-    # Use subindex type_name if available, otherwise fall back to parent object type
-    type_name = sub.type_name if sub.type_name else coe_obj.type_name
-    # Use subindex bit_size if available, otherwise fall back to parent object bit_size
-    bit_size = sub.bit_size if sub.bit_size is not None else coe_obj.bit_size
-    ads_item = CoEAdsItem(
-        name=coe_obj.name,
-        type_name=type_name,
-        index=coe_obj.index,
-        subindex=sub.subindex,
-        fastcs_name=fastcs_name,
-        access=access,
-        bit_size=bit_size,
-    )
-
-    add_attribute_fn(controller, ads_item)
-
-
 def add_coe_attribute(
     controller: CATioTerminalController,
     ads_item: CoEAdsItem,
@@ -389,7 +286,10 @@ def add_coe_attribute(
     # Get AmsAddress from the client using the controller's IOSlave
     address = controller.connection.client.get_coe_ams_address(controller.io)
 
-    # Create the CoE io_ref with all required information
+    # skip compound types as we do their sub inidices separately
+    if not ads_item.is_primitive_type:
+        return
+
     io_ref = CATioControllerCoEAttributeIORef(
         name=attr_name,
         index=ads_item.index_hex,

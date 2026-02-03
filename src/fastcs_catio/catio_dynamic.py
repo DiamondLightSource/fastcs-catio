@@ -25,8 +25,6 @@ from fastcs_catio.catio_coe import (
     AdsItemBase,
     CoEAdsItem,
     add_coe_attribute,
-    generate_coe_attr_name,
-    process_coe_subindex,
 )
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.terminal_config import (
@@ -207,34 +205,27 @@ def _create_dynamic_controller_class(
 
         # Add CoE objects and subindices as FastCS attributes
         # Track created attribute names to detect collisions
-        created_coe_attrs: dict[str, int] = {}
+        created_coe_attrs: set[str] = set()
 
         for coe_obj in coe_objects:
             # If no subindices, treat as single value
             if not getattr(coe_obj, "subindices", []):
-                # Use fastcs_name from YAML, or generate one as fallback
-                fallback = f"coe_{coe_obj.index:04x}"
-                fastcs_name = coe_obj.fastcs_name or generate_coe_attr_name(
-                    coe_obj.name or fallback, fallback
-                )
                 ads_item = CoEAdsItem(
                     name=coe_obj.name,
                     type_name=coe_obj.type_name,
                     index=coe_obj.index,
                     subindex=0,
-                    fastcs_name=fastcs_name,
+                    fastcs_name=coe_obj.fastcs_name,
                     access=coe_obj.access,
                     bit_size=coe_obj.bit_size,
                 )
                 add_coe_attribute(self, ads_item)
+                # TODO use this to make sure all names are unique
+                created_coe_attrs.add(ads_item.fastcs_name)
             else:
                 # Process each subindex
                 # TODO handle sub indices
                 continue
-                for sub in coe_obj.subindices:
-                    process_coe_subindex(
-                        coe_obj, sub, created_coe_attrs, self, _add_symbol_attribute
-                    )
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(
