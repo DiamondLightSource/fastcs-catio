@@ -182,8 +182,8 @@ async with CatioClient(target_ip="192.168.1.100") as client:
 
     # Symbols are keyed by device ID
     for device_id, symbols in all_symbols.items():
-        for symbol in symbols:
-            print(f"{symbol.name}: {symbol.type_name}")
+        for name, symbol in symbols.items():
+            print(f"{name}: {symbol.type_name}")
 ```
 
 ## Implementation in catio-terminals

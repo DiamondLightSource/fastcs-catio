@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Dynamic PDOs in EtherCAT Terminals &#8212; fastcs-catio 1.1a4.dev79+g5d0669eeb documentation</title>
+    <title>Dynamic PDOs in EtherCAT Terminals &#8212; fastcs-catio 1.1a4.dev81+g15c009f0d documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=22ee11f4"></script>
+    <script src="../_static/documentation_options.js?v=0f78cad3"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -766,8 +766,8 @@
 
     <span class="c1"># Symbols are keyed by device ID</span>
     <span class="k">for</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">symbols</span> <span class="ow">in</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

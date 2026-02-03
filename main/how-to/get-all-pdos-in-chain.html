@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev79+g5d0669eeb documentation</title>
+    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev81+g15c009f0d documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=22ee11f4"></script>
+    <script src="../_static/documentation_options.js?v=0f78cad3"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -700,7 +700,7 @@
 <p><strong>Runtime Discovery:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for an EL1502</span>
 <span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
-<span class="n">el1502_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;EL1502&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+<span class="n">el1502_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">symbol</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;EL1502&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
 
 <span class="c1"># Check which configuration is active</span>
 <span class="n">has_per_channel</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Channel 1&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el1502_symbols</span><span class="p">)</span>
@@ -735,7 +735,7 @@
 <p><strong>Runtime Discovery:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for analog input terminals</span>
 <span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
-<span class="n">ai_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;AI&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+<span class="n">ai_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;AI&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
 
 <span class="c1"># Determine which format is active</span>
 <span class="n">has_standard</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;Standard&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ai_symbols</span><span class="p">)</span>
@@ -782,7 +782,7 @@
 <p><strong>Runtime Discovery:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for EL3356</span>
 <span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
-<span class="n">el3356_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;EL3356&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+<span class="n">el3356_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;EL3356&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
 
 <span class="c1"># Determine which value format is active</span>
 <span class="n">has_int32</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;RMB Value (INT32)&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">el3356_symbols</span><span class="p">)</span>
@@ -827,8 +827,8 @@
 <p><strong>Runtime Discovery:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for an EL3702</span>
 <span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
-<span class="n">el3702_ch1</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span>
-              <span class="k">if</span> <span class="s2">&quot;EL3702&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Ch1&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Value&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+<span class="n">el3702_ch1</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+              <span class="k">if</span> <span class="s2">&quot;EL3702&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Ch1&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Value&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
 
 <span class="n">oversampling_factor</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">el3702_ch1</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EL3702 configured for </span><span class="si">{</span><span class="n">oversampling_factor</span><span class="si">}</span><span class="s2">x oversampling&quot;</span><span class="p">)</span>
@@ -841,7 +841,7 @@
 <p><strong>Runtime Discovery:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for an EL4732</span>
 <span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
-<span class="n">el4732_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;EL4732&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Value&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+<span class="n">el4732_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;EL4732&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="s2">&quot;Value&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
 
 <span class="c1"># Count array elements to determine oversampling factor</span>
 <span class="n">sample_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">el4732_symbols</span><span class="p">)</span>
@@ -892,7 +892,7 @@
 <p><strong>Runtime Discovery:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query actual symbols for ELM3704</span>
 <span class="n">symbols</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_all_symbols</span><span class="p">()</span>
-<span class="n">elm3704_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;ELM3704&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+<span class="n">elm3704_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;ELM3704&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
     <span class="n">ch_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">elm3704_symbols</span> <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;Channel </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
@@ -969,8 +969,8 @@
 
     <span class="c1"># Symbols are keyed by device ID</span>
     <span class="k">for</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">symbols</span> <span class="ow">in</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">type_name</span><span class="si">}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">index_group</span><span class="si">:</span><span class="s2">#x</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">index_offset</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">type_name</span><span class="si">}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">index_group</span><span class="si">:</span><span class="s2">#x</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">symbol</span><span class="o">.</span><span class="n">index_offset</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

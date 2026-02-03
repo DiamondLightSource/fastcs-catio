@@ -133,12 +133,17 @@ class EtherCATMasterController(CATioDeviceController):
                 ),
             )
 
-            # Map the FastCS attribute name to the symbol name used by ADS
+            # Map the FastCS channel attribute name to the symbol name used by ADS
             self.ads_name_map[f"InFrm{i}State"] = f"Inputs.Frm{i}State"
             self.ads_name_map[f"InFrm{i}WcState"] = f"Inputs.Frm{i}WcState"
             self.ads_name_map[f"InFrm{i}InpToggle"] = f"Inputs.Frm{i}InputToggle"
             self.ads_name_map[f"OutFrm{i}Ctrl"] = f"Outputs.Frm{i}Ctrl"
             self.ads_name_map[f"OutFrm{i}WcCtrl"] = f"Outputs.Frm{i}WcCtrl"
+
+        # Map the FastCS attribute name to the symbol name used by ADS
+        self.ads_name_map["InputsSlaveCount"] = "Inputs.SlaveCount"
+        self.ads_name_map["InputsDevState"] = "Inputs.DevState"
+        self.ads_name_map["OutputsDevCtrl"] = "Outputs.DevCtrl"
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(f"Created {attr_count} attributes for the controller {self.name}.")
