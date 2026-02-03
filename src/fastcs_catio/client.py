@@ -468,8 +468,9 @@ class AsyncioADSClient:
         ] = {}  # key is device id, value is IODevice object
         """Dictionary comprising all EtherCAT devices registered on the IO server"""
         self._ecsymbols: dict[
-            SupportsInt, Sequence[AdsSymbol]
-        ] = {}  # key is device id, value is list of AdsSymbol objects
+            SupportsInt, dict[str, AdsSymbol]
+        ] = {}  # key is device id,
+        # value is dictionary mapping symbol names to AdsSymbol objects
         """Dictionary comprising all ADS symbols configured on the EtherCAT devices"""
         self.fastcs_io_map: dict[
             int, IOServer | IODevice | IOSlave
@@ -2070,17 +2071,22 @@ class AsyncioADSClient:
             device_id, int(symbol_table.symbol_count), response.data
         )
 
-        # Get a list of the available symbols
-        symbols: list[AdsSymbol] = []
+        # Get a dict of the available symbols
+        symbols: dict[str, AdsSymbol] = {}
         for node in nodes:
-            symbols.extend(symbol_lookup(node))
+            symbols.update(symbol_lookup(node))
 
         # Adjust the device symbol names to include the device name as prefix
         # Unfortunately, counter correction is required in 'add_device_notification()'
+        names = []
         device_name = self._ecdevices[device_id].name
-        for symbol in symbols:
-            if symbol.name.startswith("Inputs") or symbol.name.startswith("Outputs"):
-                symbol.name = f"{device_name}.{symbol.name}"
+        for name in symbols.keys():
+            if name.startswith("Inputs") or name.startswith("Outputs"):
+                names.append((name, f"{device_name}.{name}"))
+        for old_name, new_name in names:
+            old_symbol = symbols.pop(old_name)
+            symbols[new_name] = old_symbol
+            symbols[new_name].name = new_name
 
         self._ecsymbols[device_id] = symbols
         logger.info(
@@ -2088,9 +2094,11 @@ class AsyncioADSClient:
             + f"a total of {len(symbols)} available symbols."
         )
 
-    async def get_all_symbols(self) -> dict[SupportsInt, Sequence[AdsSymbol]]:
+    async def get_all_symbols(self) -> dict[SupportsInt, dict[str, AdsSymbol]]:
         """
         Get all ADS symbols available on the EtherCAT I/O server.
+
+        :returns: a dictionary mapping each device id to its associated symbols
 
         :raises ValueError: if no EtherCAT device is defined with the ADS client
         """
@@ -2501,8 +2509,8 @@ class AsyncioADSClient:
 
         :returns: the notification handle assigned to the symbol variable
         """
-        assert symbol in self._ecsymbols[symbol.parent_id], (
-            f"Symbol '{symbol.name}' not found in the symbol list \
+        assert symbol.name in self._ecsymbols[symbol.parent_id].keys(), (
+            f"Symbol '{symbol.name}' not found in the symbol map \
                 of device {self._ecdevices[symbol.parent_id].name}."
         )
 
@@ -2579,7 +2587,7 @@ class AsyncioADSClient:
                 )
             all_symbols: Sequence[AdsSymbol] = []
             for _, dev_symbols in self._ecsymbols.items():
-                all_symbols.extend(dev_symbols)
+                all_symbols.extend(list(dev_symbols.values()))
         else:
             if isinstance(symbols, AdsSymbol):
                 all_symbols = [symbols]
@@ -2646,7 +2654,7 @@ class AsyncioADSClient:
                 )
             all_symbols: Sequence[AdsSymbol] = []
             for _, dev_symbols in self._ecsymbols.items():
-                all_symbols.extend(dev_symbols)
+                all_symbols.extend(list(dev_symbols.values()))
         else:
             if isinstance(symbols, AdsSymbol):
                 all_symbols = [symbols]
@@ -3328,7 +3336,7 @@ class AsyncioADSClient:
             dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
             dev_symbols = self._ecsymbols[dev_id]
             full_symbol_name = ".".join([ctlr.name, symbol_name])
-            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            symbol = dev_symbols.get(full_symbol_name, None)
             print(f"SYMBOL: {full_symbol_name}")
             if symbol is not None:
                 _, response = await self.read_ads_symbol(symbol)
@@ -3369,7 +3377,7 @@ class AsyncioADSClient:
             dev_id = ctlr.parent_device if isinstance(ctlr, IOSlave) else ctlr.id
             dev_symbols = self._ecsymbols[dev_id]
             full_symbol_name = ".".join([ctlr.name, symbol_name])
-            symbol = next((s for s in dev_symbols if s.name == full_symbol_name), None)
+            symbol = dev_symbols.get(full_symbol_name, None)
             if symbol is not None:
                 status = await self.write_ads_symbol(symbol, value)
                 if not status:
@@ -3410,9 +3418,7 @@ class AsyncioADSClient:
             dev_symbols = self._ecsymbols[dev_id]
             for name in symbol_names:
                 full_symbol_name = ".".join([ctlr.name, name])
-                symbol = next(
-                    (s for s in dev_symbols if s.name == full_symbol_name), None
-                )
+                symbol = dev_symbols.get(full_symbol_name, None)
                 if symbol is not None:
                     symbols.append(symbol)
 

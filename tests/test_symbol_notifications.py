@@ -19,7 +19,7 @@ async def make_client() -> AsyncioADSClient:
 
 async def main():
     client = await make_client()
-    notif_symbols = []
+    notif_symbols = {}
 
     try:
         await client.introspect_io_server()
@@ -30,7 +30,7 @@ async def main():
         # notif_symbols = random.sample(symbols[master_dev], 800)
         print("...registering notifications...")
         await client.add_notifications(
-            notif_symbols,  # max_delay_ms=1000, cycle_time_ms=1000
+            list(notif_symbols.values()),  # max_delay_ms=1000, cycle_time_ms=1000
         )
         await asyncio.sleep(0.3)
 
@@ -49,7 +49,7 @@ async def main():
 
     finally:
         print("...deleting notifications...")
-        await client.delete_notifications(notif_symbols)
+        await client.delete_notifications(list(notif_symbols.values()))
         await asyncio.sleep(1)
 
         await client.close()

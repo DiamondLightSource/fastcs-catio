@@ -28,11 +28,11 @@ async def main():
         # Read symbol values
         for _ in range(10):
             name, value = await client.read_ads_symbol(
-                random.choice(symbols[master_dev])
+                random.choice(list(symbols[master_dev].values()))
             )
             print(f"{name}: {value}")
 
-        read_symbols = random.sample(symbols[master_dev], 10)
+        read_symbols = random.sample(list(symbols[master_dev].values()), 10)
         for symbol in read_symbols:
             name, value = await client.read_ads_symbol(symbol)
             print(f"Read {name} = {value}")
@@ -42,12 +42,12 @@ async def main():
         # Write value to symbols
         output_symbols = [
             symbol
-            for symbol in symbols[master_dev]
+            for symbol in list(symbols[master_dev].values())
             if all(substr in symbol.name for substr in ["EL2024", "Channel"])
         ]
         if output_symbols:
             write_symbols = random.sample(
-                symbols[master_dev], min(10, len(output_symbols))
+                list(symbols[master_dev].values()), min(10, len(output_symbols))
             )
 
             for symbol in write_symbols:

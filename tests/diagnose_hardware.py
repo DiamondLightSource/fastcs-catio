@@ -17,7 +17,6 @@ import argparse
 import asyncio
 import logging
 import sys
-from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -105,12 +104,12 @@ def generate_yaml_config(
 
 
 def format_symbol_dump(
-    symbols: dict[Any, Sequence[AdsSymbol]],
+    symbols: dict[Any, dict[str, AdsSymbol]],
 ) -> str:
     """Format symbols for human-readable output.
 
     Args:
-        symbols: Dictionary of device_id -> list of AdsSymbol.
+        symbols: Dictionary of device_id -> (dict of symbol_name -> AdsSymbol).
 
     Returns:
         Formatted string representation of all symbols.
@@ -124,7 +123,7 @@ def format_symbol_dump(
         lines.append(f"\nDevice {device_id} ({len(device_symbols)} symbols):")
         lines.append("-" * 60)
 
-        for sym in device_symbols:
+        for sym in device_symbols.values():
             lines.append(f"  {sym.name}")
             lines.append(
                 f"    Group=0x{int(sym.group):08X}  Offset=0x{int(sym.offset):08X}  "
@@ -269,7 +268,7 @@ async def diagnose_hardware(
                             # Collect hardware symbol names
                             hardware_names = set()
                             for device_symbols in client._ecsymbols.values():
-                                for sym in device_symbols:
+                                for sym in device_symbols.values():
                                     hardware_names.add(sym.name)
 
                             # Collect simulator symbol names
