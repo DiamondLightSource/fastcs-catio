@@ -460,6 +460,69 @@ terminal_types:
         access: ro
         subindices: []
         fastcs_name: software_version
+      - index: 4120
+        name: Identity
+        type_name: DT1018
+        bit_size: 144
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "04"
+            fastcs_name: identity_subindex_000
+          - subindex: 1
+            name: Vendor ID
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "02000000"
+            fastcs_name: identity_vendor_id
+          - subindex: 2
+            name: Product code
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 5230de05
+            fastcs_name: identity_product_code
+          - subindex: 3
+            name: Revision
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00001200"
+            fastcs_name: identity_revision
+          - subindex: 4
+            name: Serial number
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: identity_serial_number
+        fastcs_name: identity
+      - index: 4336
+        name: Backup parameter handling
+        type_name: DT10F0
+        bit_size: 48
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "01"
+            fastcs_name: backup_parameter_handling_subindex_000
+          - subindex: 1
+            name: Checksum
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: backup_parameter_handling_checksum
+        fastcs_name: backup_parameter_handling
       - index: 5120
         name: CNT RxPDO-Par Ch.1
         type_name: DT1400
@@ -473,14 +536,1229 @@ terminal_types:
             access: ro
             default_data: "06"
             fastcs_name: cnt_rxpdo_par_ch_1_subindex_000
-          # - subindex: 6
-          #   name: Exclude RxPDOs
-          #   type_name: ARRAY [0..3] OF BYTE
+          - subindex: 6
+            name: Exclude RxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: "02160000"
+            fastcs_name: cnt_rxpdo_par_ch_1_exclude_rxpdos
+        fastcs_name: cnt_rxpdo_par_ch_1
+      - index: 5121
+        name: CNT RxPDO-Par Ch.2
+        type_name: DT1400
+        bit_size: 48
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "06"
+            fastcs_name: cnt_rxpdo_par_ch_2_subindex_000
+          - subindex: 6
+            name: Exclude RxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: "02160000"
+            fastcs_name: cnt_rxpdo_par_ch_2_exclude_rxpdos
+        fastcs_name: cnt_rxpdo_par_ch_2
+      - index: 5122
+        name: CNT RxPDO-Par
+        type_name: DT1400
+        bit_size: 48
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "06"
+            fastcs_name: cnt_rxpdo_par_subindex_000
+          - subindex: 6
+            name: Exclude RxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: "00160116"
+            fastcs_name: cnt_rxpdo_par_exclude_rxpdos
+        fastcs_name: cnt_rxpdo_par
+      - index: 5632
+        name: CNT RxPDO-Map Ch.1
+        type_name: DT1600
+        bit_size: 208
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "06"
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_000
+          - subindex: 1
+            name: SubIndex 001
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01010070"
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_001
+          - subindex: 2
+            name: SubIndex 002
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01020070"
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_002
+          - subindex: 3
+            name: SubIndex 003
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01030070"
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_003
+          - subindex: 4
+            name: SubIndex 004
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01040070"
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_004
+          - subindex: 5
+            name: SubIndex 005
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 0c000000
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_005
+          - subindex: 6
+            name: SubIndex 006
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "20110070"
+            fastcs_name: cnt_rxpdo_map_ch_1_subindex_006
+        fastcs_name: cnt_rxpdo_map_ch_1
+      - index: 5633
+        name: CNT RxPDO-Map Ch.2
+        type_name: DT1600
+        bit_size: 208
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "06"
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_000
+          - subindex: 1
+            name: SubIndex 001
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01011070"
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_001
+          - subindex: 2
+            name: SubIndex 002
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01021070"
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_002
+          - subindex: 3
+            name: SubIndex 003
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01031070"
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_003
+          - subindex: 4
+            name: SubIndex 004
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01041070"
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_004
+          - subindex: 5
+            name: SubIndex 005
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 0c000000
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_005
+          - subindex: 6
+            name: SubIndex 006
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "20111070"
+            fastcs_name: cnt_rxpdo_map_ch_2_subindex_006
+        fastcs_name: cnt_rxpdo_map_ch_2
+      - index: 5634
+        name: CNT RxPDO-Map
+        type_name: DT1600
+        bit_size: 208
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "06"
+            fastcs_name: cnt_rxpdo_map_subindex_000
+          - subindex: 1
+            name: SubIndex 001
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01012070"
+            fastcs_name: cnt_rxpdo_map_subindex_001
+          - subindex: 2
+            name: SubIndex 002
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01022070"
+            fastcs_name: cnt_rxpdo_map_subindex_002
+          - subindex: 3
+            name: SubIndex 003
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01032070"
+            fastcs_name: cnt_rxpdo_map_subindex_003
+          - subindex: 4
+            name: SubIndex 004
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01042070"
+            fastcs_name: cnt_rxpdo_map_subindex_004
+          - subindex: 5
+            name: SubIndex 005
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 0c000000
+            fastcs_name: cnt_rxpdo_map_subindex_005
+          - subindex: 6
+            name: SubIndex 006
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "20112070"
+            fastcs_name: cnt_rxpdo_map_subindex_006
+        fastcs_name: cnt_rxpdo_map
+      - index: 6144
+        name: CNT TxPDO-Par Ch.1
+        type_name: DT1800
+        bit_size: 56
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "09"
+            fastcs_name: cnt_txpdo_par_ch_1_subindex_000
+          - subindex: 6
+            name: Exclude TxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: 021a0000
+            fastcs_name: cnt_txpdo_par_ch_1_exclude_txpdos
+        fastcs_name: cnt_txpdo_par_ch_1
+      - index: 6145
+        name: CNT TxPDO-Par Ch.2
+        type_name: DT1800
+        bit_size: 56
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "09"
+            fastcs_name: cnt_txpdo_par_ch_2_subindex_000
+          - subindex: 6
+            name: Exclude TxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: 021a0000
+            fastcs_name: cnt_txpdo_par_ch_2_exclude_txpdos
+        fastcs_name: cnt_txpdo_par_ch_2
+      - index: 6146
+        name: CNT TxPDO-Par
+        type_name: DT1800
+        bit_size: 56
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "09"
+            fastcs_name: cnt_txpdo_par_subindex_000
+          - subindex: 6
+            name: Exclude TxPDOs
+            type_name: ARRAY [0..3] OF BYTE
+            bit_size: 32
+            access: ro
+            default_data: 001a011a
+            fastcs_name: cnt_txpdo_par_exclude_txpdos
+        fastcs_name: cnt_txpdo_par
+      - index: 6656
+        name: CNT TxPDO-Map Ch.1
+        type_name: DT1A00
+        bit_size: 368
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: 0b
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_000
+          - subindex: 1
+            name: SubIndex 001
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01010060"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_001
+          - subindex: 2
+            name: SubIndex 002
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01020060"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_002
+          - subindex: 3
+            name: SubIndex 003
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01030060"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_003
+          - subindex: 4
+            name: SubIndex 004
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01040060"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_004
+          - subindex: 5
+            name: SubIndex 005
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01000000"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_005
+          - subindex: 6
+            name: SubIndex 006
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01060060"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_006
+          - subindex: 7
+            name: SubIndex 007
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "07000000"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_007
+          - subindex: 8
+            name: SubIndex 008
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 0120321c
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_008
+          - subindex: 9
+            name: SubIndex 009
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01000000"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_009
+          - subindex: 10
+            name: SubIndex 010
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01090018"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_010
+          - subindex: 11
+            name: SubIndex 011
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "20110060"
+            fastcs_name: cnt_txpdo_map_ch_1_subindex_011
+        fastcs_name: cnt_txpdo_map_ch_1
+      - index: 6657
+        name: CNT TxPDO-Map Ch.2
+        type_name: DT1A00
+        bit_size: 368
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: 0b
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_000
+          - subindex: 1
+            name: SubIndex 001
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01011060"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_001
+          - subindex: 2
+            name: SubIndex 002
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01021060"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_002
+          - subindex: 3
+            name: SubIndex 003
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01031060"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_003
+          - subindex: 4
+            name: SubIndex 004
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01041060"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_004
+          - subindex: 5
+            name: SubIndex 005
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01000000"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_005
+          - subindex: 6
+            name: SubIndex 006
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01061060"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_006
+          - subindex: 7
+            name: SubIndex 007
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "07000000"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_007
+          - subindex: 8
+            name: SubIndex 008
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 0120321c
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_008
+          - subindex: 9
+            name: SubIndex 009
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01000000"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_009
+          - subindex: 10
+            name: SubIndex 010
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01090118"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_010
+          - subindex: 11
+            name: SubIndex 011
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "20111060"
+            fastcs_name: cnt_txpdo_map_ch_2_subindex_011
+        fastcs_name: cnt_txpdo_map_ch_2
+      - index: 6658
+        name: CNT TxPDO-Map
+        type_name: DT1A00
+        bit_size: 368
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: 0b
+            fastcs_name: cnt_txpdo_map_subindex_000
+          - subindex: 1
+            name: SubIndex 001
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01012060"
+            fastcs_name: cnt_txpdo_map_subindex_001
+          - subindex: 2
+            name: SubIndex 002
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01022060"
+            fastcs_name: cnt_txpdo_map_subindex_002
+          - subindex: 3
+            name: SubIndex 003
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01032060"
+            fastcs_name: cnt_txpdo_map_subindex_003
+          - subindex: 4
+            name: SubIndex 004
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01042060"
+            fastcs_name: cnt_txpdo_map_subindex_004
+          - subindex: 5
+            name: SubIndex 005
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01052060"
+            fastcs_name: cnt_txpdo_map_subindex_005
+          - subindex: 6
+            name: SubIndex 006
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01062060"
+            fastcs_name: cnt_txpdo_map_subindex_006
+          - subindex: 7
+            name: SubIndex 007
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "07000000"
+            fastcs_name: cnt_txpdo_map_subindex_007
+          - subindex: 8
+            name: SubIndex 008
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: 0120321c
+            fastcs_name: cnt_txpdo_map_subindex_008
+          - subindex: 9
+            name: SubIndex 009
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01000000"
+            fastcs_name: cnt_txpdo_map_subindex_009
+          - subindex: 10
+            name: SubIndex 010
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "01090218"
+            fastcs_name: cnt_txpdo_map_subindex_010
+          - subindex: 11
+            name: SubIndex 011
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "20112060"
+            fastcs_name: cnt_txpdo_map_subindex_011
+        fastcs_name: cnt_txpdo_map
+      - index: 7218
+        name: SM output parameter
+        type_name: DT1C32
+        bit_size: 344
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "20"
+            fastcs_name: sm_output_parameter_subindex_000
+          - subindex: 1
+            name: Sync mode
+            type_name: UINT
+            bit_size: 16
+            access: rw
+            default_data: "0100"
+            fastcs_name: sm_output_parameter_sync_mode
+          - subindex: 2
+            name: Cycle time
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: sm_output_parameter_cycle_time
+          - subindex: 3
+            name: Shift time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_output_parameter_shift_time
+          - subindex: 4
+            name: Sync modes supported
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: 07c0
+            fastcs_name: sm_output_parameter_sync_modes_supported
+          - subindex: 5
+            name: Minimum cycle time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_output_parameter_minimum_cycle_time
+          - subindex: 6
+            name: Calc and copy time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_output_parameter_calc_and_copy_time
+          # - subindex: 7
+          #   name: Minimum delay time
+          #   type_name: UDINT
           #   bit_size: 32
           #   access: ro
-          #   default_data: "02160000"
-          #   fastcs_name: cnt_rxpdo_par_ch_1_exclude_rxpdos
-        fastcs_name: cnt_rxpdo_par_ch_1
+          #   default_data: '00000000'
+          #   fastcs_name: sm_output_parameter_minimum_delay_time
+          - subindex: 8
+            name: Command
+            type_name: UINT
+            bit_size: 16
+            access: rw
+            default_data: "0000"
+            fastcs_name: sm_output_parameter_command
+          - subindex: 9
+            name: Maximum delay time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_output_parameter_maximum_delay_time
+          - subindex: 11
+            name: SM event missed counter
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: "0000"
+            fastcs_name: sm_out_par_sm_event_missed_cnt
+          - subindex: 12
+            name: Cycle exceeded counter
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: "0000"
+            fastcs_name: sm_out_par_cycle_exceeded_cnt
+          - subindex: 13
+            name: Shift too short counter
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: "0000"
+            fastcs_name: sm_out_par_shift_too_short_cnt
+          - subindex: 32
+            name: Sync error
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: sm_output_parameter_sync_error
+        fastcs_name: sm_output_parameter
+      - index: 7219
+        name: SM input parameter
+        type_name: DT1C32
+        bit_size: 344
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "20"
+            fastcs_name: sm_input_parameter_subindex_000
+          - subindex: 1
+            name: Sync mode
+            type_name: UINT
+            bit_size: 16
+            access: rw
+            default_data: "2200"
+            fastcs_name: sm_input_parameter_sync_mode
+          - subindex: 2
+            name: Cycle time
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: sm_input_parameter_cycle_time
+          - subindex: 3
+            name: Shift time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_input_parameter_shift_time
+          - subindex: 4
+            name: Sync modes supported
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: 07c0
+            fastcs_name: sm_input_parameter_sync_modes_supported
+          - subindex: 5
+            name: Minimum cycle time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_input_parameter_minimum_cycle_time
+          - subindex: 6
+            name: Calc and copy time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_input_parameter_calc_and_copy_time
+          # - subindex: 7
+          #   name: Minimum delay time
+          #   type_name: UDINT
+          #   bit_size: 32
+          #   access: ro
+          #   default_data: '00000000'
+          #   fastcs_name: sm_input_parameter_minimum_delay_time
+          - subindex: 8
+            name: Command
+            type_name: UINT
+            bit_size: 16
+            access: rw
+            default_data: "0000"
+            fastcs_name: sm_input_parameter_command
+          - subindex: 9
+            name: Maximum delay time
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: sm_input_parameter_maximum_delay_time
+          - subindex: 11
+            name: SM event missed counter
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: "0000"
+            fastcs_name: sm_in_par_sm_event_missed_cnt
+          - subindex: 12
+            name: Cycle exceeded counter
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: "0000"
+            fastcs_name: sm_in_par_cycle_exceeded_cnt
+          - subindex: 13
+            name: Shift too short counter
+            type_name: UINT
+            bit_size: 16
+            access: ro
+            default_data: "0000"
+            fastcs_name: sm_in_par_shift_too_short_cnt
+          - subindex: 32
+            name: Sync error
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: sm_input_parameter_sync_error
+        fastcs_name: sm_input_parameter
+      - index: 24576
+        name: CNT Inputs Ch.1
+        type_name: DT6000
+        bit_size: 64
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "11"
+            fastcs_name: cnt_inputs_ch_1_subindex_000
+          - subindex: 1
+            name: Output functions enabled
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_1_output_functions_enabled
+          - subindex: 2
+            name: Status of output
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_1_status_of_output
+          - subindex: 3
+            name: Set counter done
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_1_set_counter_done
+          - subindex: 4
+            name: Counter inhibited
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_1_counter_inhibited
+          - subindex: 6
+            name: Status of input clock
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_1_status_of_input_clock
+          - subindex: 17
+            name: Counter value
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: cnt_inputs_ch_1_counter_value
+        fastcs_name: cnt_inputs_ch_1
+      - index: 24592
+        name: CNT Inputs Ch.2
+        type_name: DT6000
+        bit_size: 64
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "11"
+            fastcs_name: cnt_inputs_ch_2_subindex_000
+          - subindex: 1
+            name: Output functions enabled
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_2_output_functions_enabled
+          - subindex: 2
+            name: Status of output
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_2_status_of_output
+          - subindex: 3
+            name: Set counter done
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_2_set_counter_done
+          - subindex: 4
+            name: Counter inhibited
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_2_counter_inhibited
+          - subindex: 6
+            name: Status of input clock
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_inputs_ch_2_status_of_input_clock
+          - subindex: 17
+            name: Counter value
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: cnt_inputs_ch_2_counter_value
+        fastcs_name: cnt_inputs_ch_2
+      - index: 28672
+        name: CNT Outputs Ch.1
+        type_name: DT7000
+        bit_size: 64
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "11"
+            fastcs_name: cnt_outputs_ch_1_subindex_000
+          - subindex: 1
+            name: Enable output functions
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_1_enable_output_functions
+          - subindex: 2
+            name: Set output
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_1_set_output
+          - subindex: 3
+            name: Set counter
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_1_set_counter
+          - subindex: 4
+            name: Inhibit counter
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_1_inhibit_counter
+          - subindex: 17
+            name: Set counter value
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: cnt_outputs_ch_1_set_counter_value
+        fastcs_name: cnt_outputs_ch_1
+      - index: 28688
+        name: CNT Outputs Ch.2
+        type_name: DT7000
+        bit_size: 64
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "11"
+            fastcs_name: cnt_outputs_ch_2_subindex_000
+          - subindex: 1
+            name: Enable output functions
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_2_enable_output_functions
+          - subindex: 2
+            name: Set output
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_2_set_output
+          - subindex: 3
+            name: Set counter
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_2_set_counter
+          - subindex: 4
+            name: Inhibit counter
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_ch_2_inhibit_counter
+          - subindex: 17
+            name: Set counter value
+            type_name: UDINT
+            bit_size: 32
+            access: ro
+            default_data: "00000000"
+            fastcs_name: cnt_outputs_ch_2_set_counter_value
+        fastcs_name: cnt_outputs_ch_2
+      - index: 28704
+        name: CNT Outputs
+        type_name: DT7000
+        bit_size: 64
+        access: ro
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "11"
+            fastcs_name: cnt_outputs_subindex_000
+          - subindex: 1
+            name: Enable output functions
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_enable_output_functions
+          - subindex: 2
+            name: Set output
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_set_output
+          - subindex: 3
+            name: Set counter
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_set_counter
+          - subindex: 4
+            name: Inhibit counter
+            type_name: BOOL
+            bit_size: 1
+            access: ro
+            default_data: "00"
+            fastcs_name: cnt_outputs_inhibit_counter
+          # - subindex: 17
+          #   name: Set counter value
+          #   type_name: UDINT
+          #   bit_size: 32
+          #   access: ro
+          #   default_data: "00000000"
+          #   fastcs_name: cnt_outputs_set_counter_value
+        fastcs_name: cnt_outputs
+      - index: 32768
+        name: CNT Settings Ch.1
+        type_name: DT8000
+        bit_size: 128
+        access: rw
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "13"
+            fastcs_name: cnt_settings_ch_1_subindex_000
+          - subindex: 1
+            name: Enable function to set output
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_set_ch_1_en_fn_to_set_out
+          - subindex: 2
+            name: Enable function to reset output
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_set_ch_1_en_fn_to_reset_out
+          - subindex: 3
+            name: Enable reload
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_settings_ch_1_enable_reload
+          - subindex: 4
+            name: Count down
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_settings_ch_1_count_down
+          - subindex: 17
+            name: Switch on treshold value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: cnt_set_ch_1_sw_on_thr_val
+          - subindex: 18
+            name: Switch off treshold value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: cnt_set_ch_1_sw_off_thr_val
+          - subindex: 19
+            name: Counter reload value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            fastcs_name: cnt_settings_ch_1_counter_reload_value
+        fastcs_name: cnt_settings_ch_1
+      - index: 32784
+        name: CNT Settings Ch.2
+        type_name: DT8000
+        bit_size: 128
+        access: rw
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "13"
+            fastcs_name: cnt_settings_ch_2_subindex_000
+          - subindex: 1
+            name: Enable function to set output
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_set_ch_2_en_fn_to_set_out
+          - subindex: 2
+            name: Enable function to reset output
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_set_ch_2_en_fn_to_reset_out
+          - subindex: 3
+            name: Enable reload
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_settings_ch_2_enable_reload
+          - subindex: 4
+            name: Count down
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_settings_ch_2_count_down
+          - subindex: 17
+            name: Switch on treshold value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: cnt_set_ch_2_sw_on_thr_val
+          - subindex: 18
+            name: Switch off treshold value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: cnt_set_ch_2_sw_off_thr_val
+          - subindex: 19
+            name: Counter reload value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            fastcs_name: cnt_settings_ch_2_counter_reload_value
+        fastcs_name: cnt_settings_ch_2
+      - index: 32800
+        name: CNT Settings
+        type_name: DT8020
+        bit_size: 128
+        access: rw
+        subindices:
+          - subindex: 0
+            name: SubIndex 000
+            type_name: USINT
+            bit_size: 8
+            access: ro
+            default_data: "13"
+            fastcs_name: cnt_settings_subindex_000
+          - subindex: 1
+            name: Enable function to set output
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_set_en_fn_to_set_out
+          - subindex: 2
+            name: Enable function to reset output
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_set_en_fn_to_reset_out
+          - subindex: 3
+            name: Enable reload
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_settings_enable_reload
+          - subindex: 4
+            name: Count down
+            type_name: BOOL
+            bit_size: 1
+            access: rw
+            default_data: "00"
+            fastcs_name: cnt_settings_count_down
+          # - subindex: 5
+          #   name: Operating mode
+          #   type_name: DT0800EN02
+          #   bit_size: 2
+          #   access: rw
+          #   default_data: '00'
+          #   fastcs_name: cnt_settings_operating_mode
+          - subindex: 17
+            name: Switch on treshold value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: cnt_settings_switch_on_treshold_value
+          - subindex: 18
+            name: Switch off treshold value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            default_data: "00000000"
+            fastcs_name: cnt_settings_switch_off_treshold_value
+          - subindex: 19
+            name: Counter reload value
+            type_name: UDINT
+            bit_size: 32
+            access: rw
+            fastcs_name: cnt_settings_counter_reload_value
+        fastcs_name: cnt_settings
+      - index: 61448
+        name: Code word
+        type_name: UDINT
+        bit_size: 32
+        access: rw
+        subindices: []
+        fastcs_name: code_word
     group_type: Measuring
     pdo_groups:
       - name: Per-Channel
