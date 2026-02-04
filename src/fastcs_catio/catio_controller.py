@@ -564,7 +564,7 @@ class CATioServerController(CATioController):
         :returns: the subcontroller object created for the current node.
         """
         # Lazy import to prevent circular import reference
-        from fastcs_catio.catio_dynamic import get_terminal_controller_class
+        from fastcs_catio.catio_dynamic_controller import get_terminal_controller_class
         from fastcs_catio.catio_hardware import SUPPORTED_CONTROLLERS
 
         match node.data.category:

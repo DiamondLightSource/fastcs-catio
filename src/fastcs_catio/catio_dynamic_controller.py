@@ -5,7 +5,7 @@ dynamically from terminal YAML definitions. This enables gradual replacement of
 explicit hardware classes with generated ones.
 
 Usage:
-    from fastcs_catio.catio_dynamic import get_terminal_controller_class
+    from fastcs_catio.catio_dynamic_controller import get_terminal_controller_class
 
     # Get or create a controller class for a terminal type
     controller_class = get_terminal_controller_class("EL1004")
