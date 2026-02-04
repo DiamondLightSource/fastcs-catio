@@ -90,7 +90,7 @@ def simulator_process(request):
         "-m",
         "tests.ads_sim",
         "--log-level",
-        "DEBUG",
+        "INFO",
         "--disable-notifications",
         "--port",
         str(simulator_port),

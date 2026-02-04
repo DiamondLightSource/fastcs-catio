@@ -533,7 +533,15 @@ class EtherCATChain:
         # load full model TerminalType definitions for PDO group filtering
         from catio_terminals.models import TerminalConfig
 
-        terminals_path = Path(__file__).parent / "terminal_types.yaml"
+        # use the default terminal types used by the ioc to ensure we are testing
+        # things that will really happen!
+        terminals_path = (
+            Path(__file__).parents[2]
+            / "src"
+            / "catio_terminals"
+            / "terminals"
+            / "terminal_types.yaml"
+        )
         if terminals_path.exists():
             config = TerminalConfig.from_yaml(terminals_path)
             self.model_terminals = config.terminal_types
