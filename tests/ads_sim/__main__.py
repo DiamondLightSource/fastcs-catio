@@ -130,6 +130,7 @@ async def main() -> int:
         await server.start()
         logger.info(f"ADS Simulation Server running on {args.host}:{args.port}")
         logger.info("Press Ctrl+C to stop")
+        logger.info("READY")
 
         # Wait for shutdown signal
         await shutdown_event.wait()
