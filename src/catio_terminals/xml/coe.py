@@ -1,7 +1,7 @@
 """CoE (CANopen over EtherCAT) object parsing for Beckhoff terminal XML files."""
 
 from catio_terminals.models import CoEObject, CoESubIndex
-from catio_terminals.utils import to_snake_case
+from catio_terminals.utils import make_fastcs_name, make_subindex_fastcs_name
 from catio_terminals.xml.constants import parse_hex_value
 
 
@@ -52,12 +52,15 @@ def _build_datatype_map(device) -> dict[str, list[dict]]:
     return datatype_map
 
 
-def _parse_subindices(info_section, datatype_subitems: list[dict]) -> list[CoESubIndex]:
+def _parse_subindices(
+    info_section, datatype_subitems: list[dict], parent_name: str
+) -> list[CoESubIndex]:
     """Parse subindices from object Info section.
 
     Args:
         info_section: lxml Info element from Object
         datatype_subitems: List of subitem dicts from datatype definition
+        parent_name: Name of the parent CoE object for unique fastcs_name generation
 
     Returns:
         List of CoESubIndex instances
@@ -104,7 +107,7 @@ def _parse_subindices(info_section, datatype_subitems: list[dict]) -> list[CoESu
                 bit_size=subitem_bitsize,
                 access=subitem_access,
                 default_data=default_data,
-                fastcs_name=to_snake_case(subitem_name),
+                fastcs_name=make_subindex_fastcs_name(parent_name, subitem_name),
             )
         )
 
@@ -145,7 +148,7 @@ def parse_coe_objects(device) -> list[CoEObject]:
 
         datatype_subitems = datatype_map.get(type_name, [])
         info_section = obj.find("Info")
-        subindices = _parse_subindices(info_section, datatype_subitems)
+        subindices = _parse_subindices(info_section, datatype_subitems, obj_name)
 
         coe_objects.append(
             CoEObject(
@@ -155,7 +158,7 @@ def parse_coe_objects(device) -> list[CoEObject]:
                 bit_size=bit_size,
                 access=access,
                 subindices=subindices,
-                fastcs_name=to_snake_case(obj_name),
+                fastcs_name=make_fastcs_name(obj_name),
             )
         )
 

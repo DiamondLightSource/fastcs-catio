@@ -33,14 +33,12 @@ async def compare_and_update_attribute_value(
         assert isinstance(attr.datatype, Waveform)
         assert isinstance(value, np.ndarray)
         if not np.array_equal(response, value):
-            value = attr.dtype(response)
+            value = response
             await attr.update(value)
-            logger.debug(
-                f"CoE Waveform attribute '{attr.name}' was updated to {response}."
-            )
+            logger.debug(f"Waveform attribute '{attr.name}' was updated to {response}.")
         else:
             logger.debug(
-                f"Current value of CoE attribute '{attr.name}' is unchanged: {value}"
+                f"Current value of attribute '{attr.name}' is unchanged: {value}"
             )
     # Handle simple data types
     else:
@@ -48,9 +46,7 @@ async def compare_and_update_attribute_value(
         if new_value != value:
             value = new_value
             await attr.update(value)
-            logger.debug(
-                f"CoE Attribute '{attr.name}' was updated to value {new_value}"
-            )
+            logger.debug(f"Attribute '{attr.name}' was updated to value {new_value}")
         else:
             logger.debug(
                 f"Current value of CoE attribute '{attr.name}' is unchanged: {value}"
@@ -314,10 +310,12 @@ class CATioControllerCoEAttributeIO(
         :param attr: The attribute to be initialised.
         :param response: The polled response from the controller.
         """
-        if isinstance(response, np.ndarray):
-            assert isinstance(attr.datatype, Waveform)
         try:
-            self._value[attr.name] = attr.dtype(response)
+            if isinstance(response, np.ndarray):
+                assert isinstance(attr.datatype, Waveform)
+                self._value[attr.name] = response
+            else:
+                self._value[attr.name] = attr.dtype(response)
         except Exception as e:
             logger.warning(
                 f"Error converting response for attribute '{attr.name}': {e}"
@@ -328,45 +326,6 @@ class CATioControllerCoEAttributeIO(
             f"CoE attribute '{attr.name}' of type {attr.datatype} was initialised "
             f"to value {response}."
         )
-
-    async def compare_and_update_attribute_value(
-        self, attr: AttrR[AnyT, CATioControllerCoEAttributeIORef], response: Any
-    ) -> None:
-        """
-        Compare the current attribute value with the polled response; update if needed.
-
-        :param attr: The attribute to be updated.
-        :param response: The polled response from the controller.
-        """
-        # Handle numpy arrays (waveforms) separately
-        if isinstance(response, np.ndarray):
-            assert isinstance(attr.datatype, Waveform)
-            assert isinstance(self._value[attr.name], np.ndarray)
-            if not np.array_equal(response, self._value[attr.name]):
-                self._value[attr.name] = attr.dtype(response)
-                await attr.update(self._value[attr.name])
-                logger.debug(
-                    f"CoE Waveform attribute '{attr.name}' was updated to {response}."
-                )
-            else:
-                logger.debug(
-                    f"Current value of CoE attribute '{attr.name}' "
-                    f"is unchanged: {self._value}"
-                )
-        # Handle simple data types
-        else:
-            new_value = attr.dtype(response)
-            if new_value != self._value:
-                self._value[attr.name] = new_value
-                await attr.update(self._value[attr.name])
-                logger.debug(
-                    f"CoE Attribute '{attr.name}' was updated to value {new_value}"
-                )
-            else:
-                logger.debug(
-                    f"Current value of CoE attribute '{attr.name}' "
-                    f"is unchanged: {self._value}"
-                )
 
     async def update(self, attr: AttrR[AnyT, CATioControllerCoEAttributeIORef]) -> None:
         """
@@ -408,7 +367,9 @@ class CATioControllerCoEAttributeIO(
                 logger.debug(
                     f"Checking if value of CoE Attribute '{attr.name}' needs updating."
                 )
-                await self.compare_and_update_attribute_value(attr, response)
+                await compare_and_update_attribute_value(
+                    attr, self._value[attr.name], response
+                )
 
         self.log_event(
             "Get query for CoE attribute",

@@ -530,59 +530,24 @@ class EtherCATChain:
         1. Built-in terminal types in src/catio_terminals/terminals/
         2. Legacy terminal_types in the main config (for backwards compatibility)
         """
-        # Try to load full model TerminalType definitions for PDO group filtering
-        try:
-            from catio_terminals.models import TerminalConfig
+        # load full model TerminalType definitions for PDO group filtering
+        from catio_terminals.models import TerminalConfig
 
-            terminals_path = (
-                Path(__file__).parents[2]
-                / "src"
-                / "catio_terminals"
-                / "terminals"
-                / "terminal_types.yaml"
-            )
-            if terminals_path.exists():
-                config = TerminalConfig.from_yaml(terminals_path)
-                self.model_terminals = config.terminal_types
-                logger.debug(f"Loaded {len(self.model_terminals)} model terminal types")
-            else:
-                logger.warning(f"Terminal types file not found: {terminals_path}")
-        except ImportError:
-            logger.warning("catio_terminals not available, PDO filtering disabled")
-            self.model_terminals = {}
-
-        # Try to find the terminals directory relative to the package root
-        # First check from the src folder
-        pkg_root = Path(__file__).parents[2] / "src" / "catio_terminals" / "terminals"
-
-        if not pkg_root.exists():
-            # Fall back to checking relative to current file location
-            pkg_root = Path(__file__).parent / "terminals"
-
-        if pkg_root.exists():
-            # Load all YAML files in the terminals directory
-            for yaml_file in sorted(pkg_root.glob("*.yaml")):
-                try:
-                    with open(yaml_file) as f:
-                        terminal_config = yaml.safe_load(f)
-
-                    if "terminal_types" in terminal_config:
-                        for type_name, type_config in terminal_config[
-                            "terminal_types"
-                        ].items():
-                            self.terminal_types[type_name] = self._parse_terminal_type(
-                                type_name, type_config
-                            )
-                        logger.debug(
-                            f"Loaded {len(terminal_config['terminal_types'])} "
-                            f"terminal types from {yaml_file.name}"
-                        )
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to load terminal types from {yaml_file}: {e}"
-                    )
+        # use the default terminal types used by the ioc to ensure we are testing
+        # things that will really happen!
+        terminals_path = (
+            Path(__file__).parents[2]
+            / "src"
+            / "catio_terminals"
+            / "terminals"
+            / "terminal_types.yaml"
+        )
+        if terminals_path.exists():
+            config = TerminalConfig.from_yaml(terminals_path)
+            self.model_terminals = config.terminal_types
+            logger.debug(f"Loaded {len(self.model_terminals)} model terminal types")
         else:
-            logger.warning(f"Terminal types directory not found: {pkg_root}")
+            raise RuntimeError(f"Terminal types file not found: {terminals_path}")
 
     def load_config(self, config_path: str | Path) -> None:
         """

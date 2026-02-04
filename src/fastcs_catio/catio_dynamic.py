@@ -224,8 +224,26 @@ def _create_dynamic_controller_class(
                 created_coe_attrs.add(ads_item.fastcs_name)
             else:
                 # Process each subindex
-                # TODO handle sub indices
-                continue
+                for subindex in coe_obj.subindices:
+                    ads_item = CoEAdsItem(
+                        name=coe_obj.name,
+                        type_name=subindex.type_name,
+                        index=coe_obj.index,
+                        subindex=subindex.subindex,
+                        fastcs_name=subindex.fastcs_name,
+                        access=subindex.access,
+                        bit_size=subindex.bit_size,
+                    )
+                    if ads_item.fastcs_name in created_coe_attrs:
+                        logger.warning(
+                            f"Attribute name collision for CoE object "
+                            f"{ads_item.name} index {ads_item.index} subindex "
+                            f"{ads_item.subindex}: {ads_item.fastcs_name} "
+                            "already exists. Skipping attribute creation."
+                        )
+                        continue
+                    add_coe_attribute(self, ads_item)
+                    created_coe_attrs.add(ads_item.fastcs_name)
 
         attr_count = len(self.attributes) - initial_attr_count
         logger.debug(

@@ -92,16 +92,32 @@ def clean_yaml(
             help="Process all YAML files in the terminals directory",
         ),
     ] = False,
+    include_all_coe: Annotated[
+        bool,
+        typer.Option(
+            "--include-all-coe",
+            help="Include all CoE objects (default: exclude all CoE)",
+        ),
+    ] = False,
+    include_coe: Annotated[
+        bool,
+        typer.Option(
+            "--include-coe",
+            help="Include CoE objects with index 0x8000-0x8FFF (settings)",
+        ),
+    ] = False,
 ) -> None:
     """Clean up terminal YAML files by syncing with Beckhoff XML.
 
     This command loads YAML files, merges with XML data (dropping non-XML symbols),
     selects all symbols, and saves the cleaned file.
     """
-    asyncio.run(_clean_yaml_async(file, all_files))
+    asyncio.run(_clean_yaml_async(file, all_files, include_all_coe, include_coe))
 
 
-async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
+async def _clean_yaml_async(
+    file: Path | None, all_files: bool, include_all_coe: bool, include_coe: bool
+) -> None:
     """Async implementation of clean-yaml command."""
     from catio_terminals.beckhoff import BeckhoffClient
     from catio_terminals.service_file import FileService
@@ -127,13 +143,17 @@ async def _clean_yaml_async(file: Path | None, all_files: bool) -> None:
             raise typer.Exit(code=1)
 
         for yaml_path in files_to_process:
-            await _cleanup_single_yaml(yaml_path, beckhoff_client, FileService)
+            await _cleanup_single_yaml(
+                yaml_path, beckhoff_client, FileService, include_all_coe, include_coe
+            )
 
     elif file is not None:
         if not file.exists():
             print(f"File not found: {file}", file=sys.stderr)
             raise typer.Exit(code=1)
-        await _cleanup_single_yaml(file, beckhoff_client, FileService)
+        await _cleanup_single_yaml(
+            file, beckhoff_client, FileService, include_all_coe, include_coe
+        )
 
     else:
         print("Please provide a file or use --all to process all files.")
@@ -144,6 +164,8 @@ async def _cleanup_single_yaml(
     yaml_path: Path,
     beckhoff_client,
     file_service,
+    include_all_coe: bool = False,
+    include_coe: bool = False,
 ) -> None:
     """Clean up a single YAML file.
 
@@ -159,10 +181,11 @@ async def _cleanup_single_yaml(
     # prefer_xml=True ensures we get fresh data from XML
     await file_service.merge_xml_data(config, beckhoff_client, prefer_xml=True)
 
-    # Select ALL symbols, but no CoE objects
+    # Select ALL symbols, and optionally all CoE objects
     # For dynamic PDO terminals, only select symbols in the default group
     for terminal_id, terminal in config.terminal_types.items():
         selected_count = 0
+        coe_count = 0
 
         if terminal.has_dynamic_pdos:
             # Get the active (or default) group's symbol indices
@@ -172,18 +195,31 @@ async def _cleanup_single_yaml(
                 if symbol.selected:
                     selected_count += 1
             group_name = terminal.selected_pdo_group or "default"
-            print(
-                f"  {terminal_id}: selected {selected_count} symbols "
-                f"(PDO group: {group_name}), 0 CoE"
-            )
         else:
             for symbol in terminal.symbol_nodes:
                 symbol.selected = True
                 selected_count += 1
-            print(f"  {terminal_id}: selected {selected_count} symbols, 0 CoE")
+            group_name = None
 
         for coe in terminal.coe_objects:
-            coe.selected = False
+            if include_all_coe:
+                coe.selected = True
+                coe_count += 1
+            elif include_coe and 0x8000 <= coe.index < 0x9000:
+                coe.selected = True
+                coe_count += 1
+            else:
+                coe.selected = False
+
+        if group_name:
+            print(
+                f"  {terminal_id}: selected {selected_count} symbols "
+                f"(PDO group: {group_name}), {coe_count} CoE"
+            )
+        else:
+            print(
+                f"  {terminal_id}: selected {selected_count} symbols, {coe_count} CoE"
+            )
 
     # Save the cleaned file
     config.to_yaml(yaml_path)

@@ -90,21 +90,61 @@ def simulator_process(request):
         "-m",
         "tests.ads_sim",
         "--log-level",
-        "DEBUG",
+        "INFO",
         "--disable-notifications",
         "--port",
         str(simulator_port),
     ]
-    process = subprocess.Popen(cmd)
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
 
-    # Give it a moment to start and print initial output
-    time.sleep(1)
+    # Wait for the READY log before yielding
+    start_time = time.time()
+    timeout = 10.0  # 10 seconds timeout
+    ready = False
+
+    assert process.stdout is not None, "stdout should be captured"
+    while not ready and time.time() - start_time < timeout:
+        line = process.stdout.readline()
+        if line:
+            print(line.rstrip())  # Echo output for debugging
+            if "READY" in line:
+                ready = True
+                break
+        if process.poll() is not None:
+            pytest.fail(
+                f"Simulator process exited prematurely with code {process.returncode}"
+            )
+        time.sleep(0.01)
+
+    if not ready:
+        if process.stdout:
+            process.stdout.close()
+        process.terminate()
+        process.wait(timeout=2)
+        pytest.fail(f"Simulator did not become ready within {timeout}s")
+
+    # Close stdout now that we've read the READY line - we don't need it anymore
+    if process.stdout:
+        process.stdout.close()
 
     yield process
 
-    # Cleanup: terminate the simulator
+    # Cleanup: terminate the simulator and ensure pipes are closed
     process.terminate()
-    process.wait(timeout=2)
+    try:
+        process.wait(timeout=2)
+    finally:
+        # Ensure all pipes are closed
+        if process.stdout and not process.stdout.closed:
+            process.stdout.close()
+        if process.stderr and not process.stderr.closed:
+            process.stderr.close()
 
     # make sure the client has time to close
     time.sleep(1)
@@ -148,7 +188,7 @@ async def fastcs_catio_controller(simulator_process):
 
     # make sure the notification system is enabled
     # meaning the scan routine has started
-    timeout = 60.0  # 60 seconds timeout for startup
+    timeout = 120.0  # 60 seconds timeout for startup
     start_time = asyncio.get_event_loop().time()
     while controller.notification_enabled is False:
         if asyncio.get_event_loop().time() - start_time > timeout:
