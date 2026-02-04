@@ -99,17 +99,24 @@ def clean_yaml(
             help="Include all CoE objects (default: exclude all CoE)",
         ),
     ] = False,
+    include_coe: Annotated[
+        bool,
+        typer.Option(
+            "--include-coe",
+            help="Include CoE objects with index 0x8000-0x8FFF (settings)",
+        ),
+    ] = False,
 ) -> None:
     """Clean up terminal YAML files by syncing with Beckhoff XML.
 
     This command loads YAML files, merges with XML data (dropping non-XML symbols),
     selects all symbols, and saves the cleaned file.
     """
-    asyncio.run(_clean_yaml_async(file, all_files, include_all_coe))
+    asyncio.run(_clean_yaml_async(file, all_files, include_all_coe, include_coe))
 
 
 async def _clean_yaml_async(
-    file: Path | None, all_files: bool, include_all_coe: bool
+    file: Path | None, all_files: bool, include_all_coe: bool, include_coe: bool
 ) -> None:
     """Async implementation of clean-yaml command."""
     from catio_terminals.beckhoff import BeckhoffClient
@@ -137,14 +144,16 @@ async def _clean_yaml_async(
 
         for yaml_path in files_to_process:
             await _cleanup_single_yaml(
-                yaml_path, beckhoff_client, FileService, include_all_coe
+                yaml_path, beckhoff_client, FileService, include_all_coe, include_coe
             )
 
     elif file is not None:
         if not file.exists():
             print(f"File not found: {file}", file=sys.stderr)
             raise typer.Exit(code=1)
-        await _cleanup_single_yaml(file, beckhoff_client, FileService, include_all_coe)
+        await _cleanup_single_yaml(
+            file, beckhoff_client, FileService, include_all_coe, include_coe
+        )
 
     else:
         print("Please provide a file or use --all to process all files.")
@@ -156,6 +165,7 @@ async def _cleanup_single_yaml(
     beckhoff_client,
     file_service,
     include_all_coe: bool = False,
+    include_coe: bool = False,
 ) -> None:
     """Clean up a single YAML file.
 
@@ -192,9 +202,14 @@ async def _cleanup_single_yaml(
             group_name = None
 
         for coe in terminal.coe_objects:
-            coe.selected = include_all_coe
             if include_all_coe:
+                coe.selected = True
                 coe_count += 1
+            elif include_coe and 0x8000 <= coe.index < 0x9000:
+                coe.selected = True
+                coe_count += 1
+            else:
+                coe.selected = False
 
         if group_name:
             print(
