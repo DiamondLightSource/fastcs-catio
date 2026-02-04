@@ -104,7 +104,7 @@ def add_coe_attribute(
     # Get AmsAddress from the client using the controller's IOSlave
     address = controller.connection.client.get_coe_ams_address(controller.io)
 
-    # skip compound types as we do their sub inidices separately
+    # skip compound types as we do their sub indices separately
     if not ads_item.is_primitive_type:
         return
 
@@ -122,7 +122,7 @@ def add_coe_attribute(
             AttrR(
                 datatype=ads_item.fastcs_datatype,
                 io_ref=io_ref,
-                group=controller.attr_group_name,
+                group=ads_item.fastcs_group or controller.attr_group_name,
                 initial_value=None,
                 description=str(ads_item),
             ),
@@ -133,7 +133,7 @@ def add_coe_attribute(
             AttrRW(
                 datatype=ads_item.fastcs_datatype,
                 io_ref=io_ref,
-                group=controller.attr_group_name,
+                group=ads_item.fastcs_group or controller.attr_group_name,
                 initial_value=None,
                 description=str(ads_item),
             ),

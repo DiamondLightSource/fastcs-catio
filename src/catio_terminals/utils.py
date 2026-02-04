@@ -176,7 +176,7 @@ def _remove_duplicate_words(words: list[str]) -> list[str]:
 
 
 def make_subindex_fastcs_name(
-    parent_name: str, subindex_name: str, max_length: int = 40
+    parent_index: int, subindex_name: str, max_length: int = 40
 ) -> str:
     """Create unique fastcs_name for subindex including parent context.
 
@@ -206,54 +206,36 @@ def make_subindex_fastcs_name(
         >>> make_subindex_fastcs_name("SM input parameter", "Minimum fast cycle time")
         'sm_in_par_min_fast_cycle_time'
     """
+
+    def final_result():
+        return f"{result}_{hex_index}"
+
     # Convert both names to snake_case first
-    parent_snake = to_snake_case(parent_name)
+    hex_index = hex(parent_index).lstrip("0x")
+    max_length = max_length - len(hex_index) - 1  # for underscore
+
     sub_snake = to_snake_case(subindex_name)
 
     # Split into words
-    parent_words = parent_snake.split("_")
     sub_words = sub_snake.split("_")
 
     # Combine words, removing duplicates between parent and child
     # e.g., "CNT Inputs" + "Counter value" shouldn't have duplicate meaning
-    combined_words = parent_words + sub_words
-    combined_words = _remove_duplicate_words(combined_words)
+    combined_words = _remove_duplicate_words(sub_words)
 
     # First attempt: full names
     result = "_".join(combined_words)
     if len(result) <= max_length:
-        return result
+        return final_result()
 
     # Second attempt: abbreviate common words
     abbreviated = _abbreviate_words(combined_words)
-    abbreviated = _remove_duplicate_words(abbreviated)
     result = "_".join(abbreviated)
     if len(result) <= max_length:
-        return result
-
-    # Third attempt: keep essential parts
-    # Priority: parent prefix (first 2 words) + subindex identifier
-    parent_abbrev = _abbreviate_words(parent_words)
-    sub_abbrev = _abbreviate_words(sub_words)
-
-    # Keep first 2-3 words of parent, all of subindex
-    essential_parent = parent_abbrev[:3]
-    combined = essential_parent + sub_abbrev
-    combined = _remove_duplicate_words(combined)
-    result = "_".join(combined)
-    if len(result) <= max_length:
-        return result
-
-    # Fourth attempt: keep first 2 parent words + truncate subindex
-    essential_parent = parent_abbrev[:2]
-    combined = essential_parent + sub_abbrev
-    combined = _remove_duplicate_words(combined)
-    result = "_".join(combined)
-    if len(result) <= max_length:
-        return result
+        return final_result()
 
     # Final fallback: truncate to max_length preserving word boundaries
-    result = "_".join(combined)
+    result = "_".join(abbreviated)
     if len(result) > max_length:
         # Truncate at word boundary
         truncated = result[:max_length]
@@ -262,4 +244,4 @@ def make_subindex_fastcs_name(
             truncated = truncated[:last_underscore]
         result = truncated
 
-    return result
+    return final_result()

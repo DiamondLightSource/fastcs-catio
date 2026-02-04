@@ -144,7 +144,14 @@ class AdsItemBase:
     name: str
     type_name: str
     fastcs_name: str
+    group: str | None = None
     access: str | None = None
+
+    @property
+    def fastcs_group(self) -> str | None:
+        """Return the attribute group name."""
+
+        return re.sub(r"[\s.]", "", self.group) if self.group else None
 
     @property
     def readonly(self) -> bool:

@@ -132,6 +132,7 @@ def _create_dynamic_controller_class(
                         fastcs_name=subindex.fastcs_name,
                         access=subindex.access,
                         bit_size=subindex.bit_size,
+                        group=coe_obj.name,
                     )
                     if ads_item.fastcs_name in created_coe_attrs:
                         logger.warning(
