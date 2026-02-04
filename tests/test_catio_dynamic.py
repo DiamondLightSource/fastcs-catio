@@ -4,7 +4,7 @@ import pytest
 
 from catio_terminals.models import SymbolNode
 from fastcs_catio.catio_controller import CATioTerminalController
-from fastcs_catio.catio_dynamic import (
+from fastcs_catio.catio_dynamic_controller import (
     clear_controller_cache,
     get_terminal_controller_class,
 )

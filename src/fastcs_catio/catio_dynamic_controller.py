@@ -5,7 +5,7 @@ dynamically from terminal YAML definitions. This enables gradual replacement of
 explicit hardware classes with generated ones.
 
 Usage:
-    from fastcs_catio.catio_dynamic import get_terminal_controller_class
+    from fastcs_catio.catio_dynamic_controller import get_terminal_controller_class
 
     # Get or create a controller class for a terminal type
     controller_class = get_terminal_controller_class("EL1004")
@@ -14,47 +14,22 @@ Usage:
     controller = controller_class(name="MOD1", node=node)
 """
 
-from dataclasses import dataclass
-
-from fastcs.attributes import AttrR, AttrRW
 from fastcs.logging import bind_logger
 
 from catio_terminals.models import SymbolNode
-from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
-from fastcs_catio.catio_coe import (
-    AdsItemBase,
+from fastcs_catio.catio_controller import CATioTerminalController
+from fastcs_catio.catio_dynamic_coe import (
     CoEAdsItem,
     add_coe_attribute,
 )
-from fastcs_catio.catio_controller import CATioTerminalController
+from fastcs_catio.catio_dynamic_symbol import add_symbol_attribute
 from fastcs_catio.terminal_config import (
     clear_config_cache,
     get_terminal_type,
     load_runtime_symbols,
-    symbol_to_ads_name,
-    symbol_to_fastcs_name,
 )
 
 logger = bind_logger(logger_name=__name__)
-
-
-@dataclass
-class SymbolAdsItem(AdsItemBase):
-    """ADS item for processing data symbols.
-
-    Stores the symbol name and type information for use with
-    CATioControllerSymbolAttributeIORef.
-
-    Args:
-        name: The ADS symbol name (e.g., "Channel 1").
-        type_name: The TwinCAT type name (e.g., "UINT", "INT").
-        fastcs_name: The FastCS attribute name (snake_case).
-        access: Access type (e.g., "Read-only", "Read/Write").
-    """
-
-    def __str__(self) -> str:
-        """Return the symbol name."""
-        return self.name
 
 
 # -----------------------------------------------------------------------------
@@ -63,82 +38,6 @@ class SymbolAdsItem(AdsItemBase):
 
 # Cache of dynamically generated controller classes
 _DYNAMIC_CONTROLLER_CACHE: dict[str, type[CATioTerminalController]] = {}
-
-
-def _add_attribute(
-    controller: CATioTerminalController,
-    ads_item: SymbolAdsItem,
-    desc: str,
-) -> None:
-    """Add a FastCS attribute to a controller.
-
-    Args:
-        controller: The controller to add the attribute to.
-        ads_item: The ADS item containing name, type, fastcs_name, and access.
-        desc: The attribute description.
-    """
-    if ads_item.readonly:
-        controller.add_attribute(
-            ads_item.fastcs_name,
-            AttrR(
-                datatype=ads_item.fastcs_datatype,
-                io_ref=None,
-                group=controller.attr_group_name,
-                initial_value=None,
-                description=desc,
-            ),
-        )
-    else:
-        io_ref = CATioControllerSymbolAttributeIORef(ads_item.name)
-        controller.add_attribute(
-            ads_item.fastcs_name,
-            AttrRW(
-                datatype=ads_item.fastcs_datatype,
-                io_ref=io_ref,
-                group=controller.attr_group_name,
-                initial_value=None,
-                description=desc,
-            ),
-        )
-    controller.ads_name_map[ads_item.fastcs_name] = str(ads_item)
-
-
-def _add_symbol_attribute(
-    controller: CATioTerminalController, symbol: SymbolNode
-) -> None:
-    """Add FastCS attributes for a symbol to a controller.
-
-    Handles both single-channel and multi-channel symbols.
-
-    Args:
-        controller: The controller to add attributes to.
-        symbol: The symbol definition.
-    """
-    if symbol.channels > 1:
-        # Multi-channel symbol - create one attribute per channel
-        for ch in range(1, symbol.channels + 1):
-            fastcs_name = symbol_to_fastcs_name(symbol, ch)
-            ads_name = symbol_to_ads_name(symbol, ch)
-            ads_item = SymbolAdsItem(
-                name=ads_name,
-                type_name=symbol.type_name,
-                fastcs_name=fastcs_name,
-                access=symbol.access,
-            )
-            desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
-            _add_attribute(controller, ads_item, desc)
-    else:
-        # Single-channel symbol - use fastcs_name from YAML
-        fastcs_name = symbol_to_fastcs_name(symbol)
-        ads_name = symbol_to_ads_name(symbol)
-        ads_item = SymbolAdsItem(
-            name=ads_name,
-            type_name=symbol.type_name,
-            fastcs_name=fastcs_name,
-            access=symbol.access,
-        )
-        desc = symbol.tooltip or symbol.name_template
-        _add_attribute(controller, ads_item, desc)
 
 
 def _create_dynamic_controller_class(
@@ -197,11 +96,11 @@ def _create_dynamic_controller_class(
 
         # Process runtime symbols first
         for symbol in runtime_syms:
-            _add_symbol_attribute(self, symbol)
+            add_symbol_attribute(self, symbol)
 
         # Then process PDO symbols
         for symbol in pdo_symbols:
-            _add_symbol_attribute(self, symbol)
+            add_symbol_attribute(self, symbol)
 
         # Add CoE objects and subindices as FastCS attributes
         # Track created attribute names to detect collisions
