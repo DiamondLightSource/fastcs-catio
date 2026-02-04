@@ -63,7 +63,7 @@ class SymbolNode(BaseModel):
     channels: int = Field(default=1, description="Number of channels")
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
-        default=None, description="PascalCase name for FastCS"
+        default=None, description="Snake case name for FastCS"
     )
     tooltip: str | None = Field(
         default=None, description="Tooltip description from XML Comment element"
@@ -115,7 +115,7 @@ class RuntimeSymbol(BaseModel):
     channels: int = Field(default=1, description="Number of channels")
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
-        default=None, description="PascalCase name for FastCS"
+        default=None, description="Snake case name for FastCS"
     )
     description: str | None = Field(default=None, description="Symbol description")
     whitelist: list[str] = Field(

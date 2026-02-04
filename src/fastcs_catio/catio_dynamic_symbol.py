@@ -86,6 +86,7 @@ def add_symbol_attribute(
         controller: The controller to add attributes to.
         symbol: The symbol definition.
     """
+
     if symbol.channels > 1:
         # Multi-channel symbol - create one attribute per channel
         for ch in range(1, symbol.channels + 1):
@@ -98,6 +99,7 @@ def add_symbol_attribute(
                 access=symbol.access,
             )
             desc = symbol.tooltip or f"{symbol.name_template} ch {ch}"
+            desc = desc[:40]
             _add_attribute(controller, ads_item, desc)
     else:
         # Single-channel symbol - use fastcs_name from YAML
@@ -110,4 +112,5 @@ def add_symbol_attribute(
             access=symbol.access,
         )
         desc = symbol.tooltip or symbol.name_template
+        desc = desc[:40]
         _add_attribute(controller, ads_item, desc)

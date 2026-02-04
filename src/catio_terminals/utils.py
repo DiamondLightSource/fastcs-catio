@@ -100,7 +100,31 @@ def to_snake_case(name: str) -> str:
     return "_".join(words)
 
 
-def make_fastcs_name(name: str, max_length: int = 40) -> str:
+def snake_to_pascal(name: str) -> str:
+    """Convert snake_case to PascalCase.
+
+    Args:
+        name: snake_case string
+
+    Returns:
+        PascalCase version of the name
+
+    Examples:
+        >>> snake_to_pascal("ai_inputs_channel")
+        'AiInputsChannel'
+        >>> snake_to_pascal("status_word")
+        'StatusWord'
+        >>> snake_to_pascal("channel_{channel}_value")
+        'Channel{channel}Value'
+        >>> snake_to_pascal("simple")
+        'Simple'
+    """
+    # Split on underscores, capitalize each word, join
+    words = name.split("_")
+    return "".join(word.capitalize() for word in words if word)
+
+
+def make_fastcs_name(name: str, max_length: int = 40, suffix: str = "") -> str:
     """Create fastcs_name with length limit and abbreviations.
 
     Converts name to snake_case. If the result exceeds max_length,
@@ -121,17 +145,24 @@ def make_fastcs_name(name: str, max_length: int = 40) -> str:
         >>> len(make_fastcs_name("Status Input Cycle Counter Channel 1")) <= 40
         True
     """
-    snake = to_snake_case(name)
-    if len(snake) <= max_length:
-        return snake
+
+    def final_result():
+        if suffix == "":
+            return result
+        else:
+            return f"{result}_{suffix}"
+
+    result = to_snake_case(name)
+    if len(result) <= max_length:
+        return final_result()
 
     # Apply abbreviations
-    words = snake.split("_")
+    words = result.split("_")
     abbreviated = _abbreviate_words(words)
     abbreviated = _remove_duplicate_words(abbreviated)
     result = "_".join(abbreviated)
     if len(result) <= max_length:
-        return result
+        return final_result()
 
     # Final fallback: truncate at word boundary
     if len(result) > max_length:
@@ -141,7 +172,7 @@ def make_fastcs_name(name: str, max_length: int = 40) -> str:
             truncated = truncated[:last_underscore]
         result = truncated
 
-    return result
+    return final_result()
 
 
 def _abbreviate_words(words: list[str]) -> list[str]:
@@ -211,7 +242,7 @@ def make_subindex_fastcs_name(
         return f"{result}_{hex_index}"
 
     # Convert both names to snake_case first
-    hex_index = hex(parent_index).lstrip("0x")
+    hex_index = f"idx{hex(parent_index).lstrip('0x')}"
     max_length = max_length - len(hex_index) - 1  # for underscore
 
     sub_snake = to_snake_case(subindex_name)

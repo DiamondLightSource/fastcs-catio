@@ -147,6 +147,15 @@ class AdsItemBase:
     group: str | None = None
     access: str | None = None
 
+    def __post_init__(self) -> None:
+        """Post-initialization checks."""
+        if not self.name:
+            raise ValueError("AdsItemBase requires a non-empty name.")
+        if not self.type_name:
+            self.type_name = "BIT"  # Default to INT for unknown types
+        if not self.fastcs_name:
+            raise ValueError("AdsItemBase requires a non-empty fastcs_name.")
+
     @property
     def fastcs_group(self) -> str | None:
         """Return the attribute group name."""

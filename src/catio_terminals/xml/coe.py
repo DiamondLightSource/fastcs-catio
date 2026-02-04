@@ -155,6 +155,7 @@ def parse_coe_objects(device) -> list[CoEObject]:
         info_section = obj.find("Info")
         subindices = _parse_subindices(info_section, datatype_subitems, coe_index)
 
+        suffix = f"idx{hex(coe_index).lstrip('0x')}"
         coe_objects.append(
             CoEObject(
                 index=coe_index,
@@ -163,7 +164,7 @@ def parse_coe_objects(device) -> list[CoEObject]:
                 bit_size=bit_size,
                 access=access,
                 subindices=subindices,
-                fastcs_name=make_fastcs_name(obj_name),
+                fastcs_name=make_fastcs_name(obj_name, suffix=suffix),
             )
         )
 

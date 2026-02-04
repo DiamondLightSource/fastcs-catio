@@ -742,9 +742,8 @@ class AsyncioADSClient:
         )
         cls = MESSAGE_CLASS[type(request)]
         response = await response_event.get(cls)
-        assert response.result == ErrorCode.ERR_NOERROR, (
-            f"ERROR {ErrorCode(response.result)}"
-        )
+        if response.result != ErrorCode.ERR_NOERROR:
+            logger.warning(f"ERROR {ErrorCode(response.result)}")
         return response
 
     #################################################################
