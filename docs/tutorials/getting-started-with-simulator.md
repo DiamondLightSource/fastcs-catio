@@ -142,7 +142,7 @@ Navigate to any EL2024 terminal (e.g., Term 4) to see:
 - Working counter status
 - State indicators
 
-Note that the simulator is a basic at present and none of the symbols will update if you attempt to change them. CoE parameters will appear to update (but are not really changing any behaviour in the simulator)
+Note that the simulator is a basic at present and none of the symbols will update if you attempt to change them. CoE parameters will appear to update (but are not really changing any behaviour in the simulator).
 
 **Digital Input (EL1004/EL1014)**
 
