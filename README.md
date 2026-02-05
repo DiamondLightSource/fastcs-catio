@@ -29,12 +29,6 @@ from fastcs_catio import __version__
 print(f"Hello fastcs_catio {__version__}")
 ```
 
-Or if it is a commandline tool then you might put some example commands here:
-
-```
-python -m fastcs_catio --version
-```
-
 <!-- README only content. Anything below this line won't be included in index.md -->
 
 See https://diamondlightsource.github.io/fastcs-catio for more detailed documentation.

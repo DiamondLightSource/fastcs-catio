@@ -211,31 +211,29 @@ def make_subindex_fastcs_name(
 ) -> str:
     """Create unique fastcs_name for subindex including parent context.
 
-    Combines parent CoE object name with subindex name to create a unique
+    Combines parent CoE object index with subindex name to create a unique
     identifier. If the combined name exceeds max_length, applies abbreviations
     and truncation strategies while preserving readability.
 
     Args:
-        parent_name: Parent CoE object name
+        parent_index: Parent CoE object index (e.g., 0x8000, 0x1018)
         subindex_name: SubIndex name
         max_length: Maximum allowed length (default 40)
 
     Returns:
-        Unique snake_case name under max_length characters
+        Unique snake_case name under max_length characters with hex index suffix
 
     Examples:
-        >>> make_subindex_fastcs_name("CNT Settings Ch.1", "SubIndex 000")
-        'cnt_settings_ch_1_subindex_000'
-        >>> make_subindex_fastcs_name("CNT Inputs Ch.1", "Counter value")
-        'cnt_inputs_ch_1_counter_value'
-        >>> make_subindex_fastcs_name("Identity", "Vendor ID")
-        'identity_vendor_id'
-        >>> long_parent = "Very Long Parent Object Name Here"
-        >>> long_sub = "And A Very Long SubIndex Name Too"
-        >>> len(make_subindex_fastcs_name(long_parent, long_sub)) <= 40
+        >>> make_subindex_fastcs_name(0x8000, "SubIndex 001")
+        'subindex_001_idx8000'
+        >>> make_subindex_fastcs_name(0x8001, "Counter value")
+        'counter_value_idx8001'
+        >>> make_subindex_fastcs_name(0x1018, "Vendor ID")
+        'vendor_id_idx1018'
+        >>> len(make_subindex_fastcs_name(0x8010, "Very Long SubIndex Name Here")) <= 40
         True
-        >>> make_subindex_fastcs_name("SM input parameter", "Minimum fast cycle time")
-        'sm_in_par_min_fast_cycle_time'
+        >>> make_subindex_fastcs_name(0x8020, "Minimum fast cycle time")
+        'minimum_fast_cycle_time_idx8020'
     """
 
     def final_result():

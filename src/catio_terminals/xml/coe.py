@@ -60,7 +60,7 @@ def _parse_subindices(
     Args:
         info_section: lxml Info element from Object
         datatype_subitems: List of subitem dicts from datatype definition
-        parent_name: Name of the parent CoE object for unique fastcs_name generation
+        parent_index: Index of the parent CoE object for unique fastcs_name generation
 
     Returns:
         List of CoESubIndex instances
