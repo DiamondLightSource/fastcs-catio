@@ -42,11 +42,7 @@ All CATio controllers inherit from `CATioController`, which extends the FastCS `
 - References to corresponding hardware objects (`IOServer`, `IODevice`, or `IOSlave`)
 - Attribute grouping for organized PV naming
 
-```{literalinclude} ../../src/fastcs_catio/catio_controller.py
-:language: python
-:start-at: class CATioController
-:end-before: @property
-```
+The `CATioController` class is defined in [catio_controller.py](../../src/fastcs_catio/catio_controller.py). It includes connection management, attribute registration, and the core interface for communicating with the ADS client.
 
 ### The Server Controller
 
@@ -135,11 +131,7 @@ The update flow for a CATio attribute follows these steps:
 
 This indirection means attributes don't need to know ADS protocol details - they just specify their name and polling period.
 
-```{literalinclude} ../../src/fastcs_catio/catio_attribute_io.py
-:language: python
-:start-at: class CATioControllerAttributeIO
-:end-before: class
-```
+The `CATioControllerAttributeIO` class in [catio_attribute_io.py](../../src/fastcs_catio/catio_attribute_io.py) implements this bridge between FastCS attributes and the ADS client API.
 
 ### Polling vs Notifications
 
@@ -206,13 +198,7 @@ CATio controllers follow a specific lifecycle managed by FastCS:
 
 ## Testing Considerations
 
-When writing tests for CATio controllers, you typically need to mock the ADS client layer. The `MockADSServer` class in the test suite simulates TwinCAT responses:
-
-```{literalinclude} ../../tests/mock_server.py
-:language: python
-:pyobject: MockADSServer
-:end-before: async def start
-```
+When writing tests for CATio controllers, you typically need to mock the ADS client layer. The `MockADSServer` class in [mock_server.py](../../tests/mock_server.py) simulates TwinCAT responses.
 
 This allows testing controller logic without real hardware by:
 
