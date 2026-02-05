@@ -66,20 +66,22 @@ The editor has three main sections:
 ## Adding a Terminal
 
 1. Click **"Add Terminal"** button in the header
-2. Choose one of two methods:
+2. The dialog shows a list of available terminals with search and filtering:
 
-   **Method 1: Search Beckhoff Catalog**
-   - Enter search terms in the search box
-   - Click "Search"
-   - Browse results and click "Add" on your chosen terminal
-   - The terminal information will be populated automatically
+   **Filtering by Type**
+   - Use the "Filter by Type" dropdown to narrow results by terminal category (Digital Input, Analog Output, etc.)
+   - The filter automatically selects the category of your currently selected terminal
+   
+   **Searching**
+   - Type in the search box to filter terminals - results update automatically as you type
+   - Press Enter or just continue typing to refine the search
+   - The status line shows total matches, already-added count, and available count
 
-   **Method 2: Create Manually**
-   - Scroll to the bottom of the dialog
-   - Enter Terminal ID (e.g., "EL4004")
-   - Enter Description
-   - Click "Create Manually"
-   - Edit the default values as needed
+   **Adding Terminals**
+   - Click **"Add"** on any available terminal to add it to your configuration
+   - Already-added terminals appear grayed out
+   - Use **"Add All"** to add all currently visible available terminals at once
+   - Click **"Close"** when finished
 
 ## Editing Terminal Details
 
@@ -173,9 +175,17 @@ The `catio_terminals` package consists of several modules:
 
 - **models.py**: Pydantic data models for YAML structure
 - **beckhoff.py**: Client for fetching Beckhoff terminal information
-- **xml_cache.py**: Caching system for Beckhoff XML files
-- **xml_parser.py**: Parser for Beckhoff ESI XML files
-- **app.py**: Main NiceGUI application
+- **xml/**: Subpackage for Beckhoff ESI XML parsing
+  - **cache.py**: Caching system for downloaded XML files
+  - **parser.py**: Main XML parsing utilities
+  - **pdo.py**: PDO entry parsing
+  - **pdo_groups.py**: PDO group (AlternativeSmMapping) parsing
+  - **coe.py**: CoE object parsing
+  - **catalog.py**: Terminal catalog browsing
+- **ui_app.py**: Main NiceGUI application
+- **ui_components/**: UI component modules (tree view, details panes)
+- **ui_dialogs/**: Dialog modules (file, terminal, confirmation dialogs)
+- **service_*.py**: Service layer modules (file, config, terminal operations)
 - **__main__.py**: Entry point for the application
 
 ## Troubleshooting
@@ -190,7 +200,8 @@ The `catio_terminals` package consists of several modules:
 - Check disk space
 - View error in notification
 
-### Beckhoff Search Not Working
-- The app downloads and caches Beckhoff XML files on first use
-- Check internet connectivity
+### Beckhoff Terminal Search Not Working
+- Run `catio-terminals update-cache` to download and cache Beckhoff XML files
+- Check internet connectivity during cache update
 - View cache status in `~/.cache/catio_terminals/`
+- If the terminal list is empty, the cache needs to be updated

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>ADS Client Implementation &#8212; fastcs-catio 1.1a4.dev98+ge42efc026 documentation</title>
+    <title>ADS Client Implementation &#8212; fastcs-catio 1.1a4.dev114+ga0cc799f6 documentation</title>
   
   
   
@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=90a8e51b" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=864a6e87"></script>
+    <script src="../_static/documentation_options.js?v=3b8ee1e8"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -59,7 +59,7 @@
     <link rel="icon" href="../_static/dls-logo.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="API Decoupling Analysis" href="api-decoupling.html" />
+    <link rel="next" title="EtherCAT and TwinCAT Nomenclature" href="nomenclature.html" />
     <link rel="prev" title="FastCS EPICS IOC Implementation" href="fastcs-epics-ioc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -401,10 +401,8 @@
 <li class="toctree-l1"><a class="reference internal" href="architecture-overview.html">CATio Architecture Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">ADS Client Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nomenclature.html">EtherCAT and TwinCAT Nomenclature</a></li>
 <li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
 <li class="toctree-l1"><a class="reference internal" href="coe-parameters.html">CoE Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic-pdos.html">Dynamic PDOs in EtherCAT Terminals</a></li>
@@ -412,6 +410,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0003-api-decoupling-analysis.html">API Decoupling Analysis</a></li>
 </ul>
 </details></li>
 </ul>
@@ -522,34 +521,7 @@
 <li><p><strong>Discover the target’s AMS NetId</strong>: Query the TwinCAT system for its network identity</p></li>
 <li><p><strong>Register this client</strong>: Add an entry to the routing table with authentication credentials</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RemoteRoute</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Define a remote route to a Beckhoff TwinCAT server via UDP communication.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">remote</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">route_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-        <span class="n">user_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Administrator&quot;</span><span class="p">,</span>
-        <span class="n">password</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">remote</span> <span class="o">=</span> <span class="n">remote</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;IP address of the remote Beckhoff TwinCAT server&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">routename</span> <span class="o">=</span> <span class="n">route_name</span> <span class="ow">or</span> <span class="n">get_localhost_name</span><span class="p">()</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name assigned to the remote route&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hostnetid</span> <span class="o">=</span> <span class="n">AmsNetId</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">get_local_netid_str</span><span class="p">())</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;AmsNetId of the local host machine&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">user_name</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;User name for authentication with the remote TwinCAT server&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Password for authentication with the remote TwinCAT server&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">get_localhost_ip</span><span class="p">()</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;IP address of the local host machine (client)&quot;&quot;&quot;</span>
-
-</pre></div>
-</div>
-<p>The route registration includes:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">RemoteRoute</span></code> class in <a class="reference download internal" download="" href="../_downloads/6cd68f7e0f10c306a12098be247e6f98/client.py"><span class="xref download myst">client.py</span></a> handles route management with these parameters:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Parameter</p></th>
@@ -582,38 +554,7 @@
 </section>
 <section id="tcp-connection">
 <h3>TCP Connection<a class="headerlink" href="#tcp-connection" title="Link to this heading">#</a></h3>
-<p>Once routed, CATio opens a persistent TCP connection for ADS communication:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="nd">@classmethod</span>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">connected_to</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">target_ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">target_ams_net_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">target_ams_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">ads_port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">ADS_TCP_PORT</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncioADSClient</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create an asynchronous ADS client connection to a given ADS server.</span>
-
-<span class="sd">        :param target_ip: IP of the ADS server</span>
-<span class="sd">        :param target_ams_net_id: netid of the ADS server</span>
-<span class="sd">        :param target_ams_port: ADS port for the I/O device available on the ADS server</span>
-<span class="sd">        :param ads_port: unencrypted ADS port for TCP connections</span>
-
-<span class="sd">        :returns: an asynchronous ADS client connection</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">target_ip</span><span class="p">,</span> <span class="n">ads_port</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Opened client communication with ADS server at </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%X</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">target_ams_net_id</span><span class="p">,</span>
-            <span class="n">target_ams_port</span><span class="p">,</span>
-            <span class="n">reader</span><span class="p">,</span>
-            <span class="n">writer</span><span class="p">,</span>
-        <span class="p">)</span>
-</pre></div>
-</div>
-<p>The connection uses Python’s <code class="docutils literal notranslate"><span class="pre">asyncio.open_connection()</span></code> for non-blocking I/O, returning stream reader/writer pairs for bidirectional communication.</p>
+<p>Once routed, CATio opens a persistent TCP connection for ADS communication. The <code class="docutils literal notranslate"><span class="pre">AsyncioADSClient.connected_to()</span></code> method in <a class="reference download internal" download="" href="../_downloads/6cd68f7e0f10c306a12098be247e6f98/client.py"><span class="xref download myst">client.py</span></a> uses Python’s <code class="docutils literal notranslate"><span class="pre">asyncio.open_connection()</span></code> for non-blocking I/O, returning stream reader/writer pairs for bidirectional communication.</p>
 </section>
 </section>
 <section id="ads-commands">
@@ -713,32 +654,7 @@
 <p>ADS symbols provide named access to PLC variables, avoiding hard-coded index group/offset values. CATio discovers available symbols and maps them for convenient access.</p>
 <section id="the-adssymbol-structure">
 <h3>The AdsSymbol Structure<a class="headerlink" href="#the-adssymbol-structure" title="Link to this heading">#</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">AdsSymbol</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Define an ADS symbol.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">parent_id</span><span class="p">:</span> <span class="n">SupportsInt</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Id of the device which the symbol belongs to&quot;&quot;&quot;</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the symbol&quot;&quot;&quot;</span>
-    <span class="n">dtype</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">DTypeLike</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data type of the symbol&quot;&quot;&quot;</span>
-    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of elements&quot;&quot;&quot;</span>
-    <span class="n">group</span><span class="p">:</span> <span class="n">SupportsInt</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Index group used by the ADS protocol to address the symbol&quot;&quot;&quot;</span>
-    <span class="n">offset</span><span class="p">:</span> <span class="n">SupportsInt</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Index offset used by the ADS protocol to address the symbol&quot;&quot;&quot;</span>
-    <span class="n">comment</span><span class="p">:</span> <span class="nb">str</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Optional comment associated to the symbol&quot;&quot;&quot;</span>
-    <span class="n">handle</span><span class="p">:</span> <span class="n">SupportsInt</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unique handle value mapping the symbol to an ADS notification&quot;&quot;&quot;</span>
-
-</pre></div>
-</div>
-<p>Symbols carry type information (<code class="docutils literal notranslate"><span class="pre">dtype</span></code>) allowing CATio to correctly interpret binary data. The <code class="docutils literal notranslate"><span class="pre">group</span></code> and <code class="docutils literal notranslate"><span class="pre">offset</span></code> fields are used in ADS read/write commands.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">AdsSymbol</span></code> dataclass in <a class="reference download internal" download="" href="../_downloads/0bf5cc55edf34de6cdf7d9cbdf3006b9/devices.py"><span class="xref download myst">devices.py</span></a> represents ADS symbols. Symbols carry type information (<code class="docutils literal notranslate"><span class="pre">dtype</span></code>) allowing CATio to correctly interpret binary data. The <code class="docutils literal notranslate"><span class="pre">group</span></code> and <code class="docutils literal notranslate"><span class="pre">offset</span></code> fields are used in ADS read/write commands.</p>
 </section>
 <section id="symbol-based-access-vs-direct-access">
 <h3>Symbol-Based Access vs Direct Access<a class="headerlink" href="#symbol-based-access-vs-direct-access" title="Link to this heading">#</a></h3>
@@ -820,7 +736,7 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">query(&quot;SYSTEM_TREE&quot;)</span></code> → calls <code class="docutils literal notranslate"><span class="pre">get_system_tree()</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">command(&quot;DEVICE_STATE&quot;,</span> <span class="pre">...)</span></code> → calls <code class="docutils literal notranslate"><span class="pre">set_device_state(...)</span></code></p></li>
 </ul>
-<p>This pattern, while flexible, has tradeoffs discussed in <a class="reference internal" href="api-decoupling.html"><span class="std std-doc">API Decoupling Analysis</span></a>.</p>
+<p>This pattern, while flexible, has tradeoffs discussed in <a class="reference internal" href="decisions/0003-api-decoupling-analysis.html"><span class="std std-doc">API Decoupling Analysis</span></a>.</p>
 </section>
 <section id="key-api-methods">
 <h3>Key API Methods<a class="headerlink" href="#key-api-methods" title="Link to this heading">#</a></h3>
@@ -886,54 +802,7 @@
 </section>
 <section id="testing-with-mockadsserver">
 <h2>Testing with MockADSServer<a class="headerlink" href="#testing-with-mockadsserver" title="Link to this heading">#</a></h2>
-<p>CATio includes a mock ADS server for testing without hardware:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MockADSServer</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A mock ADS server that simulates a Beckhoff TwinCAT device.</span>
-
-<span class="sd">    This server accepts AMS connections over TCP and responds to ADS commands with</span>
-<span class="sd">    mock data, allowing testing of the CATio client without a real device.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48898</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the mock ADS server.</span>
-
-<span class="sd">        :param host: Host address to bind to (default: 127.0.0.1)</span>
-<span class="sd">        :param port: Port to listen on (default: 48898)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Server</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">local_netid</span> <span class="o">=</span> <span class="n">AmsNetId</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">get_local_netid_str</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="c1"># Mock data info</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">AdsSymbol</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">device_info</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;DeviceName&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;MockDevice&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;DeviceVersion&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
-        <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ads_state</span> <span class="o">=</span> <span class="n">AdsState</span><span class="o">.</span><span class="n">ADSSTATE_RUN</span>
-
-        <span class="c1"># Notification handles and subscriptions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_notification_handles</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_next_handle</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Message handlers</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CommandId</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READSTATE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read_state</span><span class="p">,</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READDEVICEINFO</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read_device_info</span><span class="p">,</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READ</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read</span><span class="p">,</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_WRITE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_write</span><span class="p">,</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_READWRITE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_read_write</span><span class="p">,</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_ADDDEVICENOTE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_add_notification</span><span class="p">,</span>
-            <span class="n">CommandId</span><span class="o">.</span><span class="n">ADSSRVID_DELETEDEVICENOTE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_delete_notification</span><span class="p">,</span>
-        <span class="p">}</span>
-
-</pre></div>
-</div>
-<p>The mock server:</p>
+<p>CATio includes a mock ADS server for testing without hardware. The <code class="docutils literal notranslate"><span class="pre">MockADSServer</span></code> class in <a class="reference download internal" download="" href="../_downloads/0c457125b5498c5b939b31face5cb6ce/mock_server.py"><span class="xref download myst">mock_server.py</span></a> provides:</p>
 <ul class="simple">
 <li><p>Accepts TCP connections on the standard ADS port</p></li>
 <li><p>Parses AMS headers and dispatches to command handlers</p></li>
@@ -947,7 +816,7 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="architecture-overview.html"><span class="std std-doc">Architecture Overview</span></a> - High-level system architecture</p></li>
 <li><p><a class="reference internal" href="fastcs-epics-ioc.html"><span class="std std-doc">FastCS EPICS IOC Implementation</span></a> - Details of the EPICS layer</p></li>
-<li><p><a class="reference internal" href="api-decoupling.html"><span class="std std-doc">API Decoupling Analysis</span></a> - API design discussion</p></li>
+<li><p><a class="reference internal" href="decisions/0003-api-decoupling-analysis.html"><span class="std std-doc">API Decoupling Analysis</span></a> - API design discussion</p></li>
 </ul>
 </section>
 </section>
@@ -972,11 +841,11 @@
       </div>
     </a>
     <a class="right-next"
-       href="api-decoupling.html"
+       href="nomenclature.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">API Decoupling Analysis</p>
+        <p class="prev-next-title">EtherCAT and TwinCAT Nomenclature</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

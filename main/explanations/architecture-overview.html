@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>CATio Architecture Overview &#8212; fastcs-catio 1.1a4.dev98+ge42efc026 documentation</title>
+    <title>CATio Architecture Overview &#8212; fastcs-catio 1.1a4.dev114+ga0cc799f6 documentation</title>
   
   
   
@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=90a8e51b" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=864a6e87"></script>
+    <script src="../_static/documentation_options.js?v=3b8ee1e8"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -836,10 +836,8 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">CATio Architecture Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nomenclature.html">EtherCAT and TwinCAT Nomenclature</a></li>
 <li class="toctree-l1"><a class="reference internal" href="terminal-yaml-definitions.html">Terminal YAML Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
 <li class="toctree-l1"><a class="reference internal" href="coe-parameters.html">CoE Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic-pdos.html">Dynamic PDOs in EtherCAT Terminals</a></li>
@@ -847,6 +845,7 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0003-api-decoupling-analysis.html">API Decoupling Analysis</a></li>
 </ul>
 </details></li>
 </ul>
@@ -919,14 +918,19 @@ window.addEventListener("load", load);</script>
 <section id="high-level-architecture-diagram">
 <h2>High-Level Architecture Diagram<a class="headerlink" href="#high-level-architecture-diagram" title="Link to this heading">#</a></h2>
 <pre  class="mermaid">
-        %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
-flowchart TB
+        flowchart TB
     clients[&quot;EPICS Clients / Control Systems&quot;]
 
     subgraph fastcs[&quot;FastCS EPICS IOC Layer&quot;]
         direction LR
-        server[&quot;CATioServerController&quot;] --&gt; device[&quot;CATioDeviceController&lt;br/&gt;(EtherCAT Master)&quot;] --&gt; terminal[&quot;CATioTerminalController&lt;br/&gt;(EK1100, EL3xxx, etc.)&quot;]
-        fastcs_files[&quot;catio_controller.py&lt;br/&gt;catio_hardware.py&lt;br/&gt;catio_attribute_io.py&quot;]
+        server[&quot;CATioServerController&quot;] --&gt; device[&quot;CATioDeviceController&lt;br/&gt;(EtherCAT Master)&quot;] --&gt; terminal[&quot;Dynamic Terminal Controllers&lt;br/&gt;(generated from YAML)&quot;]
+        fastcs_files[&quot;catio_controller.py&lt;br/&gt;catio_dynamic_controller.py&lt;br/&gt;catio_dynamic_symbol.py&lt;br/&gt;catio_dynamic_coe.py&quot;]
+    end
+
+    subgraph yamldef[&quot;Terminal Definitions&quot;]
+        direction LR
+        yaml[&quot;terminal_types.yaml&quot;] --&gt; dynamic[&quot;get_terminal_controller_class()&quot;]
+        runtime[&quot;runtime_symbols.yaml&quot;] --&gt; dynamic
     end
 
     subgraph bridge[&quot;CATio API Bridge&quot;]
@@ -947,6 +951,7 @@ flowchart TB
     end
 
     clients --&gt;|&quot;Channel Access / PVAccess&quot;| fastcs
+    yamldef --&gt;|&quot;Controller classes&quot;| fastcs
     fastcs --&gt;|&quot;CATioConnection API&lt;br/&gt;(CATioFastCSRequest/Response)&quot;| bridge
     bridge --&gt;|&quot;ADS Protocol (TCP/UDP)&quot;| adslayer
     adslayer --&gt;|&quot;ADS/AMS Protocol&lt;br/&gt;(TCP 48898, UDP 48899)&quot;| twincat
@@ -959,9 +964,30 @@ flowchart TB
 <ul class="simple">
 <li><p><strong>CATioServerController</strong>: Root controller representing the I/O server; manages TCP connections and device discovery</p></li>
 <li><p><strong>CATioDeviceController</strong>: Represents EtherCAT Master devices with their associated attributes</p></li>
-<li><p><strong>CATioTerminalController</strong>: Represents individual EtherCAT slave terminals (couplers, I/O modules)</p></li>
+<li><p><strong>Dynamic Terminal Controllers</strong>: Generated at runtime from YAML terminal definitions (see below)</p></li>
 <li><p><strong>CATioControllerAttributeIO</strong>: Handles attribute read/write operations through the API</p></li>
 </ul>
+</section>
+<section id="dynamic-controller-generation">
+<h3>Dynamic Controller Generation<a class="headerlink" href="#dynamic-controller-generation" title="Link to this heading">#</a></h3>
+<p>Terminal controllers are generated dynamically from YAML definitions in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/</span></code>:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_terminal_controller_class()</span></code></strong>: Factory function that creates controller classes on demand</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">catio_dynamic_controller.py</span></code></strong>: Creates FastCS controller classes from YAML terminal type definitions</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">catio_dynamic_symbol.py</span></code></strong>: Adds PDO symbol attributes (process data) to controllers</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">catio_dynamic_coe.py</span></code></strong>: Adds CoE parameter attributes (configuration) to controllers</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">catio_dynamic_types.py</span></code></strong>: Type conversion between TwinCAT, numpy, and FastCS types</p></li>
+</ul>
+<p>Controller classes are cached so only one class is created per terminal type:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fastcs_catio.catio_dynamic_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_terminal_controller_class</span>
+
+<span class="c1"># Get or create a controller class for a terminal type</span>
+<span class="n">controller_class</span> <span class="o">=</span> <span class="n">get_terminal_controller_class</span><span class="p">(</span><span class="s2">&quot;EL1004&quot;</span><span class="p">)</span>
+
+<span class="c1"># Use it like any other controller class</span>
+<span class="n">controller</span> <span class="o">=</span> <span class="n">controller_class</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MOD1&quot;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="api-bridge-layer">
 <h3>API Bridge Layer<a class="headerlink" href="#api-bridge-layer" title="Link to this heading">#</a></h3>
@@ -992,26 +1018,46 @@ flowchart TB
 <li><p><strong>Route Addition</strong>: Client machine is added to the TwinCAT server’s routing table</p></li>
 <li><p><strong>TCP Connection</strong>: Establish persistent TCP connection for ADS communication</p></li>
 <li><p><strong>I/O Introspection</strong>: Query server for devices, slaves, and symbol information</p></li>
-<li><p><strong>Controller Creation</strong>: Build FastCS controller hierarchy matching hardware topology</p></li>
-<li><p><strong>Attribute Registration</strong>: Create EPICS PVs for each accessible parameter</p></li>
+<li><p><strong>Dynamic Controller Creation</strong>: Generate controller classes from YAML definitions based on discovered terminal types</p></li>
+<li><p><strong>Attribute Registration</strong>: Create EPICS PVs for each accessible parameter (symbols and CoE objects)</p></li>
 </ol>
 </section>
 <section id="runtime-data-flow">
 <h3>Runtime Data Flow<a class="headerlink" href="#runtime-data-flow" title="Link to this heading">#</a></h3>
 <pre  class="mermaid">
-        flowchart TB
-    A[&quot;EPICS Client Request&quot;] --&gt; B[&quot;FastCS Attribute Access&quot;]
-    B --&gt; C[&quot;CATioControllerAttributeIO.update()&quot;]
-    C --&gt; D[&quot;CATioConnection.send_query()&quot;]
-    D --&gt; E[&quot;AsyncioADSClient.query() / command()&quot;]
-    E --&gt; F[&quot;API method dispatch (get_* / set_*)&quot;]
-    F --&gt; G[&quot;ADS Read/Write/ReadWrite commands&quot;]
-    G --&gt; H[&quot;TwinCAT Server Response&quot;]
-    H --&gt; I[&quot;Response propagation back to EPICS&quot;]
+        sequenceDiagram
+    participant Client as EPICS Client
+    participant FastCS as FastCS Attribute
+    participant IO as CATioControllerAttributeIO
+    participant Conn as CATioConnection
+    participant ADS as AsyncioADSClient
+    participant TC as TwinCAT Server
+
+    Client-&gt;&gt;FastCS: Read/Write PV
+    FastCS-&gt;&gt;IO: update()
+    IO-&gt;&gt;Conn: send_query()
+    Conn-&gt;&gt;ADS: query() / command()
+    ADS-&gt;&gt;ADS: API method dispatch (get_* / set_*)
+    ADS-&gt;&gt;TC: ADS Read/Write/ReadWrite
+    TC--&gt;&gt;ADS: Response
+    ADS--&gt;&gt;Conn: Response
+    Conn--&gt;&gt;IO: Response
+    IO--&gt;&gt;FastCS: Update attribute
+    FastCS--&gt;&gt;Client: PV updated
     </pre></section>
 </section>
 <section id="key-design-decisions">
 <h2>Key Design Decisions<a class="headerlink" href="#key-design-decisions" title="Link to this heading">#</a></h2>
+<section id="id1">
+<h3>Dynamic Controller Generation<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<p>Terminal controllers are generated from YAML definitions rather than explicit Python classes:</p>
+<ul class="simple">
+<li><p><strong>Flexibility</strong>: New terminal types can be added by editing YAML without code changes</p></li>
+<li><p><strong>Maintainability</strong>: Single source of truth for terminal definitions in <code class="docutils literal notranslate"><span class="pre">terminal_types.yaml</span></code></p></li>
+<li><p><strong>Runtime symbols</strong>: Diagnostic symbols from the EtherCAT master defined separately in <code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code></p></li>
+<li><p><strong>Selection</strong>: Only symbols marked <code class="docutils literal notranslate"><span class="pre">selected:</span> <span class="pre">true</span></code> in YAML become FastCS attributes</p></li>
+</ul>
+</section>
 <section id="asynchronous-architecture">
 <h3>Asynchronous Architecture<a class="headerlink" href="#asynchronous-architecture" title="Link to this heading">#</a></h3>
 <p>The entire stack uses Python’s <code class="docutils literal notranslate"><span class="pre">asyncio</span></code> for non-blocking I/O operations:</p>
@@ -1027,8 +1073,8 @@ flowchart TB
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>IOServer
 └── IODevice (EtherCAT Master)
     ├── IOSlave (EK1100 Coupler)
-    │   ├── IOSlave (EL3xxx Input)
-    │   └── IOSlave (EL4xxx Output)
+    │   ├── IOSlave (EL3xxx Input) - DynamicEL3xxxController
+    │   └── IOSlave (EL4xxx Output) - DynamicEL4xxxController
     └── IOSlave (EK1101 Coupler)
         └── ...
 </pre></div>
@@ -1057,9 +1103,10 @@ flowchart TB
 <section id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="fastcs-epics-ioc.html"><span class="std std-doc">FastCS EPICS IOC Implementation</span></a> - Detailed explanation of the EPICS layer</p></li>
-<li><p><a class="reference internal" href="ads-client.html"><span class="std std-doc">ADS Client Implementation</span></a> - Detailed explanation of the ADS protocol layer</p></li>
-<li><p><a class="reference internal" href="api-decoupling.html"><span class="std std-doc">API Decoupling Analysis</span></a> - Discussion of the API design and potential improvements</p></li>
+<li><p><a class="reference internal" href="fastcs-epics-ioc.html"><span class="std std-doc">FastCS EPICS IOC Implementation</span></a> - Details of the EPICS layer</p></li>
+<li><p><a class="reference internal" href="ads-client.html"><span class="std std-doc">ADS Client Implementation</span></a> - Details of the ADS protocol layer</p></li>
+<li><p><a class="reference internal" href="terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a> - How to define terminal types in YAML</p></li>
+<li><p><a class="reference internal" href="decisions/0003-api-decoupling-analysis.html"><span class="std std-doc">API Decoupling Analysis</span></a> - Discussion of the API design and potential improvements</p></li>
 </ul>
 </section>
 </section>
@@ -1114,6 +1161,7 @@ flowchart TB
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#high-level-architecture-diagram">High-Level Architecture Diagram</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#component-overview">Component Overview</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fastcs-epics-ioc-layer">FastCS EPICS IOC Layer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-controller-generation">Dynamic Controller Generation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#api-bridge-layer">API Bridge Layer</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ads-client-layer">ADS Client Layer</a></li>
 </ul>
@@ -1124,6 +1172,7 @@ flowchart TB
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-design-decisions">Key Design Decisions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Dynamic Controller Generation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#asynchronous-architecture">Asynchronous Architecture</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controller-hierarchy">Controller Hierarchy</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-based-access">Symbol-Based Access</a></li>

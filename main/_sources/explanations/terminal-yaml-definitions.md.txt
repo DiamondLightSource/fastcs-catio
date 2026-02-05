@@ -11,24 +11,19 @@ For background on the underlying Beckhoff technologies, see:
 ## Overview
 
 Terminal definitions are YAML files that describe:
+- **Composite types** - Bit field definitions for packed status/control bytes
 - **Terminal identity** - Vendor ID, product code, revision
 - **Symbol nodes** - Process data (I/O values) accessible via ADS
-- **CoE objects** - Configuration parameters (optional)
-- **Runtime symbols** - Diagnostic symbols added by the EtherCAT master
+- **CoE objects** - Configuration parameters with subindices
+- **Runtime symbols** - Diagnostic symbols added by the EtherCAT master (defined separately)
 
 ## File Organization
 
-Terminal definitions live in `src/catio_terminals/terminals/`, organized by function:
+Terminal definitions live in `src/catio_terminals/terminals/`, organized as follows:
 
 | File | Terminal Types |
 |------|----------------|
-| `analog_input.yaml` | EL3004, EL3104, EL3602, etc. |
-| `analog_output.yaml` | EL4004, EL4134, etc. |
-| `digital_input.yaml` | EL1004, EL1014, EL1084, etc. |
-| `digital_output.yaml` | EL2004, EL2024, EL2809, etc. |
-| `counter.yaml` | EL1502, EL5101, etc. |
-| `bus_couplers.yaml` | EK1100, EK1110, etc. |
-| `power_supply.yaml` | EL9410, EL9512, etc. |
+| `terminal_types.yaml` | All terminals currently in use at DLS |
 
 Supporting configuration files in `src/catio_terminals/config/`:
 
@@ -38,9 +33,20 @@ Supporting configuration files in `src/catio_terminals/config/`:
 
 ## Terminal Definition Structure
 
-### Basic Example
+### Top-Level Structure
 
 ```yaml
+composite_types:
+  InputBits:
+    description: 'Bit fields: Input'
+    ads_type: 65
+    size: 1
+    members: []
+    bit_fields:
+      - name: Input
+        bit: 0
+  # ... more composite types
+
 terminal_types:
   EL3104:
     description: "4-channel Analog Input +/-10V 16-bit"
@@ -50,13 +56,36 @@ terminal_types:
       revision_number: 1048576
     group_type: AnaIn
     symbol_nodes:
-      - name_template: "AI Standard Channel {channel}.Value"
-        index_group: 61472
-        type_name: INT
-        channels: 4
-        access: Read-only
-        fastcs_name: "AiStandardChannel{channel}Value"
-    coe_objects: []
+      # ... symbols
+    coe_objects:
+      # ... CoE objects
+```
+
+### Composite Types Section
+
+Composite types define packed bit fields for status and control bytes:
+
+```yaml
+composite_types:
+  Status__Underrange_6Bits:
+    description: 'Bit fields: Status__Underrange, Status__Overrange, Status__Error,
+      Status__Sync error, Status__TxPDO State, Status__TxPDO Toggle'
+    ads_type: 65
+    size: 1
+    members: []
+    bit_fields:
+      - name: Status__Underrange
+        bit: 0
+      - name: Status__Overrange
+        bit: 1
+      - name: Status__Error
+        bit: 2
+      - name: Status__Sync error
+        bit: 3
+      - name: Status__TxPDO State
+        bit: 4
+      - name: Status__TxPDO Toggle
+        bit: 5
 ```
 
 ### Identity Section
@@ -78,22 +107,31 @@ Symbol nodes define the ADS symbols for process data. Each symbol maps to memory
 
 ```yaml
 symbol_nodes:
-  - name_template: "AI Standard Channel {channel}.Value"
-    index_group: 61472       # 0xF020 - input data
-    type_name: INT
-    channels: 4
+  - name_template: CNT Inputs Channel {channel}
+    index_group: 61488
+    type_name: Status__Output functions enabled_7Bits
+    channels: 2
     access: Read-only
-    fastcs_name: "AiStandardChannel{channel}Value"
+    fastcs_name: cnt_inputs_channel_{channel}
+    selected: false
+  - name_template: CNT Inputs.Counter value
+    index_group: 61488
+    type_name: UDINT
+    channels: 1
+    access: Read-only
+    fastcs_name: cnt_inputs_counter_value
+    selected: true
 ```
 
 | Field | Description |
 |-------|-------------|
 | `name_template` | Symbol name pattern. Use `{channel}` for multi-channel terminals |
 | `index_group` | ADS index group (see table below) |
-| `type_name` | Data type - primitive (INT, BOOL, etc.) |
+| `type_name` | Data type - primitive (INT, BOOL, UDINT) or composite type name |
 | `channels` | Number of channels using this pattern |
 | `access` | `Read-only` (inputs) or `Read/Write` (outputs) |
-| `fastcs_name` | PascalCase name for FastCS attributes |
+| `fastcs_name` | Snake_case name for FastCS attributes |
+| `selected` | Whether this symbol is included in FastCS controllers |
 
 **ADS Index Groups:**
 
@@ -104,18 +142,57 @@ symbol_nodes:
 | 61488 | 0xF030 | Output bytes (RxPDO - controller to terminal) |
 | 61489 | 0xF031 | Output bits |
 
+### CoE Objects
+
+CoE (CANopen over EtherCAT) objects define configuration parameters with subindices:
+
+```yaml
+coe_objects:
+  - index: 32768           # 0x8000 in decimal
+    name: CNT Settings Ch.1
+    type_name: DT8000
+    bit_size: 128
+    access: rw
+    subindices:
+      - subindex: 1
+        name: Enable function to set output
+        type_name: BOOL
+        bit_size: 1
+        access: rw
+        default_data: '00'
+        fastcs_name: enable_function_to_set_output_idx8000
+      - subindex: 17
+        name: Switch on treshold value
+        type_name: UDINT
+        bit_size: 32
+        access: rw
+        default_data: '00000000'
+        fastcs_name: switch_on_treshold_value_idx8000
+    fastcs_name: cnt_settings_ch_1_idx8000
+```
+
+| Field | Description |
+|-------|-------------|
+| `index` | CoE index (decimal) |
+| `name` | Human-readable name |
+| `type_name` | Data type for the object |
+| `bit_size` | Total size in bits |
+| `access` | `ro` (read-only) or `rw` (read-write) |
+| `subindices` | List of subindex definitions |
+| `fastcs_name` | FastCS attribute name |
+
 ### Computed Properties
 
 The `size` and `ads_type` fields are computed from `type_name`:
 
 ```yaml
 # You write:
-- name_template: "Value {channel}"
-  type_name: INT
+- name_template: "Counter value"
+  type_name: UDINT
 
 # The system computes:
-#   size: 2 (bytes)
-#   ads_type: 2 (ADS type code for INT)
+#   size: 4 (bytes)
+#   ads_type: 19 (ADS type code for UDINT)
 ```
 
 Type mappings are defined in `src/catio_terminals/ads_types.py`.
@@ -182,8 +259,8 @@ Downloads Beckhoff's ESI XML files to `~/.cache/catio_terminals/`.
 ### Edit Terminal Files
 
 ```bash
-catio-terminals                    # Create new file
-catio-terminals terminals.yaml     # Edit existing file
+catio-terminals edit                    # Create new file
+catio-terminals edit terminals.yaml     # Edit existing file
 ```
 
 ### Workflow
@@ -220,8 +297,8 @@ The test simulator uses terminal definitions to:
 
 ### FastCS Controller Generation
 
-(Future) Terminal definitions will generate FastCS controllers:
-- Each symbol becomes a FastCS attribute
+Terminal definitions generate FastCS controllers:
+- Each symbol with `selected: true` becomes a FastCS attribute
 - Channel templates expand to numbered attributes
 
 ### catio-terminals UI

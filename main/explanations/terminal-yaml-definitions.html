@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Terminal YAML Definitions &#8212; fastcs-catio 1.1a4.dev98+ge42efc026 documentation</title>
+    <title>Terminal YAML Definitions &#8212; fastcs-catio 1.1a4.dev114+ga0cc799f6 documentation</title>
   
   
   
@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=90a8e51b" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=864a6e87"></script>
+    <script src="../_static/documentation_options.js?v=3b8ee1e8"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -59,7 +59,7 @@
     <link rel="icon" href="../_static/dls-logo.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Terminal Type Definitions" href="terminal-definitions.html" />
+    <link rel="next" title="Composite Types in TwinCAT" href="composite-types.html" />
     <link rel="prev" title="EtherCAT and TwinCAT Nomenclature" href="nomenclature.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -401,10 +401,8 @@
 <li class="toctree-l1"><a class="reference internal" href="architecture-overview.html">CATio Architecture Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fastcs-epics-ioc.html">FastCS EPICS IOC Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ads-client.html">ADS Client Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api-decoupling.html">API Decoupling Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nomenclature.html">EtherCAT and TwinCAT Nomenclature</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Terminal YAML Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="terminal-definitions.html">Terminal Type Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="composite-types.html">Composite Types in TwinCAT</a></li>
 <li class="toctree-l1"><a class="reference internal" href="coe-parameters.html">CoE Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic-pdos.html">Dynamic PDOs in EtherCAT Terminals</a></li>
@@ -412,6 +410,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="decisions.html">Architectural Decision Records</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0001-record-architecture-decisions.html">1. Record architecture decisions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="decisions/0002-switched-to-python-copier-template.html">2. Adopt python-copier-template for project structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decisions/0003-api-decoupling-analysis.html">API Decoupling Analysis</a></li>
 </ul>
 </details></li>
 </ul>
@@ -487,15 +486,16 @@
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
 <p>Terminal definitions are YAML files that describe:</p>
 <ul class="simple">
+<li><p><strong>Composite types</strong> - Bit field definitions for packed status/control bytes</p></li>
 <li><p><strong>Terminal identity</strong> - Vendor ID, product code, revision</p></li>
 <li><p><strong>Symbol nodes</strong> - Process data (I/O values) accessible via ADS</p></li>
-<li><p><strong>CoE objects</strong> - Configuration parameters (optional)</p></li>
-<li><p><strong>Runtime symbols</strong> - Diagnostic symbols added by the EtherCAT master</p></li>
+<li><p><strong>CoE objects</strong> - Configuration parameters with subindices</p></li>
+<li><p><strong>Runtime symbols</strong> - Diagnostic symbols added by the EtherCAT master (defined separately)</p></li>
 </ul>
 </section>
 <section id="file-organization">
 <h2>File Organization<a class="headerlink" href="#file-organization" title="Link to this heading">#</a></h2>
-<p>Terminal definitions live in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/</span></code>, organized by function:</p>
+<p>Terminal definitions live in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/</span></code>, organized as follows:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>File</p></th>
@@ -503,26 +503,8 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">analog_input.yaml</span></code></p></td>
-<td><p>EL3004, EL3104, EL3602, etc.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">analog_output.yaml</span></code></p></td>
-<td><p>EL4004, EL4134, etc.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">digital_input.yaml</span></code></p></td>
-<td><p>EL1004, EL1014, EL1084, etc.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">digital_output.yaml</span></code></p></td>
-<td><p>EL2004, EL2024, EL2809, etc.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">counter.yaml</span></code></p></td>
-<td><p>EL1502, EL5101, etc.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bus_couplers.yaml</span></code></p></td>
-<td><p>EK1100, EK1110, etc.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power_supply.yaml</span></code></p></td>
-<td><p>EL9410, EL9512, etc.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">terminal_types.yaml</span></code></p></td>
+<td><p>All terminals currently in use at DLS</p></td>
 </tr>
 </tbody>
 </table>
@@ -544,9 +526,20 @@
 </section>
 <section id="terminal-definition-structure">
 <h2>Terminal Definition Structure<a class="headerlink" href="#terminal-definition-structure" title="Link to this heading">#</a></h2>
-<section id="basic-example">
-<h3>Basic Example<a class="headerlink" href="#basic-example" title="Link to this heading">#</a></h3>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">terminal_types</span><span class="p">:</span>
+<section id="top-level-structure">
+<h3>Top-Level Structure<a class="headerlink" href="#top-level-structure" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">composite_types</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">InputBits</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Bit</span><span class="nv"> </span><span class="s">fields:</span><span class="nv"> </span><span class="s">Input&#39;</span>
+<span class="w">    </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65</span>
+<span class="w">    </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">members</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">    </span><span class="nt">bit_fields</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Input</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="c1"># ... more composite types</span>
+
+<span class="nt">terminal_types</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">EL3104</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;4-channel</span><span class="nv"> </span><span class="s">Analog</span><span class="nv"> </span><span class="s">Input</span><span class="nv"> </span><span class="s">+/-10V</span><span class="nv"> </span><span class="s">16-bit&quot;</span>
 <span class="w">    </span><span class="nt">identity</span><span class="p">:</span>
@@ -555,13 +548,35 @@
 <span class="w">      </span><span class="nt">revision_number</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1048576</span>
 <span class="w">    </span><span class="nt">group_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AnaIn</span>
 <span class="w">    </span><span class="nt">symbol_nodes</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}.Value&quot;</span>
-<span class="w">        </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61472</span>
-<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INT</span>
-<span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read-only</span>
-<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AiStandardChannel{channel}Value&quot;</span>
-<span class="w">    </span><span class="nt">coe_objects</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="c1"># ... symbols</span>
+<span class="w">    </span><span class="nt">coe_objects</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># ... CoE objects</span>
+</pre></div>
+</div>
+</section>
+<section id="composite-types-section">
+<h3>Composite Types Section<a class="headerlink" href="#composite-types-section" title="Link to this heading">#</a></h3>
+<p>Composite types define packed bit fields for status and control bytes:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">composite_types</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">Status__Underrange_6Bits</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Bit</span><span class="nv"> </span><span class="s">fields:</span><span class="nv"> </span><span class="s">Status__Underrange,</span><span class="nv"> </span><span class="s">Status__Overrange,</span><span class="nv"> </span><span class="s">Status__Error,</span>
+<span class="w">      </span><span class="s">Status__Sync</span><span class="nv"> </span><span class="s">error,</span><span class="nv"> </span><span class="s">Status__TxPDO</span><span class="nv"> </span><span class="s">State,</span><span class="nv"> </span><span class="s">Status__TxPDO</span><span class="nv"> </span><span class="s">Toggle&#39;</span>
+<span class="w">    </span><span class="nt">ads_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65</span>
+<span class="w">    </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">members</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">    </span><span class="nt">bit_fields</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__Underrange</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__Overrange</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__Error</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__Sync error</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__TxPDO State</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__TxPDO Toggle</span>
+<span class="w">        </span><span class="nt">bit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
 </pre></div>
 </div>
 </section>
@@ -580,12 +595,20 @@
 <h3>Symbol Nodes<a class="headerlink" href="#symbol-nodes" title="Link to this heading">#</a></h3>
 <p>Symbol nodes define the ADS symbols for process data. Each symbol maps to memory that updates during the EtherCAT cycle.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">symbol_nodes</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AI</span><span class="nv"> </span><span class="s">Standard</span><span class="nv"> </span><span class="s">Channel</span><span class="nv"> </span><span class="s">{channel}.Value&quot;</span>
-<span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61472</span><span class="w">       </span><span class="c1"># 0xF020 - input data</span>
-<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INT</span>
-<span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CNT Inputs Channel {channel}</span>
+<span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61488</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Status__Output functions enabled_7Bits</span>
+<span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read-only</span>
-<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;AiStandardChannel{channel}Value&quot;</span>
+<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_inputs_channel_{channel}</span>
+<span class="w">    </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CNT Inputs.Counter value</span>
+<span class="w">    </span><span class="nt">index_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">61488</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">UDINT</span>
+<span class="w">    </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read-only</span>
+<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_inputs_counter_value</span>
+<span class="w">    </span><span class="nt">selected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 </div>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -602,7 +625,7 @@
 <td><p>ADS index group (see table below)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type_name</span></code></p></td>
-<td><p>Data type - primitive (INT, BOOL, etc.)</p></td>
+<td><p>Data type - primitive (INT, BOOL, UDINT) or composite type name</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">channels</span></code></p></td>
 <td><p>Number of channels using this pattern</p></td>
@@ -611,7 +634,10 @@
 <td><p><code class="docutils literal notranslate"><span class="pre">Read-only</span></code> (inputs) or <code class="docutils literal notranslate"><span class="pre">Read/Write</span></code> (outputs)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fastcs_name</span></code></p></td>
-<td><p>PascalCase name for FastCS attributes</p></td>
+<td><p>Snake_case name for FastCS attributes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">selected</span></code></p></td>
+<td><p>Whether this symbol is included in FastCS controllers</p></td>
 </tr>
 </tbody>
 </table>
@@ -645,16 +671,75 @@
 </table>
 </div>
 </section>
+<section id="coe-objects">
+<h3>CoE Objects<a class="headerlink" href="#coe-objects" title="Link to this heading">#</a></h3>
+<p>CoE (CANopen over EtherCAT) objects define configuration parameters with subindices:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">coe_objects</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32768</span><span class="w">           </span><span class="c1"># 0x8000 in decimal</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CNT Settings Ch.1</span>
+<span class="w">    </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DT8000</span>
+<span class="w">    </span><span class="nt">bit_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">128</span>
+<span class="w">    </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rw</span>
+<span class="w">    </span><span class="nt">subindices</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">subindex</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Enable function to set output</span>
+<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BOOL</span>
+<span class="w">        </span><span class="nt">bit_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rw</span>
+<span class="w">        </span><span class="nt">default_data</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;00&#39;</span>
+<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enable_function_to_set_output_idx8000</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">subindex</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">17</span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Switch on treshold value</span>
+<span class="w">        </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">UDINT</span>
+<span class="w">        </span><span class="nt">bit_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">        </span><span class="nt">access</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rw</span>
+<span class="w">        </span><span class="nt">default_data</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;00000000&#39;</span>
+<span class="w">        </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">switch_on_treshold_value_idx8000</span>
+<span class="w">    </span><span class="nt">fastcs_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_settings_ch_1_idx8000</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">index</span></code></p></td>
+<td><p>CoE index (decimal)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>Human-readable name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type_name</span></code></p></td>
+<td><p>Data type for the object</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bit_size</span></code></p></td>
+<td><p>Total size in bits</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">access</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ro</span></code> (read-only) or <code class="docutils literal notranslate"><span class="pre">rw</span></code> (read-write)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">subindices</span></code></p></td>
+<td><p>List of subindex definitions</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fastcs_name</span></code></p></td>
+<td><p>FastCS attribute name</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="computed-properties">
 <h3>Computed Properties<a class="headerlink" href="#computed-properties" title="Link to this heading">#</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">size</span></code> and <code class="docutils literal notranslate"><span class="pre">ads_type</span></code> fields are computed from <code class="docutils literal notranslate"><span class="pre">type_name</span></code>:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># You write:</span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Value</span><span class="nv"> </span><span class="s">{channel}&quot;</span>
-<span class="w">  </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INT</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name_template</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Counter</span><span class="nv"> </span><span class="s">value&quot;</span>
+<span class="w">  </span><span class="nt">type_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">UDINT</span>
 
 <span class="c1"># The system computes:</span>
-<span class="c1">#   size: 2 (bytes)</span>
-<span class="c1">#   ads_type: 2 (ADS type code for INT)</span>
+<span class="c1">#   size: 4 (bytes)</span>
+<span class="c1">#   ads_type: 19 (ADS type code for UDINT)</span>
 </pre></div>
 </div>
 <p>Type mappings are defined in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/ads_types.py</span></code>.</p>
@@ -751,8 +836,8 @@
 </section>
 <section id="edit-terminal-files">
 <h3>Edit Terminal Files<a class="headerlink" href="#edit-terminal-files" title="Link to this heading">#</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>catio-terminals<span class="w">                    </span><span class="c1"># Create new file</span>
-catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span><span class="c1"># Edit existing file</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>catio-terminals<span class="w"> </span>edit<span class="w">                    </span><span class="c1"># Create new file</span>
+catio-terminals<span class="w"> </span>edit<span class="w"> </span>terminals.yaml<span class="w">     </span><span class="c1"># Edit existing file</span>
 </pre></div>
 </div>
 </section>
@@ -799,9 +884,9 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
 </section>
 <section id="fastcs-controller-generation">
 <h3>FastCS Controller Generation<a class="headerlink" href="#fastcs-controller-generation" title="Link to this heading">#</a></h3>
-<p>(Future) Terminal definitions will generate FastCS controllers:</p>
+<p>Terminal definitions generate FastCS controllers:</p>
 <ul class="simple">
-<li><p>Each symbol becomes a FastCS attribute</p></li>
+<li><p>Each symbol with <code class="docutils literal notranslate"><span class="pre">selected:</span> <span class="pre">true</span></code> becomes a FastCS attribute</p></li>
 <li><p>Channel templates expand to numbered attributes</p></li>
 </ul>
 </section>
@@ -846,11 +931,11 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
       </div>
     </a>
     <a class="right-next"
-       href="terminal-definitions.html"
+       href="composite-types.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Terminal Type Definitions</p>
+        <p class="prev-next-title">Composite Types in TwinCAT</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -876,9 +961,11 @@ catio-terminals<span class="w"> </span>terminals.yaml<span class="w">     </span
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#file-organization">File Organization</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminal-definition-structure">Terminal Definition Structure</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-example">Basic Example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#top-level-structure">Top-Level Structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#composite-types-section">Composite Types Section</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#identity-section">Identity Section</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#symbol-nodes">Symbol Nodes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coe-objects">CoE Objects</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computed-properties">Computed Properties</a></li>
 </ul>
 </li>

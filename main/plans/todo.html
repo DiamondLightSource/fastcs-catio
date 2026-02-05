@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>TODO &#8212; fastcs-catio 1.1a4.dev98+ge42efc026 documentation</title>
+    <title>TODO &#8212; fastcs-catio 1.1a4.dev114+ga0cc799f6 documentation</title>
   
   
   
@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=90a8e51b" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=864a6e87"></script>
+    <script src="../_static/documentation_options.js?v=3b8ee1e8"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -59,8 +59,8 @@
     <link rel="icon" href="../_static/dls-logo.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Plan: Align Simulator Symbols with Real Hardware" href="simulator-symbol-alignment.html" />
-    <link rel="prev" title="EtherCAT Composite Types" href="../reference/ethercat-composite-types.html" />
+    <link rel="next" title="Index" href="../genindex.html" />
+    <link rel="prev" title="Documentation Plan" href="documentation-plan.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="main" />
@@ -403,8 +403,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../reference/beckhoff-xml-format.html">Beckhoff ESI XML File Format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reference/ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reference/ethercat-composite-types.html">EtherCAT Composite Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation-plan.html">Documentation Plan</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">TODO</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator-symbol-alignment.html">Plan: Align Simulator Symbols with Real Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
 </ul>
@@ -470,43 +470,32 @@
   <section id="todo">
 <h1>TODO<a class="headerlink" href="#todo" title="Link to this heading">#</a></h1>
 <p>Outstanding tasks and improvements for CATio.</p>
-<hr class="docutils" />
 <section id="client-symbol-lookup-should-handle-ads-type-uint16">
-<h2>1. Client symbol_lookup should handle ADS_TYPE_UINT16<a class="headerlink" href="#client-symbol-lookup-should-handle-ads-type-uint16" title="Link to this heading">#</a></h2>
+<h2>Client symbol_lookup should handle ADS_TYPE_UINT16<a class="headerlink" href="#client-symbol-lookup-should-handle-ads-type-uint16" title="Link to this heading">#</a></h2>
 <p><strong>Priority:</strong> Medium
 <strong>Status:</strong> Not Started</p>
 <section id="background">
 <h3>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h3>
-<p>The client’s <code class="docutils literal notranslate"><span class="pre">symbol_lookup</span></code> function in <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code> only handles a limited set of ADS data types:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">symbol_lookup</span></code> function in <code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code> only handles these ADS data types:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">ADS_TYPE_BIT</span></code> (33)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ADS_TYPE_BIGTYPE</span></code> (65)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT8</span></code> (17)</p></li>
 </ul>
-<p>Symbols with other ADS types (e.g., <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span> <span class="pre">=</span> <span class="pre">18</span></code>) are silently ignored with a warning log message.</p>
+<p>Symbols with other types (e.g., <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span> <span class="pre">=</span> <span class="pre">18</span></code>) are silently ignored.</p>
 </section>
 <section id="problem">
 <h3>Problem<a class="headerlink" href="#problem" title="Link to this heading">#</a></h3>
 <p>Real TwinCAT hardware returns symbols with <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code> for:</p>
 <ul class="simple">
-<li><p>Device-level symbols: <code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.Frm0State</span></code>, <code class="docutils literal notranslate"><span class="pre">SlaveCount</span></code>, <code class="docutils literal notranslate"><span class="pre">DevState</span></code>, etc.</p></li>
-<li><p>Runtime symbols: <code class="docutils literal notranslate"><span class="pre">InfoData.State</span></code> (device state from EtherCAT state machine)</p></li>
+<li><p>Device-level symbols: <code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">1</span> <span class="pre">(EtherCAT).Inputs.Frm0State</span></code>, <code class="docutils literal notranslate"><span class="pre">SlaveCount</span></code>, <code class="docutils literal notranslate"><span class="pre">DevState</span></code></p></li>
+<li><p>Runtime symbols: <code class="docutils literal notranslate"><span class="pre">InfoData.State</span></code> (EtherCAT state machine)</p></li>
 </ul>
-<p>These symbols are currently filtered out by the client, meaning they cannot be read or monitored.</p>
-</section>
-<section id="current-workaround">
-<h3>Current Workaround<a class="headerlink" href="#current-workaround" title="Link to this heading">#</a></h3>
-<p>In the simulator (<code class="docutils literal notranslate"><span class="pre">tests/ads_sim/ethercat_chain.py</span></code>):</p>
-<ol class="arabic simple">
-<li><p>Device-level symbols use <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_BIT</span></code> (33) instead of <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code> (18)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">total_symbol_count</span></code> property filters out symbols with unhandled ADS types to match client behavior</p></li>
-</ol>
 </section>
 <section id="proposed-fix">
 <h3>Proposed Fix<a class="headerlink" href="#proposed-fix" title="Link to this heading">#</a></h3>
-<p>Add handling for <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code> (and potentially other integer types) in <code class="docutils literal notranslate"><span class="pre">symbol_lookup</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In src/fastcs_catio/symbols.py, add case for UINT16:</span>
-<span class="k">case</span> <span class="n">AdsDataType</span><span class="o">.</span><span class="n">ADS_TYPE_UINT16</span><span class="p">:</span>
+<p>Add handling for <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code> in <code class="docutils literal notranslate"><span class="pre">symbol_lookup</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">case</span> <span class="n">AdsDataType</span><span class="o">.</span><span class="n">ADS_TYPE_UINT16</span><span class="p">:</span>
     <span class="n">symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
         <span class="n">AdsSymbol</span><span class="p">(</span>
             <span class="n">parent_id</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">parent_id</span><span class="p">,</span>
@@ -524,26 +513,10 @@
 </pre></div>
 </div>
 </section>
-<section id="files-to-modify">
-<h3>Files to Modify<a class="headerlink" href="#files-to-modify" title="Link to this heading">#</a></h3>
+<section id="files">
+<h3>Files<a class="headerlink" href="#files" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code> - Add cases for <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code>, <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_INT16</span></code>, etc.</p></li>
-</ul>
-</section>
-<section id="after-implementation">
-<h3>After Implementation<a class="headerlink" href="#after-implementation" title="Link to this heading">#</a></h3>
-<ol class="arabic simple">
-<li><p>Update simulator device-level symbols to use correct <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_UINT16</span></code></p></li>
-<li><p>Remove <code class="docutils literal notranslate"><span class="pre">ADS_TYPE_BIT</span></code> workaround from <code class="docutils literal notranslate"><span class="pre">get_device_symbols()</span></code> in <code class="docutils literal notranslate"><span class="pre">tests/ads_sim/ethercat_chain.py</span></code></p></li>
-<li><p>Update <code class="docutils literal notranslate"><span class="pre">total_symbol_count</span></code> to include UINT16 symbols</p></li>
-<li><p>Verify with real hardware that UINT16 symbols are readable</p></li>
-</ol>
-</section>
-<section id="related">
-<h3>Related<a class="headerlink" href="#related" title="Link to this heading">#</a></h3>
-<ul class="simple">
-<li><p>Simulator symbol alignment plan: <a class="reference internal" href="simulator-symbol-alignment.html"><span class="std std-doc">simulator-symbol-alignment.md</span></a></p></li>
-<li><p>Runtime symbols config: <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/config/runtime_symbols.yaml</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/fastcs_catio/symbols.py</span></code> - Add cases for UINT16 and other integer types</p></li>
 </ul>
 </section>
 </section>
@@ -560,20 +533,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../reference/ethercat-composite-types.html"
+       href="documentation-plan.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">EtherCAT Composite Types</p>
+        <p class="prev-next-title">Documentation Plan</p>
       </div>
     </a>
     <a class="right-next"
-       href="simulator-symbol-alignment.html"
+       href="../genindex.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Plan: Align Simulator Symbols with Real Hardware</p>
+        <p class="prev-next-title">Index</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -596,14 +569,11 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#client-symbol-lookup-should-handle-ads-type-uint16">1. Client symbol_lookup should handle ADS_TYPE_UINT16</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#client-symbol-lookup-should-handle-ads-type-uint16">Client symbol_lookup should handle ADS_TYPE_UINT16</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#problem">Problem</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#current-workaround">Current Workaround</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#proposed-fix">Proposed Fix</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#files-to-modify">Files to Modify</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#after-implementation">After Implementation</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#related">Related</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#files">Files</a></li>
 </ul>
 </li>
 </ul>

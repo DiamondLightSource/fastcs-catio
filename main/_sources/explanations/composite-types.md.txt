@@ -1,6 +1,6 @@
 # Composite Types in TwinCAT
 
-This document explains how TwinCAT generates composite type names and how they are implemented in the catio-terminals codebase. It complements the [Terminal Definitions](terminal-definitions.md) document.
+This document explains how TwinCAT generates composite type names and how they are implemented in the catio-terminals codebase. It complements the [Terminal YAML Definitions](terminal-yaml-definitions.md) document.
 
 ## What Are Composite Types?
 
@@ -212,6 +212,6 @@ When adding support for a new terminal type:
 
 ## Related Documentation
 
-- [Terminal Definitions](terminal-definitions.md) - YAML file structure and symbol nodes
+- [Terminal YAML Definitions](terminal-yaml-definitions.md) - YAML file structure and symbol nodes
 - [Beckhoff XML Format](../reference/beckhoff-xml-format.md) - ESI XML schema reference
 - [Architecture Overview](architecture-overview.md) - Overall system design

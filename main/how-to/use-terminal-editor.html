@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Using the Terminal Editor &#8212; fastcs-catio 1.1a4.dev98+ge42efc026 documentation</title>
+    <title>Using the Terminal Editor &#8212; fastcs-catio 1.1a4.dev114+ga0cc799f6 documentation</title>
   
   
   
@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6fec2c37" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=90a8e51b" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=864a6e87"></script>
+    <script src="../_static/documentation_options.js?v=3b8ee1e8"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -399,7 +399,6 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribute to the project</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get-all-pdos-in-chain.html">How to Get All PDOs in an EtherCAT Chain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run-container.html">Run in a container</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Using the Terminal Editor</a></li>
 </ul>
@@ -535,21 +534,24 @@ catio-terminals<span class="w"> </span>edit<span class="w"> </span>path/to/termi
 <h2>Adding a Terminal<a class="headerlink" href="#adding-a-terminal" title="Link to this heading">#</a></h2>
 <ol class="arabic">
 <li><p>Click <strong>“Add Terminal”</strong> button in the header</p></li>
-<li><p>Choose one of two methods:</p>
-<p><strong>Method 1: Search Beckhoff Catalog</strong></p>
+<li><p>The dialog shows a list of available terminals with search and filtering:</p>
+<p><strong>Filtering by Type</strong></p>
 <ul class="simple">
-<li><p>Enter search terms in the search box</p></li>
-<li><p>Click “Search”</p></li>
-<li><p>Browse results and click “Add” on your chosen terminal</p></li>
-<li><p>The terminal information will be populated automatically</p></li>
+<li><p>Use the “Filter by Type” dropdown to narrow results by terminal category (Digital Input, Analog Output, etc.)</p></li>
+<li><p>The filter automatically selects the category of your currently selected terminal</p></li>
 </ul>
-<p><strong>Method 2: Create Manually</strong></p>
+<p><strong>Searching</strong></p>
 <ul class="simple">
-<li><p>Scroll to the bottom of the dialog</p></li>
-<li><p>Enter Terminal ID (e.g., “EL4004”)</p></li>
-<li><p>Enter Description</p></li>
-<li><p>Click “Create Manually”</p></li>
-<li><p>Edit the default values as needed</p></li>
+<li><p>Type in the search box to filter terminals - results update automatically as you type</p></li>
+<li><p>Press Enter or just continue typing to refine the search</p></li>
+<li><p>The status line shows total matches, already-added count, and available count</p></li>
+</ul>
+<p><strong>Adding Terminals</strong></p>
+<ul class="simple">
+<li><p>Click <strong>“Add”</strong> on any available terminal to add it to your configuration</p></li>
+<li><p>Already-added terminals appear grayed out</p></li>
+<li><p>Use <strong>“Add All”</strong> to add all currently visible available terminals at once</p></li>
+<li><p>Click <strong>“Close”</strong> when finished</p></li>
 </ul>
 </li>
 </ol>
@@ -656,9 +658,20 @@ catio-terminals<span class="w"> </span>edit<span class="w"> </span>path/to/termi
 <ul class="simple">
 <li><p><strong>models.py</strong>: Pydantic data models for YAML structure</p></li>
 <li><p><strong>beckhoff.py</strong>: Client for fetching Beckhoff terminal information</p></li>
-<li><p><strong>xml_cache.py</strong>: Caching system for Beckhoff XML files</p></li>
-<li><p><strong>xml_parser.py</strong>: Parser for Beckhoff ESI XML files</p></li>
-<li><p><strong>app.py</strong>: Main NiceGUI application</p></li>
+<li><p><strong>xml/</strong>: Subpackage for Beckhoff ESI XML parsing</p>
+<ul>
+<li><p><strong>cache.py</strong>: Caching system for downloaded XML files</p></li>
+<li><p><strong>parser.py</strong>: Main XML parsing utilities</p></li>
+<li><p><strong>pdo.py</strong>: PDO entry parsing</p></li>
+<li><p><strong>pdo_groups.py</strong>: PDO group (AlternativeSmMapping) parsing</p></li>
+<li><p><strong>coe.py</strong>: CoE object parsing</p></li>
+<li><p><strong>catalog.py</strong>: Terminal catalog browsing</p></li>
+</ul>
+</li>
+<li><p><strong>ui_app.py</strong>: Main NiceGUI application</p></li>
+<li><p><strong>ui_components/</strong>: UI component modules (tree view, details panes)</p></li>
+<li><p><strong>ui_dialogs/</strong>: Dialog modules (file, terminal, confirmation dialogs)</p></li>
+<li><p><strong>service_*.py</strong>: Service layer modules (file, config, terminal operations)</p></li>
 <li><p><strong><strong>main</strong>.py</strong>: Entry point for the application</p></li>
 </ul>
 </section>
@@ -680,12 +693,13 @@ catio-terminals<span class="w"> </span>edit<span class="w"> </span>path/to/termi
 <li><p>View error in notification</p></li>
 </ul>
 </section>
-<section id="beckhoff-search-not-working">
-<h3>Beckhoff Search Not Working<a class="headerlink" href="#beckhoff-search-not-working" title="Link to this heading">#</a></h3>
+<section id="beckhoff-terminal-search-not-working">
+<h3>Beckhoff Terminal Search Not Working<a class="headerlink" href="#beckhoff-terminal-search-not-working" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p>The app downloads and caches Beckhoff XML files on first use</p></li>
-<li><p>Check internet connectivity</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">catio-terminals</span> <span class="pre">update-cache</span></code> to download and cache Beckhoff XML files</p></li>
+<li><p>Check internet connectivity during cache update</p></li>
 <li><p>View cache status in <code class="docutils literal notranslate"><span class="pre">~/.cache/catio_terminals/</span></code></p></li>
+<li><p>If the terminal list is empty, the cache needs to be updated</p></li>
 </ul>
 </section>
 </section>
@@ -754,7 +768,7 @@ catio-terminals<span class="w"> </span>edit<span class="w"> </span>path/to/termi
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#file-not-loading">File Not Loading</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminal-not-saving">Terminal Not Saving</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#beckhoff-search-not-working">Beckhoff Search Not Working</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#beckhoff-terminal-search-not-working">Beckhoff Terminal Search Not Working</a></li>
 </ul>
 </li>
 </ul>
