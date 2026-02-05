@@ -110,6 +110,7 @@ The bottom layer implements the TwinCAT ADS protocol:
 
 ### Runtime Data Flow
 
+:::{div} mermaid-simple
 ```mermaid
 flowchart TB
     A["EPICS Client Request"] --> B["FastCS Attribute Access"]
@@ -121,6 +122,7 @@ flowchart TB
     G --> H["TwinCAT Server Response"]
     H --> I["Response propagation back to EPICS"]
 ```
+:::
 
 ## Key Design Decisions
 

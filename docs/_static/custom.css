@@ -10,6 +10,13 @@
     height: auto !important;
 }
 
+/* Simple diagrams - don't force full width, use natural size */
+.mermaid-simple .mermaid,
+.mermaid-simple .mermaid svg {
+    width: auto !important;
+    max-width: 100% !important;
+}
+
 /* Make expanded/fullscreen mermaid diagrams prioritize width with vertical scroll */
 .mermaid-modal,
 .mermaid-fullscreen,
