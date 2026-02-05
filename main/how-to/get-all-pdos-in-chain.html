@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev94+gfff1a1baf documentation</title>
+    <title>How to Get All PDOs in an EtherCAT Chain &#8212; fastcs-catio 1.1a4.dev98+ge42efc026 documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=725dc37d"></script>
+    <script src="../_static/documentation_options.js?v=864a6e87"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -467,6 +467,12 @@
 <p>This guide explains how to discover the actual PDO (Process Data Object) configuration of terminals at runtime, which is necessary when the ESI XML cannot reliably predict the symbol structure.</p>
 <p>The original intention of the YAML based terminal type descriptions created using <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> (see <a class="reference internal" href="../explanations/terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a>) was to provide a complete mapping of all PDOs for each terminal type, generating this information from the Beckhoff ESI XML files.</p>
 <p>However, some terminals have dynamic PDO configurations that depend on project settings in TwinCAT, making it impossible to determine the exact PDO layout from XML alone. This document outlines the extent of the problem by highlighting those terminals used at Diamond Light Source that require runtime discovery.</p>
+<section id="current-status">
+<h2>Current Status<a class="headerlink" href="#current-status" title="Link to this heading">#</a></h2>
+<p>At present the YAML definitions will include all of the dynamic PDOs. However, these are grouped by mode and the editor allows you to select which mode you are using. This in turn only selects the PDOs from that mode.</p>
+<p>This means that changing the mode on TwinCAT requires that you change the mode in the YAML file and restart the IOC.</p>
+<p>Please note that at present all terminals of a given type must be in the same mode for this to work as there is no Terminal instance level mode selection. This is a a planned improvement.</p>
+</section>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
 <p>Some EtherCAT terminals have <strong>dynamic PDO configurations</strong> that depend on:</p>
@@ -1134,6 +1140,7 @@ The XML defines three TxPDO maps for inputs:</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#current-status">Current Status</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-in-the-test-configuration">Terminals in the Test Configuration</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#terminals-requiring-runtime-discovery">Terminals Requiring Runtime Discovery</a><ul class="nav section-nav flex-column">
