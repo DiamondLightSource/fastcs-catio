@@ -30,6 +30,14 @@ from fastcs.launch import FastCS
 
 from ads_sim.ethercat_chain import EtherCATChain
 
+# List of ADS simulator YAML config files to test against.
+# Add or remove files here to control which configurations are tested.
+SIMULATOR_CONFIG_FILES: list[str] = [
+    "server_config_CX7000_cs1.yaml",
+    "server_config_CX7000_cs2.yaml",
+    "server_config_CX8290_cs1.yaml",
+]
+
 # To enable debug logging
 # instead of doing this use `pytest --log-cli-level=DEBUG`
 
@@ -47,19 +55,18 @@ def _is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
             return False
 
 
-@pytest.fixture(scope="session")
-def expected_chain() -> EtherCATChain:
+@pytest.fixture(scope="function")
+def expected_chain(config_file: str) -> EtherCATChain:
     """Load and return the expected EtherCAT chain configuration."""
-    config_path = Path(__file__).parent / "ads_sim" / "server_config.yaml"
+    config_path = Path(__file__).parent / "ads_sim" / config_file
     return EtherCATChain(config_path)
 
 
-@pytest.fixture(scope="session")
-def simulator_process(request):
+@pytest.fixture(scope="function")
+def simulator_process(request, config_file: str):
     """Launch the ADS simulator and return pexpect child process.
 
-    This is a session-scoped fixture so the simulator is started once
-    and shared across all tests in the session.
+    This is a function-scoped fixture so each test config gets its own simulator.
 
     If --external-simulator flag is passed, this fixture will not launch
     a simulator but instead assume one is already running externally.
@@ -75,20 +82,17 @@ def simulator_process(request):
         # No cleanup needed
         return
 
-    # Check if simulator port is already in use
+    # Get the config file path
     simulator_port = 48898  # ADS_TCP_PORT
-    if _is_port_in_use(simulator_port):
-        pytest.fail(
-            f"Port {simulator_port} is already in use. "
-            "A simulator may already be running. "
-            "Stop it before running tests or use --external-simulator flag."
-        )
+    config_path = Path(__file__).parent / "ads_sim" / config_file
 
     # Launch the simulator subprocess with verbose logging
     cmd = [
         sys.executable,
         "-m",
         "tests.ads_sim",
+        "--config",
+        str(config_path),
         "--log-level",
         "INFO",
         "--disable-notifications",
@@ -151,12 +155,13 @@ def simulator_process(request):
 
 
 @pytest_asyncio.fixture(scope="function")
-async def fastcs_catio_controller(simulator_process):
+async def fastcs_catio_controller(simulator_process, config_file: str):
     """Create fastcs-catio controller and test basic connection.
 
     This fixture depends on simulator_process to ensure the simulator is running first.
     Note: We only test connection, not full initialization which hangs.
     """
+    _ = config_file  # Used by dependent fixtures
     from fastcs_catio.catio_controller import CATioServerController
     from fastcs_catio.client import RemoteRoute
 
@@ -212,8 +217,9 @@ class TestFastcsCatioConnection:
     """Test fastcs-catio IOC connection to simulator."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("config_file", SIMULATOR_CONFIG_FILES)
     async def test_ioc_connects_and_discovers_symbols(
-        self, fastcs_catio_controller, expected_chain: EtherCATChain
+        self, fastcs_catio_controller, expected_chain: EtherCATChain, config_file: str
     ):
         """Test that fastcs-catio IOC connects to the simulator.
 
@@ -255,8 +261,9 @@ class TestFastcsCatioConnection:
         )
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("config_file", SIMULATOR_CONFIG_FILES)
     async def test_discovered_terminals_match_yaml_config(
-        self, fastcs_catio_controller, expected_chain: EtherCATChain
+        self, fastcs_catio_controller, expected_chain: EtherCATChain, config_file: str
     ):
         """Test that discovered EtherCAT terminals match the YAML configuration.
 

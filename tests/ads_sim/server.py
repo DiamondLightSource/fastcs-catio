@@ -288,6 +288,7 @@ class ADSSimServer:
         host: str = "127.0.0.1",
         port: int = ADS_TCP_PORT,
         config_path: str | Path | None = None,
+        terminal_patterns: list[str] | None = None,
         enable_notifications: bool = True,
     ):
         """
@@ -297,6 +298,7 @@ class ADSSimServer:
             host: Host address to bind to.
             port: Port to listen on.
             config_path: Path to YAML config file for EtherCAT chain.
+            terminal_patterns: Glob patterns for terminal definition YAML files.
             enable_notifications: Whether to enable the notification system.
         """
         self.host = host
@@ -307,7 +309,7 @@ class ADSSimServer:
         self.enable_notifications = enable_notifications
 
         # Load EtherCAT chain configuration
-        self.chain = EtherCATChain(config_path)
+        self.chain = EtherCATChain(config_path, terminal_patterns=terminal_patterns)
 
         # ADS state
         self.ads_state = AdsState.ADSSTATE_RUN

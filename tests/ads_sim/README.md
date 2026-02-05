@@ -82,13 +82,13 @@ asyncio.run(main())
 ## Configuration
 
 The EtherCAT chain is configured via YAML. The default configuration is in
-`server_config.yaml`, which defines the server settings and device instances.
+`erver_config_CX7000_cs2.yaml`, which defines the server settings and device instances.
 Terminal type definitions are stored in separate YAML files in
 `src/catio_terminals/terminals/`, organized by terminal class.
 
 ### Structure
 
-Server configuration file (`server_config.yaml`):
+Server configuration file (`erver_config_CX7000_cs2.yaml`):
 
 ```yaml
 # Server information
@@ -181,7 +181,7 @@ tests/ads_sim/
 ├── __init__.py          # Package exports
 ├── __main__.py          # CLI entry point
 ├── ethercat_chain.py    # Chain configuration parser
-├── server_config.yaml   # Default server/device configuration
+├── erver_config_CX7000_cs2.yaml   # Default server/device configuration
 ├── server.py            # ADS protocol server
 └── README.md            # This file
 

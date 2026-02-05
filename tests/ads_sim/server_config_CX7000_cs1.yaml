@@ -1,0 +1,109 @@
+# EtherCAT Chain Configuration for ADS Simulation Server
+# ========================================================
+#
+# Auto-generated from hardware at 172.23.242.39
+#
+
+server:
+  name: I/O Server
+  version: '3.1'
+  build: 2103
+devices:
+- id: 1
+  name: Device 1 (EtherCAT)
+  type: 94
+  netid: 5.108.227.22.2.1
+  identity:
+    vendor_id: 2
+    product_code: 65539
+    revision_number: 1844
+    serial_number: 0
+  slaves:
+  - type: EK1110
+    name: Term 2 (EK1110)
+    node: 0
+    position: 0
+  - type: EK1100
+    name: Term 3 (EK1100)
+    node: 1
+    position: 0
+  - type: EL3702
+    name: Term 4 (EL3702)
+    node: 1
+    position: 1
+  - type: EL3104
+    name: Term 5 (EL3104)
+    node: 1
+    position: 2
+  - type: EL3602
+    name: Term 6 (EL3602)
+    node: 1
+    position: 3
+  - type: EL9410
+    name: Term 7 (EL9410)
+    node: 1
+    position: 4
+  - type: ELM3704-0000
+    name: Term 8 (ELM3704-0000)
+    node: 1
+    position: 5
+  - type: EK1100
+    name: Term 9 (EK1100)
+    node: 2
+    position: 0
+  - type: EL3104
+    name: Term 10 (EL3104)
+    node: 2
+    position: 1
+  - type: EL4134
+    name: Term 11 (EL4134)
+    node: 2
+    position: 2
+  - type: EL2024-0010
+    name: Term 12 (EL2024-0010)
+    node: 2
+    position: 3
+  - type: EL1014
+    name: Term 13 (EL1014)
+    node: 2
+    position: 4
+  - type: EL9410
+    name: Term 14 (EL9410)
+    node: 2
+    position: 5
+  - type: EL3602
+    name: Term 15 (EL3602)
+    node: 2
+    position: 6
+  - type: EL3602
+    name: Term 16 (EL3602)
+    node: 2
+    position: 7
+  - type: EL3602
+    name: Term 17 (EL3602)
+    node: 2
+    position: 8
+  - type: EL3602
+    name: Term 18 (EL3602)
+    node: 2
+    position: 9
+  - type: EL3602
+    name: Term 19 (EL3602)
+    node: 2
+    position: 10
+  - type: EL3602
+    name: Term 20 (EL3602)
+    node: 2
+    position: 11
+  - type: EL3602
+    name: Term 21 (EL3602)
+    node: 2
+    position: 12
+  - type: EL3602
+    name: Term 22 (EL3602)
+    node: 2
+    position: 13
+  - type: EL3602
+    name: Term 23 (EL3602)
+    node: 2
+    position: 14

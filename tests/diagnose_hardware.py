@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import yaml
 
 # Add src to path for imports
@@ -39,6 +40,34 @@ except ImportError:
     SIMULATOR_AVAILABLE = False
 
 
+# Add numpy type converters for YAML serialization
+def numpy_int_representer(dumper, data):
+    """Convert numpy integers to Python int."""
+    return dumper.represent_int(int(data))
+
+
+def numpy_float_representer(dumper, data):
+    """Convert numpy floats to Python float."""
+    return dumper.represent_float(float(data))
+
+
+# Register numpy type handlers
+for np_type in [
+    np.int8,
+    np.int16,
+    np.int32,
+    np.int64,
+    np.uint8,
+    np.uint16,
+    np.uint32,
+    np.uint64,
+]:
+    yaml.add_representer(np_type, numpy_int_representer)
+
+for np_type in [np.float16, np.float32, np.float64]:
+    yaml.add_representer(np_type, numpy_float_representer)
+
+
 def generate_yaml_config(
     ioserver: IOServer,
     devices: dict[Any, IODevice],
@@ -50,12 +79,16 @@ def generate_yaml_config(
         devices: Dictionary of discovered EtherCAT devices.
 
     Returns:
-        Dictionary suitable for YAML serialization matching server_config.yaml format.
+        Dictionary suitable for YAML serialization matching
+        server_config_CX7000_cs2.yaml format.
     """
+    # Convert version string: replace hyphens with dots for proper version format
+    version_str = str(ioserver.version).replace("-", ".")
+
     config: dict[str, Any] = {
         "server": {
-            "name": ioserver.name,
-            "version": ioserver.version,
+            "name": str(ioserver.name),
+            "version": version_str,
             "build": int(ioserver.build),
         },
         "devices": [],
@@ -67,12 +100,12 @@ def generate_yaml_config(
         current_node = -1
 
         for slave in device.slaves:
-            node = slave.loc_in_chain.node
-            position = slave.loc_in_chain.position
+            node = int(slave.loc_in_chain.node)
+            position = int(slave.loc_in_chain.position)
 
             slave_entry: dict[str, Any] = {
-                "type": slave.type,
-                "name": slave.name,
+                "type": str(slave.type),
+                "name": str(slave.name),
                 "node": node,
                 "position": position,
             }
@@ -82,17 +115,19 @@ def generate_yaml_config(
             if node != current_node:
                 current_node = node
 
-        device_type = (
-            device.type.value if hasattr(device.type, "value") else int(device.type)
+        # Ensure device.type is a native Python int
+        device_type = int(
+            device.type.value if hasattr(device.type, "value") else device.type
         )
+
         device_config: dict[str, Any] = {
             "id": int(device_id),
-            "name": device.name,
+            "name": str(device.name),
             "type": device_type,
             "netid": str(device.netid),
             "identity": {
                 "vendor_id": int(device.identity.vendor_id),
-                "product_code": hex(int(device.identity.product_code)),
+                "product_code": int(device.identity.product_code),
                 "revision_number": int(device.identity.revision_number),
                 "serial_number": int(device.identity.serial_number),
             },
@@ -331,7 +366,14 @@ async def diagnose_hardware(
                 f.write("#\n")
                 f.write(f"# Auto-generated from hardware at {ip}\n")
                 f.write("#\n\n")
-                yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+                yaml.dump(
+                    config,
+                    f,
+                    default_flow_style=False,
+                    sort_keys=False,
+                    allow_unicode=True,
+                    width=float("inf"),
+                )
 
             print(f"\n  YAML configuration written to: {output_path}")
 
@@ -379,7 +421,7 @@ def main() -> None:
         default=None,
         help=(
             "Simulator config YAML to compare against hardware "
-            "(e.g., tests/ads_sim/server_config.yaml)"
+            "(e.g., tests/ads_sim/erver_config_CX7000_cs2.yaml)"
         ),
     )
     parser.add_argument(

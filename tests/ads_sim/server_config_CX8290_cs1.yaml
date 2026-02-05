@@ -1,0 +1,77 @@
+# EtherCAT Chain Configuration for ADS Simulation Server
+# ========================================================
+#
+# Auto-generated from hardware at 172.23.242.40
+#
+
+server:
+  name: I/O Server
+  version: '3.1'
+  build: 2103
+devices:
+- id: 2
+  name: Device 2 (EtherCAT)
+  type: 94
+  netid: 5.163.234.5.3.1
+  identity:
+    vendor_id: 2
+    product_code: 65539
+    revision_number: 1845
+    serial_number: 0
+  slaves:
+  - type: EK1110
+    name: Term 2 (EK1110)
+    node: 0
+    position: 0
+  - type: EK1100
+    name: Term 3 (EK1100)
+    node: 1
+    position: 0
+  - type: EL3602
+    name: Term 4 (EL3602)
+    node: 1
+    position: 1
+  - type: EL3602
+    name: Term 5 (EL3602)
+    node: 1
+    position: 2
+  - type: EL3602
+    name: Term 6 (EL3602)
+    node: 1
+    position: 3
+  - type: EL3602
+    name: Term 7 (EL3602)
+    node: 1
+    position: 4
+  - type: EL3602
+    name: Term 8 (EL3602)
+    node: 1
+    position: 5
+  - type: EL9410
+    name: Term 9 (EL9410)
+    node: 1
+    position: 6
+  - type: EL3702
+    name: Term 10 (EL3702)
+    node: 1
+    position: 7
+  - type: EL3702
+    name: Term 11 (EL3702)
+    node: 1
+    position: 8
+  - type: EK1100
+    name: Term 13 (EK1100)
+    node: 2
+    position: 0
+  - type: EL3104
+    name: Term 14 (EL3104)
+    node: 2
+    position: 1
+  - type: EL3104
+    name: Term 15 (EL3104)
+    node: 2
+    position: 2
+  - type: EL3104
+    name: Term 16 (EL3104)
+    node: 2
+    position: 3
