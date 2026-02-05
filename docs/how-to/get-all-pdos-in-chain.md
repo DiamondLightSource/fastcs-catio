@@ -1,89 +1,70 @@
 # How to Get All PDOs in an EtherCAT Chain
 
-This guide explains how to discover the actual PDO (Process Data Object) configuration of terminals at runtime, which is necessary when the ESI XML cannot reliably predict the symbol structure.
+This guide provides practical instructions for discovering the actual PDO (Process Data Object) configuration of terminals at runtime.
 
-The original intention of the YAML based terminal type descriptions created using `catio-terminals` (see [Terminal YAML Definitions](../explanations/terminal-yaml-definitions.md)) was to provide a complete mapping of all PDOs for each terminal type, generating this information from the Beckhoff ESI XML files.
+**Background:** Some EtherCAT terminals have dynamic PDO configurations that depend on TwinCAT project settings. For conceptual background on dynamic PDOs, XML structure, and how `catio-terminals` handles them, see [Dynamic PDOs in EtherCAT Terminals](../explanations/dynamic-pdos.md).
 
-However, some terminals have dynamic PDO configurations that depend on project settings in TwinCAT, making it impossible to determine the exact PDO layout from XML alone. This document outlines the extent of the problem by highlighting those terminals used at Diamond Light Source that require runtime discovery.
+## Current Status with catio-terminals
 
-## Current Status
+The YAML definitions include all dynamic PDOs grouped by mode. The `catio-terminals` editor allows you to select which mode you're using, filtering the PDOs accordingly.
 
-At present the YAML definitions will include all of the dynamic PDOs. However, these are grouped by mode and the editor allows you to select which mode you are using. This in turn only selects the PDOs from that mode.
+**Implications:**
+- Changing the mode in TwinCAT requires updating the mode in the YAML file and restarting the IOC
+- All terminals of a given type must be in the same mode (per-terminal mode selection is a planned improvement)
 
-This means that changing the mode on TwinCAT requires that you change the mode in the YAML file and restart the IOC.
+For more details on the implementation, see [Dynamic PDOs - Implementation in catio-terminals](../explanations/dynamic-pdos.md#implementation-in-catio-terminals).
 
-Please note that at present all terminals of a given type must be in the same mode for this to work as there is no Terminal instance level mode selection. This is a a planned improvement.
-
-## Overview
-
-Some EtherCAT terminals have **dynamic PDO configurations** that depend on:
-- TwinCAT project settings
-- Selected operation mode
-- Oversampling factor
-- PDO assignment choices
-
-For these terminals, you must query the TwinCAT symbol table at runtime rather than relying solely on XML-derived definitions.
-
-## Terminals in the Test Configuration
+## Quick Reference: Terminals at Diamond Light Source
 
 The terminals listed here are the complete set used at DLS at the time of writing (see [DLS Terminals Reference](../reference/DLS_terminals.md) for details).
 
-The terminals are categorized by type, with notes on which require runtime discovery.
+For conceptual explanation of each dynamic PDO type, see [Dynamic PDOs - Types of Dynamic PDO Configurations](../explanations/dynamic-pdos.md#types-of-dynamic-pdo-configurations).
 
-| Terminal | Description | PDO Type | Notes |
-|----------|-------------|----------|-------|
-| EK1100 | EtherCAT Coupler | None | Bus coupler, no process data |
-| EK1122 | 2 Port EtherCAT Junction | None | Junction module, no process data |
-| EL1014 | 4Ch Digital Input 24V, 10us | Static | Fixed 4 BOOL inputs |
-| EL1084 | 4Ch Digital Input 24V, 3ms, negative | Static | Fixed 4 BOOL inputs |
-| EL1124 | 4Ch Digital Input 5V, 10us | Static | Fixed 4 BOOL inputs |
-| EL1502 | 2Ch Up/Down Counter 24V, 100kHz | **Dynamic Type 1** | Multiple PDO configurations (per-channel vs combined) |
-| EL2024 | 4Ch Digital Output 24V, 2A | Static | Fixed 4 BOOL outputs |
-| EL2024-0010 | 4Ch Digital Output 24V, 2A (variant) | Static | Fixed 4 BOOL outputs |
-| EL2124 | 4Ch Digital Output 5V, 20mA | Static | Fixed 4 BOOL outputs |
-| EL2502 | 2Ch PWM Output 24V | Static | Fixed 2 UINT PWM outputs |
-| EL2595 | 1Ch LED Constant Current | Static | Status + multi-field control outputs |
-| EL2612 | 2Ch Relay Output CO | Static | Fixed 2 BOOL relay outputs |
-| EL2624 | 4Ch Relay Output NO | Static | Fixed 4 BOOL relay outputs |
-| EL3104 | 4Ch Analog Input +/-10V Diff | **Dynamic Type 2** | Standard vs Compact PDO selection |
-| EL3124 | 4Ch Analog Input 4-20mA Diff | **Dynamic Type 2** | Standard vs Compact PDO selection |
-| EL3202 | 2Ch Analog Input PT100 (RTD) | Static | Fixed RTD Inputs per channel |
-| EL3202-0010 | 2Ch Analog Input PT100 (RTD, variant) | Static | Fixed RTD Inputs per channel |
-| EL3314 | 4Ch Analog Input Thermocouple | Static | Fixed TC Inputs + optional CJ compensation outputs |
-| EL3356-0010 | 1Ch Resistor Bridge, 16bit High Precision | **Dynamic Type 3** | Multiple PDO formats (INT32, Real, Standard, Compact) |
-| EL3602 | 2Ch Analog Input +/-10V Diff, 24bit | Static | Fixed AI Inputs per channel |
-| EL3702 | 2Ch Analog Input +/-10V Oversample | **Dynamic Type 4** | 1-100 samples per channel |
-| EL4134 | 4Ch Analog Output +/-10V, 16bit | Static | Fixed AO Output per channel |
-| EL4732 | 2Ch Analog Output +/-10V Oversample | **Dynamic Type 4** | Configurable sample count |
-| EL9410 | E-Bus Power Supply (Diagnostics) | Static | Fixed 2 status BOOLs (Us, Up undervoltage) |
-| EL9505 | Power Supply Terminal 5V | Static | Fixed status (Power OK, Overload) |
-| EL9510 | Power Supply Terminal 10V | Static | Fixed status (Power OK, Overload) |
-| EL9512 | Power Supply Terminal 12V | Static | Fixed status (Power OK, Overload) |
-| ELM3704-0000 | 4Ch Universal Analog Input, 24bit | **Dynamic Type 4** | Oversampling (1-100), data format (INT16/INT32/REAL), per-channel config |
-| EP2338-0002 | 8Ch Digital I/O 24V, 0.5A | Static | Fixed 8 inputs + 8 outputs |
-| EP2624-0002 | 4Ch Relay Output NO | Static | Fixed 4 BOOL relay outputs |
-| EP3174-0002 | 4Ch Analog Input configurable | **Dynamic Type 2** | Standard vs Compact PDO selection |
-| EP3204-0002 | 4Ch Analog Input PT100 (RTD) | Static | Fixed RTD Inputs per channel |
-| EP3314-0002 | 4Ch Analog Input Thermocouple | Static | Fixed TC Inputs + optional CJ compensation outputs |
-| EP4174-0002 | 4Ch Analog Output configurable | Static | Fixed AO Outputs per channel |
-| EP4374-0002 | 2Ch AI + 2Ch AO configurable | **Dynamic Type 2** | Standard vs Compact PDO selection for inputs |
+| Terminal | Description | PDO Type |
+|----------|-------------|----------|
+| EK1100 | EtherCAT Coupler | None |
+| EK1122 | 2 Port EtherCAT Junction | None |
+| EL1014 | 4Ch Digital Input 24V, 10us | Static |
+| EL1084 | 4Ch Digital Input 24V, 3ms, negative | Static |
+| EL1124 | 4Ch Digital Input 5V, 10us | Static |
+| EL1502 | 2Ch Up/Down Counter 24V, 100kHz | **Dynamic Type 1** |
+| EL2024 | 4Ch Digital Output 24V, 2A | Static |
+| EL2024-0010 | 4Ch Digital Output 24V, 2A (variant) | Static |
+| EL2124 | 4Ch Digital Output 5V, 20mA | Static |
+| EL2502 | 2Ch PWM Output 24V | Static |
+| EL2595 | 1Ch LED Constant Current | Static |
+| EL2612 | 2Ch Relay Output CO | Static |
+| EL2624 | 4Ch Relay Output NO | Static |
+| EL3104 | 4Ch Analog Input +/-10V Diff | **Dynamic Type 2** |
+| EL3124 | 4Ch Analog Input 4-20mA Diff | **Dynamic Type 2** |
+| EL3202 | 2Ch Analog Input PT100 (RTD) | Static |
+| EL3202-0010 | 2Ch Analog Input PT100 (RTD, variant) | Static |
+| EL3314 | 4Ch Analog Input Thermocouple | Static |
+| EL3356-0010 | 1Ch Resistor Bridge, 16bit High Precision | **Dynamic Type 3** |
+| EL3602 | 2Ch Analog Input +/-10V Diff, 24bit | Static |
+| EL3702 | 2Ch Analog Input +/-10V Oversample | **Dynamic Type 4** |
+| EL4134 | 4Ch Analog Output +/-10V, 16bit | Static |
+| EL4732 | 2Ch Analog Output +/-10V Oversample | **Dynamic Type 4** |
+| EL9410 | E-Bus Power Supply (Diagnostics) | Static |
+| EL9505 | Power Supply Terminal 5V | Static |
+| EL9510 | Power Supply Terminal 10V | Static |
+| EL9512 | Power Supply Terminal 12V | Static |
+| ELM3704-0000 | 4Ch Universal Analog Input, 24bit | **Dynamic Type 4** |
+| EP2338-0002 | 8Ch Digital I/O 24V, 0.5A | Static |
+| EP2624-0002 | 4Ch Relay Output NO | Static |
+| EP3174-0002 | 4Ch Analog Input configurable | **Dynamic Type 2** |
+| EP3204-0002 | 4Ch Analog Input PT100 (RTD) | Static |
+| EP3314-0002 | 4Ch Analog Input Thermocouple | Static |
+| EP4174-0002 | 4Ch Analog Output configurable | Static |
+| EP4374-0002 | 2Ch AI + 2Ch AO configurable | **Dynamic Type 2** |
 
-## Terminals Requiring Runtime Discovery
+## Runtime Discovery Examples
 
-### Type 1: Counter Terminals with Configuration Variants (EL1502)
+This section provides practical code examples for discovering PDO configurations at runtime for each type of dynamic terminal.
 
-#### EL1502 - Up/Down Counter
+### Type 1: Configuration Variants (EL1502)
 
-**Problem:** The ESI XML defines multiple PDO configurations:
-
-| Configuration | PDO Names | Symbol Pattern |
-|---------------|-----------|----------------|
-| Per-channel | `CNT Inputs Channel 1`, `CNT Inputs Channel 2` | `CNT Inputs Channel {n}.Counter value` |
-| Combined | `CNT Inputs` | `CNT Inputs.Counter value` |
-
-The YAML file includes **both** configurations, but only one will be active in TwinCAT.
-
-**Runtime Discovery:**
+Detect whether per-channel or combined PDO configuration is active:
 ```python
 # Query actual symbols for an EL1502
 symbols = await client.get_all_symbols()
@@ -94,18 +75,9 @@ has_per_channel = any("Channel 1" in s.name for s in el1502_symbols)
 has_combined = any("CNT Inputs.Counter value" in s.name for s in el1502_symbols)
 ```
 
-### Type 2: Analog Input with Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)
+### Type 2: Standard/Compact PDO Selection (EL3104, EL3124, EP3174-0002, EP4374-0002)
 
-**Problem:** These analog input terminals offer two PDO formats per channel:
-
-| Format | PDO Name Pattern | Contents |
-|--------|------------------|----------|
-| Standard | `AI Standard Channel {n}` | Status word (underrange, overrange, limits, error) + Value |
-| Compact | `AI Compact Channel {n}` | Value only (no status) |
-
-The TwinCAT project selects one format per channel. Both are defined in XML as optional.
-
-**Runtime Discovery:**
+Detect whether Standard or Compact PDO format is active:
 ```python
 # Query actual symbols for analog input terminals
 symbols = await client.get_all_symbols()
@@ -123,18 +95,7 @@ elif has_compact:
 
 ### Type 3: Multi-Format Terminals (EL3356-0010)
 
-**Problem:** The EL3356-0010 offers multiple PDO formats for measurement data:
-
-| Format | PDO Name | Data Type |
-|--------|----------|-----------|
-| INT32 | `RMB Value (INT32)` | DINT (32-bit signed) |
-| Real | `RMB Value (Real)` | REAL (32-bit float) |
-| Standard Ch1/Ch2 | `AI Standard Channel {n}` | Status + DINT value |
-| Compact Ch1/Ch2 | `AI Compact Channel {n}` | DINT value only |
-
-Additionally, it has optional `RMB Status`, `RMB Timestamp`, and `RMB Control` PDOs.
-
-**Runtime Discovery:**
+Detect which data format and optional features are active:
 ```python
 # Query actual symbols for EL3356
 symbols = await client.get_all_symbols()
@@ -155,15 +116,7 @@ has_control = any("RMB Control" in s.name for s in el3356_symbols)
 
 #### EL3702 - 2Ch Oversampling Analog Input
 
-**Problem:** The number of samples per channel is configurable (1-100). The XML only shows a template with one sample.
-
-| Oversampling | Samples per Channel | Total Symbols |
-|--------------|---------------------|---------------|
-| 1x (default) | 1 | 2 values |
-| 10x | 10 | 20 values |
-| 100x | 100 | 200 values |
-
-**Runtime Discovery:**
+Detect the configured oversampling factor:**
 ```python
 # Query actual symbols for an EL3702
 symbols = await client.get_all_symbols()
