@@ -53,14 +53,14 @@ def _build_datatype_map(device) -> dict[str, list[dict]]:
 
 
 def _parse_subindices(
-    info_section, datatype_subitems: list[dict], parent_name: str
+    info_section, datatype_subitems: list[dict], parent_index: int
 ) -> list[CoESubIndex]:
     """Parse subindices from object Info section.
 
     Args:
         info_section: lxml Info element from Object
         datatype_subitems: List of subitem dicts from datatype definition
-        parent_name: Name of the parent CoE object for unique fastcs_name generation
+        parent_index: Index of the parent CoE object for unique fastcs_name generation
 
     Returns:
         List of CoESubIndex instances
@@ -71,6 +71,11 @@ def _parse_subindices(
         return subindices
 
     for idx, subitem in enumerate(info_section.findall("SubItem")):
+        # Skip subindex 0 (number of sub-indices) as this is not shown in
+        # TwinCAT and is an alias for the parent CoE
+        if idx == 0:
+            continue
+
         subitem_name = subitem.findtext("Name", f"SubIndex {idx}")
 
         subitem_info = subitem.find("Info")
@@ -107,7 +112,7 @@ def _parse_subindices(
                 bit_size=subitem_bitsize,
                 access=subitem_access,
                 default_data=default_data,
-                fastcs_name=make_subindex_fastcs_name(parent_name, subitem_name),
+                fastcs_name=make_subindex_fastcs_name(parent_index, subitem_name),
             )
         )
 
@@ -148,8 +153,9 @@ def parse_coe_objects(device) -> list[CoEObject]:
 
         datatype_subitems = datatype_map.get(type_name, [])
         info_section = obj.find("Info")
-        subindices = _parse_subindices(info_section, datatype_subitems, obj_name)
+        subindices = _parse_subindices(info_section, datatype_subitems, coe_index)
 
+        suffix = f"idx{hex(coe_index).lstrip('0x')}"
         coe_objects.append(
             CoEObject(
                 index=coe_index,
@@ -158,7 +164,7 @@ def parse_coe_objects(device) -> list[CoEObject]:
                 bit_size=bit_size,
                 access=access,
                 subindices=subindices,
-                fastcs_name=make_fastcs_name(obj_name),
+                fastcs_name=make_fastcs_name(obj_name, suffix=suffix),
             )
         )
 

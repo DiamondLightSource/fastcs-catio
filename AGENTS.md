@@ -123,6 +123,8 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 ## Testing
 
 - **MUST** write unit tests for all new functions and classes
+- **MUST** include doctests in docstrings with realistic examples that pass
+- **MUST** ensure doctest examples use correct types matching function signatures
 - **MUST** mock external dependencies (APIs, databases, file systems)
 - **MUST** use pytest as the testing framework
 - **NEVER** run tests you generate without first saving them as their own discrete file
@@ -130,6 +132,7 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - Ensure the folder used for test outputs is present in `.gitignore`
 - Follow the Arrange-Act-Assert pattern
 - Do not commit commented-out tests
+- Note: `pytest` runs unit/system tests in `tests/`, doctests in `src/` modules, and doctests in `docs/*.rst` files
 
 ## Imports and Dependencies
 
@@ -168,7 +171,7 @@ def calculate_total(items: list[dict], tax_rate: float = 0.0) -> float:
 - **MUST** use `uv` for package management
 - do `uv ruff check --fix; uv run pyright src tests` after code changes
 - or `uv ruff check --fix; uv run mypy src tests` for projects that use mypy
-- Use `uv run pytest` for testing
+- Use `uv run pytest` for testing (runs unit tests in `tests/`, doctests in `src/` and `docs/`)
 
 ## Before Committing
 

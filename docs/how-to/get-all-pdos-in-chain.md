@@ -6,6 +6,14 @@ The original intention of the YAML based terminal type descriptions created usin
 
 However, some terminals have dynamic PDO configurations that depend on project settings in TwinCAT, making it impossible to determine the exact PDO layout from XML alone. This document outlines the extent of the problem by highlighting those terminals used at Diamond Light Source that require runtime discovery.
 
+## Current Status
+
+At present the YAML definitions will include all of the dynamic PDOs. However, these are grouped by mode and the editor allows you to select which mode you are using. This in turn only selects the PDOs from that mode.
+
+This means that changing the mode on TwinCAT requires that you change the mode in the YAML file and restart the IOC.
+
+Please note that at present all terminals of a given type must be in the same mode for this to work as there is no Terminal instance level mode selection. This is a a planned improvement.
+
 ## Overview
 
 Some EtherCAT terminals have **dynamic PDO configurations** that depend on:

@@ -17,6 +17,7 @@ Usage:
 from fastcs.logging import bind_logger
 
 from catio_terminals.models import SymbolNode
+from catio_terminals.utils import snake_to_pascal
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.catio_dynamic_coe import (
     CoEAdsItem,
@@ -132,6 +133,7 @@ def _create_dynamic_controller_class(
                         fastcs_name=subindex.fastcs_name,
                         access=subindex.access,
                         bit_size=subindex.bit_size,
+                        group=snake_to_pascal(coe_obj.fastcs_name),
                     )
                     if ads_item.fastcs_name in created_coe_attrs:
                         logger.warning(

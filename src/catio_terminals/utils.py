@@ -100,7 +100,31 @@ def to_snake_case(name: str) -> str:
     return "_".join(words)
 
 
-def make_fastcs_name(name: str, max_length: int = 40) -> str:
+def snake_to_pascal(name: str) -> str:
+    """Convert snake_case to PascalCase.
+
+    Args:
+        name: snake_case string
+
+    Returns:
+        PascalCase version of the name
+
+    Examples:
+        >>> snake_to_pascal("ai_inputs_channel")
+        'AiInputsChannel'
+        >>> snake_to_pascal("status_word")
+        'StatusWord'
+        >>> snake_to_pascal("channel_{channel}_value")
+        'Channel{channel}Value'
+        >>> snake_to_pascal("simple")
+        'Simple'
+    """
+    # Split on underscores, capitalize each word, join
+    words = name.split("_")
+    return "".join(word.capitalize() for word in words if word)
+
+
+def make_fastcs_name(name: str, max_length: int = 40, suffix: str = "") -> str:
     """Create fastcs_name with length limit and abbreviations.
 
     Converts name to snake_case. If the result exceeds max_length,
@@ -121,17 +145,24 @@ def make_fastcs_name(name: str, max_length: int = 40) -> str:
         >>> len(make_fastcs_name("Status Input Cycle Counter Channel 1")) <= 40
         True
     """
-    snake = to_snake_case(name)
-    if len(snake) <= max_length:
-        return snake
+
+    def final_result():
+        if suffix == "":
+            return result
+        else:
+            return f"{result}_{suffix}"
+
+    result = to_snake_case(name)
+    if len(result) <= max_length:
+        return final_result()
 
     # Apply abbreviations
-    words = snake.split("_")
+    words = result.split("_")
     abbreviated = _abbreviate_words(words)
     abbreviated = _remove_duplicate_words(abbreviated)
     result = "_".join(abbreviated)
     if len(result) <= max_length:
-        return result
+        return final_result()
 
     # Final fallback: truncate at word boundary
     if len(result) > max_length:
@@ -141,7 +172,7 @@ def make_fastcs_name(name: str, max_length: int = 40) -> str:
             truncated = truncated[:last_underscore]
         result = truncated
 
-    return result
+    return final_result()
 
 
 def _abbreviate_words(words: list[str]) -> list[str]:
@@ -176,84 +207,64 @@ def _remove_duplicate_words(words: list[str]) -> list[str]:
 
 
 def make_subindex_fastcs_name(
-    parent_name: str, subindex_name: str, max_length: int = 40
+    parent_index: int, subindex_name: str, max_length: int = 40
 ) -> str:
     """Create unique fastcs_name for subindex including parent context.
 
-    Combines parent CoE object name with subindex name to create a unique
+    Combines parent CoE object index with subindex name to create a unique
     identifier. If the combined name exceeds max_length, applies abbreviations
     and truncation strategies while preserving readability.
 
     Args:
-        parent_name: Parent CoE object name
+        parent_index: Parent CoE object index (e.g., 0x8000, 0x1018)
         subindex_name: SubIndex name
         max_length: Maximum allowed length (default 40)
 
     Returns:
-        Unique snake_case name under max_length characters
+        Unique snake_case name under max_length characters with hex index suffix
 
     Examples:
-        >>> make_subindex_fastcs_name("CNT Settings Ch.1", "SubIndex 000")
-        'cnt_settings_ch_1_subindex_000'
-        >>> make_subindex_fastcs_name("CNT Inputs Ch.1", "Counter value")
-        'cnt_inputs_ch_1_counter_value'
-        >>> make_subindex_fastcs_name("Identity", "Vendor ID")
-        'identity_vendor_id'
-        >>> long_parent = "Very Long Parent Object Name Here"
-        >>> long_sub = "And A Very Long SubIndex Name Too"
-        >>> len(make_subindex_fastcs_name(long_parent, long_sub)) <= 40
+        >>> make_subindex_fastcs_name(0x8000, "SubIndex 001")
+        'subindex_001_idx8000'
+        >>> make_subindex_fastcs_name(0x8001, "Counter value")
+        'counter_value_idx8001'
+        >>> make_subindex_fastcs_name(0x1018, "Vendor ID")
+        'vendor_id_idx1018'
+        >>> len(make_subindex_fastcs_name(0x8010, "Very Long SubIndex Name Here")) <= 40
         True
-        >>> make_subindex_fastcs_name("SM input parameter", "Minimum fast cycle time")
-        'sm_in_par_min_fast_cycle_time'
+        >>> make_subindex_fastcs_name(0x8020, "Minimum fast cycle time")
+        'minimum_fast_cycle_time_idx8020'
     """
+
+    def final_result():
+        return f"{result}_{hex_index}"
+
     # Convert both names to snake_case first
-    parent_snake = to_snake_case(parent_name)
+    hex_index = f"idx{hex(parent_index).lstrip('0x')}"
+    max_length = max_length - len(hex_index) - 1  # for underscore
+
     sub_snake = to_snake_case(subindex_name)
 
     # Split into words
-    parent_words = parent_snake.split("_")
     sub_words = sub_snake.split("_")
 
     # Combine words, removing duplicates between parent and child
     # e.g., "CNT Inputs" + "Counter value" shouldn't have duplicate meaning
-    combined_words = parent_words + sub_words
-    combined_words = _remove_duplicate_words(combined_words)
+    combined_words = _remove_duplicate_words(sub_words)
 
     # First attempt: full names
     result = "_".join(combined_words)
     if len(result) <= max_length:
-        return result
+        return final_result()
 
     # Second attempt: abbreviate common words
     abbreviated = _abbreviate_words(combined_words)
-    abbreviated = _remove_duplicate_words(abbreviated)
     result = "_".join(abbreviated)
     if len(result) <= max_length:
-        return result
-
-    # Third attempt: keep essential parts
-    # Priority: parent prefix (first 2 words) + subindex identifier
-    parent_abbrev = _abbreviate_words(parent_words)
-    sub_abbrev = _abbreviate_words(sub_words)
-
-    # Keep first 2-3 words of parent, all of subindex
-    essential_parent = parent_abbrev[:3]
-    combined = essential_parent + sub_abbrev
-    combined = _remove_duplicate_words(combined)
-    result = "_".join(combined)
-    if len(result) <= max_length:
-        return result
-
-    # Fourth attempt: keep first 2 parent words + truncate subindex
-    essential_parent = parent_abbrev[:2]
-    combined = essential_parent + sub_abbrev
-    combined = _remove_duplicate_words(combined)
-    result = "_".join(combined)
-    if len(result) <= max_length:
-        return result
+        return final_result()
 
     # Final fallback: truncate to max_length preserving word boundaries
-    result = "_".join(combined)
+    result = "_".join(abbreviated)
     if len(result) > max_length:
         # Truncate at word boundary
         truncated = result[:max_length]
@@ -262,4 +273,4 @@ def make_subindex_fastcs_name(
             truncated = truncated[:last_underscore]
         result = truncated
 
-    return result
+    return final_result()
