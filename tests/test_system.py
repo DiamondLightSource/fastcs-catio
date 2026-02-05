@@ -82,16 +82,8 @@ def simulator_process(request, config_file: str):
         # No cleanup needed
         return
 
-    # Check if simulator port is already in use
-    simulator_port = 48898  # ADS_TCP_PORT
-    if _is_port_in_use(simulator_port):
-        pytest.fail(
-            f"Port {simulator_port} is already in use. "
-            "A simulator may already be running. "
-            "Stop it before running tests or use --external-simulator flag."
-        )
-
     # Get the config file path
+    simulator_port = 48898  # ADS_TCP_PORT
     config_path = Path(__file__).parent / "ads_sim" / config_file
 
     # Launch the simulator subprocess with verbose logging
