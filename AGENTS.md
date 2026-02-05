@@ -279,7 +279,7 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 2. **Instantiate and load configuration:**
    ```python
    chain = EtherCATChain()  # Create instance first
-   chain.load_config(Path('tests/ads_sim/server_config.yaml'))  # Instance method, not class method
+   chain.load_config(Path('tests/ads_sim/erver_config_CX7000_cs2.yaml'))  # Instance method, not class method
    ```
 
 3. **Check symbol counts:**
@@ -328,7 +328,7 @@ Skills are specialized knowledge that can be loaded on demand. Use these prompts
 **Related files:**
 - `tests/ads_sim/ethercat_chain.py` - Chain and device/slave models
 - `tests/ads_sim/server.py` - ADS protocol server
-- `tests/ads_sim/server_config.yaml` - default YAML representation of the Simulator
+- `tests/ads_sim/erver_config_CX7000_cs2.yaml` - default YAML representation of the Simulator
 - `tests/test_system.py` - Integration tests against simulator
 
 ---

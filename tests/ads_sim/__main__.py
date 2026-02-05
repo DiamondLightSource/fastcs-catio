@@ -9,7 +9,9 @@ Options:
     --host HOST              Host address to bind to (default: 127.0.0.1)
     --port PORT              Port to listen on (default: 48898)
     --config PATH            Path to YAML config file
-                             (default: server_config.yaml)
+                             (default: erver_config_CX7000_cs2.yaml)
+    --terminal-defs PATTERN  Glob pattern(s) for terminal definition YAML files
+                             (default: DLS embedded definitions)
     --log-level LEVEL        Set logging level: DEBUG, INFO, WARNING, ERROR
                              (default: INFO)
     --disable-notifications  Disable the notification system to reduce
@@ -18,6 +20,8 @@ Options:
 Example:
     python -m tests.ads_sim --host 0.0.0.0 --port 48898 --log-level DEBUG
     python -m tests.ads_sim --disable-notifications --log-level INFO
+    python -m tests.ads_sim --terminal-defs "custom_terminals/*.yaml"
+    python -m tests.ads_sim --terminal-defs "term1.yaml,term2.yaml"
 """
 
 from __future__ import annotations
@@ -67,6 +71,17 @@ def parse_args() -> argparse.Namespace:
         help="Path to YAML configuration file for EtherCAT chain",
     )
     parser.add_argument(
+        "--terminal-defs",
+        type=str,
+        default=None,
+        help=(
+            "Glob pattern for terminal definition YAML files. "
+            "Can use wildcards like '*.yaml' or '**/*.yaml' for recursive search. "
+            "Defaults to DLS yaml descriptions embedded in the python package. "
+            "May also be a comma separated list of glob patterns or filenames."
+        ),
+    )
+    parser.add_argument(
         "--log-level",
         type=str,
         default="INFO",
@@ -98,16 +113,23 @@ async def main() -> int:
             return 1
     else:
         # Use default config from package
-        default_config = Path(__file__).parent / "server_config.yaml"
+        default_config = Path(__file__).parent / "erver_config_CX7000_cs2.yaml"
         if default_config.exists():
             config_path = default_config
             logger.info(f"Using default config: {config_path}")
+
+    # Parse terminal definitions patterns
+    terminal_patterns: list[str] | None = None
+    if args.terminal_defs:
+        terminal_patterns = [p.strip() for p in args.terminal_defs.split(",")]
+        logger.info(f"Using terminal definition patterns: {terminal_patterns}")
 
     # Create and start server
     server = ADSSimServer(
         host=args.host,
         port=args.port,
         config_path=config_path,
+        terminal_patterns=terminal_patterns,
         enable_notifications=not args.disable_notifications,
     )
 

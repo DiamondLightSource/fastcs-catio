@@ -464,12 +464,18 @@ class EtherCATChain:
     device and slave information.
     """
 
-    def __init__(self, config_path: str | Path | None = None):
+    def __init__(
+        self,
+        config_path: str | Path | None = None,
+        terminal_patterns: list[str] | None = None,
+    ):
         """
         Initialize the EtherCAT chain.
 
         Args:
             config_path: Path to YAML configuration file. If None, uses default config.
+            terminal_patterns: Glob patterns for terminal definition YAML files.
+                If None, uses default DLS terminal definitions.
         """
         self.server_info = ServerInfo()
         self.devices: dict[int, EtherCATDevice] = {}
@@ -478,6 +484,7 @@ class EtherCATChain:
             str, ModelTerminalType
         ] = {}  # Full terminal models for PDO filtering
         self.runtime_symbols: RuntimeSymbolsConfig | None = None
+        self.terminal_patterns = terminal_patterns
 
         # Load runtime symbols configuration
         self._load_runtime_symbols()
@@ -489,7 +496,7 @@ class EtherCATChain:
             self.load_config(config_path)
         else:
             # Load default config from package
-            default_config = Path(__file__).parent / "server_config.yaml"
+            default_config = Path(__file__).parent / "server_config_CX7000_cs2.yaml"
             if default_config.exists():
                 self.load_config(default_config)
             else:
@@ -527,27 +534,58 @@ class EtherCATChain:
         Load terminal type definitions from YAML files.
 
         Loads terminal types from:
-        1. Built-in terminal types in src/catio_terminals/terminals/
-        2. Legacy terminal_types in the main config (for backwards compatibility)
+        1. Custom patterns if provided via terminal_patterns
+        2. Built-in terminal types in src/catio_terminals/terminals/ (default)
         """
         # load full model TerminalType definitions for PDO group filtering
+        import glob
+
         from catio_terminals.models import TerminalConfig
 
-        # use the default terminal types used by the ioc to ensure we are testing
-        # things that will really happen!
-        terminals_path = (
-            Path(__file__).parents[2]
-            / "src"
-            / "catio_terminals"
-            / "terminals"
-            / "terminal_types.yaml"
-        )
-        if terminals_path.exists():
-            config = TerminalConfig.from_yaml(terminals_path)
-            self.model_terminals = config.terminal_types
-            logger.debug(f"Loaded {len(self.model_terminals)} model terminal types")
+        # Determine which patterns to use
+        if self.terminal_patterns:
+            patterns = self.terminal_patterns
+            logger.info(f"Using custom terminal definition patterns: {patterns}")
         else:
-            raise RuntimeError(f"Terminal types file not found: {terminals_path}")
+            # Use the default terminal types used by the IOC to ensure we are testing
+            # things that will really happen!
+            terminals_path = (
+                Path(__file__).parents[2]
+                / "src"
+                / "catio_terminals"
+                / "terminals"
+                / "*.yaml"
+            )
+            patterns = [str(terminals_path)]
+            logger.debug(f"Using default terminal definition pattern: {patterns[0]}")
+
+        # Expand all glob patterns and collect YAML files
+        yaml_files = []
+        for pattern in patterns:
+            matched = glob.glob(pattern, recursive=True)
+            yaml_files.extend(matched)
+
+        if not yaml_files:
+            raise RuntimeError(
+                f"No terminal definition YAML files found matching patterns: {patterns}"
+            )
+
+        logger.debug(f"Loading terminal types from {len(yaml_files)} YAML files")
+
+        # Load all terminal types from the collected files
+        all_terminals: dict[str, ModelTerminalType] = {}
+        for yaml_file in yaml_files:
+            try:
+                config = TerminalConfig.from_yaml(Path(yaml_file))
+                all_terminals.update(config.terminal_types)
+                logger.debug(
+                    f"Loaded {len(config.terminal_types)} terminals from {yaml_file}"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load terminal types from {yaml_file}: {e}")
+
+        self.model_terminals = all_terminals
+        logger.info(f"Loaded {len(self.model_terminals)} model terminal types total")
 
     def load_config(self, config_path: str | Path) -> None:
         """
