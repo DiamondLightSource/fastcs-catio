@@ -80,13 +80,12 @@ Leave this terminal running and open a new terminal for the next step.
 In a new terminal, start the IOC connecting to the simulator:
 
 ```bash
-fastcs-catio ioc TUTORIAL \
-    --terminal-defs /tmp/terminal_types.yaml \
-    --screens-dir /tmp/screens
+fastcs-catio ioc IOC \
+    --terminal-defs /tmp/terminal_types.yaml
 ```
 
 The command arguments:
-- `TUTORIAL` - The PV prefix for all EPICS records (e.g., `TUTORIAL:ETH1:...`)
+- `IOC` - The PV prefix for all EPICS records (e.g., `IOC:ETH1:...`)
 - `--terminal-defs` - Points to our editable terminal definitions
 - `--screens-dir` - Where to write the generated Phoebus `.bob` screen files
 
@@ -143,7 +142,7 @@ Navigate to any EL2024 terminal (e.g., Term 4) to see:
 - Working counter status
 - State indicators
 
-Try clicking the output toggles - they will update in the simulator.
+Note that the simulator is a basic at present and none of the symbols will update if you attempt to change them. CoE parameters will appear to update (but are not really changing any behaviour in the simulator)
 
 **Digital Input (EL1004/EL1014)**
 
@@ -174,11 +173,11 @@ Now that everything is running, try these experiments:
 In another terminal, use `caget` or `camonitor` to see the PVs:
 
 ```bash
-# List all PVs with the TUTORIAL prefix
-caget TUTORIAL:ETH1:RIO1:MOD1:CH1:OUTPUT
+# List all PVs with the IOC prefix
+caget IOC:ETH1:RIO1:MOD1:CH1:OUTPUT
 
 # Monitor a digital output
-camonitor TUTORIAL:ETH1:RIO1:MOD1:CH1:OUTPUT
+camonitor IOC:ETH1:RIO1:MOD1:CH1:OUTPUT
 ```
 
 ### Modify the Chain Topology
@@ -199,6 +198,8 @@ When finished, stop the processes with `Ctrl+C`:
 
 ## Next Steps
 
+- [Customizing Terminal Definitions](customizing-terminal-definitions.md) - Add CoE
+  objects and symbols using the GUI editor
 - Learn about [terminal YAML definitions](../explanations/terminal-yaml-definitions.md)
 - Explore the [architecture overview](../explanations/architecture-overview.md)
 
@@ -231,7 +232,7 @@ python -m tests.ads_sim --port 48899
 ### No PVs visible in Phoebus
 
 Ensure the IOC is running and check the PV prefix matches. The default
-configuration uses `TUTORIAL` as the prefix.
+configuration uses `IOC` as the prefix.
 
 ### Container permission errors
 
