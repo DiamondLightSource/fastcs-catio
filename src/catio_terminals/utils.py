@@ -152,6 +152,8 @@ def make_fastcs_name(name: str, max_length: int = 40, suffix: str = "") -> str:
         else:
             return f"{result}_{suffix}"
 
+    max_length = max_length - len(suffix) - 1 if suffix else max_length
+
     result = to_snake_case(name)
     if len(result) <= max_length:
         return final_result()
