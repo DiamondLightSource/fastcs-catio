@@ -11,7 +11,7 @@ For complete documentation on terminal definitions, including:
 - ADS runtime symbols vs XML definitions
 - Adding new terminal types
 
-See the main documentation: [Terminal Type Definitions](../../../docs/explanations/terminal-definitions.md)
+See the main documentation: [Terminal YAML Definitions](../../../docs/explanations/terminal-yaml-definitions.md)
 
 ## Quick Reference
 

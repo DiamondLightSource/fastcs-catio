@@ -207,7 +207,7 @@ CANopen over EtherCAT objects provide configuration parameters:
 
 ## Mapping to Terminal YAML
 
-The XML parser (`xml_parser.py`) transforms ESI data into terminal YAML:
+The XML parser (`xml/parser.py` and related modules) transforms ESI data into terminal YAML:
 
 | XML Element | YAML Field |
 |-------------|------------|
@@ -236,5 +236,5 @@ These must be obtained from a live TwinCAT system.
 
 ## Related Documentation
 
-- [Terminal Definitions](../explanations/terminal-definitions.md) - YAML file structure
+- [Terminal YAML Definitions](../explanations/terminal-yaml-definitions.md) - YAML file structure
 - [catio-terminals README](https://github.com/DiamondLightSource/fastcs-catio/tree/main/src/catio_terminals) - Tool usage

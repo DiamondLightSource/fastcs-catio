@@ -42,11 +42,7 @@ All CATio controllers inherit from `CATioController`, which extends the FastCS `
 - References to corresponding hardware objects (`IOServer`, `IODevice`, or `IOSlave`)
 - Attribute grouping for organized PV naming
 
-```{literalinclude} ../../src/fastcs_catio/catio_controller.py
-:language: python
-:start-at: class CATioController
-:end-before: @property
-```
+The `CATioController` class is defined in [catio_controller.py](../../src/fastcs_catio/catio_controller.py). It includes connection management, attribute registration, and the core interface for communicating with the ADS client.
 
 ### The Server Controller
 
@@ -78,21 +74,46 @@ During initialization, the server controller queries the TwinCAT system and buil
 | `LinkStatus` | Network link health indicator |
 | `CrcErrorSum` | Accumulated CRC errors for this terminal |
 
-## Hardware-Specific Controllers
+## Dynamic Terminal Controllers
 
-Not all terminals are alike. A digital input module exposes different data than an analog output module. CATio handles this through specialized controller classes defined in [catio_hardware.py](../../src/fastcs_catio/catio_hardware.py).
+Not all terminals are alike. A digital input module exposes different data than an analog output module. CATio handles this through dynamically generated controller classes based on YAML terminal definitions.
 
-The `SUPPORTED_CONTROLLERS` dictionary maps Beckhoff terminal type codes to their controller classes. When CATio discovers a terminal, it looks up the type (e.g., "EL3064") in this dictionary and instantiates the appropriate controller.
+### How Dynamic Generation Works
 
-Each terminal type exposes its specific attributes:
+When CATio discovers a terminal, it calls `get_terminal_controller_class(terminal_id)` from `catio_dynamic_controller.py`. This factory function:
 
-| Controller Family | Terminal Types | Key Attributes |
-|-------------------|----------------|----------------|
-| `EL10xxController` | EL1004, EL1008, etc. | Digital input values |
-| `EL20xxController` | EL2004, EL2008, etc. | Digital output values (read/write) |
-| `EL30xxController` | EL3064, EL3102, etc. | Analog input values, scaling info |
-| `EL40xxController` | EL4002, EL4132, etc. | Analog output values, range config |
-| `ELM3xxxController` | ELM3004, ELM3602, etc. | High-precision measurements, oversampling |
+1. Looks up the terminal type (e.g., "EL3064") in `terminal_types.yaml`
+2. Creates a controller class dynamically based on the YAML definition
+3. Adds symbol attributes for process data (from `catio_dynamic_symbol.py`)
+4. Adds CoE attributes for configuration parameters (from `catio_dynamic_coe.py`)
+5. Caches the class for reuse
+
+The key modules involved:
+
+| Module | Purpose |
+|--------|---------|
+| `catio_dynamic_controller.py` | Factory function and dynamic class creation |
+| `catio_dynamic_symbol.py` | Adds PDO symbol attributes to controllers |
+| `catio_dynamic_coe.py` | Adds CoE parameter attributes to controllers |
+| `catio_dynamic_types.py` | Type conversion between TwinCAT, numpy, and FastCS |
+
+### Terminal YAML Definitions
+
+Each terminal type is defined in `src/catio_terminals/terminals/terminal_types.yaml` with:
+
+- **Symbol nodes**: Process data accessible via ADS (inputs/outputs)
+- **CoE objects**: Configuration parameters with subindices
+- **Selection**: Only symbols with `selected: true` become attributes
+
+For example, a digital input terminal might expose:
+
+| Attribute Type | Source | Examples |
+|----------------|--------|----------|
+| PDO symbols | `symbol_nodes` in YAML | Input values, status bits |
+| Runtime symbols | `runtime_symbols.yaml` | WcState, InfoData |
+| CoE parameters | `coe_objects` in YAML | Filter settings, calibration |
+
+This approach allows adding new terminal types by editing YAML files without changing Python code. See [Terminal YAML Definitions](terminal-yaml-definitions.md) for details on the YAML format.
 
 ## The Attribute I/O System
 
@@ -110,11 +131,7 @@ The update flow for a CATio attribute follows these steps:
 
 This indirection means attributes don't need to know ADS protocol details - they just specify their name and polling period.
 
-```{literalinclude} ../../src/fastcs_catio/catio_attribute_io.py
-:language: python
-:start-at: class CATioControllerAttributeIO
-:end-before: class
-```
+The `CATioControllerAttributeIO` class in [catio_attribute_io.py](../../src/fastcs_catio/catio_attribute_io.py) implements this bridge between FastCS attributes and the ADS client API.
 
 ### Polling vs Notifications
 
@@ -181,13 +198,7 @@ CATio controllers follow a specific lifecycle managed by FastCS:
 
 ## Testing Considerations
 
-When writing tests for CATio controllers, you typically need to mock the ADS client layer. The `MockADSServer` class in the test suite simulates TwinCAT responses:
-
-```{literalinclude} ../../tests/mock_server.py
-:language: python
-:pyobject: MockADSServer
-:end-before: async def start
-```
+When writing tests for CATio controllers, you typically need to mock the ADS client layer. The `MockADSServer` class in [mock_server.py](../../tests/mock_server.py) simulates TwinCAT responses.
 
 This allows testing controller logic without real hardware by:
 
@@ -199,4 +210,4 @@ This allows testing controller logic without real hardware by:
 
 - [Architecture Overview](architecture-overview.md) - High-level system architecture
 - [ADS Client Implementation](ads-client.md) - Details of the ADS protocol layer
-- [API Decoupling Analysis](api-decoupling.md) - Discussion of the API design
+- [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md) - API design discussion

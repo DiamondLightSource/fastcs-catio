@@ -50,13 +50,7 @@ TwinCAT maintains a routing table of authorized clients. CATio uses UDP messages
 1. **Discover the target's AMS NetId**: Query the TwinCAT system for its network identity
 2. **Register this client**: Add an entry to the routing table with authentication credentials
 
-```{literalinclude} ../../src/fastcs_catio/client.py
-:language: python
-:start-at: class RemoteRoute
-:end-before: def _get_route_info_as_bytes
-```
-
-The route registration includes:
+The `RemoteRoute` class in [client.py](../../src/fastcs_catio/client.py) handles route management with these parameters:
 
 | Parameter | Purpose |
 |-----------|---------|
@@ -72,14 +66,7 @@ Default TwinCAT credentials are typically `Administrator` / `1`. Production syst
 
 ### TCP Connection
 
-Once routed, CATio opens a persistent TCP connection for ADS communication:
-
-```{literalinclude} ../../src/fastcs_catio/client.py
-:language: python
-:pyobject: AsyncioADSClient.connected_to
-```
-
-The connection uses Python's `asyncio.open_connection()` for non-blocking I/O, returning stream reader/writer pairs for bidirectional communication.
+Once routed, CATio opens a persistent TCP connection for ADS communication. The `AsyncioADSClient.connected_to()` method in [client.py](../../src/fastcs_catio/client.py) uses Python's `asyncio.open_connection()` for non-blocking I/O, returning stream reader/writer pairs for bidirectional communication.
 
 ## ADS Commands
 
@@ -142,13 +129,7 @@ ADS symbols provide named access to PLC variables, avoiding hard-coded index gro
 
 ### The AdsSymbol Structure
 
-```{literalinclude} ../../src/fastcs_catio/devices.py
-:language: python
-:pyobject: AdsSymbol
-:end-before: @property
-```
-
-Symbols carry type information (`dtype`) allowing CATio to correctly interpret binary data. The `group` and `offset` fields are used in ADS read/write commands.
+The `AdsSymbol` dataclass in [devices.py](../../src/fastcs_catio/devices.py) represents ADS symbols. Symbols carry type information (`dtype`) allowing CATio to correctly interpret binary data. The `group` and `offset` fields are used in ADS read/write commands.
 
 ### Symbol-Based Access vs Direct Access
 
@@ -201,7 +182,7 @@ The client uses string-based dispatch to route API calls:
 - `query("SYSTEM_TREE")` → calls `get_system_tree()`
 - `command("DEVICE_STATE", ...)` → calls `set_device_state(...)`
 
-This pattern, while flexible, has tradeoffs discussed in [API Decoupling Analysis](api-decoupling.md).
+This pattern, while flexible, has tradeoffs discussed in [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md).
 
 ### Key API Methods
 
@@ -230,15 +211,8 @@ The client raises exceptions with meaningful messages when operations fail, allo
 
 ## Testing with MockADSServer
 
-CATio includes a mock ADS server for testing without hardware:
+CATio includes a mock ADS server for testing without hardware. The `MockADSServer` class in [mock_server.py](../../tests/mock_server.py) provides:
 
-```{literalinclude} ../../tests/mock_server.py
-:language: python
-:pyobject: MockADSServer
-:end-before: async def start
-```
-
-The mock server:
 - Accepts TCP connections on the standard ADS port
 - Parses AMS headers and dispatches to command handlers
 - Returns configurable mock responses
@@ -250,4 +224,4 @@ This enables comprehensive testing of the client logic independent of real TwinC
 
 - [Architecture Overview](architecture-overview.md) - High-level system architecture
 - [FastCS EPICS IOC Implementation](fastcs-epics-ioc.md) - Details of the EPICS layer
-- [API Decoupling Analysis](api-decoupling.md) - API design discussion
+- [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md) - API design discussion
