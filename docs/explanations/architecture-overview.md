@@ -8,7 +8,6 @@ CATio is a Python-based control system integration for EtherCAT I/O devices runn
 ## High-Level Architecture Diagram
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
 flowchart TB
     clients["EPICS Clients / Control Systems"]
 
@@ -83,7 +82,6 @@ The bottom layer implements the TwinCAT ADS protocol:
 ### Runtime Data Flow
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
 flowchart TB
     A["EPICS Client Request"] --> B["FastCS Attribute Access"]
     B --> C["CATioControllerAttributeIO.update()"]

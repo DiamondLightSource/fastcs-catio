@@ -64,7 +64,6 @@ coe_objects:
 The CoE parameter system uses several components:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
 flowchart TD
     YAML[Terminal YAML] --> CoEAdsItem
     CoEAdsItem --> add_coe_attribute
