@@ -19,11 +19,11 @@ Terminal definitions are YAML files that describe:
 
 ## File Organization
 
-Terminal definitions are stored in a single file:
+Terminal definitions live in `src/catio_terminals/terminals/`, organized as follows:
 
-| File | Purpose |
-|------|---------|
-| `src/catio_terminals/terminals/terminal_types.yaml` | All terminal type definitions |
+| File | Terminal Types |
+|------|----------------|
+| `terminal_types.yaml` | All terminals currently in use at DLS |
 
 Supporting configuration files in `src/catio_terminals/config/`:
 
