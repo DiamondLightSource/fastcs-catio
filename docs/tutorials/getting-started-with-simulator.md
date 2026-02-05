@@ -204,6 +204,16 @@ When finished, stop the processes with `Ctrl+C`:
 
 ## Troubleshooting
 
+### Phoebus Fails to Start
+
+This WILL be an issue if your workstation is using Wayland. The fix below should work in this instance.
+
+If you see `Authorization required, but no authorization protocol specified` or similar issue with X11 permissions when load phoebus. Try giving your own account permission to access the X server:
+
+```bash
+xhost +SI:localuser:$(id -un)
+```
+
 ### Port already in use
 
 If you see "Address already in use" when starting the simulator:
