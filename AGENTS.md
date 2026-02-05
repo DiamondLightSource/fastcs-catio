@@ -199,6 +199,8 @@ This project interfaces with Beckhoff EtherCAT I/O terminals via the ADS protoco
 
 - **Testing with Hardware**: **NEVER** run `fastcs-catio ioc` commands yourself. Let the user run the IOC and report any errors back to you. The IOC requires network access to real hardware that may not be available or may have specific configuration requirements.
 
+- **Testing Troubleshooting**: If `test_system.py` reports that simulator port 48898 is already in use, check if VS Code has auto-forwarded the port. In VS Code's "Ports" panel (View → Ports), delete any forwarding for port 48898. VS Code's auto port-forwarding can prevent the test simulator from binding to the port.
+
 - **Terminal Definitions**: YAML files describing Beckhoff terminal types, their symbols, and CoE objects. See [docs/explanations/terminal-yaml-definitions.md](docs/explanations/terminal-yaml-definitions.md) for:
   - How to generate terminal YAML files using `catio-terminals`
   - Understanding ADS symbol nodes and index groups
