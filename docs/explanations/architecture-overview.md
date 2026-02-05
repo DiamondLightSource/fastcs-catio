@@ -110,19 +110,27 @@ The bottom layer implements the TwinCAT ADS protocol:
 
 ### Runtime Data Flow
 
-:::{div} mermaid-simple
 ```mermaid
-flowchart TB
-    A["EPICS Client Request"] --> B["FastCS Attribute Access"]
-    B --> C["CATioControllerAttributeIO.update()"]
-    C --> D["CATioConnection.send_query()"]
-    D --> E["AsyncioADSClient.query() / command()"]
-    E --> F["API method dispatch (get_* / set_*)"]
-    F --> G["ADS Read/Write/ReadWrite commands"]
-    G --> H["TwinCAT Server Response"]
-    H --> I["Response propagation back to EPICS"]
+sequenceDiagram
+    participant Client as EPICS Client
+    participant FastCS as FastCS Attribute
+    participant IO as CATioControllerAttributeIO
+    participant Conn as CATioConnection
+    participant ADS as AsyncioADSClient
+    participant TC as TwinCAT Server
+
+    Client->>FastCS: Read/Write PV
+    FastCS->>IO: update()
+    IO->>Conn: send_query()
+    Conn->>ADS: query() / command()
+    ADS->>ADS: API method dispatch (get_* / set_*)
+    ADS->>TC: ADS Read/Write/ReadWrite
+    TC-->>ADS: Response
+    ADS-->>Conn: Response
+    Conn-->>IO: Response
+    IO-->>FastCS: Update attribute
+    FastCS-->>Client: PV updated
 ```
-:::
 
 ## Key Design Decisions
 
