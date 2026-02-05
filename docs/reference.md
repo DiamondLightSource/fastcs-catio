@@ -11,8 +11,8 @@ reference/DLS_terminals
 reference/beckhoff-xml-format
 reference/ads-symbols-and-coe
 reference/ethercat-composite-types
+plans/documentation-plan
 plans/todo
-plans/simulator-symbol-alignment
 genindex
 Release Notes <https://github.com/DiamondLightSource/fastcs-catio/releases>
 ```

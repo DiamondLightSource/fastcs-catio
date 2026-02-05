@@ -199,4 +199,4 @@ This allows testing controller logic without real hardware by:
 
 - [Architecture Overview](architecture-overview.md) - High-level system architecture
 - [ADS Client Implementation](ads-client.md) - Details of the ADS protocol layer
-- [API Decoupling Analysis](api-decoupling.md) - Discussion of the API design
+- [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md) - API design discussion

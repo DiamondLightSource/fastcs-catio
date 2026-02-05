@@ -236,5 +236,5 @@ These must be obtained from a live TwinCAT system.
 
 ## Related Documentation
 
-- [Terminal Definitions](../explanations/terminal-definitions.md) - YAML file structure
+- [Terminal YAML Definitions](../explanations/terminal-yaml-definitions.md) - YAML file structure
 - [catio-terminals README](https://github.com/DiamondLightSource/fastcs-catio/tree/main/src/catio_terminals) - Tool usage

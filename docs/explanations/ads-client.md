@@ -201,7 +201,7 @@ The client uses string-based dispatch to route API calls:
 - `query("SYSTEM_TREE")` → calls `get_system_tree()`
 - `command("DEVICE_STATE", ...)` → calls `set_device_state(...)`
 
-This pattern, while flexible, has tradeoffs discussed in [API Decoupling Analysis](api-decoupling.md).
+This pattern, while flexible, has tradeoffs discussed in [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md).
 
 ### Key API Methods
 
@@ -250,4 +250,4 @@ This enables comprehensive testing of the client logic independent of real TwinC
 
 - [Architecture Overview](architecture-overview.md) - High-level system architecture
 - [FastCS EPICS IOC Implementation](fastcs-epics-ioc.md) - Details of the EPICS layer
-- [API Decoupling Analysis](api-decoupling.md) - API design discussion
+- [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md) - API design discussion

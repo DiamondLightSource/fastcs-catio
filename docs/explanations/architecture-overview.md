@@ -83,6 +83,7 @@ The bottom layer implements the TwinCAT ADS protocol:
 ### Runtime Data Flow
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
 flowchart TB
     A["EPICS Client Request"] --> B["FastCS Attribute Access"]
     B --> C["CATioControllerAttributeIO.update()"]
@@ -137,6 +138,6 @@ CATio is configured through command-line parameters:
 
 ## See Also
 
-- [FastCS EPICS IOC Implementation](fastcs-epics-ioc.md) - Detailed explanation of the EPICS layer
-- [ADS Client Implementation](ads-client.md) - Detailed explanation of the ADS protocol layer
-- [API Decoupling Analysis](api-decoupling.md) - Discussion of the API design and potential improvements
+- [Architecture Overview](architecture-overview.md) - High-level system architecture
+- [FastCS EPICS IOC Implementation](fastcs-epics-ioc.md) - Details of the EPICS layer
+- [API Decoupling Analysis](decisions/0003-api-decoupling-analysis.md) - Discussion of the API design and potential improvements

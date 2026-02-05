@@ -3,12 +3,9 @@
 [![PyPI](https://img.shields.io/pypi/v/fastcs-catio.svg)](https://pypi.org/project/fastcs-catio)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-# fastcs_catio
+# fastcs-catio
 
-Control system integration of EtherCAT I/O devices running under TwinCAT using pyads and FastCS
-
-This is where you should write a short paragraph that describes what your module does,
-how it does it, and why people should use it.
+CATio provides control system integration for Beckhoff EtherCAT I/O devices running under TwinCAT. It uses the ADS protocol to communicate with TwinCAT PLCs and exposes device data as EPICS Process Variables through the FastCS framework.
 
 Source          | <https://github.com/DiamondLightSource/fastcs-catio>
 :---:           | :---:
@@ -17,16 +14,14 @@ Docker          | `docker run ghcr.io/diamondlightsource/fastcs-catio:latest`
 Documentation   | <https://diamondlightsource.github.io/fastcs-catio>
 Releases        | <https://github.com/DiamondLightSource/fastcs-catio/releases>
 
-This is where you should put some images or code snippets that illustrate
-some relevant examples. If it is a library then you might put some
-introductory code here:
+## Quick Start
 
-Some tips about using Claude Code[CLAUDE_NOTES.md].
+```bash
+# Install
+pip install fastcs-catio
 
-```python
-from fastcs_catio import __version__
-
-print(f"Hello fastcs_catio {__version__}")
+# Run the IOC
+fastcs-catio ioc --target-ip 192.168.1.100
 ```
 
 <!-- README only content. Anything below this line won't be included in index.md -->

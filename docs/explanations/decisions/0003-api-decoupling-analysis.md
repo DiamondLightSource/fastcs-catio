@@ -444,6 +444,6 @@ These improvements would make the codebase more maintainable, testable, and easi
 
 ## See Also
 
-- [Architecture Overview](architecture-overview.md) - High-level system architecture
-- [FastCS EPICS IOC Implementation](fastcs-epics-ioc.md) - Details of the EPICS layer
-- [ADS Client Implementation](ads-client.md) - Details of the ADS protocol layer
+- [Architecture Overview](../architecture-overview.md) - High-level system architecture
+- [FastCS EPICS IOC Implementation](../fastcs-epics-ioc.md) - Details of the EPICS layer
+- [ADS Client Implementation](../ads-client.md) - Details of the ADS protocol layer
