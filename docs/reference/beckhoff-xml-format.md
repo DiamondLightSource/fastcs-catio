@@ -207,7 +207,7 @@ CANopen over EtherCAT objects provide configuration parameters:
 
 ## Mapping to Terminal YAML
 
-The XML parser (`xml_parser.py`) transforms ESI data into terminal YAML:
+The XML parser (`xml/parser.py` and related modules) transforms ESI data into terminal YAML:
 
 | XML Element | YAML Field |
 |-------------|------------|

@@ -173,9 +173,17 @@ The `catio_terminals` package consists of several modules:
 
 - **models.py**: Pydantic data models for YAML structure
 - **beckhoff.py**: Client for fetching Beckhoff terminal information
-- **xml_cache.py**: Caching system for Beckhoff XML files
-- **xml_parser.py**: Parser for Beckhoff ESI XML files
-- **app.py**: Main NiceGUI application
+- **xml/**: Subpackage for Beckhoff ESI XML parsing
+  - **cache.py**: Caching system for downloaded XML files
+  - **parser.py**: Main XML parsing utilities
+  - **pdo.py**: PDO entry parsing
+  - **pdo_groups.py**: PDO group (AlternativeSmMapping) parsing
+  - **coe.py**: CoE object parsing
+  - **catalog.py**: Terminal catalog browsing
+- **ui_app.py**: Main NiceGUI application
+- **ui_components/**: UI component modules (tree view, details panes)
+- **ui_dialogs/**: Dialog modules (file, terminal, confirmation dialogs)
+- **service_*.py**: Service layer modules (file, config, terminal operations)
 - **__main__.py**: Entry point for the application
 
 ## Troubleshooting

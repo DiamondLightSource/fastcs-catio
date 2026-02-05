@@ -205,7 +205,7 @@ The data models for PDO groups are defined in [models.py](../../src/catio_termin
 
 ### XML Parsing
 
-The `xml_pdo_groups.py` module handles parsing of PDO group definitions using two methods:
+The `xml/pdo_groups.py` module handles parsing of PDO group definitions using two methods:
 
 **Method 1: AlternativeSmMapping (preferred)**
 
