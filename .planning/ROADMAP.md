@@ -27,10 +27,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Document identifies specific tasks where Claude Opus was used and frames the developer as the directing agent
   4. Document includes the trajectory arc from pre-agent CATio work to builder2ibek as evidence of maturing practice
   5. Document reads as a concise, scannable executive summary -- not a technical report
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md -- Verify metrics, write executive summary, author review
 
 ### Phase 2: Sphinx Integration
 **Goal**: The document is a first-class page in the CATio docs that builds cleanly and is discoverable in the explanations section
@@ -52,5 +52,5 @@ Phases execute in numeric order: 1 -> 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Document Content | 0/? | Not started | - |
+| 1. Document Content | 0/1 | Planned | - |
 | 2. Sphinx Integration | 0/? | Not started | - |
