@@ -43,7 +43,7 @@ This was the developer's first production project using AI. They also had very l
 The AI pair programmer helped in multiple areas:
 
 - rapid understanding of a new codebase
-- help in understanding Beckhoff TwinCAT, 
+- help in understanding Beckhoff TwinCAT and the ADS protocol
 - discussing ideas for radical architecture changes
 - investigating in depth the huge and complex XML files from Beckhoff
   - to discover what could be extracted from them (ans: all details of all terminal types) 
@@ -58,7 +58,7 @@ The AI pair programmer helped in multiple areas:
 - exemplary help in diagnosing and fixing any issues with code/docs/infrastructure/tools
 - excellent support in learning how to use agents themselves
 - generally being able to learn about any subject that you need help with
-- 
+
 fastcs-catio was an initial foray into AI and represents early learning about prompting only (stage 1 below). Nevertheless there was a performance improvement of 10x or more over traditional practices.
 
 ### Further Improvements
