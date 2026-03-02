@@ -75,3 +75,6 @@ screens
 
 .test.yaml
 .nicegui
+
+# Claude Code / GSD tooling
+.claude/
