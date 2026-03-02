@@ -54,15 +54,15 @@
 | CONT-06 | Phase 1 | Pending |
 | ADVC-01 | Phase 1 | Pending |
 | ADVC-02 | Phase 1 | Pending |
-| FRMT-01 | Phase 1 | Pending |
-| FRMT-02 | Phase 1 | Pending |
-| FRMT-03 | Phase 1 | Pending |
+| FRMT-01 | Phase 2 | Pending |
+| FRMT-02 | Phase 2 | Pending |
+| FRMT-03 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 11 total
 - Mapped to phases: 11
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-02*
-*Last updated: 2026-03-02 after initial definition*
+*Last updated: 2026-03-02 after roadmap creation*
