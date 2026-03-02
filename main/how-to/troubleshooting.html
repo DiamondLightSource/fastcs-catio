@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Documentation Plan &#8212; fastcs-catio 1.1a4.dev124+g81fc31124 documentation</title>
+    <title>Troubleshooting &#8212; fastcs-catio 1.1a4.dev124+g81fc31124 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=30646c52"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'plans/documentation-plan';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'how-to/troubleshooting';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
@@ -59,8 +59,8 @@
     <link rel="icon" href="../_static/dls-logo.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="TODO" href="todo.html" />
-    <link rel="prev" title="EtherCAT Composite Types" href="../reference/ethercat-composite-types.html" />
+    <link rel="next" title="Using the Terminal Editor" href="use-terminal-editor.html" />
+    <link rel="prev" title="Run in a container" href="run-container.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="main" />
@@ -154,7 +154,7 @@
 </li>
 
 
-<li class="nav-item ">
+<li class="nav-item current active">
   <a class="nav-link nav-internal" href="../how-to.html">
     How-to Guides
   </a>
@@ -168,7 +168,7 @@
 </li>
 
 
-<li class="nav-item current active">
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../reference.html">
     Reference
   </a>
@@ -302,7 +302,7 @@
 </li>
 
 
-<li class="nav-item ">
+<li class="nav-item current active">
   <a class="nav-link nav-internal" href="../how-to.html">
     How-to Guides
   </a>
@@ -316,7 +316,7 @@
 </li>
 
 
-<li class="nav-item current active">
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../reference.html">
     Reference
   </a>
@@ -398,15 +398,10 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../_api/fastcs_catio.html">API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../reference/DLS_terminals.html">DLS Terminal Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../reference/beckhoff-xml-format.html">Beckhoff ESI XML File Format</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../reference/ads-symbols-and-coe.html">ADS Symbols and CoE Objects</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../reference/ethercat-composite-types.html">EtherCAT Composite Types</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Documentation Plan</a></li>
-<li class="toctree-l1"><a class="reference internal" href="todo.html">TODO</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/DiamondLightSource/fastcs-catio/releases">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribute to the project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run-container.html">Run in a container</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="use-terminal-editor.html">Using the Terminal Editor</a></li>
 </ul>
 </div>
 </nav></div>
@@ -448,9 +443,9 @@
       </a>
     </li>
     
-    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">Reference</a></li>
+    <li class="breadcrumb-item"><a href="../how-to.html" class="nav-link">How-to Guides</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Documentation Plan</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Troubleshooting</span></li>
   </ul>
 </nav>
 </div>
@@ -467,102 +462,111 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="documentation-plan">
-<h1>Documentation Plan<a class="headerlink" href="#documentation-plan" title="Link to this heading">#</a></h1>
-<p>This document outlines remaining documentation tasks and suggested agent prompts for improving the documentation.</p>
-<section id="outstanding-tasks">
-<h2>Outstanding Tasks<a class="headerlink" href="#outstanding-tasks" title="Link to this heading">#</a></h2>
-<section id="high-priority">
-<h3>High Priority<a class="headerlink" href="#high-priority" title="Link to this heading">#</a></h3>
+  <section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h1>
+<p>Common issues and their solutions when working with fastcs-catio.</p>
+<section id="test-system-issues">
+<h2>Test System Issues<a class="headerlink" href="#test-system-issues" title="Link to this heading">#</a></h2>
+<section id="port-48898-already-in-use">
+<h3>Port 48898 Already in Use<a class="headerlink" href="#port-48898-already-in-use" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> When running <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">tests/test_system.py</span></code>, you get an error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Port</span> <span class="mi">48898</span> <span class="ow">is</span> <span class="n">already</span> <span class="ow">in</span> <span class="n">use</span><span class="o">.</span> <span class="n">A</span> <span class="n">simulator</span> <span class="n">may</span> <span class="n">already</span> <span class="n">be</span> <span class="n">running</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>But you’re certain no simulator is running.</p>
+<p><strong>Cause:</strong> VS Code’s auto port-forwarding feature may have automatically forwarded port 48898, which prevents the test simulator from binding to it.</p>
+<p><strong>Solution:</strong></p>
+<ol class="arabic simple">
+<li><p>Open VS Code’s Ports panel: <strong>View → Ports</strong> (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+Shift+P</span></code> and search for “Ports: Focus on Ports View”)</p></li>
+<li><p>Look for port 48898 in the list</p></li>
+<li><p>Right-click on it and select <strong>Stop Forwarding Port</strong> or <strong>Remove Port</strong></p></li>
+<li><p>Re-run the tests</p></li>
+</ol>
+<p><strong>Prevention:</strong> You can disable auto port-forwarding in VS Code settings:</p>
 <ul class="simple">
-<li><p>[ ] <strong>Add Getting Started tutorial</strong>: Create a step-by-step guide for first-time users covering installation, connection to TwinCAT, and running the IOC</p></li>
-<li><p>[ ] <strong>Document CoE parameter write support</strong>: If/when implemented, document how to write CoE configuration parameters</p></li>
+<li><p>Open Settings (<code class="docutils literal notranslate"><span class="pre">Ctrl+,</span></code>)</p></li>
+<li><p>Search for <code class="docutils literal notranslate"><span class="pre">remote.autoForwardPorts</span></code></p></li>
+<li><p>Set it to <code class="docutils literal notranslate"><span class="pre">false</span></code> or configure <code class="docutils literal notranslate"><span class="pre">remote.autoForwardPortsSource</span></code> to exclude port 48898</p></li>
 </ul>
 </section>
-<section id="medium-priority">
-<h3>Medium Priority<a class="headerlink" href="#medium-priority" title="Link to this heading">#</a></h3>
+<section id="alternative-using-an-external-simulator">
+<h3>Alternative: Using an External Simulator<a class="headerlink" href="#alternative-using-an-external-simulator" title="Link to this heading">#</a></h3>
+<p>If you have a simulator already running intentionally, you can tell the tests to use it instead of launching their own:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/test_system.py<span class="w"> </span>--external-simulator
+</pre></div>
+</div>
+<p>This skips the port check and internal simulator launch, assuming a simulator is already listening on port 48898.</p>
+</section>
+</section>
+<section id="vs-code-dev-container-issues">
+<h2>VS Code Dev Container Issues<a class="headerlink" href="#vs-code-dev-container-issues" title="Link to this heading">#</a></h2>
+<section id="terminal-commands-not-showing">
+<h3>Terminal Commands Not Showing<a class="headerlink" href="#terminal-commands-not-showing" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> Commands executed in the terminal don’t display output or appear to hang.</p>
+<p><strong>Solution:</strong> Rebuild the dev container:</p>
+<ol class="arabic simple">
+<li><p>Press <code class="docutils literal notranslate"><span class="pre">Ctrl+Shift+P</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd+Shift+P</span></code> on Mac)</p></li>
+<li><p>Select <strong>Dev Containers: Rebuild Container</strong></p></li>
+<li><p>Choose <strong>Rebuild Container Without Cache</strong> for a clean rebuild</p></li>
+</ol>
+</section>
+<section id="container-port-binding-issues">
+<h3>Container Port Binding Issues<a class="headerlink" href="#container-port-binding-issues" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> After a container restart or rebuild, ports show as already in use even though nothing is running.</p>
+<p><strong>Solution:</strong></p>
+<ol class="arabic simple">
+<li><p>Stop all containers: <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">stop</span> <span class="pre">$(docker</span> <span class="pre">ps</span> <span class="pre">-aq)</span></code></p></li>
+<li><p>Remove the specific container: <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">ps</span> <span class="pre">-a</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">fastcs-catio</span></code> then <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">rm</span> <span class="pre">&lt;container-id&gt;</span></code></p></li>
+<li><p>Optionally, prune Docker resources: <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">system</span> <span class="pre">prune</span></code> (careful - removes unused containers/networks/images)</p></li>
+<li><p>Reopen the folder in the container</p></li>
+</ol>
+</section>
+</section>
+<section id="hardware-connection-issues">
+<h2>Hardware Connection Issues<a class="headerlink" href="#hardware-connection-issues" title="Link to this heading">#</a></h2>
+<section id="cannot-connect-to-plc-controller">
+<h3>Cannot Connect to PLC/Controller<a class="headerlink" href="#cannot-connect-to-plc-controller" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">fastcs-catio</span> <span class="pre">ioc</span></code> fails with connection errors.</p>
+<p><strong>Common causes:</strong></p>
 <ul class="simple">
-<li><p>[ ] <strong>Add troubleshooting guide</strong>: Common connection issues, ADS errors, and their solutions</p></li>
-<li><p>[ ] <strong>Document notification subscriptions</strong>: How to subscribe to high-frequency data updates using ADS notifications</p></li>
-<li><p>[ ] <strong>Add configuration reference</strong>: Document all CLI options and environment variables</p></li>
+<li><p>Network connectivity issues</p></li>
+<li><p>Incorrect AMS Net ID or IP address in configuration</p></li>
+<li><p>Firewall blocking ADS protocol (port 48898)</p></li>
+<li><p>TwinCAT runtime not running on the target</p></li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ul class="simple">
+<li><p>Verify network connectivity: <code class="docutils literal notranslate"><span class="pre">ping</span> <span class="pre">&lt;controller-ip&gt;</span></code></p></li>
+<li><p>Check AMS Net ID matches the controller configuration</p></li>
+<li><p>Ensure TwinCAT is in Run mode on the controller</p></li>
+<li><p>Check firewall settings allow ADS traffic</p></li>
+<li><p>Verify the correct configuration file is being used</p></li>
 </ul>
 </section>
-<section id="low-priority">
-<h3>Low Priority<a class="headerlink" href="#low-priority" title="Link to this heading">#</a></h3>
+</section>
+<section id="build-and-installation-issues">
+<h2>Build and Installation Issues<a class="headerlink" href="#build-and-installation-issues" title="Link to this heading">#</a></h2>
+<section id="package-installation-fails">
+<h3>Package Installation Fails<a class="headerlink" href="#package-installation-fails" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span></code> or package installation fails.</p>
+<p><strong>Solution:</strong></p>
 <ul class="simple">
-<li><p>[ ] <strong>Add example scripts</strong>: Python examples showing common use cases</p></li>
-<li><p>[ ] <strong>Expand DLS terminals reference</strong>: Add more detail on each terminal type’s capabilities</p></li>
+<li><p>Ensure you’re in the dev container or have the correct Python environment active</p></li>
+<li><p>Try: <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--reinstall</span></code> to force reinstall all packages</p></li>
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> for any conflicting version constraints</p></li>
 </ul>
 </section>
+<section id="type-checking-failures">
+<h3>Type Checking Failures<a class="headerlink" href="#type-checking-failures" title="Link to this heading">#</a></h3>
+<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">pyright</span></code> or <code class="docutils literal notranslate"><span class="pre">mypy</span></code> reports type errors that seem incorrect.</p>
+<p><strong>Solution:</strong></p>
+<ul class="simple">
+<li><p>Ensure all dependencies are installed: <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code></p></li>
+<li><p>Clear type checker cache: <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">.mypy_cache</span></code> or <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">.pyright</span></code></p></li>
+<li><p>Restart your editor/language server</p></li>
+<li><p>Check if you’re using the correct Python interpreter from the venv</p></li>
+</ul>
 </section>
-<section id="agent-prompts-for-documentation-improvement">
-<h2>Agent Prompts for Documentation Improvement<a class="headerlink" href="#agent-prompts-for-documentation-improvement" title="Link to this heading">#</a></h2>
-<p>Use these prompts to get AI assistance with documentation tasks:</p>
-<section id="architecture-and-design">
-<h3>Architecture and Design<a class="headerlink" href="#architecture-and-design" title="Link to this heading">#</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Review</span> <span class="n">the</span> <span class="n">architecture</span><span class="o">-</span><span class="n">overview</span><span class="o">.</span><span class="n">md</span> <span class="ow">and</span> <span class="n">suggest</span> <span class="n">improvements</span> <span class="n">to</span> <span class="n">make</span> <span class="n">the</span> <span class="n">Mermaid</span> <span class="n">diagrams</span> <span class="n">clearer</span> <span class="ow">and</span> <span class="n">more</span> <span class="n">informative</span><span class="o">.</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Compare</span> <span class="n">fastcs</span><span class="o">-</span><span class="n">epics</span><span class="o">-</span><span class="n">ioc</span><span class="o">.</span><span class="n">md</span> <span class="ow">and</span> <span class="n">ads</span><span class="o">-</span><span class="n">client</span><span class="o">.</span><span class="n">md</span> <span class="k">for</span> <span class="n">consistency</span> <span class="ow">in</span> <span class="n">terminology</span> <span class="ow">and</span> <span class="n">cross</span><span class="o">-</span><span class="n">references</span><span class="o">.</span>
-</pre></div>
-</div>
-</section>
-<section id="terminal-definitions">
-<h3>Terminal Definitions<a class="headerlink" href="#terminal-definitions" title="Link to this heading">#</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Load</span> <span class="n">Beckhoff</span> <span class="n">XML</span> <span class="n">skill</span> <span class="ow">and</span> <span class="n">help</span> <span class="n">me</span> <span class="n">document</span> <span class="n">a</span> <span class="n">new</span> <span class="n">terminal</span> <span class="nb">type</span> <span class="p">[</span><span class="n">terminal</span><span class="o">-</span><span class="nb">id</span><span class="p">]</span><span class="o">.</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Review</span> <span class="n">terminal</span><span class="o">-</span><span class="n">yaml</span><span class="o">-</span><span class="n">definitions</span><span class="o">.</span><span class="n">md</span> <span class="ow">and</span> <span class="n">identify</span> <span class="nb">any</span> <span class="n">information</span> <span class="n">that</span> <span class="ow">is</span> <span class="n">out</span> <span class="n">of</span> <span class="n">date</span> <span class="k">with</span> <span class="n">the</span> <span class="n">current</span> <span class="n">code</span><span class="o">.</span>
-</pre></div>
-</div>
-</section>
-<section id="code-documentation">
-<h3>Code Documentation<a class="headerlink" href="#code-documentation" title="Link to this heading">#</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Review</span> <span class="n">the</span> <span class="n">docstrings</span> <span class="ow">in</span> <span class="n">src</span><span class="o">/</span><span class="n">fastcs_catio</span><span class="o">/</span><span class="n">client</span><span class="o">.</span><span class="n">py</span> <span class="ow">and</span> <span class="n">suggest</span> <span class="n">improvements</span> <span class="k">for</span> <span class="n">clarity</span> <span class="ow">and</span> <span class="n">completeness</span><span class="o">.</span>
-</pre></div>
-</div>
-</section>
-<section id="user-guides">
-<h3>User Guides<a class="headerlink" href="#user-guides" title="Link to this heading">#</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Write</span> <span class="n">a</span> <span class="n">troubleshooting</span> <span class="n">guide</span> <span class="n">covering</span> <span class="n">common</span> <span class="n">ADS</span> <span class="n">connection</span> <span class="n">errors</span> <span class="ow">and</span> <span class="n">their</span> <span class="n">solutions</span><span class="o">.</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Create</span> <span class="n">a</span> <span class="n">getting</span><span class="o">-</span><span class="n">started</span> <span class="n">tutorial</span> <span class="n">that</span> <span class="n">walks</span> <span class="n">through</span> <span class="n">connecting</span> <span class="n">to</span> <span class="n">a</span> <span class="n">TwinCAT</span> <span class="n">PLC</span> <span class="ow">and</span> <span class="n">reading</span> <span class="n">analog</span> <span class="nb">input</span> <span class="n">values</span><span class="o">.</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="documentation-structure">
-<h2>Documentation Structure<a class="headerlink" href="#documentation-structure" title="Link to this heading">#</a></h2>
-<p>The documentation follows the <a class="reference external" href="https://diataxis.fr/">Diátaxis</a> framework:</p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Section</p></th>
-<th class="head"><p>Purpose</p></th>
-<th class="head"><p>Files</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><strong>Tutorials</strong></p></td>
-<td><p>Learning-oriented</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">tutorials/installation.md</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><strong>How-to</strong></p></td>
-<td><p>Task-oriented</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">how-to/</span></code> directory</p></td>
-</tr>
-<tr class="row-even"><td><p><strong>Explanations</strong></p></td>
-<td><p>Understanding-oriented</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">explanations/</span></code> directory</p></td>
-</tr>
-<tr class="row-odd"><td><p><strong>Reference</strong></p></td>
-<td><p>Information-oriented</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">reference/</span></code> directory, <code class="docutils literal notranslate"><span class="pre">_api/</span></code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>When adding new documentation, place it in the appropriate section based on its purpose.</p>
 </section>
 </section>
 
@@ -577,20 +581,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../reference/ethercat-composite-types.html"
+       href="run-container.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">EtherCAT Composite Types</p>
+        <p class="prev-next-title">Run in a container</p>
       </div>
     </a>
     <a class="right-next"
-       href="todo.html"
+       href="use-terminal-editor.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">TODO</p>
+        <p class="prev-next-title">Using the Terminal Editor</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -613,20 +617,25 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#outstanding-tasks">Outstanding Tasks</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#high-priority">High Priority</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#medium-priority">Medium Priority</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#low-priority">Low Priority</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#test-system-issues">Test System Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#port-48898-already-in-use">Port 48898 Already in Use</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#alternative-using-an-external-simulator">Alternative: Using an External Simulator</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#agent-prompts-for-documentation-improvement">Agent Prompts for Documentation Improvement</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#architecture-and-design">Architecture and Design</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminal-definitions">Terminal Definitions</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-documentation">Code Documentation</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#user-guides">User Guides</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vs-code-dev-container-issues">VS Code Dev Container Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminal-commands-not-showing">Terminal Commands Not Showing</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#container-port-binding-issues">Container Port Binding Issues</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation-structure">Documentation Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hardware-connection-issues">Hardware Connection Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cannot-connect-to-plc-controller">Cannot Connect to PLC/Controller</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#build-and-installation-issues">Build and Installation Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#package-installation-fails">Package Installation Fails</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#type-checking-failures">Type Checking Failures</a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
@@ -634,7 +643,7 @@
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/plans/documentation-plan.md">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/how-to/troubleshooting.md">
       <i class="fa-solid fa-pencil"></i>
       
       
@@ -650,7 +659,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/plans/documentation-plan.md.txt"
+      <li><a href="../_sources/how-to/troubleshooting.md.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>

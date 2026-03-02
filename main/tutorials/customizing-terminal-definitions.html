@@ -1,0 +1,915 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Customizing Terminal Definitions &#8212; fastcs-catio 1.1a4.dev124+g81fc31124 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=90a8e51b" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=85897bc2"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/customizing-terminal-definitions';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://DiamondLightSource.github.io/fastcs-catio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'main';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="icon" href="../_static/dls-logo.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How-to Guides" href="../how-to.html" />
+    <link rel="prev" title="Getting Started with the Simulator" href="getting-started-with-simulator.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="main" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/dls-logo.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/dls-logo.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">fastcs-catio</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../how-to.html">
+    How-to Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../explanations.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/DiamondLightSource/fastcs-catio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/fastcs-catio" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fas fa-cube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started-with-simulator.html">Getting Started with the Simulator</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Customizing Terminal Definitions</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../tutorials.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Customizing Terminal Definitions</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="customizing-terminal-definitions">
+<h1>Customizing Terminal Definitions<a class="headerlink" href="#customizing-terminal-definitions" title="Link to this heading">#</a></h1>
+<p>This tutorial shows how to customize which symbols and CoE objects are exposed
+by the IOC using the <code class="docutils literal notranslate"><span class="pre">catio-terminals</span></code> GUI editor.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Completed <a class="reference internal" href="getting-started-with-simulator.html"><span class="std std-doc">Getting Started with the Simulator</span></a></p></li>
+<li><p>Configuration files copied to <code class="docutils literal notranslate"><span class="pre">/tmp</span></code></p></li>
+</ul>
+</section>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>The terminal definitions YAML file controls which data points the IOC exposes
+as EPICS Process Variables (PVs). Each Beckhoff terminal type has many
+potential symbols and CoE (CANopen over EtherCAT) configuration objects, but
+you typically only need a subset of them.</p>
+<p>In this tutorial, you will:</p>
+<ol class="arabic simple">
+<li><p>View an EL1502 counter terminal’s current PVs</p></li>
+<li><p>Use the catio-terminals GUI to add more CoE objects</p></li>
+<li><p>See the new PVs appear after restarting the IOC</p></li>
+</ol>
+</section>
+<section id="step-1-start-the-simulator">
+<h2>Step 1: Start the Simulator<a class="headerlink" href="#step-1-start-the-simulator" title="Link to this heading">#</a></h2>
+<p>If the simulator from the first tutorial is still running, you can skip this
+step. Otherwise, start it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>tests.ads_sim<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--terminal-defs<span class="w"> </span>/tmp/terminal_types.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="w"> </span>/tmp/server_config_CX7000_cs2.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--disable-notifications
+</pre></div>
+</div>
+</section>
+<section id="step-2-start-the-ioc-and-observe-current-state">
+<h2>Step 2: Start the IOC and Observe Current State<a class="headerlink" href="#step-2-start-the-ioc-and-observe-current-state" title="Link to this heading">#</a></h2>
+<p>In a new terminal, start the IOC:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fastcs-catio<span class="w"> </span>ioc<span class="w"> </span>IOC<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--terminal-defs<span class="w"> </span>/tmp/terminal_types.yaml
+</pre></div>
+</div>
+<p>Use Phoebus to navigate to <strong>ETH1 &gt; RIO2 &gt; MOD13</strong>. You’ll see the current
+symbols and CoE objects exposed for the EL1502 terminal:</p>
+<p>You can identify the CoEs by the fact that they are grouped into their own group boxes, the symbols all appear in the first group box.</p>
+</section>
+<section id="step-3-fetch-the-beckhoff-terminal-database">
+<h2>Step 3: Fetch the Beckhoff Terminal Database<a class="headerlink" href="#step-3-fetch-the-beckhoff-terminal-database" title="Link to this heading">#</a></h2>
+<p>Before editing terminal definitions, you need to download Beckhoff’s ESI
+(EtherCAT Slave Information) database. This XML catalog describes all terminal
+types and their available symbols.</p>
+<p>Run the cache update command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>catio-terminals<span class="w"> </span>update-cache
+</pre></div>
+</div>
+<p>This downloads XML files from Beckhoff’s website to <code class="docutils literal notranslate"><span class="pre">~/.cache/catio_terminals/</span></code>.
+You only need to do this once (or when new terminal types are released).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The download may take a minute. You’ll see progress messages as it parses
+each XML file.</p>
+</div>
+</section>
+<section id="step-4-launch-the-terminal-editor">
+<h2>Step 4: Launch the Terminal Editor<a class="headerlink" href="#step-4-launch-the-terminal-editor" title="Link to this heading">#</a></h2>
+<p>Now launch the catio-terminals GUI to edit the terminal definitions:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>catio-terminals<span class="w"> </span>edit<span class="w"> </span>/tmp/terminal_types.yaml
+</pre></div>
+</div>
+<p>A browser window will open with the terminal editor interface.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If a browser doesn’t open automatically, look in the terminal output for a
+URL like <code class="docutils literal notranslate"><span class="pre">http://localhost:8080</span></code> and open it manually.</p>
+</div>
+</section>
+<section id="step-5-find-the-el1502-terminal">
+<h2>Step 5: Find the EL1502 Terminal<a class="headerlink" href="#step-5-find-the-el1502-terminal" title="Link to this heading">#</a></h2>
+<p>The editor shows a list of all terminal types defined in the YAML file.</p>
+<ol class="arabic simple">
+<li><p><strong>Use the filter</strong> - Type <code class="docutils literal notranslate"><span class="pre">EL1502</span></code> in the filter/search box at the top</p></li>
+<li><p><strong>Click on EL1502</strong> - This opens the terminal details panel</p></li>
+</ol>
+<p>You’ll see two main sections:</p>
+<ul class="simple">
+<li><p><strong>Symbol Nodes (PDO)</strong> - Process data (counter values, control bits)</p></li>
+<li><p><strong>CoE Objects</strong> - Configuration parameters accessible via SDO</p></li>
+</ul>
+</section>
+<section id="step-6-add-coe-objects">
+<h2>Step 6: Add CoE Objects<a class="headerlink" href="#step-6-add-coe-objects" title="Link to this heading">#</a></h2>
+<p>The EL1502 has several CoE objects available for configuration. Let’s add
+some useful ones.</p>
+<section id="available-coe-objects">
+<h3>Available CoE Objects<a class="headerlink" href="#available-coe-objects" title="Link to this heading">#</a></h3>
+<p>The EL1502 supports the following CoE configuration objects and by default these are already selected in the YAML file. The 0x8000 range of Coe addresses represents the operational configuration parameters for all terminals that have CoE.</p>
+<p>There are many more CoE objects available for the EL1502. In this exercise you can add a few more to see the result in the IOC and Phoebus.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Index</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0x8000</p></td>
+<td><p>CNT Settings Ch.1</p></td>
+<td><p>Channel 1 counter configuration</p></td>
+</tr>
+<tr class="row-odd"><td><p>0x8010</p></td>
+<td><p>CNT Settings Ch.2</p></td>
+<td><p>Channel 2 counter configuration</p></td>
+</tr>
+<tr class="row-even"><td><p>0x8020</p></td>
+<td><p>CNT Settings</p></td>
+<td><p>Combined counter settings</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="select-coe-objects">
+<h3>Select CoE Objects<a class="headerlink" href="#select-coe-objects" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Scroll down to the <strong>CoE Objects</strong> section</p></li>
+<li><p>Click the checkbox next to these objects to select them:</p>
+<ul class="simple">
+<li><p><strong>CNT Settings Ch.1</strong> (index 0x8000)</p></li>
+<li><p><strong>CNT Settings Ch.2</strong> (index 0x8010)</p></li>
+<li><p><strong>CNT Settings</strong> (index 0x8020)</p></li>
+</ul>
+</li>
+<li><p>Expand a CoE object to see its sub-indices:</p>
+<ul class="simple">
+<li><p>Each sub-index is a configurable parameter</p></li>
+<li><p>For example, CNT Settings Ch.1 has:</p>
+<ul>
+<li><p>Enable function to set output</p></li>
+<li><p>Enable function to reset output</p></li>
+<li><p>Enable reload</p></li>
+<li><p>Count down</p></li>
+<li><p>Switch on threshold value</p></li>
+<li><p>Switch off threshold value</p></li>
+<li><p>Counter reload value</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Select individual sub-indices you want to expose as PVs</p></li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The counter threshold values are particularly useful - they let you configure
+at what count values the terminal sets or resets its digital output.</p>
+</div>
+</section>
+</section>
+<section id="step-7-save-the-configuration">
+<h2>Step 7: Save the Configuration<a class="headerlink" href="#step-7-save-the-configuration" title="Link to this heading">#</a></h2>
+<p>Click the <strong>Save</strong> button in the editor toolbar.</p>
+<p>The YAML file is updated with your selections. You can verify by examining
+the file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check the EL1502 section in the YAML</span>
+grep<span class="w"> </span>-A<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="s2">&quot;EL1502:&quot;</span><span class="w"> </span>/tmp/terminal_types.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-120
+</pre></div>
+</div>
+<p>Look for <code class="docutils literal notranslate"><span class="pre">selected:</span> <span class="pre">true</span></code> on the CoE object subindices you enabled.</p>
+</section>
+<section id="step-8-restart-the-ioc">
+<h2>Step 8: Restart the IOC<a class="headerlink" href="#step-8-restart-the-ioc" title="Link to this heading">#</a></h2>
+<p>The IOC reads terminal definitions at startup, so you need to restart it to
+pick up the changes.</p>
+<ol class="arabic simple">
+<li><p>Stop the running IOC with <code class="docutils literal notranslate"><span class="pre">Ctrl+C</span></code></p></li>
+<li><p>Restart it:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fastcs-catio<span class="w"> </span>ioc<span class="w"> </span>IOC<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--terminal-defs<span class="w"> </span>/tmp/terminal_types.yaml
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The simulator can stay running - you only need to restart the IOC.</p>
+</div>
+</section>
+<section id="step-9-view-the-new-pvs">
+<h2>Step 9: View the New PVs<a class="headerlink" href="#step-9-view-the-new-pvs" title="Link to this heading">#</a></h2>
+<p>Navigate back to the EL1502 terminal in Phoebus (ETH1 &gt; RIO2 &gt; MOD13).</p>
+<p>You should now see additional PVs for the CoE objects you selected:</p>
+<ul class="simple">
+<li><p>Counter configuration parameters</p></li>
+<li><p>Threshold values</p></li>
+<li><p>Enable flags</p></li>
+</ul>
+<p>These parameters are now readable and writable through EPICS!</p>
+<section id="example-configure-counter-threshold">
+<h3>Example: Configure Counter Threshold<a class="headerlink" href="#example-configure-counter-threshold" title="Link to this heading">#</a></h3>
+<p>Try setting a counter threshold:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the &quot;switch on&quot; threshold for channel 1 to 100</span>
+caput<span class="w"> </span>IOC:ETH1:RIO2:MOD13:CNT_SETTINGS_CH_1:SWITCH_ON_THRESHOLD_VALUE<span class="w"> </span><span class="m">100</span>
+
+<span class="c1"># Read it back</span>
+caget<span class="w"> </span>IOC:ETH1:RIO2:MOD13:CNT_SETTINGS_CH_1:SWITCH_ON_THRESHOLD_VALUE
+</pre></div>
+</div>
+</section>
+</section>
+<section id="understanding-coe-vs-pdo">
+<h2>Understanding CoE vs PDO<a class="headerlink" href="#understanding-coe-vs-pdo" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>What It Is</p></th>
+<th class="head"><p>Access Speed</p></th>
+<th class="head"><p>Use Case</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>PDO (Symbol)</strong></p></td>
+<td><p>Process data</p></td>
+<td><p>Fast (cyclic)</p></td>
+<td><p>Real-time I/O values</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CoE (SDO)</strong></p></td>
+<td><p>Configuration</p></td>
+<td><p>Slower (acyclic)</p></td>
+<td><p>Setup parameters</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<ul class="simple">
+<li><p><strong>PDO symbols</strong> (counter value, status bits) update every EtherCAT cycle</p></li>
+<li><p><strong>CoE objects</strong> (thresholds, enable flags) are configuration parameters read/written on demand</p></li>
+</ul>
+<p>Most applications need PDO symbols for monitoring. CoE objects are useful when
+you need to configure terminal behavior at runtime.</p>
+</section>
+<section id="experiment-further">
+<h2>Experiment Further<a class="headerlink" href="#experiment-further" title="Link to this heading">#</a></h2>
+<section id="add-more-terminal-types">
+<h3>Add More Terminal Types<a class="headerlink" href="#add-more-terminal-types" title="Link to this heading">#</a></h3>
+<p>TODO: this experiment needs to be expanded into a separate tutorial in which we add terminals to the chain and then see that we need to update the terminal definitions to get those new terminals working.</p>
+<p>Try adding CoE objects to other terminal types:</p>
+<ul class="simple">
+<li><p><strong>EL3104</strong> - Analog input scaling and filter settings</p></li>
+<li><p><strong>EL2024</strong> - Digital output diagnostics</p></li>
+</ul>
+</section>
+<section id="remove-unused-symbols">
+<h3>Remove Unused Symbols<a class="headerlink" href="#remove-unused-symbols" title="Link to this heading">#</a></h3>
+<p>If your IOC has too many PVs, use the editor to deselect symbols you don’t
+need. This reduces memory usage and simplifies the Phoebus screens.</p>
+</section>
+<section id="create-custom-yaml-files">
+<h3>Create Custom YAML Files<a class="headerlink" href="#create-custom-yaml-files" title="Link to this heading">#</a></h3>
+<p>For production deployments, you might maintain separate YAML files for
+different beamlines or experiments:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copy the base definitions</span>
+cp<span class="w"> </span>/tmp/terminal_types.yaml<span class="w"> </span>/tmp/beamline_i22.yaml
+
+<span class="c1"># Edit for I22-specific terminals</span>
+catio-terminals<span class="w"> </span>edit<span class="w"> </span>/tmp/beamline_i22.yaml
+
+<span class="c1"># Start IOC with custom definitions</span>
+fastcs-catio<span class="w"> </span>ioc<span class="w"> </span>BL22I-EA-CATIO-01<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--terminal-defs<span class="w"> </span>/tmp/beamline_i22.yaml
+</pre></div>
+</div>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Learn about <a class="reference internal" href="../explanations/terminal-yaml-definitions.html"><span class="std std-doc">Terminal YAML Definitions</span></a>
+in depth</p></li>
+<li><p>Explore <a class="reference internal" href="../explanations/coe-parameters.html"><span class="std std-doc">CoE Parameters</span></a> available for
+different terminal types</p></li>
+<li><p>See <a class="reference internal" href="../explanations/architecture-overview.html"><span class="std std-doc">Architecture Overview</span></a> for how
+the system works</p></li>
+</ul>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="coe-objects-not-appearing">
+<h3>CoE Objects Not Appearing<a class="headerlink" href="#coe-objects-not-appearing" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ensure you saved the YAML file in the editor</p></li>
+<li><p>Verify the IOC was restarted (not just the simulator)</p></li>
+<li><p>Check for YAML syntax errors: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-c</span> <span class="pre">&quot;import</span> <span class="pre">yaml;</span> <span class="pre">yaml.safe_load(open('/tmp/terminal_types.yaml'))&quot;</span></code></p></li>
+</ul>
+</section>
+<section id="editor-won-t-start">
+<h3>Editor Won’t Start<a class="headerlink" href="#editor-won-t-start" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ensure the terminals optional dependency is installed: <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[terminals]&quot;</span></code></p></li>
+<li><p>Check no other process is using port 8080</p></li>
+</ul>
+</section>
+<section id="pv-names-changed">
+<h3>PV Names Changed<a class="headerlink" href="#pv-names-changed" title="Link to this heading">#</a></h3>
+<p>CoE object PV names are derived from their names in the Beckhoff XML. If names
+look different after editing, the XML database may have been updated. This is
+normal - the names are canonical from Beckhoff.</p>
+<p>Because the screens are autogenerated, you need only refresh them with <code class="docutils literal notranslate"><span class="pre">right-click</span> <span class="pre">&gt;</span> <span class="pre">Re-load</span> <span class="pre">display</span></code> to see the new PVs after editing terminal definitions and restarting the IOC.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="getting-started-with-simulator.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Getting Started with the Simulator</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../how-to.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How-to Guides</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-start-the-simulator">Step 1: Start the Simulator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-start-the-ioc-and-observe-current-state">Step 2: Start the IOC and Observe Current State</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-fetch-the-beckhoff-terminal-database">Step 3: Fetch the Beckhoff Terminal Database</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-launch-the-terminal-editor">Step 4: Launch the Terminal Editor</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-find-the-el1502-terminal">Step 5: Find the EL1502 Terminal</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-add-coe-objects">Step 6: Add CoE Objects</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#available-coe-objects">Available CoE Objects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#select-coe-objects">Select CoE Objects</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-7-save-the-configuration">Step 7: Save the Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-8-restart-the-ioc">Step 8: Restart the IOC</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-9-view-the-new-pvs">Step 9: View the New PVs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-configure-counter-threshold">Example: Configure Counter Threshold</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-coe-vs-pdo">Understanding CoE vs PDO</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#experiment-further">Experiment Further</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#add-more-terminal-types">Add More Terminal Types</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#remove-unused-symbols">Remove Unused Symbols</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-custom-yaml-files">Create Custom YAML Files</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coe-objects-not-appearing">CoE Objects Not Appearing</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#editor-won-t-start">Editor Won’t Start</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pv-names-changed">PV Names Changed</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/DiamondLightSource/fastcs-catio/edit/main/docs/tutorials/customizing-terminal-definitions.md">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorials/customizing-terminal-definitions.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
