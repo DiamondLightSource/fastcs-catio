@@ -15,4 +15,5 @@ explanations/coe-parameters.md
 explanations/dynamic-pdos.md
 explanations/useful_notes_ads_twincat.md
 explanations/decisions.md
+explanations/ai-assisted-development.md
 ```
