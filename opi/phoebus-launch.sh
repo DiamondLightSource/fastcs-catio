@@ -17,7 +17,7 @@ mounts="
 "
 
 settings="
--resource /workspace/screens/catio.bob
+-resource /workspace/screens/index.bob
 "
 
 set -x

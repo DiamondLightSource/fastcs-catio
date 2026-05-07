@@ -150,9 +150,7 @@ class ResponseEvent:
 #################################################################
 
 
-def get_remote_address(
-    remote_ip: str, udp_port: int = REMOTE_UDP_PORT
-) -> AmsNetId:
+def get_remote_address(remote_ip: str, udp_port: int = REMOTE_UDP_PORT) -> AmsNetId:
     """
     Get the AmsNetId of a remote TwinCAT server via UDP communication.
 

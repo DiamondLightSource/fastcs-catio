@@ -185,8 +185,13 @@ async def fastcs_catio_controller(simulator_process, config_file: str):
     Note: We only test connection, not full initialization which hangs.
     """
     _ = config_file  # Used by dependent fixtures
-    from fastcs_catio.catio_controller import CATioServerController
-    from fastcs_catio.client import RemoteRoute
+    from fastcs_catio.catio_controller import (
+        CATioRouteSettings,
+        CATioScanTimings,
+        CATioServerController,
+        CATioServerControllerOptions,
+        CATioTCPSettings,
+    )
 
     # Give simulator a moment to be ready
     time.sleep(0.5)
@@ -201,15 +206,16 @@ async def fastcs_catio_controller(simulator_process, config_file: str):
 
     _, simulator_tcp_port, simulator_udp_port = simulator_process
 
-    route = RemoteRoute(ip, udp_port=simulator_udp_port)
-    controller = CATioServerController(
-        ip,
-        route,
-        target_port,
-        poll_period,
-        notification_period,
-        tcp_port=simulator_tcp_port,
+    options = CATioServerControllerOptions(
+        tcp_settings=CATioTCPSettings(
+            target_ip=ip, target_port=target_port, tcp_port=simulator_tcp_port
+        ),
+        route=CATioRouteSettings(udp_port=simulator_udp_port),
+        scan_timings=CATioScanTimings(
+            poll_period=poll_period, notification_period=notification_period
+        ),
     )
+    controller = CATioServerController(options)
     launcher = FastCS(controller, transports=[])
 
     try:

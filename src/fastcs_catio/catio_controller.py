@@ -4,6 +4,7 @@ import string
 import time
 from abc import abstractmethod
 from collections.abc import Generator, Iterator
+from dataclasses import dataclass, field
 from itertools import chain, count
 from types import FrameType
 from typing import Any
@@ -25,7 +26,7 @@ from fastcs_catio.catio_attribute_io import (
     CATioControllerCoEAttributeIO,
     CATioControllerSymbolAttributeIO,
 )
-from fastcs_catio.client import RemoteRoute, get_remote_address
+from fastcs_catio.client import REMOTE_UDP_PORT, RemoteRoute, get_remote_address
 from fastcs_catio.devices import IODevice, IONodeType, IOServer, IOSlave, IOTreeNode
 from fastcs_catio.logging import get_logger
 from fastcs_catio.utils import (
@@ -349,18 +350,48 @@ class CATioController(Controller, Tracer):
                 )
 
 
+@dataclass
+class CATioTCPSettings:
+    target_ip: str
+    target_port: int = 27905
+    tcp_port: int = 48898
+
+
+@dataclass
+class CATioRouteSettings:
+    route_name: str = ""
+    user_name: str = "Administrator"
+    password: str = "1"
+    udp_port: int = REMOTE_UDP_PORT
+
+
+@dataclass
+class CATioScanTimings:
+    poll_period: float = 1.0
+    notification_period: float = 0.2
+
+
+@dataclass
+class CATioServerControllerOptions:
+    tcp_settings: CATioTCPSettings
+    route: CATioRouteSettings = field(default_factory=CATioRouteSettings)
+    scan_timings: CATioScanTimings = field(default_factory=CATioScanTimings)
+
+
 class CATioServerController(CATioController):
     """A root controller for an ADS-based EtherCAT I/O server."""
 
-    def __init__(
-        self,
-        target_ip: str,
-        route: RemoteRoute,
-        target_port: int,
-        poll_period: float,
-        notification_period: float,
-        tcp_port: int = 48898,
-    ) -> None:
+    def __init__(self, options: CATioServerControllerOptions) -> None:
+        target_ip = options.tcp_settings.target_ip
+
+        route = RemoteRoute(
+            target_ip,
+            route_name=options.route.route_name,
+            user_name=options.route.user_name,
+            password=options.route.password,
+            udp_port=options.route.udp_port,
+        )
+
         # Get remote target netid via udp connection.
         # The route already knows the remote's UDP discovery port; reuse it
         # so all UDP traffic for this remote goes to the same place.
@@ -376,7 +407,10 @@ class CATioServerController(CATioController):
 
         # Define the other instance variables
         self._tcp_settings = CATioServerConnectionSettings(
-            target_ip, target_netid.to_string(), target_port, tcp_port
+            target_ip,
+            target_netid.to_string(),
+            options.tcp_settings.target_port,
+            options.tcp_settings.tcp_port,
         )
         """TCP connection settings for the CATio server."""
         self.io_function = "Beckhoff Embedded PC for I/O systems connection and control"
@@ -392,8 +426,8 @@ class CATioServerController(CATioController):
 
         # Update the global period variables
         global STANDARD_POLL_UPDATE_PERIOD, NOTIFICATION_UPDATE_PERIOD
-        STANDARD_POLL_UPDATE_PERIOD = poll_period
-        NOTIFICATION_UPDATE_PERIOD = notification_period
+        STANDARD_POLL_UPDATE_PERIOD = options.scan_timings.poll_period
+        NOTIFICATION_UPDATE_PERIOD = options.scan_timings.notification_period
         logger.info(
             f"CATio standard polling period set to {STANDARD_POLL_UPDATE_PERIOD} "
             + "seconds and CATio notification update period set to "

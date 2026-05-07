@@ -1,26 +1,142 @@
 {
   "$defs": {
-    "EpicsCAOptions": {
+    "CATioRouteSettings": {
       "properties": {
-        "docs": {
-          "$ref": "#/$defs/EpicsDocsOptions"
+        "route_name": {
+          "default": "",
+          "title": "Route Name",
+          "type": "string"
         },
-        "gui": {
-          "$ref": "#/$defs/EpicsGUIOptions"
+        "user_name": {
+          "default": "Administrator",
+          "title": "User Name",
+          "type": "string"
         },
-        "ioc": {
-          "$ref": "#/$defs/EpicsIOCOptions"
+        "password": {
+          "default": "1",
+          "title": "Password",
+          "type": "string"
+        },
+        "udp_port": {
+          "default": 48899,
+          "title": "Udp Port",
+          "type": "integer"
         }
       },
+      "title": "CATioRouteSettings",
+      "type": "object"
+    },
+    "CATioScanTimings": {
+      "properties": {
+        "poll_period": {
+          "default": 1.0,
+          "title": "Poll Period",
+          "type": "number"
+        },
+        "notification_period": {
+          "default": 0.2,
+          "title": "Notification Period",
+          "type": "number"
+        }
+      },
+      "title": "CATioScanTimings",
+      "type": "object"
+    },
+    "CATioServerControllerEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CATioServerController",
+          "title": "Type",
+          "type": "string"
+        },
+        "tcp_settings": {
+          "$ref": "#/$defs/CATioTCPSettings"
+        },
+        "route": {
+          "$ref": "#/$defs/CATioRouteSettings"
+        },
+        "scan_timings": {
+          "$ref": "#/$defs/CATioScanTimings"
+        }
+      },
+      "required": [
+        "type",
+        "tcp_settings"
+      ],
+      "title": "CATioServerControllerEntry",
+      "type": "object"
+    },
+    "CATioTCPSettings": {
+      "properties": {
+        "target_ip": {
+          "title": "Target Ip",
+          "type": "string"
+        },
+        "target_port": {
+          "default": 27905,
+          "title": "Target Port",
+          "type": "integer"
+        },
+        "tcp_port": {
+          "default": 48898,
+          "title": "Tcp Port",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "target_ip"
+      ],
+      "title": "CATioTCPSettings",
+      "type": "object"
+    },
+    "EpicsCAOptions": {
+      "properties": {},
       "title": "EpicsCAOptions",
+      "type": "object"
+    },
+    "EpicsCATransport": {
+      "properties": {
+        "epicsca": {
+          "$ref": "#/$defs/EpicsCAOptions"
+        },
+        "docs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpicsDocsOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "gui": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpicsGUIOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "EpicsCATransport",
       "type": "object"
     },
     "EpicsDocsOptions": {
       "properties": {
-        "path": {
+        "output_dir": {
           "default": ".",
           "format": "path",
-          "title": "Path",
+          "title": "Output Dir",
+          "type": "string"
+        },
+        "title": {
+          "default": "FastCS Devices",
+          "title": "Title",
           "type": "string"
         },
         "depth": {
@@ -50,10 +166,10 @@
     },
     "EpicsGUIOptions": {
       "properties": {
-        "output_path": {
-          "default": "output.bob",
+        "output_dir": {
+          "default": ".",
           "format": "path",
-          "title": "Output Path",
+          "title": "Output Dir",
           "type": "string"
         },
         "file_format": {
@@ -61,7 +177,7 @@
           "default": ".bob"
         },
         "title": {
-          "default": "Simple Device",
+          "default": "FastCS Devices",
           "title": "Title",
           "type": "string"
         }
@@ -69,138 +185,40 @@
       "title": "EpicsGUIOptions",
       "type": "object"
     },
-    "EpicsIOCOptions": {
-      "properties": {
-        "pv_prefix": {
-          "default": "MY-DEVICE-PREFIX",
-          "title": "Pv Prefix",
-          "type": "string"
-        }
-      },
-      "title": "EpicsIOCOptions",
-      "type": "object"
-    },
     "EpicsPVAOptions": {
-      "properties": {
-        "docs": {
-          "$ref": "#/$defs/EpicsDocsOptions"
-        },
-        "gui": {
-          "$ref": "#/$defs/EpicsGUIOptions"
-        },
-        "ioc": {
-          "$ref": "#/$defs/EpicsIOCOptions"
-        }
-      },
+      "properties": {},
       "title": "EpicsPVAOptions",
       "type": "object"
     },
-    "GraphQLOptions": {
+    "EpicsPVATransport": {
       "properties": {
-        "gql": {
-          "$ref": "#/$defs/GraphQLServerOptions"
+        "epicspva": {
+          "$ref": "#/$defs/EpicsPVAOptions"
+        },
+        "docs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpicsDocsOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "gui": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EpicsGUIOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
-      "title": "GraphQLOptions",
-      "type": "object"
-    },
-    "GraphQLServerOptions": {
-      "properties": {
-        "host": {
-          "default": "localhost",
-          "title": "Host",
-          "type": "string"
-        },
-        "port": {
-          "default": 8080,
-          "title": "Port",
-          "type": "integer"
-        },
-        "log_level": {
-          "default": "info",
-          "title": "Log Level",
-          "type": "string"
-        }
-      },
-      "title": "GraphQLServerOptions",
-      "type": "object"
-    },
-    "CATioRemoteRoute": {
-      "properties": {
-        "remote": {
-          "title": "Ip",
-          "type": "string"
-        },
-        "route_name": {
-          "default": "test_route",
-          "title": "Name",
-          "type": "string",
-          "description": "Remote route name parameter"
-        },
-        "user_name": {
-          "default": "Administrator",
-          "title": "Username",
-          "type": "string",
-          "description": "Beckhoff server connection username credential"
-        },
-        "password": {
-          "default": "1",
-          "title": "Password",
-          "type": "string",
-          "description": "Beckhoff server connection username credential"
-        }
-      },
-      "required": [
-        "remote"
-      ],
-      "title": "CATioRemoteRoute",
-      "type": "object"
-    },
-    "CATioConnectionSettings": {
-      "properties": {
-        "target_ip": {
-          "title": "Ip",
-          "type": "string",
-          "description": "Beckhoff TwinCAT server host to connect to (name or IP address)"
-        },
-        "target_port": {
-          "title": "Port",
-          "type": "integer",
-          "description": "Ams port of the the target device"
-        }
-      },
-      "required": [
-        "target_ip",
-        "target_port"
-      ],
-      "title": "CATioConnectionSettings",
-      "type": "object"
-    },
-    "CATioScanTimings": {
-      "properties": {
-        "poll_period": {
-          "default": 1.0,
-          "title": "Poll Period",
-          "type": "float",
-          "description": "Poll period in seconds for the standard CAtio parameters"
-        },
-        "notification_period": {
-          "default": 0.2,
-          "title": "Notification Period",
-          "type": "float",
-          "description": "Poll period in seconds for the subscribed CAtio parameters"
-        }
-      },
-      "title": "CATioScanTimings",
-      "type": "object"
-    },
-    "RestOptions": {
-      "properties": {
-        "rest": {
-          "$ref": "#/$defs/RestServerOptions"
-        }
-      },
-      "title": "RestOptions",
+      "title": "EpicsPVATransport",
       "type": "object"
     },
     "RestServerOptions": {
@@ -224,79 +242,36 @@
       "title": "RestServerOptions",
       "type": "object"
     },
-    "TangoDSROptions": {
+    "RestTransport": {
       "properties": {
-        "dev_name": {
-          "default": "MY/DEVICE/NAME",
-          "title": "Dev Name",
-          "type": "string"
-        },
-        "dsr_instance": {
-          "default": "MY_SERVER_INSTANCE",
-          "title": "Dsr Instance",
-          "type": "string"
-        },
-        "debug": {
-          "default": false,
-          "title": "Debug",
-          "type": "boolean"
+        "rest": {
+          "$ref": "#/$defs/RestServerOptions"
         }
       },
-      "title": "TangoDSROptions",
-      "type": "object"
-    },
-    "TangoOptions": {
-      "properties": {
-        "dsr": {
-          "$ref": "#/$defs/TangoDSROptions"
-        }
-      },
-      "title": "TangoOptions",
-      "type": "object"
-    },
-    "CATioControllerSettings": {
-      "properties": {
-        "remote_route": {
-          "$ref": "#/$defs/CATioRemoteRoute"
-        },
-        "tcp_settings": {
-          "$ref": "#/$defs/CATioConnectionSettings"
-        },
-        "scan_timings": {
-          "$ref": "#/$defs/CATioScanTimings"
-        }
-      },
-      "required": [
-        "route",
-        "tcp_settings",
-        "scan_timings"
-      ],
-      "title": "CATioControllerSettings",
+      "title": "RestTransport",
       "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
-    "controller": {
-      "$ref": "#/$defs/CATioControllerSettings"
+    "controllers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CATioServerControllerEntry"
+      },
+      "title": "Controllers",
+      "type": "object"
     },
     "transport": {
       "items": {
         "anyOf": [
           {
-            "$ref": "#/$defs/EpicsPVAOptions"
+            "$ref": "#/$defs/EpicsCATransport"
           },
           {
-            "$ref": "#/$defs/EpicsCAOptions"
+            "$ref": "#/$defs/EpicsPVATransport"
           },
           {
-            "$ref": "#/$defs/TangoOptions"
-          },
-          {
-            "$ref": "#/$defs/RestOptions"
-          },
-          {
-            "$ref": "#/$defs/GraphQLOptions"
+            "$ref": "#/$defs/RestTransport"
           }
         ]
       },
@@ -305,9 +280,9 @@
     }
   },
   "required": [
-    "controller",
+    "controllers",
     "transport"
   ],
-  "title": "CATioController",
+  "title": "CATioServerController",
   "type": "object"
 }
