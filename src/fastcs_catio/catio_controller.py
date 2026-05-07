@@ -359,9 +359,12 @@ class CATioServerController(CATioController):
         target_port: int,
         poll_period: float,
         notification_period: float,
+        tcp_port: int = 48898,
     ) -> None:
-        # Get remote target netid via udp connection
-        target_netid = get_remote_address(target_ip)
+        # Get remote target netid via udp connection.
+        # The route already knows the remote's UDP discovery port; reuse it
+        # so all UDP traffic for this remote goes to the same place.
+        target_netid = get_remote_address(target_ip, route.udp_port)
         logger.info(f"{target_ip} remote has Ams netid: {target_netid}.")
 
         # Add a communication route to the remote via udp connection
@@ -373,7 +376,7 @@ class CATioServerController(CATioController):
 
         # Define the other instance variables
         self._tcp_settings = CATioServerConnectionSettings(
-            target_ip, target_netid.to_string(), target_port
+            target_ip, target_netid.to_string(), target_port, tcp_port
         )
         """TCP connection settings for the CATio server."""
         self.io_function = "Beckhoff Embedded PC for I/O systems connection and control"

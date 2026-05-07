@@ -83,6 +83,8 @@ class CATioServerConnectionSettings:
     """The Ams netid of the TwinCAT server to connect to."""
     ams_port: int = 25565
     """The Ams port of the TwinCAT server to connect to."""
+    tcp_port: int = 48898
+    """The TCP port the ADS server listens on (default: ADS standard 48898)."""
 
     def __repr__(self) -> str:
         return f"TCP connection to remote server with netid {self.ams_netid}, \
@@ -144,6 +146,7 @@ class CATioStreamConnection:
             target_ip=settings.ip,
             target_ams_net_id=settings.ams_netid,
             target_ams_port=settings.ams_port,
+            ads_port=settings.tcp_port,
         )
         return cls(settings, ads_client)
 

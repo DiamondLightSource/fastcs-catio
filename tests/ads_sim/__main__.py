@@ -65,6 +65,12 @@ def parse_args() -> argparse.Namespace:
         help="Port to listen on",
     )
     parser.add_argument(
+        "--udp-port",
+        type=int,
+        default=48899,
+        help="UDP port for service discovery",
+    )
+    parser.add_argument(
         "--config",
         type=str,
         default=None,
@@ -128,6 +134,7 @@ async def main() -> int:
     server = ADSSimServer(
         host=args.host,
         port=args.port,
+        udp_port=args.udp_port,
         config_path=config_path,
         terminal_patterns=terminal_patterns,
         enable_notifications=not args.disable_notifications,

@@ -287,6 +287,7 @@ class ADSSimServer:
         self,
         host: str = "127.0.0.1",
         port: int = ADS_TCP_PORT,
+        udp_port: int = ADS_UDP_PORT,
         config_path: str | Path | None = None,
         terminal_patterns: list[str] | None = None,
         enable_notifications: bool = True,
@@ -296,13 +297,15 @@ class ADSSimServer:
 
         Args:
             host: Host address to bind to.
-            port: Port to listen on.
+            port: TCP port to listen on.
+            udp_port: UDP port for service discovery.
             config_path: Path to YAML config file for EtherCAT chain.
             terminal_patterns: Glob patterns for terminal definition YAML files.
             enable_notifications: Whether to enable the notification system.
         """
         self.host = host
         self.port = port
+        self.udp_port = udp_port
         self.server: asyncio.Server | None = None
         self.udp_transport: asyncio.DatagramTransport | None = None
         self.running = False
@@ -349,7 +352,7 @@ class ADSSimServer:
         loop = asyncio.get_event_loop()
         self.udp_transport, _ = await loop.create_datagram_endpoint(
             lambda: UDPProtocol(self),
-            local_addr=(self.host, ADS_UDP_PORT),
+            local_addr=(self.host, self.udp_port),
         )
 
         self.running = True
@@ -362,7 +365,7 @@ class ADSSimServer:
             logger.info("Notification system disabled")
 
         logger.info(f"ADS Simulation server started on {self.host}:{self.port} (TCP)")
-        logger.info(f"ADS UDP discovery service on {self.host}:{ADS_UDP_PORT}")
+        logger.info(f"ADS UDP discovery service on {self.host}:{self.udp_port}")
         self.chain.print_chain()
 
     async def stop(self) -> None:
