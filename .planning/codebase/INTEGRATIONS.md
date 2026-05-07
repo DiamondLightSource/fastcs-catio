@@ -38,7 +38,7 @@
 ### YAML Configuration Files
 - Terminal type definitions: `src/catio_terminals/terminals/terminal_types.yaml`
 - Runtime symbols: `src/catio_terminals/config/runtime_symbols.yaml`
-- Controller config: `src/fastcs_catio/catio_controller.yaml`
+- Controller config: `src/fastcs_catio/fastcs.yaml`
 
 ### ESI XML Files
 - Parsed by `src/catio_terminals/xml/` package

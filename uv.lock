@@ -760,7 +760,7 @@ wheels = [
 
 [[package]]
 name = "fastcs"
-version = "0.12.0a1"
+version = "0.14.0b1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioserial" },
@@ -773,9 +773,9 @@ dependencies = [
     { name = "ruamel-yaml" },
     { name = "stdio-socket" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/9c/ed9fbd9699e021e81aa837983806d9731cecbb191455653d3ca528e9ad86/fastcs-0.12.0a1.tar.gz", hash = "sha256:e5443a6db9646f184f5a950f7cf3c4607c61160c33ea0dca92f7fdc8eb26e20b", size = 118985, upload-time = "2025-12-22T14:34:34.147Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/0a/10f9c5cf04de110bb955e25ed4771bc337a77a415090e0e491d27434b1ee/fastcs-0.14.0b1.tar.gz", hash = "sha256:b895e6b50885edce5e0ee5fec5e54045d22b177f6673018c18bd445356d097fe", size = 415767, upload-time = "2026-05-06T16:14:18.141Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/84/6270f9cf5817fc5e5a3a3f4b4291c781d61035c6b146ab4087b55dc106bf/fastcs-0.12.0a1-py3-none-any.whl", hash = "sha256:21412a67b6f480d1c82b629963a298c0f04cdd6d418933ebdadb78659161e5ab", size = 82484, upload-time = "2025-12-22T14:34:32.838Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/35/8ff78ef1e2005f89aa303210d09be1e9092f2d71d389d48fd2b47a726ea6/fastcs-0.14.0b1-py3-none-any.whl", hash = "sha256:c7146762e569e1fe32358e1db39ac04164b179ce417a8e0ecd606489d63e0ab3", size = 93592, upload-time = "2026-05-06T16:14:16.921Z" },
 ]
 
 [package.optional-dependencies]
@@ -827,7 +827,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastcs", extras = ["epics"], specifier = "==0.12.0a1" },
+    { name = "fastcs", extras = ["epics"], specifier = "==0.14.0b1" },
     { name = "httpx", marker = "extra == 'terminals'", specifier = ">=0.27.0" },
     { name = "nicegui", specifier = ">=3.6.1" },
     { name = "nicegui", marker = "extra == 'terminals'", specifier = ">=2.0.0" },

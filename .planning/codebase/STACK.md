@@ -51,7 +51,7 @@
 ## Configuration
 
 - `pyproject.toml` — project metadata, dependencies, tool config
-- `src/fastcs_catio/catio_controller.yaml` — controller configuration
+- `src/fastcs_catio/fastcs.yaml` — controller configuration
 - `src/catio_terminals/config/runtime_symbols.yaml` — runtime symbol definitions
 - `src/catio_terminals/terminals/terminal_types.yaml` — terminal type definitions
 - `renovate.json` — dependency update automation

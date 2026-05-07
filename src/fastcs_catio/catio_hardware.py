@@ -11,7 +11,7 @@
 import numpy as np
 from fastcs.attributes import AttrR
 from fastcs.datatypes import Int, Waveform
-from fastcs.logging import bind_logger
+from fastcs.logging import logger as _fastcs_logger
 from fastcs.tracer import Tracer
 
 from fastcs_catio.catio_controller import (
@@ -20,8 +20,8 @@ from fastcs_catio.catio_controller import (
 )
 from fastcs_catio.devices import ELM_OVERSAMPLING_FACTOR, OVERSAMPLING_FACTOR
 
-tracer = Tracer(name=__name__)
-logger = bind_logger(logger_name=__name__)
+tracer = Tracer()
+logger = _fastcs_logger.bind(logger_name=__name__)
 
 
 class EtherCATMasterController(CATioDeviceController):

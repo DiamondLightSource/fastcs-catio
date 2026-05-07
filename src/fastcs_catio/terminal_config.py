@@ -8,7 +8,7 @@ import glob
 from pathlib import Path
 
 from fastcs.datatypes import Int
-from fastcs.logging import bind_logger
+from fastcs.logging import logger as _fastcs_logger
 
 from catio_terminals.models import (
     RuntimeSymbolsConfig,
@@ -17,7 +17,7 @@ from catio_terminals.models import (
     TerminalType,
 )
 
-logger = bind_logger(logger_name=__name__)
+logger = _fastcs_logger.bind(logger_name=__name__)
 
 # Configurable path(s) to terminal types YAML files (supports glob patterns)
 # Default to terminal_types.yaml in catio_terminals/terminals/

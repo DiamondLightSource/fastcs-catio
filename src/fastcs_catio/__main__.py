@@ -15,7 +15,6 @@ from fastcs.transports.epics.ca.transport import EpicsCATransport
 from fastcs.transports.epics.options import (
     EpicsDocsOptions,
     EpicsGUIOptions,
-    EpicsIOCOptions,
 )
 from softioc.imports import callbackSetQueueSize
 
@@ -178,11 +177,8 @@ def ioc(
 
     # Define EPICS ChannelAccess/PVA transport parameters
     epics_transport = EpicsCATransport(
-        epicsca=EpicsIOCOptions(pv_prefix=pv_prefix),
         docs=EpicsDocsOptions(),
-        gui=EpicsGUIOptions(
-            output_path=ui_path / "catio.bob", title=f"CATio - {pv_prefix}"
-        ),
+        gui=EpicsGUIOptions(output_dir=ui_path, title=f"CATio - {pv_prefix}"),
     )
 
     # Get the Beckhoff TwinCAT server IP address in case the server name was provided
@@ -199,6 +195,7 @@ def ioc(
     controller = CATioServerController(
         ip, route, target_port, poll_period, notification_period
     )
+    controller.set_id(pv_prefix)
 
     # Launch the CATio IOC with FastCS
     launcher = FastCS(controller, transports=[epics_transport])
@@ -207,18 +204,3 @@ def ioc(
 
 if __name__ == "__main__":
     app()
-
-# # TO DO: make the yaml config option work if it's preferred
-# # if using a yaml file config: python -m fastcs_catio run
-# #     ./src/fastcs_catio/catio_controller.yaml
-# if __name__ == "__main__":
-#     transport = EpicsCATransport(
-#        ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01")
-# )
-#     route = CATioRemoteRoute(remote=ip, route_name="test_route", password="DIAMOND")
-#     connection = CATioConnectionSettings(target_ip=ip, target_port=target_port)
-#     timings = CATioScanTimings()
-#     controller_settings = CATioControllerSettings(
-#         remote_route=route, tcp_settings=connection, scan_timings=timings
-#     )
-#     launch(CATioServerController, version=__version__)

@@ -47,7 +47,7 @@ NOTIFICATION_UPDATE_PERIOD: float = 0.2
 STANDARD_POLL_UPDATE_PERIOD: float = 1.0
 
 
-tracer = Tracer(name=__name__)
+tracer = Tracer()
 logger = get_logger(__name__)
 
 
@@ -273,7 +273,7 @@ class CATioController(Controller, Tracer):
 
     async def connect(self) -> None:
         """Establish the FastCS connection to the controller and its subcontrollers."""
-        # await super().connect()
+        await super().connect()
         if self.sub_controllers:
             for name, subctlr in self.sub_controllers.items():
                 assert isinstance(subctlr, CATioController)

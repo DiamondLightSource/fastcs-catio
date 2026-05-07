@@ -4,15 +4,15 @@ from typing import Any, TypeVar
 import numpy as np
 from fastcs.attributes import AttributeIO, AttributeIORef, AttrR, AttrRW, AttrW
 from fastcs.datatypes import DType_T, Waveform
-from fastcs.logging import bind_logger
+from fastcs.logging import logger as _fastcs_logger
 from fastcs.tracer import Tracer
 from fastcs.util import ONCE
 
 from fastcs_catio._types import AmsAddress
 from fastcs_catio.catio_connection import CATioConnection, CATioFastCSRequest
 
-tracer = Tracer(name=__name__)
-logger = bind_logger(logger_name=__name__)
+tracer = Tracer()
+logger = _fastcs_logger.bind(logger_name=__name__)
 
 
 AnyT = TypeVar("AnyT", str, int, float)

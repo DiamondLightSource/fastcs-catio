@@ -14,7 +14,7 @@ fastcs-catio/
 │   │   ├── catio_attribute_io.py  # FastCS attribute ↔ ADS I/O bridge
 │   │   ├── catio_connection.py    # Connection management
 │   │   ├── catio_controller.py    # Core controller hierarchy (~1200 lines)
-│   │   ├── catio_controller.yaml  # Controller configuration
+│   │   ├── fastcs.yaml  # Controller configuration
 │   │   ├── catio_dynamic_coe.py   # Dynamic CoE object controllers
 │   │   ├── catio_dynamic_controller.py  # Dynamic terminal controllers
 │   │   ├── catio_dynamic_symbol.py      # Dynamic symbol controllers
