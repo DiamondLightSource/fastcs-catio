@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=schema.json
 
 controllers:
-  CATIO_TEST:
+  - id: CATIO_TEST
     type: CATioServerController
     tcp_settings:
       target_ip: "172.23.242.42"

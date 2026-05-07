@@ -181,7 +181,7 @@ def ioc(
         ),
     )
     controller = CATioServerController(options)
-    controller.set_id(pv_prefix)
+    controller.set_path([pv_prefix])
 
     # Launch the CATio IOC with FastCS
     launcher = FastCS(controller, transports=[epics_transport])
