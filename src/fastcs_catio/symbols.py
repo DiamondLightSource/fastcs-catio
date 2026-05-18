@@ -54,26 +54,26 @@ class AdsSymbolTypePattern:
     """e.g. EL1502 digital input counter terminal"""
     DO_COUNTER = re.compile(r"^CNT Outputs_(\d*_)?TYPE")
     """e.g. EL1502 digital output counter terminal"""
-    DI_CHANNEL = re.compile(r"^Channel 1_(\d*_)?TYPE")
+    DI_CHANNEL = re.compile(r"^Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. EL1014 digital input channel terminal"""
-    AI16_CHANNEL = re.compile(r"^AI Standard Channel 1_(\d*_)?TYPE")
+    AI16_CHANNEL = re.compile(r"^AI Standard Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. EL3104 16-bit analog input channel terminal"""
-    AO16_CHANNEL = re.compile(r"^AO Output Channel 1_(\d*_)?TYPE")
+    AO16_CHANNEL = re.compile(r"^AO Outputs Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. EL4134 16-bit analog output channel terminal"""
-    AI24_CHANNEL = re.compile(r"^AI Inputs Channel 1_(\d*_)?TYPE")
+    AI24_CHANNEL = re.compile(r"^AI Inputs Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. EL3602 24-bit analog input channel terminal"""
     AI16_OVSMPL_CYCLE = re.compile(r"^Ch(\d+) CycleCount_(\d*_)?TYPE")
     """e.g. EL3702 16-bit analog input oversampling terminal cycle count"""
     AI16_OVSMPL_CHANNEL = re.compile(r"^Ch(\d+) Sample 0_(\d*_)?TYPE_ARR")
     """e.g. EL3702 16-bit analog input oversampling terminal sample"""
-    AI24_MF_STATUS = re.compile(r"^PAI Status Channel 1_(\d*_)?TYPE")
+    AI24_MF_STATUS = re.compile(r"^PAI Status Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal status"""
-    AI24_MF_TIMESTAMP = re.compile(r"^PAI Timestamp Channel 1_(\d*_)?TYPE")
+    AI24_MF_TIMESTAMP = re.compile(r"^PAI Timestamp Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal timing"""
-    AI24_MF_SAMPLE = re.compile(r"^PAI Samples (\d+) Channel 1_(\d*_)?TYPE")
+    AI24_MF_SAMPLE = re.compile(r"^PAI Samples (\d+) Channel (\d*_){1}(\d*_)?TYPE")
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal sample"""
     AI24_MF_SYNCHRON = re.compile(
-        r"^PAI Synchronous Oversampling Channel 1_(\d*_)?TYPE"
+        r"^PAI Synchronous Oversampling Channel (\d*_){1}(\d*_)?TYPE"
     )
     """e.g. ELM3704-0000 24-bit multi-function analog input terminal synchronisation"""
 
