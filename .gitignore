@@ -75,3 +75,6 @@ screens
 
 .test.yaml
 .nicegui
+
+# vscode workspace settings
+*.code-workspace
