@@ -45,6 +45,10 @@
     "CATioServerControllerEntry": {
       "additionalProperties": false,
       "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
         "type": {
           "const": "CATioServerController",
           "title": "Type",
@@ -61,6 +65,7 @@
         }
       },
       "required": [
+        "id",
         "type",
         "tcp_settings"
       ],
@@ -255,11 +260,11 @@
   "additionalProperties": false,
   "properties": {
     "controllers": {
-      "additionalProperties": {
+      "items": {
         "$ref": "#/$defs/CATioServerControllerEntry"
       },
       "title": "Controllers",
-      "type": "object"
+      "type": "array"
     },
     "transport": {
       "items": {
