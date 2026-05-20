@@ -50,6 +50,26 @@ Group-specific logic lives in `process_pdo_entries()` in
 - ADS offsets — computed at runtime.
 - Some symbols like `WcState` are ADS runtime symbols, not XML-defined.
 
+## Supporting a new terminal struct type needs two things
+
+YAML alone is not enough. The runtime symbol-lookup table in
+`src/fastcs_catio/symbols.py` is a parallel requirement:
+
+1. **YAML entry** in `src/catio_terminals/terminals/terminal_types.yaml`
+   (regenerated from XML).
+2. **Regex pattern** in `AdsSymbolTypePattern` (~line 40 of
+   `src/fastcs_catio/symbols.py`) matching the structured-symbol type
+   name the live ADS server reports for that terminal.
+3. **`case` arm** in `symbol_lookup` (same file, ~line 157) returning
+   the right `SymbolGroupParam` for the value field.
+
+If the regex is missing, `symbol_lookup` falls into the `case _`
+default and logs `Definition for the structured symbol node type
+'<TypeName>' ... is missing. Symbol node will be ignored.` The parent
+struct (which carries the actual value field) is silently dropped at
+startup. When you see that warning, add the pattern — don't just
+regenerate the YAML.
+
 See [terminal-yaml-definitions.md](../../../docs/explanations/terminal-yaml-definitions.md)
 for the distinction between XML-defined symbols and ADS runtime
 symbols.
