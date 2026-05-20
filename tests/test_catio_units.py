@@ -342,30 +342,38 @@ class TestGetNotificationChanges:
 class TestTrimEcatName:
     """Test suite for trim_ecat_name utility function."""
 
-    def test_trim_basic_name(self):
-        """Test trimming basic ecat names."""
-        result = trim_ecat_name("CX5140_Master")
-        assert result is not None
-        assert isinstance(result, str)
-        assert len(result) > 0
+    def test_trim_beckhoff_name(self):
+        """Test trimming Beckhoff-style names (word + number prefix)."""
+        result = trim_ecat_name("Term 2 (EK1110)")
+        assert result == "Term2"
 
-    @pytest.mark.skip(reason="TODO this is failing")
     def test_trim_name_with_underscores(self):
         """Test trimming name with underscores."""
         result = trim_ecat_name("Device_Name_With_Underscores")
         assert result == "DeviceNameWithUnderscores"
 
-    @pytest.mark.skip(reason="TODO this is failing")
     def test_trim_name_with_spaces(self):
         """Test trimming name with spaces."""
         result = trim_ecat_name("  Device Name With Spaces  ")
         assert result == "DeviceNameWithSpaces"
 
-    @pytest.mark.skip(reason="TODO this is failing")
     def test_trim_name_with_special_chars(self):
         """Test trimming name with special characters."""
         result = trim_ecat_name("Device@#Name$%^&*()")
         assert result == "DeviceName"
+
+    def test_trim_name_with_hyphens(self):
+        """Test trimming hyphenated module names (e.g. EPICS device names)."""
+        result = trim_ecat_name("BL04I-EA-ERIO-01")
+        assert result == "Bl04iEaErio01"
+
+    def test_trim_name_with_hyphens_different_numbers(self):
+        """Test that different numeric suffixes produce different results."""
+        result1 = trim_ecat_name("BL04I-EA-ERIO-01")
+        result2 = trim_ecat_name("BL04I-EA-ERIO-02")
+        assert result1 == "Bl04iEaErio01"
+        assert result2 == "Bl04iEaErio02"
+        assert result1 != result2
 
     def test_trim_empty_name(self):
         """Test trimming empty name."""
@@ -373,9 +381,9 @@ class TestTrimEcatName:
         assert result == ""
 
     def test_trim_single_word(self):
-        """Test trimming single word."""
+        """Test trimming single word already in valid UpperCamelCase."""
         result = trim_ecat_name("Device")
-        assert len(result) > 0
+        assert result == "Device"
 
 
 @pytest.mark.skip(reason="TODO this is failing")

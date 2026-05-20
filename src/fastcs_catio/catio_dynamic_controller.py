@@ -14,7 +14,7 @@ Usage:
     controller = controller_class(name="MOD1", node=node)
 """
 
-from fastcs.logging import bind_logger
+from fastcs.logging import logger as _fastcs_logger
 
 from catio_terminals.models import SymbolNode
 from catio_terminals.utils import snake_to_pascal
@@ -30,7 +30,7 @@ from fastcs_catio.terminal_config import (
     load_runtime_symbols,
 )
 
-logger = bind_logger(logger_name=__name__)
+logger = _fastcs_logger.bind(logger_name=__name__)
 
 
 # -----------------------------------------------------------------------------

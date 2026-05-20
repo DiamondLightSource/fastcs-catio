@@ -55,6 +55,25 @@ def _is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
             return False
 
 
+def _pick_free_port(host: str = "127.0.0.1") -> int:
+    """Ask the OS for a free TCP port on ``host``.
+
+    There is a small race between releasing the port here and the simulator
+    binding it, but that's acceptable for tests and avoids TIME_WAIT collisions
+    that come from re-using a fixed port across rapid back-to-back runs.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, 0))
+        return s.getsockname()[1]
+
+
+def _pick_free_udp_port(host: str = "127.0.0.1") -> int:
+    """Ask the OS for a free UDP port on ``host``."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.bind((host, 0))
+        return s.getsockname()[1]
+
+
 @pytest.fixture(scope="function")
 def expected_chain(config_file: str) -> EtherCATChain:
     """Load and return the expected EtherCAT chain configuration."""
@@ -75,15 +94,17 @@ def simulator_process(request, config_file: str):
     use_external = request.config.getoption("--external-simulator")
 
     if use_external:
-        # No simulator to launch, just return None for both child and output
-        # Tests should handle this gracefully
+        # No simulator to launch; assume one is already listening on the default
+        # ADS TCP/UDP ports and let the controller talk to it.
         print("\nUsing externally launched simulator")
-        yield None, ""
+        yield None, 48898, 48899
         # No cleanup needed
         return
 
-    # Get the config file path
-    simulator_port = 48898  # ADS_TCP_PORT
+    # Pick ephemeral ports so back-to-back tests don't collide on lingering
+    # kernel state for the previous simulator's TCP/UDP sockets.
+    simulator_port = _pick_free_port()
+    simulator_udp_port = _pick_free_udp_port()
     config_path = Path(__file__).parent / "ads_sim" / config_file
 
     # Launch the simulator subprocess with verbose logging
@@ -98,6 +119,8 @@ def simulator_process(request, config_file: str):
         "--disable-notifications",
         "--port",
         str(simulator_port),
+        "--udp-port",
+        str(simulator_udp_port),
     ]
     process = subprocess.Popen(
         cmd,
@@ -137,7 +160,7 @@ def simulator_process(request, config_file: str):
     if process.stdout:
         process.stdout.close()
 
-    yield process
+    yield process, simulator_port, simulator_udp_port
 
     # Cleanup: terminate the simulator and ensure pipes are closed
     process.terminate()
@@ -162,8 +185,13 @@ async def fastcs_catio_controller(simulator_process, config_file: str):
     Note: We only test connection, not full initialization which hangs.
     """
     _ = config_file  # Used by dependent fixtures
-    from fastcs_catio.catio_controller import CATioServerController
-    from fastcs_catio.client import RemoteRoute
+    from fastcs_catio.catio_controller import (
+        CATioRouteSettings,
+        CATioScanTimings,
+        CATioServerController,
+        CATioServerControllerOptions,
+        CATioTCPSettings,
+    )
 
     # Give simulator a moment to be ready
     time.sleep(0.5)
@@ -176,10 +204,18 @@ async def fastcs_catio_controller(simulator_process, config_file: str):
     poll_period = 1.0
     notification_period = 0.2
 
-    route = RemoteRoute(ip)
-    controller = CATioServerController(
-        ip, route, target_port, poll_period, notification_period
+    _, simulator_tcp_port, simulator_udp_port = simulator_process
+
+    options = CATioServerControllerOptions(
+        tcp_settings=CATioTCPSettings(
+            target_ip=ip, target_port=target_port, tcp_port=simulator_tcp_port
+        ),
+        route=CATioRouteSettings(udp_port=simulator_udp_port),
+        scan_timings=CATioScanTimings(
+            poll_period=poll_period, notification_period=notification_period
+        ),
     )
+    controller = CATioServerController(options)
     launcher = FastCS(controller, transports=[])
 
     try:

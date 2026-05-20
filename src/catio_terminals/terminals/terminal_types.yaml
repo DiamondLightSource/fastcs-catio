@@ -13507,6 +13507,63 @@ terminal_types:
             fastcs_name: r2_calibration_gain_idx803f
         fastcs_name: ao_vendor_data_ch_4_idx803f
     group_type: AnaOut
+  EL1004:
+    description: 4Ch. Dig. Input 24V, 3ms
+    identity:
+      vendor_id: 2
+      product_code: 65810514
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61489
+        type_name: InputBits
+        channels: 4
+        access: Read-only
+        fastcs_name: channel_{channel}
+        selected: true
+    coe_objects: []
+    group_type: DigIn
+  EL1014:
+    description: 4Ch. Dig. Input 24V, 10µs
+    identity:
+      vendor_id: 2
+      product_code: 66465874
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61489
+        type_name: InputBits
+        channels: 4
+        access: Read-only
+        fastcs_name: channel_{channel}
+        selected: true
+    coe_objects: []
+    group_type: DigIn
+  EK1110:
+    description: EtherCAT extension
+    identity:
+      vendor_id: 2
+      product_code: 72756306
+      revision_number: 1048576
+    symbol_nodes: []
+    coe_objects: []
+    group_type: SystemBk
+  EL1084:
+    description: 4Ch. Dig. Input 24V, 3ms, negative
+    identity:
+      vendor_id: 2
+      product_code: 71053394
+      revision_number: 1048576
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61489
+        type_name: InputBits
+        channels: 4
+        access: Read-only
+        fastcs_name: channel_{channel}
+        selected: true
+    coe_objects: []
+    group_type: DigIn
   EP4374-0002:
     description: 2Ch. Ana. Input +/-10V, 0-10V, 0/4-20mA configurable; 2Ch. Ana.
       Output +/-10V, 0-10V, 0/4-20mA configurable
@@ -13527,7 +13584,7 @@ terminal_types:
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_ch_{channel}_sts
+        fastcs_name: ai_txpdo_m_std_ch_{channel}_sts_lim_1
         tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
@@ -13535,7 +13592,7 @@ terminal_types:
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_ch_{channel}_sts
+        fastcs_name: ai_txpdo_m_std_ch_{channel}_sts_lim_2
         tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
         selected: true
       - name_template: AI TxPDO-Map Standard Channel {channel}.Value
@@ -13543,21 +13600,21 @@ terminal_types:
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_ch_{channel}_val
+        fastcs_name: ai_txpdo_m_std_ch_{channel}_val
         selected: true
       - name_template: AI TxPDO-Map Compact Channel {channel}.Value
         index_group: 61489
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_compact_ch_{channel}_val
+        fastcs_name: ai_txpdo_m_cpt_ch_{channel}_val
         selected: true
       - name_template: AO RxPDO-Map Channel {channel}.Analog output
         index_group: 61473
         type_name: INT
         channels: 2
         access: Read/Write
-        fastcs_name: ao_rxpdo_map_ch_{channel}_analog_out
+        fastcs_name: ao_rxpdo_m_ch_{channel}_analog_out
         selected: true
     coe_objects:
       - index: 32768
@@ -14216,61 +14273,4 @@ terminal_types:
             default_data: '0040'
             fastcs_name: r2_calibration_gain_idx803f
         fastcs_name: ao_vendor_data_ch_4_idx803f
-    group_type: AnaOut
-  EL1004:
-    description: 4Ch. Dig. Input 24V, 3ms
-    identity:
-      vendor_id: 2
-      product_code: 65810514
-      revision_number: 1048576
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61489
-        type_name: InputBits
-        channels: 4
-        access: Read-only
-        fastcs_name: channel_{channel}
-        selected: true
-    coe_objects: []
-    group_type: DigIn
-  EL1014:
-    description: 4Ch. Dig. Input 24V, 10µs
-    identity:
-      vendor_id: 2
-      product_code: 66465874
-      revision_number: 1048576
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61489
-        type_name: InputBits
-        channels: 4
-        access: Read-only
-        fastcs_name: channel_{channel}
-        selected: true
-    coe_objects: []
-    group_type: DigIn
-  EK1110:
-    description: EtherCAT extension
-    identity:
-      vendor_id: 2
-      product_code: 72756306
-      revision_number: 1048576
-    symbol_nodes: []
-    coe_objects: []
-    group_type: SystemBk
-  EL1084:
-    description: 4Ch. Dig. Input 24V, 3ms, negative
-    identity:
-      vendor_id: 2
-      product_code: 71053394
-      revision_number: 1048576
-    symbol_nodes:
-      - name_template: Channel {channel}
-        index_group: 61489
-        type_name: InputBits
-        channels: 4
-        access: Read-only
-        fastcs_name: channel_{channel}
-        selected: true
-    coe_objects: []
-    group_type: DigIn
+    group_type: FieldbusBoxEP4xxx

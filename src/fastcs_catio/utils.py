@@ -15,6 +15,9 @@ from ._constants import TWINCAT_STRING_ENCODING
 logger = getLogger(__name__)
 
 
+_FASTCS_GROUP_NAME_RE = re.compile(r"^([A-Z][a-z0-9]*)*$")
+
+
 def get_localhost_name() -> str:
     """
     Get the hostname of the local machine.
@@ -172,14 +175,55 @@ def filetime_to_dt(filetime: int) -> np.datetime64:
 
 def trim_ecat_name(name: str) -> str:
     """
-    Shorten and remove spaces from the original EtherCAT name.
+    Convert an EtherCAT name into a valid fastcs group name (UpperCamelCase).
+
+    Two transformations are applied in order:
+
+    1. **Beckhoff-style names** (e.g. ``"Term 2 (EK1110)"``): the leading
+       word-and-number prefix is extracted and the space removed
+       (``"Term2"``).
+    2. **General sanitization**: if the result still contains characters
+       outside the fastcs pattern ``^([A-Z][a-z0-9]*)*$`` (e.g. hyphens
+       as in ``"BL04I-EA-ERIO-01"``), the name is split on every run of
+       non-alphanumeric characters. Letter-starting segments are
+       title-cased. Numeric-only segments are appended to the last
+       letter-starting segment to preserve them and avoid collisions.
 
     :param name: the original EtherCAT device/terminal name
 
-    :returns: a trimmed name without spaces
+    :returns: a valid fastcs UpperCamelCase group name
+
+    Examples:
+        >>> trim_ecat_name("Term 2 (EK1110)")
+        'Term2'
+        >>> trim_ecat_name("BL04I-EA-ERIO-01")
+        'Bl04iEaErio01'
+        >>> trim_ecat_name("Device_Name_With_Underscores")
+        'DeviceNameWithUnderscores'
+        >>> trim_ecat_name("")
+        ''
     """
     matches = re.search(r"^(\w+\s+)\d+", name)
-    return matches.group(0).replace(" ", "") if matches else name
+    name = matches.group(0).replace(" ", "") if matches else name
+
+    if not _FASTCS_GROUP_NAME_RE.match(name):
+        parts = re.split(r"[^a-zA-Z0-9]+", name)
+        result = []
+        numeric_parts = []
+
+        for p in parts:
+            if p and p[0].isalpha():
+                result.append(p[0].upper() + p[1:].lower())
+            elif p and p[0].isdigit():
+                numeric_parts.append(p)
+
+        # Append numeric-only segments to the last letter-starting segment
+        if numeric_parts and result:
+            result[-1] += "".join(numeric_parts)
+
+        name = "".join(result)
+
+    return name
 
 
 def check_ndarray(

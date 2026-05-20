@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=schema.json
+
+controllers:
+  - id: CATIO_TEST
+    type: CATioServerController
+    tcp_settings:
+      target_ip: "172.23.242.42"
+      target_port: 27905
+    route:
+      route_name: ""
+      user_name: "Administrator"
+      password: "1"
+    scan_timings:
+      poll_period: 1.0
+      notification_period: 0.2
+
+transport:
+  - epicsca: {}
+    gui:
+      title: "CATio Demo"
+      output_dir: ./screens

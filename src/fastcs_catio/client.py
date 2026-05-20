@@ -150,16 +150,17 @@ class ResponseEvent:
 #################################################################
 
 
-def get_remote_address(remote_ip: str) -> AmsNetId:
+def get_remote_address(remote_ip: str, udp_port: int = REMOTE_UDP_PORT) -> AmsNetId:
     """
     Get the AmsNetId of a remote TwinCAT server via UDP communication.
 
     :param remote_ip: IP address of the remote TwinCAT server
+    :param udp_port: UDP port the remote uses for service discovery
     :returns: the AmsNetId of the remote TwinCAT server
     """
     UDPMessage.invoke_id += 1
     request = AdsUDPMessage.get_remote_info(UDPMessage.invoke_id)
-    return UDPMessage(remote_ip).get_netid(request)
+    return UDPMessage(remote_ip, udp_port).get_netid(request)
 
 
 @dataclass_transform(kw_only_default=True)
@@ -173,9 +174,11 @@ class UDPMessage:
     UDP_COOKIE: bytes = b"\x71\x14\x66\x03"
     """Static variable defining the UDP cookie value used in the UDP message header"""
 
-    def __init__(self, remote_ip: str):
+    def __init__(self, remote_ip: str, udp_port: int = REMOTE_UDP_PORT):
         self.target = remote_ip
         """IP address of the remote Beckhoff TwinCAT server"""
+        self.udp_port = udp_port
+        """UDP port the remote uses for service discovery"""
 
     def _send_recv(self, message: AdsUDPMessage) -> bytes:
         """
@@ -192,7 +195,7 @@ class UDPMessage:
             sock.settimeout(5)
 
             # Send the data to the Beckhoff CX server target
-            sock.sendto(message.to_bytes(), (self.target, REMOTE_UDP_PORT))
+            sock.sendto(message.to_bytes(), (self.target, self.udp_port))
 
             # Receive the data from the Beckhoff CX server target
             data, addr = sock.recvfrom(1024)
@@ -303,6 +306,7 @@ class RemoteRoute:
         route_name: str = "",
         user_name: str = "Administrator",
         password: str = "1",
+        udp_port: int = REMOTE_UDP_PORT,
     ):
         self.remote = remote
         """IP address of the remote Beckhoff TwinCAT server"""
@@ -316,6 +320,8 @@ class RemoteRoute:
         """Password for authentication with the remote TwinCAT server"""
         self.hostname = get_localhost_ip()
         """IP address of the local host machine (client)"""
+        self.udp_port = udp_port
+        """UDP port the remote uses for service discovery"""
 
     def _get_route_info_as_bytes(self) -> bytes:
         """
@@ -324,9 +330,11 @@ class RemoteRoute:
         :returns: the route information as an array of bytes
         """
         lst: list[UDPInfo] = []
-        # Remote ip not part of the route definition packet to send, so skip it
+        # Remote ip and udp_port are connection parameters, not part of the
+        # route definition packet, so skip them.
         params = deepcopy(vars(self))
         params.pop("remote")
+        params.pop("udp_port")
         for name, value in params.items():
             udp_tag: UDPTag | None = getattr(UDPTag, name.upper(), None)
             if udp_tag:
@@ -367,7 +375,7 @@ class RemoteRoute:
             UDPMessage.invoke_id, self._get_route_info_as_bytes()
         )
 
-        status = UDPMessage(self.remote).add_route(request)
+        status = UDPMessage(self.remote, self.udp_port).add_route(request)
         if status:
             logger.debug(
                 f"Successfully added host {self.hostname} to remote {self.remote}"
@@ -391,7 +399,7 @@ class RemoteRoute:
             self._get_route_info_as_bytes(),
         )
 
-        status = UDPMessage(self.remote).delete_route(request)
+        status = UDPMessage(self.remote, self.udp_port).delete_route(request)
         if status:
             logger.debug(
                 f"Successfully deleted route {self.routename} from remote {self.remote}"

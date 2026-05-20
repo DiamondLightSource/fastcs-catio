@@ -5,17 +5,16 @@ import os
 import socket
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
-from fastcs.launch import FastCS
+from fastcs.launch import FastCS, _launch
 from fastcs.logging import LogLevel as FastCSLogLevel
 from fastcs.logging import configure_logging
 from fastcs.transports.epics.ca.transport import EpicsCATransport
 from fastcs.transports.epics.options import (
     EpicsDocsOptions,
     EpicsGUIOptions,
-    EpicsIOCOptions,
 )
 from softioc.imports import callbackSetQueueSize
 
@@ -24,15 +23,18 @@ from fastcs_catio.terminal_config import set_terminal_types_patterns
 
 from . import __version__
 from .catio_controller import (
+    CATioRouteSettings,
+    CATioScanTimings,
     CATioServerController,
+    CATioServerControllerOptions,
+    CATioTCPSettings,
 )
-from .client import RemoteRoute
-
-__all__ = ["main"]
 
 CALLBACK_SIZE: int = 50000
 
-app = typer.Typer(no_args_is_help=True)
+# Build the launch typer (gives us `run` and `schema` for yaml-driven mode),
+# then bolt the bespoke `ioc` command on top so both flows live in one CLI.
+app = _launch(CATioServerController, version=__version__)
 
 callbackSetQueueSize(CALLBACK_SIZE)
 
@@ -44,26 +46,6 @@ class LogLevel(str, Enum):
     info = "INFO"
     debug = "DEBUG"
     verbose = "VERBOSE"
-
-
-def version_callback(value: bool):
-    if value:
-        typer.echo(__version__)
-        raise typer.Exit()
-
-
-@app.callback()
-def main(
-    version: Optional[bool] = typer.Option(  # noqa
-        None,
-        "--version",
-        callback=version_callback,
-        is_eager=True,
-        help="Print the version and exit",
-    ),
-):
-    """Enable ADS-communication with a Beckhoff TwinCAT server."""
-    pass
 
 
 @app.command()
@@ -134,7 +116,7 @@ def ioc(
             resolve_path=True,
             rich_help_panel="Secondary Arguments",
         ),
-    ] = Path("/epics/opi"),
+    ] = Path("./screens"),
 ):
     """
     Run the EtherCAT IOC with the given PREFIX on a HOST server, e.g.
@@ -178,11 +160,8 @@ def ioc(
 
     # Define EPICS ChannelAccess/PVA transport parameters
     epics_transport = EpicsCATransport(
-        epicsca=EpicsIOCOptions(pv_prefix=pv_prefix),
         docs=EpicsDocsOptions(),
-        gui=EpicsGUIOptions(
-            output_path=ui_path / "catio.bob", title=f"CATio - {pv_prefix}"
-        ),
+        gui=EpicsGUIOptions(output_dir=ui_path, title=f"CATio - {pv_prefix}"),
     )
 
     # Get the Beckhoff TwinCAT server IP address in case the server name was provided
@@ -192,13 +171,17 @@ def ioc(
         else tcp_server
     )
 
-    # Specify the parameters for the remote route to the Beckhoff TwinCAT server
-    route = RemoteRoute(ip)
-
     # Instantiate the CATio controller
-    controller = CATioServerController(
-        ip, route, target_port, poll_period, notification_period
+    options = CATioServerControllerOptions(
+        tcp_settings=CATioTCPSettings(target_ip=ip, target_port=target_port),
+        route=CATioRouteSettings(),
+        scan_timings=CATioScanTimings(
+            poll_period=poll_period,
+            notification_period=notification_period,
+        ),
     )
+    controller = CATioServerController(options)
+    controller.set_path([pv_prefix])
 
     # Launch the CATio IOC with FastCS
     launcher = FastCS(controller, transports=[epics_transport])
@@ -207,18 +190,3 @@ def ioc(
 
 if __name__ == "__main__":
     app()
-
-# # TO DO: make the yaml config option work if it's preferred
-# # if using a yaml file config: python -m fastcs_catio run
-# #     ./src/fastcs_catio/catio_controller.yaml
-# if __name__ == "__main__":
-#     transport = EpicsCATransport(
-#        ca_ioc=EpicsIOCOptions(pv_prefix="BLxxI-EA-CATIO-01")
-# )
-#     route = CATioRemoteRoute(remote=ip, route_name="test_route", password="DIAMOND")
-#     connection = CATioConnectionSettings(target_ip=ip, target_port=target_port)
-#     timings = CATioScanTimings()
-#     controller_settings = CATioControllerSettings(
-#         remote_route=route, tcp_settings=connection, scan_timings=timings
-#     )
-#     launch(CATioServerController, version=__version__)
