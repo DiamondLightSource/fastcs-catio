@@ -98,15 +98,11 @@ def add_coe_attribute(
     # Skip io_ref for compound types - only create for primitive types
     if not ads_item.is_primitive_type:
         # For compound types, just record the mapping without creating an attribute
-        logger.warning(f"Skipping creation of CoE item {ads_item}")
+        logger.debug(f"Skipping creation of CoE item {ads_item}")
         return
 
     # Get AmsAddress from the client using the controller's IOSlave
     address = controller.connection.client.get_coe_ams_address(controller.io)
-
-    # skip compound types as we do their sub indices separately
-    if not ads_item.is_primitive_type:
-        return
 
     io_ref = CATioControllerCoEAttributeIORef(
         name=ads_item.fastcs_name,

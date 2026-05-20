@@ -822,9 +822,14 @@ class CATioServerController(CATioController):
                     attr_name = name.rsplit(".", 1)[0]
 
                     if attr_name not in self.attribute_map.keys():
-                        logger.warning(
-                            f"No reference to {attr_name} in the CATio attribute map"
-                        )
+                        # Upstream marks bus-level fields (e.g. WcState) with
+                        # an '_unreferenced_' segment; they're not exposed as
+                        # PVs, so don't warn about them.
+                        if "._unreferenced_." not in attr_name:
+                            logger.warning(
+                                f"No reference to {attr_name}"
+                                " in the CATio attribute map"
+                            )
                         continue
 
                     notif_attribute = self.attribute_map[attr_name]
