@@ -133,9 +133,22 @@ def expand_symbols_for_slave(
         )
         return {}
 
+    # Leaf detection: skip a row whose name_template is a strict prefix
+    # of any other row's name_template (followed by '.'). Those non-leaf
+    # rows are bare struct parents — e.g. EL3314's `TC Inputs Channel
+    # {channel}` with children `.Value`, `.Limit 1`. Subscribing to the
+    # bare name asks TwinCAT for the full struct symbol whose size
+    # exceeds what the YAML row claims, and the notification stream's
+    # `symbol.nbytes == sample.size` assertion fails with an empty
+    # message at flush time. Sub-rows already cover the data.
+    templates = [row.name_template for row in terminal.symbol_nodes]
+    non_leaf = {t for t in templates if any(o.startswith(t + ".") for o in templates)}
+
     symbols: dict[str, AdsSymbol] = {}
     for row in terminal.symbol_nodes:
         if not row.selected:
+            continue
+        if row.name_template in non_leaf:
             continue
         # ADS addresses are byte-granular. Sub-byte bit-field rows
         # (e.g. EL3104's `.Status__Limit 1` at bit 2) can't be
