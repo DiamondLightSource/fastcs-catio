@@ -218,5 +218,86 @@ async def test_new_terminal_symbols_default_selected_via_lazy_load(beckhoff_xml_
     )
 
 
+@pytest.mark.asyncio
+async def test_merge_preserves_selection_on_remerge(beckhoff_xml_cache):
+    """Re-running merge_xml_for_terminal must not promote unselected entries.
+
+    Regression: the GUI's revision dropdown re-runs merge_xml_for_terminal
+    on the already-merged terminal. Earlier versions forced selected=True
+    for any entry that survived the merge — which on a second call promoted
+    XML-only rows that the first merge had added unselected. The downstream
+    effect was the IOC trying to read CoE 0x1011 (Restore default
+    parameters), a write-only-command CoE, and crashing on the empty
+    response.
+    """
+    config = TerminalConfig()
+    beckhoff_client = BeckhoffClient()
+
+    terminals = await beckhoff_client.search_terminals("EP4374-0002")
+    info = next((t for t in terminals if t.terminal_id == "EP4374-0002"), None)
+    assert info is not None
+    terminal = await TerminalService.add_terminal_from_beckhoff(
+        config, info, beckhoff_client
+    )
+
+    # First merge populates the terminal — both YAML-curated and XML-only
+    # entries end up in terminal.coe_objects / .symbol_nodes.
+    await FileService.merge_xml_for_terminal(
+        "EP4374-0002", terminal, beckhoff_client, config
+    )
+    first_coe_state = {c.index: c.selected for c in terminal.coe_objects}
+    first_sym_state = {s.name_template: s.selected for s in terminal.symbol_nodes}
+
+    # Re-merge at the same revision — every entry should retain its state.
+    await FileService.merge_xml_for_terminal(
+        "EP4374-0002", terminal, beckhoff_client, config
+    )
+    second_coe_state = {c.index: c.selected for c in terminal.coe_objects}
+    second_sym_state = {s.name_template: s.selected for s in terminal.symbol_nodes}
+
+    assert second_coe_state == first_coe_state, (
+        "Re-merge changed CoE selection state — idempotency broken"
+    )
+    assert second_sym_state == first_sym_state, (
+        "Re-merge changed symbol selection state — idempotency broken"
+    )
+
+
+@pytest.mark.asyncio
+async def test_yaml_load_marks_coe_selected(beckhoff_xml_cache, tmp_path):
+    """CoE objects round-tripped through YAML come back marked selected.
+
+    `to_yaml` filters out unselected CoE — anything that survives a save is
+    by definition selected. The loader must restore that flag so the next
+    merge can preserve user intent.
+    """
+    config = TerminalConfig()
+    beckhoff_client = BeckhoffClient()
+
+    terminals = await beckhoff_client.search_terminals("EL3602")
+    info = next((t for t in terminals if t.terminal_id == "EL3602"), None)
+    assert info is not None
+    terminal = await TerminalService.add_terminal_from_beckhoff(
+        config, info, beckhoff_client
+    )
+    await FileService.merge_xml_for_terminal(
+        "EL3602", terminal, beckhoff_client, config
+    )
+    # Mark a couple of CoE entries selected so they survive to_yaml's filter.
+    assert len(terminal.coe_objects) >= 2
+    terminal.coe_objects[0].selected = True
+    terminal.coe_objects[1].selected = True
+
+    yaml_path = tmp_path / "round_trip.yaml"
+    config.to_yaml(yaml_path)
+    loaded = TerminalConfig.from_yaml(yaml_path)
+
+    loaded_terminal = loaded.terminal_types["EL3602"]
+    assert len(loaded_terminal.coe_objects) == 2
+    assert all(c.selected for c in loaded_terminal.coe_objects), (
+        "CoE entries present in YAML must load as selected=True"
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

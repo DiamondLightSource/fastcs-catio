@@ -1,6 +1,6 @@
 """Tests for XML parser PDO entry processing, especially bit field grouping."""
 
-from catio_terminals.xml import parse_terminal_details
+from catio_terminals.xml import list_revisions_for_terminal, parse_terminal_details
 
 # Sample XML for a terminal with bit fields that should be grouped into Status
 COUNTER_TERMINAL_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -709,3 +709,87 @@ Bit1: Value smaller than Limit1</Comment>
             value_symbol.tooltip
             == "Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1"
         )
+
+
+class TestListRevisions:
+    """Tests for list_revisions_for_terminal."""
+
+    _MULTI_REVISION_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor><Id>2</Id><Name>Beckhoff</Name></Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x11142852" RevisionNo="#x00100002">EP4374-0002</Type>
+        <Name LcId="1033">EP4374-0002 old</Name>
+      </Device>
+      <Device>
+        <Type ProductCode="#x11142852" RevisionNo="#x00110002">EP4374-0002</Type>
+        <Name LcId="1033">EP4374-0002 mid</Name>
+      </Device>
+      <Device>
+        <Type ProductCode="#x11142852" RevisionNo="#x00120002">EP4374-0002</Type>
+        <Name LcId="1033">EP4374-0002 newest</Name>
+      </Device>
+      <Device>
+        <Type ProductCode="#xDEADBEEF" RevisionNo="#x00990099">OTHER-0000</Type>
+        <Name LcId="1033">unrelated</Name>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+
+    def test_returns_sorted_unique_revisions(self):
+        revisions = list_revisions_for_terminal(self._MULTI_REVISION_XML, "EP4374-0002")
+
+        assert revisions == [0x00100002, 0x00110002, 0x00120002]
+
+    def test_ignores_other_terminals(self):
+        # Even though OTHER-0000 has a revision, it shouldn't appear in
+        # EP4374-0002's list.
+        revisions = list_revisions_for_terminal(self._MULTI_REVISION_XML, "EP4374-0002")
+
+        assert 0x00990099 not in revisions
+
+    def test_missing_terminal_returns_empty(self):
+        assert list_revisions_for_terminal(self._MULTI_REVISION_XML, "EL9999") == []
+
+    def test_single_revision_xml(self):
+        single = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor><Id>2</Id><Name>Beckhoff</Name></Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x0c203052" RevisionNo="#x00100000">EL3104</Type>
+        <Name LcId="1033">EL3104</Name>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+        assert list_revisions_for_terminal(single, "EL3104") == [0x00100000]
+
+    def test_malformed_xml_returns_empty(self):
+        assert list_revisions_for_terminal("not<xml", "EL3104") == []
+
+    def test_deduplicates_repeated_revisions(self):
+        repeated = """<?xml version="1.0" encoding="UTF-8"?>
+<EtherCATInfo>
+  <Vendor><Id>2</Id><Name>Beckhoff</Name></Vendor>
+  <Descriptions>
+    <Devices>
+      <Device>
+        <Type ProductCode="#x0c203052" RevisionNo="#x00100000">EL3104</Type>
+        <Name LcId="1033">EL3104 first</Name>
+      </Device>
+      <Device>
+        <Type ProductCode="#x0c203052" RevisionNo="#x00100000">EL3104</Type>
+        <Name LcId="1033">EL3104 duplicate</Name>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
+"""
+        assert list_revisions_for_terminal(repeated, "EL3104") == [0x00100000]

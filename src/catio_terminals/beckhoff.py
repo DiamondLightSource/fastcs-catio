@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from catio_terminals.models import TerminalType
 from catio_terminals.xml import (
     create_default_terminal,
+    list_revisions_for_terminal,
     parse_terminal_catalog,
     parse_terminal_details,
 )
@@ -162,6 +163,30 @@ class BeckhoffClient:
         logger.info(f"Found {len(terminals)} matching terminals")
         return terminals
 
+    def read_cached_xml(self, terminal_id: str) -> str | None:
+        """Read the cached XML file for a terminal without downloading.
+
+        Args:
+            terminal_id: Terminal ID (e.g. "EL4004").
+
+        Returns:
+            XML content, or None if no cached file is available.
+        """
+        terminals = self.get_cached_terminals()
+        if not terminals:
+            return None
+        for terminal in terminals:
+            if terminal.terminal_id == terminal_id and terminal.xml_file:
+                xml_path = Path(terminal.xml_file)
+                if not xml_path.exists():
+                    return None
+                try:
+                    return xml_path.read_text(encoding="utf-8", errors="ignore")
+                except Exception as e:
+                    logger.error(f"Error reading cached XML: {e}")
+                    return None
+        return None
+
     async def fetch_terminal_xml(self, terminal_id: str) -> str | None:
         """Fetch XML description for a terminal.
 
@@ -174,23 +199,10 @@ class BeckhoffClient:
         logger.info(f"Fetching XML for terminal: {terminal_id}")
 
         # Try cached terminals first
-        terminals = self.get_cached_terminals()
-        if terminals:
-            for terminal in terminals:
-                if terminal.terminal_id == terminal_id and terminal.xml_file:
-                    xml_path = Path(terminal.xml_file)
-                    if xml_path.exists():
-                        try:
-                            content = xml_path.read_text(
-                                encoding="utf-8", errors="ignore"
-                            )
-                            logger.info(
-                                f"Found XML for {terminal_id} in {xml_path.name}"
-                            )
-                            return content
-                        except Exception as e:
-                            logger.error(f"Error reading cached XML: {e}")
-                    break
+        cached = self.read_cached_xml(terminal_id)
+        if cached is not None:
+            logger.info(f"Found cached XML for {terminal_id}")
+            return cached
 
         # Fallback: search all files
         if not self._cache.download_and_extract():
@@ -247,6 +259,21 @@ class BeckhoffClient:
     ) -> TerminalType:
         """Create a default terminal type with placeholder values."""
         return create_default_terminal(terminal_id, description, group_type)
+
+    def list_cached_revisions(self, terminal_id: str) -> list[int]:
+        """List firmware revisions for a terminal from the cached XML.
+
+        Args:
+            terminal_id: Terminal ID (e.g. "EP4374-0002").
+
+        Returns:
+            Sorted ascending list of revision numbers found in the cached
+            XML. Empty list if the terminal is not cached.
+        """
+        xml_content = self.read_cached_xml(terminal_id)
+        if not xml_content:
+            return []
+        return list_revisions_for_terminal(xml_content, terminal_id)
 
     def close(self) -> None:
         """Close the HTTP client."""

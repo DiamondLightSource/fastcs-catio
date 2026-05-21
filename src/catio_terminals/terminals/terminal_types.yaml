@@ -13717,57 +13717,61 @@ terminal_types:
     identity:
       vendor_id: 2
       product_code: 286670930
-      revision_number: 1048578
+      revision_number: 1245186
     symbol_nodes:
-      - name_template: AI TxPDO-Map Standard Channel {channel}
+      - name_template: AI Inputs Channel {channel}
         index_group: 61489
         type_name: Status__Underrange_6Bits
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_map_standard_channel_{channel}
+        fastcs_name: ai_inputs_channel_{channel}
         selected: true
         bit_offset: 0
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 1
+      - name_template: AI Inputs Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_m_std_ch_{channel}_sts_lim_1
-        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
+        fastcs_name: ai_inputs_ch_{channel}_sts_lim_1
+        tooltip: 'Bit0: Value is less than or equal to limit 1 Bit1: Value is greater
+          than or equal to limit 1'
         selected: true
         bit_offset: 2
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Status__Limit 2
+      - name_template: AI Inputs Channel {channel}.Status__Limit 2
         index_group: 61489
         type_name: BIT2
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_m_std_ch_{channel}_sts_lim_2
-        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
+        fastcs_name: ai_inputs_ch_{channel}_sts_lim_2
+        tooltip: 'Bit0: Value is less than or equal to limit 2 Bit1: Value is greater
+          than or equal to limit 2'
         selected: true
         bit_offset: 4
-      - name_template: AI TxPDO-Map Standard Channel {channel}.Value
+      - name_template: AI Inputs Channel {channel}.Value
         index_group: 61489
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_m_std_ch_{channel}_val
+        fastcs_name: ai_inputs_channel_{channel}_value
         selected: true
         bit_offset: 16
-      - name_template: AI TxPDO-Map Compact Channel {channel}.Value
+      - name_template: AI Inputs Compact Channel {channel}.Value
         index_group: 61489
         type_name: INT
         channels: 2
         access: Read-only
-        fastcs_name: ai_txpdo_m_cpt_ch_{channel}_val
+        fastcs_name: ai_inputs_cpt_ch_{channel}_val
         selected: true
         bit_offset: 0
-      - name_template: AO RxPDO-Map Channel {channel}.Analog output
+      - name_template: AO Outputs Channel {channel}.Analog output
         index_group: 61473
         type_name: INT
         channels: 2
-        channel_indices: [3, 4]
+        channel_indices:
+          - 3
+          - 4
         access: Read/Write
-        fastcs_name: ao_rxpdo_m_ch_{channel}_analog_out
+        fastcs_name: ao_outputs_ch_{channel}_analog_out
         selected: true
         bit_offset: 0
     coe_objects:

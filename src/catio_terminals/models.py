@@ -393,7 +393,15 @@ class TerminalConfig(BaseModel):
 
         with path.open() as f:
             data = yaml.safe_load(f)
-        return cls.model_validate(data)
+        config = cls.model_validate(data)
+        # to_yaml filters out unselected CoE objects, so any CoE that round-
+        # trips through YAML was selected at save time. Restore the flag so
+        # downstream merges can preserve user intent instead of having to
+        # guess.
+        for terminal in config.terminal_types.values():
+            for coe in terminal.coe_objects:
+                coe.selected = True
+        return config
 
     def to_yaml(self, path: Path) -> None:
         """Save configuration to YAML file.
