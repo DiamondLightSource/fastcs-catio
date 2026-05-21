@@ -73,6 +73,10 @@ lockfiles/
 # generated bob screens
 screens
 
+# IOC-generated FastCS introspection dumps
+/index.md
+/EA.md
+
 .test.yaml
 .nicegui
 
