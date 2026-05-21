@@ -1289,7 +1289,12 @@ class AdsCombinedNotificationStream(Message):
                 assert notif_data, notif_data
                 sample = AdsNotificationSample.from_bytes(notif_data)
                 symbol = symbols[sample.handle]
-                assert symbol.nbytes == sample.size
+                assert symbol.nbytes == sample.size, (
+                    f"Notification size mismatch for symbol '{symbol.name}' "
+                    f"(handle={sample.handle}): server reports {sample.size} "
+                    f"bytes, AdsSymbol expects {symbol.nbytes} "
+                    f"(dtype={symbol.dtype}, size={symbol.size})."
+                )
                 dtypes += [
                     (f"_{symbol.name}.handle", np.uint32),
                     (f"_{symbol.name}.size", np.uint32),
@@ -1355,7 +1360,12 @@ class AdsNotificationStream(Message):
             assert data, data
             sample = AdsNotificationSample.from_bytes(data)
             symbol = symbols[sample.handle]
-            assert symbol.nbytes == sample.size
+            assert symbol.nbytes == sample.size, (
+                f"Notification size mismatch for symbol '{symbol.name}' "
+                f"(handle={sample.handle}): server reports {sample.size} "
+                f"bytes, AdsSymbol expects {symbol.nbytes} "
+                f"(dtype={symbol.dtype}, size={symbol.size})."
+            )
             dtypes += [
                 (f"_{symbol.name}.handle", np.uint32),
                 (f"_{symbol.name}.size", np.uint32),
