@@ -174,8 +174,11 @@ def expand_symbols_for_slave(
             full_name = f"{slave.name}.{resolved}"
             parent = _find_parent_node(nodes_by_name, full_name)
             if parent is None:
-                logger.debug(
-                    f"No bus node provides offset for '{full_name}'; skipping."
+                logger.warning(
+                    f"No bus node provides offset for '{full_name}'; "
+                    f"YAML row exists but the bus didn't expose a matching "
+                    f"symbol or parent struct. PV will be created but "
+                    f"reads/writes will fail."
                 )
                 continue
 
