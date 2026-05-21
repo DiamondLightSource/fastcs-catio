@@ -137,6 +137,13 @@ def expand_symbols_for_slave(
     for row in terminal.symbol_nodes:
         if not row.selected:
             continue
+        # ADS addresses are byte-granular. Sub-byte bit-field rows
+        # (e.g. EL3104's `.Status__Limit 1` at bit 2) can't be
+        # subscribed independently — the data lives inside the parent
+        # status byte, and the ADS server rejects the notification
+        # request with ADSERR_DEVICE_SYMBOLVERSIONINVALID. Skip them.
+        if row.bit_offset % 8 != 0:
+            continue
         channels: Iterable[int | None] = (
             range(1, row.channels + 1) if row.channels > 1 else (None,)
         )
