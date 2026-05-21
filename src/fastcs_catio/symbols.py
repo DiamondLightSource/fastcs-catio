@@ -174,11 +174,18 @@ def expand_symbols_for_slave(
             full_name = f"{slave.name}.{resolved}"
             parent = _find_parent_node(nodes_by_name, full_name)
             if parent is None:
+                pdo_hint = ""
+                if terminal.has_dynamic_pdos:
+                    pdo_hint = (
+                        f" Terminal has dynamic PDO groups and the YAML "
+                        f"selects '{terminal.selected_pdo_group}'; the bus "
+                        f"may be configured for a different group."
+                    )
                 logger.warning(
                     f"No bus node provides offset for '{full_name}'; "
                     f"YAML row exists but the bus didn't expose a matching "
                     f"symbol or parent struct. PV will be created but "
-                    f"reads/writes will fail."
+                    f"reads/writes will fail.{pdo_hint}"
                 )
                 continue
 
