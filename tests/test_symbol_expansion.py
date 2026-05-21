@@ -276,6 +276,44 @@ class TestExpandSymbolsForSlave:
         }
         assert symbols["Term1.Channel 2.Value"].offset == 0x110 + 2
 
+    def test_non_one_based_channel_indices(self, install_terminal_config):
+        # EP4374-0002 names its AO RxPDOs "Channel 3" and "Channel 4"
+        # because the terminal numbers AI channels 1-2 and AO channels 3-4
+        # under a shared scheme. The expander must walk channel_indices
+        # rather than range(1, channels+1) — otherwise it fabricates
+        # "Channel 1.Analog output" which doesn't exist on the bus.
+        terminal = TerminalType(
+            description="EP4374-0002",
+            identity=Identity(
+                vendor_id=2, product_code=0x11164052, revision_number=0x00100002
+            ),
+            symbol_nodes=[
+                SymbolNode(
+                    name_template="AO RxPDO-Map Channel {channel}.Analog output",
+                    index_group=0xF021,
+                    type_name="INT",
+                    channels=2,
+                    channel_indices=[3, 4],
+                ),
+            ],
+        )
+        install_terminal_config({"EP4374-0002": terminal})
+
+        nodes_by_name = {
+            "Term1.AO RxPDO-Map Channel 3": _make_node(
+                "Term1.AO RxPDO-Map Channel 3", index_offset=0x300
+            ),
+            "Term1.AO RxPDO-Map Channel 4": _make_node(
+                "Term1.AO RxPDO-Map Channel 4", index_offset=0x310
+            ),
+        }
+        slave = _make_slave("Term1", product=0x11164052, revision=0x00100002)
+        symbols = expand_symbols_for_slave(nodes_by_name, slave)
+        assert set(symbols.keys()) == {
+            "Term1.AO RxPDO-Map Channel 3.Analog output",
+            "Term1.AO RxPDO-Map Channel 4.Analog output",
+        }
+
     def test_missing_parent_warns_and_skips(self, install_terminal_config, caplog):
         terminal = TerminalType(
             description="EL_TEST",

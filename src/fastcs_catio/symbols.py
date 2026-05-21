@@ -163,8 +163,11 @@ def expand_symbols_for_slave(
         # request with ADSERR_DEVICE_SYMBOLVERSIONINVALID. Skip them.
         if row.bit_offset % 8 != 0:
             continue
+        # channel_indices carries the real bus channel numbers (e.g. [3, 4]
+        # for EP4374-0002's AO RxPDOs). Single-channel rows use (None,) so
+        # the template's literal name is used unchanged.
         channels: Iterable[int | None] = (
-            range(1, row.channels + 1) if row.channels > 1 else (None,)
+            row.channel_indices if row.channels > 1 else (None,)
         )
         for ch in channels:
             resolved = row.name_template

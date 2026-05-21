@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 from catio_terminals.ads_types import get_type_info
 
@@ -61,6 +61,13 @@ class SymbolNode(BaseModel):
     index_group: int = Field(description="ADS index group")
     type_name: str = Field(description="Type name (e.g., INT, BOOL, UINT)")
     channels: int = Field(default=1, description="Number of channels")
+    channel_indices: list[int] = Field(
+        default_factory=list,
+        description=(
+            "Actual channel numbers used in the bus PDO names (e.g. [3, 4] "
+            "for EP4374-0002's AO RxPDOs). Empty list means '[1..channels]'."
+        ),
+    )
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
         default=None, description="Snake case name for FastCS"
@@ -83,6 +90,17 @@ class SymbolNode(BaseModel):
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None
     _ads_type_from_yaml: int | None = None
+
+    @model_validator(mode="after")
+    def _reconcile_channels(self) -> "SymbolNode":
+        # YAMLs predating the channel_indices field carry only `channels: N`
+        # and expect 1-based numbering. Fill the explicit list so iterators
+        # don't need a fallback path.
+        if not self.channel_indices:
+            self.channel_indices = list(range(1, self.channels + 1))
+        elif self.channels != len(self.channel_indices):
+            self.channels = len(self.channel_indices)
+        return self
 
     @computed_field
     @property
@@ -415,10 +433,19 @@ class TerminalConfig(BaseModel):
 
             # Save all symbols with 'selected' field, excluding computed fields
             if "symbol_nodes" in terminal_data:
-                terminal_data["symbol_nodes"] = [
-                    {k: v for k, v in sym.items() if k not in symbol_exclude_fields}
-                    for sym in terminal_data["symbol_nodes"]
-                ]
+                cleaned = []
+                for sym in terminal_data["symbol_nodes"]:
+                    sym = {
+                        k: v for k, v in sym.items() if k not in symbol_exclude_fields
+                    }
+                    # Only emit channel_indices when it diverges from the
+                    # implicit [1..channels] default — keeps the YAML noise-free
+                    # for the vast majority of terminals.
+                    channels = sym.get("channels", 1)
+                    if sym.get("channel_indices") == list(range(1, channels + 1)):
+                        sym.pop("channel_indices", None)
+                    cleaned.append(sym)
+                terminal_data["symbol_nodes"] = cleaned
 
             if "coe_objects" in terminal_data:
                 terminal_data["coe_objects"] = [

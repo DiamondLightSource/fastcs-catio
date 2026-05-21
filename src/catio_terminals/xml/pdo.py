@@ -597,12 +597,14 @@ def create_symbol_nodes(
             data_type = bit_field_key_to_type_name[bit_field_key]
 
         symbol_idx = len(symbol_nodes)
+        channel_indices = sorted(set(channel_nums))
         symbol_nodes.append(
             SymbolNode(
                 name_template=name_pattern,
                 index_group=index_group,
                 type_name=data_type,
-                channels=len(channel_nums),
+                channels=len(channel_indices),
+                channel_indices=channel_indices,
                 access=access,
                 fastcs_name=make_fastcs_name(name_pattern),
                 tooltip=tooltip,

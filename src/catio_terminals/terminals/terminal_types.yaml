@@ -13765,6 +13765,7 @@ terminal_types:
         index_group: 61473
         type_name: INT
         channels: 2
+        channel_indices: [3, 4]
         access: Read/Write
         fastcs_name: ao_rxpdo_m_ch_{channel}_analog_out
         selected: true
