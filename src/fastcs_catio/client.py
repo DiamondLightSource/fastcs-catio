@@ -79,7 +79,7 @@ from .messages import (
     SlaveCRC,
     UDPInfo,
 )
-from .symbols import symbol_lookup
+from .symbols import build_symbols_for_device
 from .utils import (
     bytes_to_string,
     check_coe_indices_format,
@@ -2081,22 +2081,13 @@ class AsyncioADSClient:
             device_id, int(symbol_table.symbol_count), response.data
         )
 
-        # Get a dict of the available symbols
-        symbols: dict[str, AdsSymbol] = {}
-        for node in nodes:
-            symbols.update(symbol_lookup(node))
-
-        # Adjust the device symbol names to include the device name as prefix
-        # Unfortunately, counter correction is required in 'add_device_notification()'
-        names = []
-        device_name = self._ecdevices[device_id].name
-        for name in symbols.keys():
-            if name.startswith("Inputs") or name.startswith("Outputs"):
-                names.append((name, f"{device_name}.{name}"))
-        for old_name, new_name in names:
-            old_symbol = symbols.pop(old_name)
-            symbols[new_name] = old_symbol
-            symbols[new_name].name = new_name
+        device = self._ecdevices[device_id]
+        device_name = device.name
+        symbols = build_symbols_for_device(
+            nodes=nodes,
+            slaves=device.slaves,
+            device_name=device_name,
+        )
 
         self._ecsymbols[device_id] = symbols
         logger.info(

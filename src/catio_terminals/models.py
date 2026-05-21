@@ -71,6 +71,14 @@ class SymbolNode(BaseModel):
     selected: bool = Field(
         default=True, description="Whether to include in YAML output"
     )
+    bit_offset: int = Field(
+        default=0,
+        description=(
+            "Bit position of this entry within its parent struct. Top-level "
+            "symbols and primitives use 0; dotted sub-fields carry the offset "
+            "of the field within the parent BIGTYPE (e.g. .Value at bit 16)."
+        ),
+    )
 
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None

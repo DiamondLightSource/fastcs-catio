@@ -47,28 +47,28 @@ Group-specific logic lives in `process_pdo_entries()` in
 ## What the XML does NOT contain
 
 - Composite type names — assigned by our XML parser.
-- ADS offsets — computed at runtime.
 - Some symbols like `WcState` are ADS runtime symbols, not XML-defined.
 
-## Supporting a new terminal struct type needs two things
+## Supporting a new terminal: YAML is the source of truth
 
-YAML alone is not enough. The runtime symbol-lookup table in
-`src/fastcs_catio/symbols.py` is a parallel requirement:
+Since issue #54 there is only one thing to do: regenerate the YAML.
 
-1. **YAML entry** in `src/catio_terminals/terminals/terminal_types.yaml`
-   (regenerated from XML).
-2. **Regex pattern** in `AdsSymbolTypePattern` (~line 40 of
-   `src/fastcs_catio/symbols.py`) matching the structured-symbol type
-   name the live ADS server reports for that terminal.
-3. **`case` arm** in `symbol_lookup` (same file, ~line 157) returning
-   the right `SymbolGroupParam` for the value field.
+`src/fastcs_catio/symbols.py` no longer hosts a hardcoded LUT. The
+bus-side expander finds the matching terminal in
+`terminal_types.yaml` by identity (vendor / product / revision) and
+emits ADS symbols for every `selected: true` row, at offsets it reads
+from each row's `bit_offset` (populated by the XML parser).
 
-If the regex is missing, `symbol_lookup` falls into the `case _`
-default and logs `Definition for the structured symbol node type
-'<TypeName>' ... is missing. Symbol node will be ignored.` The parent
-struct (which carries the actual value field) is silently dropped at
-startup. When you see that warning, add the pattern — don't just
-regenerate the YAML.
+So:
+
+1. Run `uv run catio-terminals clean-yaml <file>` so the parser picks
+   up the new terminal and writes `bit_offset` for each row.
+2. Use the editor (`uv run catio-terminals edit`) to set `selected:
+   true` on rows that should produce PVs.
+
+If a row's symbol isn't produced at runtime, the most likely cause is
+that no bus node provides the parent struct's offset — check the
+slave's name prefix and the row's `name_template`.
 
 See [terminal-yaml-definitions.md](../../../docs/explanations/terminal-yaml-definitions.md)
 for the distinction between XML-defined symbols and ADS runtime
