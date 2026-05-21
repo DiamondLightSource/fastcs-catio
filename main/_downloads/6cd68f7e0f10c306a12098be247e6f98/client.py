@@ -1487,7 +1487,9 @@ class AsyncioADSClient:
         )
 
         self._ecdevices = await self._get_ethercat_devices()
-        logger.info(f"Available I/O devices: {self._ecdevices}")
+        # Render as a list so loguru's formatter doesn't see the dict's
+        # outer '{...}' braces and try to re-parse them as format fields.
+        logger.info(f"Available I/O devices: {list(self._ecdevices.values())}")
 
         self.master_device_id = next(iter(self._ecdevices))
         logger.info(
