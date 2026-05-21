@@ -3695,7 +3695,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}
-        selected: true
+        selected: false
         bit_offset: 0
       - name_template: TC Inputs Channel {channel}.Limit 1
         index_group: 61489
@@ -3704,7 +3704,7 @@ terminal_types:
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
-        selected: true
+        selected: false
         bit_offset: 2
       - name_template: TC Inputs Channel {channel}.Limit 2
         index_group: 61489
@@ -3713,7 +3713,7 @@ terminal_types:
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_limit_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
-        selected: true
+        selected: false
         bit_offset: 4
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61489
@@ -3721,7 +3721,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_value
-        selected: true
+        selected: false
         bit_offset: 16
       - name_template: TC Outputs Channel {channel}.CJCompensation
         index_group: 61473
@@ -3729,7 +3729,7 @@ terminal_types:
         channels: 4
         access: Read/Write
         fastcs_name: tc_outputs_ch_{channel}_cjcompensation
-        selected: true
+        selected: false
         bit_offset: 0
     coe_objects:
       - index: 32768
@@ -4557,7 +4557,7 @@ terminal_types:
           - 2
           - 3
           - 4
-    selected_pdo_group: with ColdJunction Compensation
+    selected_pdo_group: Inputs only
   EL3356-0010:
     description: 1Ch. Ana. Input Resistor Bridge Terminal, 24bit, High Precision
     identity:
