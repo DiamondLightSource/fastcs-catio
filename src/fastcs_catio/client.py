@@ -2779,7 +2779,12 @@ class AsyncioADSClient:
                                 streams_dtype, buffer
                             )
                         )
-                        assert streams_dtype.fields
+                        assert streams_dtype.fields, (
+                            f"Notification stream dtype has no fields "
+                            f"(streams_dtype={streams_dtype!r}); "
+                            f"templates={list(self.__notif_templates.keys())}, "
+                            f"handles={len(self.__device_notification_handles)}."
+                        )
                         logger.debug(
                             f"Notification stream added to the queue: "
                             f"qsize={self.__notification_queue.qsize()}, "
