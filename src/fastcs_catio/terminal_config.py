@@ -192,3 +192,25 @@ def get_terminal_type(terminal_id: str) -> TerminalType:
             f"Terminal type '{terminal_id}' not found in terminal_types.yaml"
         )
     return config.terminal_types[terminal_id]
+
+
+def get_terminal_type_by_identity(
+    vendor_id: int, product_code: int, revision_number: int
+) -> TerminalType | None:
+    """Look up a terminal definition by its EtherCAT identity.
+
+    Used by the bus-side symbol expansion: the bus reports
+    (vendor_id, product_code, revision_number) per slave; we map that
+    back to the YAML row that drives PV creation. Returns the first
+    matching terminal, or None if no terminal in YAML has this identity.
+    """
+    config = load_terminal_config()
+    for terminal in config.terminal_types.values():
+        ident = terminal.identity
+        if (
+            ident.vendor_id == vendor_id
+            and ident.product_code == product_code
+            and ident.revision_number == revision_number
+        ):
+            return terminal
+    return None
