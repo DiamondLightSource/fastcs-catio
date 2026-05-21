@@ -469,6 +469,12 @@ class CATioServerController(CATioController):
             f"A map of all attributes linked to controller {self.name} was created."
         )
 
+        # Gate bus subscriptions on attribute_map membership so the IOC
+        # only subscribes to symbols a PV consumes. Closes the seam
+        # behind issue #53 (e.g. _SyncUnits.*) without an ad-hoc
+        # carve-out in the notification handler.
+        self.connection.set_wanted_attribute_keys(self.attribute_map.keys())
+
     async def connect(self) -> None:
         """
         Establish the FastCS connection to the CATio server controller.
