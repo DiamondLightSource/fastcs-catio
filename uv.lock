@@ -760,7 +760,7 @@ wheels = [
 
 [[package]]
 name = "fastcs"
-version = "0.14.0b2"
+version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioserial" },
@@ -773,9 +773,9 @@ dependencies = [
     { name = "ruamel-yaml" },
     { name = "stdio-socket" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f8/fb/ccc1d1faa9cb6ba08475aa4eee5e07122ddd15676fbb12b021582b1382d6/fastcs-0.14.0b2.tar.gz", hash = "sha256:19274cc8bdb6a8970f130a0ff7bb4a61b425b235532a166c6c39ed267006bd76", size = 415668, upload-time = "2026-05-07T13:05:54.842Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/5e/58bda0b55981560e0d0484baf5249c12c86792ded39d3ee240b03668d8a8/fastcs-0.14.0.tar.gz", hash = "sha256:633f504b02828a5df662039a7a0e9706dcd9b4c6926b74d5538e965b5dd6916b", size = 416304, upload-time = "2026-05-19T15:18:30.666Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/7c/9b40e10007c39feaf892526a90d0be81c9c46a4ea2a90920b391388737b3/fastcs-0.14.0b2-py3-none-any.whl", hash = "sha256:7540214025973c5da4b30908ae2b45352984203a2a76ce15729e533eca8b22c4", size = 93524, upload-time = "2026-05-07T13:05:53.78Z" },
+    { url = "https://files.pythonhosted.org/packages/22/63/98061586236deb4067ba87780cd6a622b4936b710090a31f26bf0488cb75/fastcs-0.14.0-py3-none-any.whl", hash = "sha256:878aa2e8a7d56c427f769df971dbc1124133125dd2d119b7db34d0dcf1e100f3", size = 94136, upload-time = "2026-05-19T15:18:29.691Z" },
 ]
 
 [package.optional-dependencies]
@@ -827,7 +827,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastcs", extras = ["epics"], specifier = "==0.14.0b2" },
+    { name = "fastcs", extras = ["epics"], specifier = "==0.14.0" },
     { name = "httpx", marker = "extra == 'terminals'", specifier = ">=0.27.0" },
     { name = "nicegui", specifier = ">=3.6.1" },
     { name = "nicegui", marker = "extra == 'terminals'", specifier = ">=2.0.0" },
@@ -2254,15 +2254,15 @@ wheels = [
 
 [[package]]
 name = "pyright"
-version = "1.1.408"
+version = "1.1.409"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nodeenv" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/b2/5db700e52554b8f025faa9c3c624c59f1f6c8841ba81ab97641b54322f16/pyright-1.1.408.tar.gz", hash = "sha256:f28f2321f96852fa50b5829ea492f6adb0e6954568d1caa3f3af3a5f555eb684", size = 4400578, upload-time = "2026-01-08T08:07:38.795Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/51/4e/3aa27f74211522dba7e9cbc3e74de779c6d4b654c54e50a4840623be8014/pyright-1.1.409.tar.gz", hash = "sha256:986ee05beca9e077c165758ad123667c679e050059a2546aa02473930394bc93", size = 4430434, upload-time = "2026-04-23T11:02:03.799Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/82/a2c93e32800940d9573fb28c346772a14778b84ba7524e691b324620ab89/pyright-1.1.408-py3-none-any.whl", hash = "sha256:090b32865f4fdb1e0e6cd82bf5618480d48eecd2eb2e70f960982a3d9a4c17c1", size = 6399144, upload-time = "2026-01-08T08:07:37.082Z" },
+    { url = "https://files.pythonhosted.org/packages/16/6b/330d8ebae582b30c2959a1ef4c3bc344ebde48c2ff0c3f113c4710735e11/pyright-1.1.409-py3-none-any.whl", hash = "sha256:aa3ea228cab90c845c7a60d28db7a844c04315356392aa09fafcee98c8c22fb3", size = 6438161, upload-time = "2026-04-23T11:02:01.309Z" },
 ]
 
 [[package]]

@@ -76,5 +76,5 @@ screens
 .test.yaml
 .nicegui
 
-# Claude Code / GSD tooling
-.claude/
+# vscode workspace settings
+*.code-workspace
