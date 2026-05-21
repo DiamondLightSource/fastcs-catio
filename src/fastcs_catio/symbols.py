@@ -88,14 +88,20 @@ _DEVICE_OUTPUTS_FIELDS: list[tuple[str, npt.DTypeLike, int]] = [
 
 
 def _dtype_for_type_name(type_name: str) -> tuple[npt.DTypeLike, int]:
-    """Resolve a YAML ``type_name`` into ``(numpy dtype, element count)``."""
+    """Resolve a YAML ``type_name`` into ``(numpy dtype, element count)``.
+
+    The second slot in _DTYPE_MAP is bytes-per-element, not count.
+    Scalar primitives always return count=1; array types return the
+    declared element count from the ``ARRAY [a..b] OF X`` syntax.
+    """
     m = _ARRAY_RE.match(type_name)
     if m:
         lo, hi = int(m.group(1)), int(m.group(2))
         element = m.group(3).upper()
         elem_dtype, _ = _DTYPE_MAP.get(element, (np.uint8, 1))
         return elem_dtype, hi - lo + 1
-    return _DTYPE_MAP.get(type_name.upper(), (np.uint8, 1))
+    elem_dtype, _ = _DTYPE_MAP.get(type_name.upper(), (np.uint8, 1))
+    return elem_dtype, 1
 
 
 def _find_parent_node(
