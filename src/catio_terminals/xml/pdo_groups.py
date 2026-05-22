@@ -245,10 +245,14 @@ def assign_symbols_to_groups(
     pdo_groups: list[PdoGroup],
     symbol_pdo_mapping: dict[int, int],
 ) -> None:
-    """Assign symbol indices to their corresponding PDO groups.
+    """Assign symbol indices to every PDO group that contains their source PDO.
 
-    After symbols are created, this function maps each symbol's source PDO
-    index to the appropriate PDO group.
+    A single PDO can appear in more than one group — e.g. EL3314's
+    `TC Inputs Channel N` TxPDOs (`#x1a00..#x1a03`) belong to both the
+    `Inputs only` and `with ColdJunction Compensation` AlternativeSmMappings.
+    Each symbol must therefore be appended to **every** group whose
+    `pdo_indices` list contains its source PDO, not just the last one
+    iterated.
 
     Args:
         pdo_groups: List of PDO groups to update
@@ -257,18 +261,15 @@ def assign_symbols_to_groups(
     if not pdo_groups:
         return
 
-    # Build reverse mapping: PDO index -> group
-    pdo_to_group: dict[int, PdoGroup] = {}
+    # A PDO can be claimed by multiple groups; collect them all.
+    pdo_to_groups: dict[int, list[PdoGroup]] = {}
     for group in pdo_groups:
         for pdo_index in group.pdo_indices:
-            pdo_to_group[pdo_index] = group
+            pdo_to_groups.setdefault(pdo_index, []).append(group)
 
-    # Assign symbols to groups
     for symbol_idx, pdo_index in symbol_pdo_mapping.items():
-        group = pdo_to_group.get(pdo_index)
-        if group:
+        for group in pdo_to_groups.get(pdo_index, []):
             group.symbol_indices.append(symbol_idx)
 
-    # Sort symbol indices for consistent output
     for group in pdo_groups:
         group.symbol_indices.sort()

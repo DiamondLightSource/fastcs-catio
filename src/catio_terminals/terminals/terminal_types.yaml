@@ -3687,7 +3687,7 @@ terminal_types:
     identity:
       vendor_id: 2
       product_code: 217198674
-      revision_number: 1048576
+      revision_number: 1572864
     symbol_nodes:
       - name_template: TC Inputs Channel {channel}
         index_group: 61489
@@ -3695,25 +3695,25 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}
-        selected: false
+        selected: true
         bit_offset: 0
-      - name_template: TC Inputs Channel {channel}.Limit 1
+      - name_template: TC Inputs Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: tc_inputs_channel_{channel}_limit_1
+        fastcs_name: tc_inputs_ch_{channel}_sts_lim_1
         tooltip: 'Bit0: Value smaller/equal Limit1 Bit1: Value bigger/equal Limit1'
-        selected: false
+        selected: true
         bit_offset: 2
-      - name_template: TC Inputs Channel {channel}.Limit 2
+      - name_template: TC Inputs Channel {channel}.Status__Limit 2
         index_group: 61489
         type_name: BIT2
         channels: 4
         access: Read-only
-        fastcs_name: tc_inputs_channel_{channel}_limit_2
+        fastcs_name: tc_inputs_ch_{channel}_sts_lim_2
         tooltip: 'Bit0: Value smaller/equal Limit2 Bit1: Value bigger/equal Limit2'
-        selected: false
+        selected: true
         bit_offset: 4
       - name_template: TC Inputs Channel {channel}.Value
         index_group: 61489
@@ -3721,7 +3721,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: tc_inputs_channel_{channel}_value
-        selected: false
+        selected: true
         bit_offset: 16
       - name_template: TC Outputs Channel {channel}.CJCompensation
         index_group: 61473
@@ -4548,7 +4548,11 @@ terminal_types:
     pdo_groups:
       - name: Inputs only
         is_default: true
-        symbol_indices: []
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
       - name: with ColdJunction Compensation
         is_default: false
         symbol_indices:
