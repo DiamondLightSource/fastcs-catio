@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from catio_terminals.beckhoff import BeckhoffClient
-from catio_terminals.models import TerminalConfig
+from catio_terminals.models import TerminalConfig, strip_revision_suffix
 
 if TYPE_CHECKING:
     from catio_terminals.models import TerminalType
@@ -99,8 +99,13 @@ class FileService:
         """
         logger.debug(f"Loading XML for terminal: {terminal_id}")
 
+        # Issue #60: multi-revision entries are keyed
+        # "<bare-id>__rev<8 hex>" but the ESI XML only knows the bare ID.
+        # Strip the suffix before fetching/parsing.
+        xml_terminal_id = strip_revision_suffix(terminal_id)
+
         # Fetch XML for this terminal
-        xml_content = await beckhoff_client.fetch_terminal_xml(terminal_id)
+        xml_content = await beckhoff_client.fetch_terminal_xml(xml_terminal_id)
         if not xml_content:
             logger.warning(f"No XML found for {terminal_id}")
             return False
@@ -110,7 +115,7 @@ class FileService:
             # Pass target_revision to match the terminal's existing revision
             target_revision = terminal.identity.revision_number
             xml_terminal, composite_types = beckhoff_client.parse_terminal_xml(
-                xml_content, terminal_id, terminal.group_type, target_revision
+                xml_content, xml_terminal_id, terminal.group_type, target_revision
             )
 
             # Merge composite types into the config

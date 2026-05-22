@@ -285,6 +285,40 @@ Beckhoff bumps the `revision_number` on backward-compatible firmware
 `(vendor, product)` if the rig's revision differs from the cached
 XML's. Don't pin matching to all three components without a fallback.
 
+### Multi-revision YAML entries (issue #60)
+
+Some terminals do rename PDOs across revisions (e.g. EP2338-0002
+renames the RxPDOs `Channel 1..8` → `Channel 9..16` at revision
+`0x00120002`). A single YAML entry per product would silently
+misname ADS symbols on rigs running the newer firmware. The fix is
+to ship multiple entries for the same `(vendor, product)`, each
+pinned to a different `revision_number`.
+
+Keying convention:
+- The lowest-revision entry keeps the bare product ID (e.g.
+  `EP2338-0002`) — existing single-rig deployments don't need
+  renaming.
+- Additional entries use the suffix `__rev<8 hex digits>` (lowercase
+  `rev`, no `@` — that character would flow into GUI DOM IDs in
+  `ui_components/tree_data_builder.py`). Example:
+  `EP2338-0002__rev00120002`.
+
+Lookup precedence in `get_terminal_type_by_identity`:
+1. Exact `(vendor, product, revision)` match.
+2. Among `(vendor, product)` candidates with
+   `revision_number ≤ rig revision`, pick the highest (the most
+   recent layout the rig is compatible with).
+3. Otherwise pick the lowest-revision candidate as a degraded
+   fallback (the rig is older than every cached entry) and log a
+   warning.
+4. Otherwise return `None`.
+
+When `clean-yaml` re-merges from XML, `service_file.py` strips the
+`__rev...` suffix to find the ESI XML device, and passes the YAML
+entry's pinned `revision_number` as `target_revision` so the parser
+picks the right `<Device>` element. The PDO renames flow into
+`channel_indices` on the affected `symbol_nodes`.
+
 ## Subscription gating
 
 `CATioConnection.set_wanted_attribute_keys(...)` (called from the

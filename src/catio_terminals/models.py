@@ -1,5 +1,6 @@
 """Data models for terminal description YAML files."""
 
+import re
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -34,6 +35,28 @@ def _coe_primitive_bit_size(type_name: str | None) -> int | None:
     if type_name is None:
         return None
     return _COE_PRIMITIVE_BIT_SIZES.get(type_name.upper())
+
+
+# Issue #60: multi-revision YAML entries are keyed
+# "<bare-id>__rev<8 hex digits>", lowercase ``rev``, no ``@`` (that
+# character would flow into the GUI's DOM IDs in
+# ui_components/tree_data_builder.py). The bare-id entry (no suffix)
+# is the lowest cached revision for the product.
+_REVISION_SUFFIX_RE = re.compile(r"__rev[0-9a-fA-F]{8}$")
+
+
+def strip_revision_suffix(terminal_id: str) -> str:
+    """Strip the ``__revXXXXXXXX`` suffix from a multi-revision YAML key.
+
+    Returns the bare terminal ID used to look up the ESI XML device.
+    Keys without the suffix pass through unchanged.
+
+    >>> strip_revision_suffix("EP2338-0002")
+    'EP2338-0002'
+    >>> strip_revision_suffix("EP2338-0002__rev00120002")
+    'EP2338-0002'
+    """
+    return _REVISION_SUFFIX_RE.sub("", terminal_id)
 
 
 def _coe_default_data_zero(bit_size: int | None) -> str | None:

@@ -199,20 +199,53 @@ def get_terminal_type_by_identity(
 ) -> TerminalType | None:
     """Look up a terminal definition by its EtherCAT identity.
 
-    Used by the bus-side symbol expansion. Beckhoff bumps the revision
-    number on backward-compatible firmware/silicon updates, so the
-    physical layout (the only thing #54 needs) stays the same. We
-    therefore prefer an exact match but fall back to vendor+product
-    when the rig is at a newer revision than the cached XML.
+    Used by the bus-side symbol expansion. Beckhoff usually bumps the
+    revision number on backward-compatible firmware/silicon updates, so
+    one cached YAML entry per product is enough. Occasionally though
+    (e.g. EP2338-0002 at rev 0x00120002) Beckhoff renames PDOs across
+    a revision, which fabricates wrong ADS symbol names if the rig is
+    matched against the wrong YAML entry. Issue #60 lets a product ship
+    multiple YAML entries pinned to different revisions; this lookup
+    picks the right one.
+
+    Resolution order:
+    1. Exact ``(vendor, product, revision)`` match.
+    2. Among ``(vendor, product)`` candidates with ``revision <= rig``,
+       the one with the highest revision (most recent layout the rig is
+       compatible with).
+    3. Any ``(vendor, product)`` candidate (degraded fallback for rigs
+       older than every cached entry) — logged as a warning.
+    4. ``None``.
     """
     config = load_terminal_config()
-    fallback: TerminalType | None = None
-    for terminal in config.terminal_types.values():
-        ident = terminal.identity
-        if ident.vendor_id != vendor_id or ident.product_code != product_code:
-            continue
-        if ident.revision_number == revision_number:
+    candidates: list[TerminalType] = [
+        t
+        for t in config.terminal_types.values()
+        if t.identity.vendor_id == vendor_id and t.identity.product_code == product_code
+    ]
+    if not candidates:
+        return None
+
+    # 1. Exact match wins.
+    for terminal in candidates:
+        if terminal.identity.revision_number == revision_number:
             return terminal
-        if fallback is None:
-            fallback = terminal
+
+    # 2. Highest revision <= rig (most recent compatible layout).
+    le_candidates = [
+        t for t in candidates if t.identity.revision_number <= revision_number
+    ]
+    if le_candidates:
+        return max(le_candidates, key=lambda t: t.identity.revision_number)
+
+    # 3. Degraded fallback: rig is older than every cached entry. Pick
+    # the lowest-revision candidate (closest to the rig) and warn.
+    fallback = min(candidates, key=lambda t: t.identity.revision_number)
+    logger.warning(
+        f"No cached YAML entry has revision <= rig revision 0x{revision_number:08x} "
+        f"for vendor 0x{vendor_id:x} product 0x{product_code:x}; "
+        f"falling back to YAML entry pinned at "
+        f"0x{fallback.identity.revision_number:08x}. "
+        "Symbol layout may not match the rig."
+    )
     return fallback
