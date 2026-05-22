@@ -608,7 +608,7 @@ class CATioServerController(CATioController):
         """
         # Lazy import to prevent circular import reference
         from fastcs_catio.catio_dynamic_controller import get_terminal_controller_class
-        from fastcs_catio.catio_hardware import SUPPORTED_CONTROLLERS
+        from fastcs_catio.catio_hardware import SUPPORTED_DEVICE_CONTROLLERS
 
         match node.data.category:
             case IONodeType.Server:
@@ -626,24 +626,20 @@ class CATioServerController(CATioController):
                 logger.verbose(
                     f"Implementing I/O device '{key}' as CATioSubController."
                 )
-                ctlr = SUPPORTED_CONTROLLERS[key](
+                ctlr = SUPPORTED_DEVICE_CONTROLLERS[key](
                     name=node.data.get_type_name(),
                     ecat_name=node.data.name,
                     description=f"Controller for EtherCAT device #{node.data.id}",
                 )
                 await ctlr.initialise()
 
-            case IONodeType.Coupler | IONodeType.Slave:
+            case IONodeType.Coupler | IONodeType.Box | IONodeType.Slave:
                 assert isinstance(node.data, IOSlave)
                 logger.verbose(
                     f"Implementing I/O terminal '{node.data.name}' as "
                     f"CATioSubController."
                 )
-                # First check explicit controllers, then fall back to dynamic factory
-                if node.data.type in SUPPORTED_CONTROLLERS:
-                    ctlr_class = SUPPORTED_CONTROLLERS[node.data.type]
-                else:
-                    ctlr_class = get_terminal_controller_class(node.data.type)
+                ctlr_class = get_terminal_controller_class(node.data.type)
 
                 ctlr = ctlr_class(
                     name=node.data.get_type_name(),
