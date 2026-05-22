@@ -87,6 +87,33 @@ See [terminal-yaml-definitions.md](../../../docs/explanations/terminal-yaml-defi
 for the distinction between XML-defined symbols and ADS runtime
 symbols.
 
+## Selection-state round-trip and merge idempotency
+
+`merge_xml_for_terminal` is **called repeatedly** on the same terminal
+in normal use — the GUI's tree-view lazy-load fires it once, and the
+revision dropdown fires it again on every change. So the merge **must
+be idempotent**: running it N times on a terminal already in its
+merged state must not change selection state.
+
+The trap: `to_yaml` filters CoE objects by `selected=True` (only
+selected CoEs survive to disk), so on load every CoE in the YAML is
+implicitly selected — but `CoEObject.selected` defaults to `False`.
+`TerminalConfig.from_yaml` compensates by stamping `selected=True` on
+every loaded CoE. If you add a new place that constructs
+`TerminalConfig` from a YAML dict, replicate that stamp or merges
+will silently mark all your CoE entries unselected next time around.
+
+Conversely, `merge_xml_for_terminal` itself must **not** force
+`selected = True` on entries that survived the merge — that's what
+broke the rig in 2026-05-21 (every re-merge promoted XML-only rows
+the prior merge had added unselected, including CoE 0x1011 "Restore
+default parameters", which crashed the IOC at startup on a 0-byte
+read). The current code preserves existing selection state.
+
+If you touch the merge or YAML round-trip, run
+`tests/test_new_terminal_coe_selection.py::test_merge_preserves_selection_on_remerge`
+to make sure the invariant still holds.
+
 ## Bus-side expansion rules (post-#54)
 
 `expand_symbols_for_slave` in `src/fastcs_catio/symbols.py` is fussy
