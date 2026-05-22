@@ -513,6 +513,9 @@ class TestGetTerminalTypeByIdentity:
         assert get_terminal_type_by_identity(2, 10, 5) is t
 
     def test_vendor_product_fallback_on_revision_drift(self, install_terminal_config):
+        # Single-entry products still loose-match: rig at a newer revision
+        # than the cached YAML falls through to the only candidate (since
+        # its revision is <= the rig's). This preserves pre-#60 behaviour.
         t = TerminalType(
             description="EL",
             identity=Identity(vendor_id=2, product_code=10, revision_number=5),
@@ -528,3 +531,64 @@ class TestGetTerminalTypeByIdentity:
         install_terminal_config({"EL": t})
         assert get_terminal_type_by_identity(2, 11, 5) is None
         assert get_terminal_type_by_identity(3, 10, 5) is None
+
+    def test_multi_revision_exact_match_wins(self, install_terminal_config):
+        a = TerminalType(
+            description="EL rev A",
+            identity=Identity(vendor_id=2, product_code=10, revision_number=5),
+        )
+        b = TerminalType(
+            description="EL rev B",
+            identity=Identity(vendor_id=2, product_code=10, revision_number=20),
+        )
+        install_terminal_config({"EL": a, "EL__rev00000014": b})
+        # Exact match on A
+        assert get_terminal_type_by_identity(2, 10, 5) is a
+        # Exact match on B
+        assert get_terminal_type_by_identity(2, 10, 20) is b
+
+    def test_multi_revision_picks_highest_below_rig(self, install_terminal_config):
+        a = TerminalType(
+            description="EL rev A",
+            identity=Identity(vendor_id=2, product_code=10, revision_number=5),
+        )
+        b = TerminalType(
+            description="EL rev B",
+            identity=Identity(vendor_id=2, product_code=10, revision_number=20),
+        )
+        install_terminal_config({"EL": a, "EL__rev00000014": b})
+        # Rig at rev 15 (> A, < B) picks A (the highest <= 15).
+        assert get_terminal_type_by_identity(2, 10, 15) is a
+        # Rig at rev 99 (> B) picks B (the highest cached compatible rev).
+        assert get_terminal_type_by_identity(2, 10, 99) is b
+
+    def test_multi_revision_rig_below_all_falls_back_with_warning(
+        self, install_terminal_config
+    ):
+        from fastcs.logging import logger as _fastcs_logger
+
+        a = TerminalType(
+            description="EL rev A",
+            identity=Identity(vendor_id=2, product_code=10, revision_number=5),
+        )
+        b = TerminalType(
+            description="EL rev B",
+            identity=Identity(vendor_id=2, product_code=10, revision_number=20),
+        )
+        install_terminal_config({"EL": a, "EL__rev00000014": b})
+
+        # terminal_config uses fastcs's loguru logger, which doesn't feed
+        # pytest's caplog. Add a sink we can drain.
+        messages: list[str] = []
+        sink_id = _fastcs_logger.add(
+            lambda msg: messages.append(str(msg)), level="WARNING"
+        )
+        try:
+            # Rig at rev 1 is older than every cached entry. Degraded
+            # fallback: pick the lowest-revision YAML (closest) and warn.
+            result = get_terminal_type_by_identity(2, 10, 1)
+        finally:
+            _fastcs_logger.remove(sink_id)
+        assert result is a
+        joined = " ".join(messages).lower()
+        assert "falling back" in joined

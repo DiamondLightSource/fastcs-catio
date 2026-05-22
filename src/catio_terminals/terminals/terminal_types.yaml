@@ -7474,6 +7474,40 @@ terminal_types:
         bit_offset: 0
     coe_objects: []
     group_type: DigOut
+  EP2338-0002__rev00120002:
+    description: 8 Ch. Dig. Input/Output 24V, 0,5A, M12
+    identity:
+      vendor_id: 2
+      product_code: 153239634
+      revision_number: 1179650
+    symbol_nodes:
+      - name_template: Channel {channel}
+        index_group: 61489
+        type_name: InputBits
+        channels: 8
+        access: Read-only
+        fastcs_name: channel_{channel}
+        selected: true
+        bit_offset: 0
+      - name_template: Channel {channel}
+        index_group: 61473
+        type_name: InputBits
+        channels: 8
+        channel_indices:
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+          - 16
+        access: Read/Write
+        fastcs_name: channel_{channel}
+        selected: true
+        bit_offset: 0
+    coe_objects: []
+    group_type: DigOut
   EP2624-0002:
     description: 4Ch. Relay Output, NO (125V AC / 30V DC)
     identity:
