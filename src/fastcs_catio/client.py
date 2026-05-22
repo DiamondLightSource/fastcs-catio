@@ -1397,15 +1397,17 @@ class AsyncioADSClient:
         print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
+            rev = f"rev=0x{int(slave.identity.revision_number):08x}"
             if ("EK1100" in slave.name) | ("EK1200" in slave.name):
                 print(
                     f"\t|----- {slave.loc_in_chain.node}::"
-                    + f"{slave.loc_in_chain.position} -> {slave.name}"
+                    + f"{slave.loc_in_chain.position} -> {slave.name}\t{rev}"
                 )
             else:
                 print(
                     f"\t\t|----- {slave.loc_in_chain.node}::"
                     + f"{slave.loc_in_chain.position}\t-> {slave.type}\t{slave.name}"
+                    + f"\t{rev}"
                 )
 
     async def _get_ethercat_chains(self) -> None:
