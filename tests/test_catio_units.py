@@ -674,6 +674,7 @@ class TestIONodeType:
         assert IONodeType.Server.value == "server"
         assert IONodeType.Device.value == "device"
         assert IONodeType.Coupler.value == "coupler"
+        assert IONodeType.Box.value == "box"
         assert IONodeType.Slave.value == "slave"
 
     def test_node_type_string_conversion(self):
@@ -923,7 +924,7 @@ class TestAdsSymbolNode:
 class TestIOSlave:
     """Test suite for IOSlave data class."""
 
-    def test_get_type_name_for_slave_and_coupler_and_invalid(self):
+    def test_get_type_name_for_slave_and_coupler_and_box_and_invalid(self):
         """Test get_type_name method for different node categories."""
         # Create a sample IOSlave
         id = IOIdentity(
@@ -948,6 +949,10 @@ class TestIOSlave:
 
         # Coupler category -> should return RIO{position}
         slave.category = IONodeType.Coupler
+        assert slave.get_type_name() == "RIO3"
+
+        # Box category -> should return RIO{position}
+        slave.category = IONodeType.Box
         assert slave.get_type_name() == "RIO3"
 
         # Invalid category should raise NameError

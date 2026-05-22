@@ -38,6 +38,7 @@ class IONodeType(str, Enum):
     Server = "server"
     Device = "device"
     Coupler = "coupler"
+    Box = "box"
     Slave = "slave"
 
 
@@ -146,7 +147,7 @@ class IOSlave:
         """
         Translate the Beckhoff terminal type name into a more suitable PV name.
         """
-        if self.category == "coupler":
+        if self.category == "coupler" or self.category == "box":
             return f"RIO{self.loc_in_chain.node}"
         elif self.category == "slave":
             # This name could be updated by the actual Terminal Class (ai,ao,di,do...)?

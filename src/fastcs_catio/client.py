@@ -103,6 +103,9 @@ SYSTEM_SERVICE_PORT: int = 10000
 REMOTE_UDP_PORT: int = 48899
 
 
+# Pattern for valid Beckhoff EtherCAT Box (e.g. "EP1234", "EPP2008", "EQ5678", "ER3184")
+_BOX_TYPE_RE = re.compile(r"(E[PQR]{1}P?\d{4})")
+
 MessageT = TypeVar("MessageT", bound=Message)
 FuncType = Callable[[Any, Any], Awaitable[Any]]
 
@@ -1397,7 +1400,11 @@ class AsyncioADSClient:
         print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
-            if ("EK1100" in slave.name) | ("EK1200" in slave.name):
+            if (
+                ("EK1100" in slave.name)
+                or ("EK1200" in slave.name)
+                or (_BOX_TYPE_RE.search(slave.name) is not None)
+            ):
                 print(
                     f"\t|----- {slave.loc_in_chain.node}::"
                     + f"{slave.loc_in_chain.position} -> {slave.name}"
@@ -1430,6 +1437,11 @@ class AsyncioADSClient:
                     node_count += 1
                     node += 1
                     node_position = 0
+                if _BOX_TYPE_RE.match(slave.type) is not None:
+                    slave.category = IONodeType.Box
+                    node_count += 1
+                    node += 1
+                    node_position = 0
                 slave.loc_in_chain = ChainLocation(node, node_position)
                 node_position += 1
             device.node_count = node_count
@@ -1439,9 +1451,10 @@ class AsyncioADSClient:
         """
         Generate a tree structure from the components available on the EtherCAT system.
         The root node is the I/O server whose child nodes are the EtherCAT devices.
-        Each device node may comprise either coupler terminals as child nodes or
+        Each device node may comprise either coupler or box terminals as child nodes or
         slave terminals as leaf nodes.
         Coupler nodes may comprise slave terminals as leaf nodes.
+        Box nodes don't have leaf nodes as they are themselves acting as leaf nodes.
 
         :returns: the root node of the EtherCAT system tree
         """
