@@ -1,8 +1,7 @@
-from collections import namedtuple
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Self, SupportsInt
+from typing import Any, NamedTuple, Self, SupportsInt
 
 import numpy as np
 import numpy.typing as npt
@@ -15,14 +14,23 @@ from ._constants import (
 from ._types import AmsNetId
 from .messages import DeviceFrames, IOIdentity, SlaveCRC, SlaveState
 
-ChainLocation = namedtuple("ChainLocation", ["node", "position"])
-
 STD_UPDATE_POLL_PERIOD: float = 2.0
 FAST_UPDATE_POLL_PERIOD: float = 0.2
 NOTIF_UPDATE_POLL_PERIOD: float = 1.0
 
 OVERSAMPLING_FACTOR = 100
 ELM_OVERSAMPLING_FACTOR = 50
+
+
+class ChainLocation(NamedTuple):
+    """
+    Define the position of a slave terminal within the EtherCAT device chain.
+    """
+
+    node: int
+    """The node number of the slave terminal in the EtherCAT device chain."""
+    position: int
+    """The position number of the slave terminal in the EtherCAT device chain."""
 
 
 # ===================================================================

@@ -34,6 +34,7 @@ from fastcs_catio.utils import (
     check_ndarray,
     filetime_to_dt,
     get_notification_changes,
+    make_node_prefix,
     process_notifications,
     trim_ecat_name,
 )
@@ -71,6 +72,8 @@ class CATioController(Controller, Tracer):
         description: str | None = None,
         group: str = "",
         # comments: str = ""    # TO DO: can comments attribute be written to hardware?
+        *,
+        path: list[str] | None = None,
     ):
         # tracer.log_event("CATio controller creation", topic=self, name=name)
 
@@ -119,6 +122,7 @@ class CATioController(Controller, Tracer):
                     self.group,
                 ),
             ],
+            path=path,
         )
 
     @property
@@ -381,7 +385,12 @@ class CATioServerControllerOptions:
 class CATioServerController(CATioController):
     """A root controller for an ADS-based EtherCAT I/O server."""
 
-    def __init__(self, options: CATioServerControllerOptions) -> None:
+    def __init__(
+        self,
+        options: CATioServerControllerOptions,
+        *,
+        path=None,
+    ) -> None:
         target_ip = options.tcp_settings.target_ip
 
         route = RemoteRoute(
@@ -434,12 +443,17 @@ class CATioServerController(CATioController):
             + f"{NOTIFICATION_UPDATE_PERIOD} seconds."
         )
 
+        # The launcher framework injects 'path=[entry.id]' from fastcs.yaml
+        # and the direct ioc command line injection uses 'path=[pv_prefix]'
+        name = path[0] if path else "ROOT"
+
         # Initialise the base controller
         super().__init__(
-            name="ROOT",
+            name=name,
             ecat_name="IOServer",
             description="Root controller for an ADS-based EtherCAT I/O server",
             group="server",
+            path=path,
         )
 
     async def initialise(self) -> None:
@@ -557,10 +571,10 @@ class CATioServerController(CATioController):
     async def register_subcontrollers(self) -> None:
         """Register all subcontrollers available in the EtherCAT system tree."""
         server_node: IOTreeNode = await self.get_root_node()
-        await self.get_subcontrollers_from_node(server_node)
+        await self.get_subcontrollers_from_node(server_node, self.path)
 
     async def get_subcontrollers_from_node(
-        self, node: IOTreeNode
+        self, node: IOTreeNode, parent_path: list[str]
     ) -> None | CATioController:
         """
         Recursively register all subcontrollers available from a system node \
@@ -573,10 +587,20 @@ class CATioServerController(CATioController):
 
         :returns: the (sub)controller object created for the current node.
         """
+        current_path = parent_path
+        if not isinstance(node.data, IOServer):
+            if isinstance(node.data, IOSlave) and (
+                node.data.category == IONodeType.Coupler
+                or node.data.category == IONodeType.Box
+            ):
+                current_path = make_node_prefix(parent_path, node.data.get_type_name())
+            else:
+                current_path = parent_path + [node.data.get_type_name()]
+
         subcontrollers: list[CATioController] = []
         if node.has_children():
             for child in node.children:
-                ctlr = await self.get_subcontrollers_from_node(child)
+                ctlr = await self.get_subcontrollers_from_node(child, current_path)
                 assert (ctlr is not None) and (isinstance(ctlr, CATioController))
                 subcontrollers.append(ctlr)
 
@@ -584,12 +608,17 @@ class CATioServerController(CATioController):
                 f"{len(subcontrollers)} subcontrollers were found for {node.data.name}."
             )
 
-        return await self._get_subcontroller_object(node, subcontrollers)
+        return await self._get_subcontroller_object(
+            node,
+            subcontrollers,
+            current_path,
+        )
 
     async def _get_subcontroller_object(
         self,
         node: IOTreeNode,
         subcontrollers: list[CATioController],
+        controller_path: list[str],
     ) -> None | CATioController:
         """
         Create the associated CATio controller/subcontroller object for the given node \
@@ -624,6 +653,7 @@ class CATioServerController(CATioController):
                     name=node.data.get_type_name(),
                     ecat_name=node.data.name,
                     description=f"Controller for EtherCAT device #{node.data.id}",
+                    path=controller_path,
                 )
                 await ctlr.initialise()
 
@@ -640,6 +670,7 @@ class CATioServerController(CATioController):
                     ecat_name=node.data.name,
                     description=f"Controller for {node.data.category.value} terminal "
                     + f"'{node.data.name}'",
+                    path=controller_path,
                 )
                 await ctlr.initialise()
 
@@ -882,12 +913,14 @@ class CATioDeviceController(CATioController):
         name: str,
         ecat_name: str = "",
         description: str | None = None,
+        path: list[str] | None = None,
     ) -> None:
         super().__init__(
             name=name,
             ecat_name=ecat_name,
             description=description,
             group="device",
+            path=path,
         )
         self.notification_ready: bool = False
         """Flag indicating if the device is ready to provide notifications."""
@@ -1134,12 +1167,14 @@ class CATioTerminalController(CATioController):
         name: str,
         ecat_name: str = "",
         description: str | None = None,
+        path: list[str] | None = None,
     ) -> None:
         super().__init__(
             name=name,
             ecat_name=ecat_name,
             description=description,
             group="terminal",
+            path=path,
         )
 
     async def get_io_attributes(self) -> None:

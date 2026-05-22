@@ -1432,6 +1432,9 @@ class AsyncioADSClient:
             node_count = 0
             node, node_position = 0, 0
             for slave in device.slaves:
+                if slave.type == "EK1110" and node == 0:
+                    # EK1200 not being registered in TwinCAT introspection
+                    node_position += 1
                 if slave.type == "EK1100":
                     slave.category = IONodeType.Coupler
                     node_count += 1

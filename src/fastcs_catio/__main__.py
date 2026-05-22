@@ -180,8 +180,7 @@ def ioc(
             notification_period=notification_period,
         ),
     )
-    controller = CATioServerController(options)
-    controller.set_path([pv_prefix])
+    controller = CATioServerController(options, path=[pv_prefix])
 
     # Launch the CATio IOC with FastCS
     launcher = FastCS(controller, transports=[epics_transport])
