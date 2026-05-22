@@ -677,4 +677,41 @@ def create_symbol_nodes(
             if name in symbol_pdo_map:
                 symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name]
 
+    symbol_nodes, symbol_index_to_pdo = _drop_non_leaf_parents(
+        symbol_nodes, symbol_index_to_pdo
+    )
     return symbol_nodes, composite_types, symbol_index_to_pdo
+
+
+def _drop_non_leaf_parents(
+    symbol_nodes: list[SymbolNode],
+    symbol_index_to_pdo: dict[int, int],
+) -> tuple[list[SymbolNode], dict[int, int]]:
+    """Drop bare-struct parent rows whose template is a strict prefix of a sibling.
+
+    Beckhoff ESI XML expresses composite PDO entries (e.g. EL3314's
+    ``TC Inputs Channel N``) as a parent struct plus per-field children
+    (``.Value``, ``.Status__Limit 1``...). The parent carries no
+    information the children don't already imply, and the bus-side
+    expander in ``fastcs_catio.symbols`` refuses to subscribe to it
+    anyway (TwinCAT reports the full struct size, which mismatches the
+    YAML row's primitive ``type_name`` and trips the notification
+    flush assertion). Emitting it would only produce an orphan PV.
+    """
+    templates = [row.name_template for row in symbol_nodes]
+    non_leaf = {t for t in templates if any(o.startswith(t + ".") for o in templates)}
+
+    kept_nodes: list[SymbolNode] = []
+    old_to_new: dict[int, int] = {}
+    for old_idx, row in enumerate(symbol_nodes):
+        if row.name_template in non_leaf:
+            continue
+        old_to_new[old_idx] = len(kept_nodes)
+        kept_nodes.append(row)
+
+    remapped = {
+        old_to_new[old_idx]: pdo_idx
+        for old_idx, pdo_idx in symbol_index_to_pdo.items()
+        if old_idx in old_to_new
+    }
+    return kept_nodes, remapped

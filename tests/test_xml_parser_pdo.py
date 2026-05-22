@@ -1,6 +1,8 @@
 """Tests for XML parser PDO entry processing, especially bit field grouping."""
 
+from catio_terminals.models import SymbolNode
 from catio_terminals.xml import list_revisions_for_terminal, parse_terminal_details
+from catio_terminals.xml.pdo import _drop_non_leaf_parents
 
 # Sample XML for a terminal with bit fields that should be grouped into Status
 COUNTER_TERMINAL_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -153,29 +155,34 @@ class TestBitFieldGrouping:
     """Tests for grouping bit fields into composite symbols using PDO name."""
 
     def test_bit_fields_grouped_into_pdo_name(self):
-        """Verify bit fields from TxPdo are grouped using the PDO name."""
+        """Verify TxPdo bit fields are coalesced and the bare-struct parent
+        is dropped (its child `.Counter value` makes it a non-leaf)."""
         result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
         terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
-        # Get symbol names
         symbol_names = [s.name_template for s in terminal.symbol_nodes]
 
-        # Bit fields should use the PDO name directly (no .Status suffix)
-        assert "CNT Inputs Channel {channel}" in symbol_names
+        # Bare-struct parent is filtered out — it's a non-leaf prefix of
+        # `.Counter value` and would only produce an orphan PV.
+        assert "CNT Inputs Channel {channel}" not in symbol_names
 
-        # Should NOT have individual bit entries
+        # Individual bit entries are still coalesced (not emitted separately).
         assert (
             "CNT Inputs Channel {channel}.Output functions enabled" not in symbol_names
         )
         assert "CNT Inputs Channel {channel}.Status of output" not in symbol_names
 
-        # Should still have the Counter value entry
+        # The byte-aligned leaf survives.
         assert "CNT Inputs Channel {channel}.Counter value" in symbol_names
 
+        # The bit-field composite type is still emitted for reference.
+        assert "Output functions enabled_4Bits" in composite_types
+
     def test_bit_fields_grouped_into_pdo_name_rxpdo(self):
-        """Verify bit fields from RxPdo are grouped using the PDO name."""
+        """Verify RxPdo bit fields are coalesced and the bare-struct parent
+        is dropped (its child `.Set counter value` makes it a non-leaf)."""
         result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
         terminal, composite_types = result if result else (None, {})
 
@@ -183,80 +190,56 @@ class TestBitFieldGrouping:
 
         symbol_names = [s.name_template for s in terminal.symbol_nodes]
 
-        # Bit fields should use the PDO name directly (no .Control suffix)
-        assert "CNT Outputs Channel {channel}" in symbol_names
+        # Bare-struct parent is filtered out.
+        assert "CNT Outputs Channel {channel}" not in symbol_names
 
-        # Should NOT have individual bit entries
+        # Individual bit entries are still coalesced (not emitted separately).
         assert (
             "CNT Outputs Channel {channel}.Enable output functions" not in symbol_names
         )
         assert "CNT Outputs Channel {channel}.Set output" not in symbol_names
 
-        # Should still have the Set counter value entry
+        # The byte-aligned leaf survives.
         assert "CNT Outputs Channel {channel}.Set counter value" in symbol_names
 
-    def test_txpdo_bit_symbol_type_is_composite(self):
-        """Verify TxPdo bit symbol has appropriate composite type (USINT/UINT)."""
+        # The bit-field composite type is still emitted for reference.
+        assert "Enable output functions_3Bits" in composite_types
+
+    def test_txpdo_composite_type_emitted(self):
+        """Bit-field composite types are still emitted even when the parent
+        symbol is filtered out as a non-leaf."""
         result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
         terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
+        # First bit field is "Output functions enabled", 4 bits total.
+        assert "Output functions enabled_4Bits" in composite_types
 
-        # Find TxPdo bit symbol (CNT Inputs Channel)
-        input_symbols = [
-            s
-            for s in terminal.symbol_nodes
-            if s.name_template == "CNT Inputs Channel {channel}"
-        ]
-
-        assert len(input_symbols) == 1
-        symbol = input_symbols[0]
-
-        # Should have a composite type name based on bit fields
-        # The first bit field is "Output functions enabled", and there are 4 bits
-        assert symbol.type_name == "Output functions enabled_4Bits"
-        # Verify the composite type exists
-        assert symbol.type_name in composite_types
-
-    def test_rxpdo_bit_symbol_type_is_composite(self):
-        """Verify RxPdo bit symbol has appropriate composite type."""
+    def test_rxpdo_composite_type_emitted(self):
+        """RxPdo bit-field composite type is still emitted."""
         result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
         terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
-
-        # Find RxPdo bit symbol (CNT Outputs Channel)
-        output_symbols = [
-            s
-            for s in terminal.symbol_nodes
-            if s.name_template == "CNT Outputs Channel {channel}"
-        ]
-
-        assert len(output_symbols) == 1
-        symbol = output_symbols[0]
-
-        # Should have a composite type name based on bit fields
-        # The first bit field is "Enable output functions", and there are 3 bits
-        assert symbol.type_name == "Enable output functions_3Bits"
-        # Verify the composite type exists
-        assert symbol.type_name in composite_types
+        # First bit field is "Enable output functions", 3 bits total.
+        assert "Enable output functions_3Bits" in composite_types
 
     def test_channel_count_preserved(self):
-        """Verify channel count is correctly detected for grouped symbols."""
+        """Verify channel count is correctly detected on the surviving leaf."""
         result = parse_terminal_details(COUNTER_TERMINAL_XML, "EL1502", "DigIn")
         terminal, composite_types = result if result else (None, {})
 
         assert terminal is not None
 
-        # Find TxPdo bit symbol (should have 2 channels)
-        input_symbols = [
+        # The `.Counter value` leaf is the survivor; check it carries the
+        # channel count that was on the (now-dropped) bare-struct parent.
+        counter_symbols = [
             s
             for s in terminal.symbol_nodes
-            if s.name_template == "CNT Inputs Channel {channel}"
+            if s.name_template == "CNT Inputs Channel {channel}.Counter value"
         ]
-
-        assert len(input_symbols) == 1
-        assert input_symbols[0].channels == 2
+        assert len(counter_symbols) == 1
+        assert counter_symbols[0].channels == 2
 
     def test_access_modes_correct(self):
         """Verify TxPdo symbols are read-only and RxPdo symbols are read/write."""
@@ -793,3 +776,72 @@ class TestListRevisions:
 </EtherCATInfo>
 """
         assert list_revisions_for_terminal(repeated, "EL3104") == [0x00100000]
+
+
+class TestDropNonLeafParents:
+    """Direct tests for `_drop_non_leaf_parents`."""
+
+    def _node(self, name: str) -> SymbolNode:
+        return SymbolNode(
+            name_template=name,
+            index_group=0x6000,
+            type_name="INT",
+        )
+
+    def test_parent_with_child_dropped(self):
+        nodes = [
+            self._node("TC Inputs Channel {channel}"),
+            self._node("TC Inputs Channel {channel}.Value"),
+        ]
+        kept, _ = _drop_non_leaf_parents(nodes, {})
+        names = [n.name_template for n in kept]
+        assert names == ["TC Inputs Channel {channel}.Value"]
+
+    def test_standalone_leaf_kept(self):
+        # No siblings prefixed by this name → it's a leaf.
+        nodes = [self._node("Standalone Leaf")]
+        kept, _ = _drop_non_leaf_parents(nodes, {})
+        assert [n.name_template for n in kept] == ["Standalone Leaf"]
+
+    def test_sub_byte_siblings_dont_save_the_parent(self):
+        # EL3314 shape: parent + .Value + sub-byte bit children. Parent still
+        # gets dropped because any child template that starts with `<parent>.`
+        # makes the parent non-leaf, regardless of byte alignment.
+        nodes = [
+            self._node("TC Inputs Channel {channel}"),
+            self._node("TC Inputs Channel {channel}.Value"),
+            self._node("TC Inputs Channel {channel}.Status__Limit 1"),
+            self._node("TC Inputs Channel {channel}.Status__Limit 2"),
+        ]
+        kept, _ = _drop_non_leaf_parents(nodes, {})
+        names = [n.name_template for n in kept]
+        assert "TC Inputs Channel {channel}" not in names
+        assert "TC Inputs Channel {channel}.Value" in names
+        # Sub-byte rows survive the generator filter (they're still leaves);
+        # the bus-side expander gates them out separately.
+        assert "TC Inputs Channel {channel}.Status__Limit 1" in names
+
+    def test_pdo_indices_remapped(self):
+        # Parent at old index 0, child at old index 1 with pdo 7.
+        # After dropping the parent the child shifts to new index 0.
+        nodes = [
+            self._node("Parent"),
+            self._node("Parent.Child"),
+        ]
+        kept, remapped = _drop_non_leaf_parents(nodes, {0: 5, 1: 7})
+        assert [n.name_template for n in kept] == ["Parent.Child"]
+        # Old index 0 (the parent) is gone. Old index 1 → new index 0.
+        assert remapped == {0: 7}
+
+    def test_dotted_prefix_must_be_followed_by_dot(self):
+        # "Foo Bar" is not a prefix of "Foo Bar Baz" — the trailing `.` is
+        # what distinguishes a struct parent from an unrelated row that just
+        # happens to share an opening substring.
+        nodes = [
+            self._node("Foo Bar"),
+            self._node("Foo Bar Baz"),
+        ]
+        kept, _ = _drop_non_leaf_parents(nodes, {})
+        names = [n.name_template for n in kept]
+        assert "Foo Bar" in names
+        assert "Foo Bar Baz" in names

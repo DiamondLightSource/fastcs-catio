@@ -361,14 +361,6 @@ terminal_types:
       product_code: 98447442
       revision_number: 1245184
     symbol_nodes:
-      - name_template: CNT Inputs Channel {channel}
-        index_group: 61488
-        type_name: Status__Output functions enabled_7Bits
-        channels: 2
-        access: Read-only
-        fastcs_name: cnt_inputs_channel_{channel}
-        selected: false
-        bit_offset: 0
       - name_template: CNT Inputs Channel {channel}.Counter value
         index_group: 61488
         type_name: UDINT
@@ -377,14 +369,6 @@ terminal_types:
         fastcs_name: cnt_inputs_ch_{channel}_cnt_val
         selected: false
         bit_offset: 16
-      - name_template: CNT Outputs Channel {channel}
-        index_group: 61472
-        type_name: Control__Enable output functions_4Bits
-        channels: 2
-        access: Read/Write
-        fastcs_name: cnt_outputs_channel_{channel}
-        selected: false
-        bit_offset: 0
       - name_template: CNT Outputs Channel {channel}.Set counter value
         index_group: 61472
         type_name: UDINT
@@ -393,14 +377,6 @@ terminal_types:
         fastcs_name: cnt_outputs_ch_{channel}_set_cnt_val
         selected: false
         bit_offset: 16
-      - name_template: CNT Inputs
-        index_group: 61488
-        type_name: Status__Output functions enabled_8Bits
-        channels: 1
-        access: Read-only
-        fastcs_name: cnt_inputs
-        selected: true
-        bit_offset: 0
       - name_template: CNT Inputs.Counter value
         index_group: 61488
         type_name: UDINT
@@ -409,14 +385,6 @@ terminal_types:
         fastcs_name: cnt_inputs_counter_value
         selected: true
         bit_offset: 16
-      - name_template: CNT Outputs
-        index_group: 61472
-        type_name: Control__Enable output functions_4Bits
-        channels: 1
-        access: Read/Write
-        fastcs_name: cnt_outputs
-        selected: true
-        bit_offset: 0
       - name_template: CNT Outputs.Set counter value
         index_group: 61472
         type_name: UDINT
@@ -605,15 +573,11 @@ terminal_types:
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 3
       - name: Combined
         is_default: true
         symbol_indices:
-          - 4
-          - 5
-          - 6
-          - 7
+          - 2
+          - 3
     selected_pdo_group: Combined
   EL2024:
     description: 4-channel Digital Output 24V DC
@@ -1328,14 +1292,6 @@ terminal_types:
       product_code: 203436114
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_6Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: ai_standard_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
@@ -1991,11 +1947,10 @@ terminal_types:
           - 0
           - 1
           - 2
-          - 3
       - name: Compact
         is_default: false
         symbol_indices:
-          - 4
+          - 3
     selected_pdo_group: Standard
   EL3124:
     description: 4-channel Analog Input 4..20mA 16-bit
@@ -2004,14 +1959,6 @@ terminal_types:
       product_code: 204746834
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_6Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: ai_standard_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
@@ -2667,11 +2614,10 @@ terminal_types:
           - 0
           - 1
           - 2
-          - 3
       - name: Compact
         is_default: false
         symbol_indices:
-          - 4
+          - 3
     selected_pdo_group: Standard
   EL3202:
     description: 2Ch. Ana. Input PT100 (RTD)
@@ -2680,14 +2626,6 @@ terminal_types:
       product_code: 209858642
       revision_number: 1048576
     symbol_nodes:
-      - name_template: RTD Inputs Channel {channel}
-        index_group: 61489
-        type_name: Underrange_5Bits
-        channels: 2
-        access: Read-only
-        fastcs_name: rtd_inputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61489
         type_name: BIT2
@@ -3194,14 +3132,6 @@ terminal_types:
       product_code: 209858642
       revision_number: 1048586
     symbol_nodes:
-      - name_template: RTD Inputs Channel {channel}
-        index_group: 61489
-        type_name: Underrange_5Bits
-        channels: 2
-        access: Read-only
-        fastcs_name: rtd_inputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: RTD Inputs Channel {channel}.Limit 1
         index_group: 61489
         type_name: BIT2
@@ -3708,14 +3638,6 @@ terminal_types:
       product_code: 217198674
       revision_number: 1572864
     symbol_nodes:
-      - name_template: TC Inputs Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_5Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: tc_inputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: TC Inputs Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
@@ -4599,7 +4521,6 @@ terminal_types:
           - 0
           - 1
           - 2
-          - 3
       - name: with ColdJunction Compensation
         is_default: false
         symbol_indices:
@@ -4607,7 +4528,6 @@ terminal_types:
           - 1
           - 2
           - 3
-          - 4
     selected_pdo_group: Inputs only
   EL3356-0010:
     description: 1Ch. Ana. Input Resistor Bridge Terminal, 24bit, High Precision
@@ -4616,14 +4536,6 @@ terminal_types:
       product_code: 219951186
       revision_number: 1114122
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
-        index_group: 61489
-        type_name: Underrange_4Bits
-        channels: 2
-        access: Read-only
-        fastcs_name: ai_standard_channel_{channel}
-        selected: false
-        bit_offset: 0
       - name_template: AI Standard Channel {channel}.Value
         index_group: 61489
         type_name: DINT
@@ -5045,24 +4957,23 @@ terminal_types:
       - name: Standard (INT32)
         is_default: true
         symbol_indices:
+          - 2
           - 3
-          - 4
-          - 7
+          - 6
       - name: Standard (REAL)
         is_default: false
         symbol_indices:
-          - 3
-          - 5
-          - 7
+          - 2
+          - 4
+          - 6
       - name: 2x AnalogIn (Standard)
         is_default: false
         symbol_indices:
           - 0
-          - 1
       - name: 2x AnalogIn (Compact)
         is_default: false
         symbol_indices:
-          - 2
+          - 1
     selected_pdo_group: Standard (INT32)
   EL3602:
     description: 2-channel Analog Input +/-10V 24-bit
@@ -5071,14 +4982,6 @@ terminal_types:
       product_code: 236073042
       revision_number: 1048576
     symbol_nodes:
-      - name_template: AI Inputs Channel {channel}
-        index_group: 61489
-        type_name: Underrange_5Bits
-        channels: 2
-        access: Read-only
-        fastcs_name: ai_inputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: AI Inputs Channel {channel}.Limit 1
         index_group: 61489
         type_name: BIT2
@@ -6180,14 +6083,6 @@ terminal_types:
       product_code: 1344379273
       revision_number: 1048576
     symbol_nodes:
-      - name_template: PAI Status Channel {channel}
-        index_group: 61489
-        type_name: Status__Error_5Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: pai_status_channel_{channel}
-        selected: true
-        bit_offset: 8
       - name_template: PAI Status Channel {channel}.Status__No of Samples
         index_group: 61489
         type_name: USINT
@@ -10262,188 +10157,162 @@ terminal_types:
           - 0
           - 1
           - 2
-          - 3
       - name: Oversampling 5 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 6
+          - 5
       - name: Oversampling 10 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 8
+          - 7
       - name: Oversampling 20 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 10
+          - 9
       - name: Oversampling 50 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 14
+          - 13
       - name: Oversampling 100 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 17
+          - 16
       - name: SM Oversampling 1 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
           - 2
-          - 3
-          - 35
+          - 34
       - name: SM Oversampling 10 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 8
-          - 35
+          - 7
+          - 34
       - name: Ch 1+2 Ovs 5 - Ch 3+4 Ovs 10 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 8
+          - 7
       - name: Ch 1+2 Ovs 10 - Ch 3+4 Ovs 1 (24Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
           - 2
-          - 3
       - name: Oversampling 1 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 20
+          - 19
       - name: Oversampling 5 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 23
+          - 22
       - name: Oversampling 10 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 25
+          - 24
       - name: Oversampling 20 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 27
+          - 26
       - name: Oversampling 50 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 31
+          - 30
       - name: Oversampling 100 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 34
+          - 33
       - name: SM Oversampling 1 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 20
-          - 35
+          - 19
+          - 34
       - name: SM Oversampling 10 (16Bit)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 25
-          - 35
+          - 24
+          - 34
       - name: Oversampling 1 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 36
+          - 35
       - name: Oversampling 5 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 39
+          - 38
       - name: Oversampling 10 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 41
+          - 40
       - name: Oversampling 20 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 43
+          - 42
       - name: Oversampling 50 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 47
+          - 46
       - name: Oversampling 100 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 50
+          - 49
       - name: SM Oversampling 1 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
+          - 34
           - 35
-          - 36
       - name: SM Oversampling 10 (REAL32)
         is_default: false
         symbol_indices:
           - 0
           - 1
-          - 2
-          - 35
-          - 41
+          - 34
+          - 40
     selected_pdo_group: Oversampling 50 (16Bit)
   EP2338-0002:
     description: 8 Ch. Dig. Input/Output 24V, 0,5A, M12
@@ -10494,14 +10363,6 @@ terminal_types:
       product_code: 208027730
       revision_number: 1048578
     symbol_nodes:
-      - name_template: AI Standard Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_5Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: ai_standard_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: AI Standard Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
@@ -11259,14 +11120,6 @@ terminal_types:
       product_code: 209993810
       revision_number: 1114114
     symbol_nodes:
-      - name_template: RTD RTDInputs Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_6Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: rtd_rtdinputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: RTD RTDInputs Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
@@ -12252,14 +12105,6 @@ terminal_types:
       product_code: 217202770
       revision_number: 1048578
     symbol_nodes:
-      - name_template: TC TCInputs Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_6Bits
-        channels: 4
-        access: Read-only
-        fastcs_name: tc_tcinputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: TC TCInputs Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
@@ -13860,14 +13705,6 @@ terminal_types:
       product_code: 286670930
       revision_number: 1245186
     symbol_nodes:
-      - name_template: AI Inputs Channel {channel}
-        index_group: 61489
-        type_name: Status__Underrange_6Bits
-        channels: 2
-        access: Read-only
-        fastcs_name: ai_inputs_channel_{channel}
-        selected: true
-        bit_offset: 0
       - name_template: AI Inputs Channel {channel}.Status__Limit 1
         index_group: 61489
         type_name: BIT2
