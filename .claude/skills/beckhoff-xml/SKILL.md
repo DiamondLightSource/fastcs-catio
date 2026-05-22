@@ -127,7 +127,9 @@ in priority order:
    `.Value`, `.Limit 1`). TwinCAT reports the full struct size for
    the bare name, which then mismatches the YAML row's primitive
    type and the `symbol.nbytes == sample.size` assertion fires at
-   notification flush time.
+   notification flush time. Post-f6fbfbc this rarely fires in
+   practice — see "Generation-time filter" below — but the gate
+   remains as defense against hand-edited or stale YAML.
 3. **Sub-byte bit-field rows → skipped.** ADS addresses are
    byte-granular; rows with `bit_offset % 8 != 0` represent bit
    fields within a parent byte (e.g. EL3104's `.Status__Limit 1`
@@ -138,6 +140,40 @@ in priority order:
    gets a startup warning. Most common cause: the rig is in a
    different dynamic PDO group than `selected_pdo_group` in the YAML
    (see #58 for the per-slave-instance problem).
+
+## Generation-time filter: non-leaf parents (post-f6fbfbc)
+
+`src/catio_terminals/xml/pdo.py::_drop_non_leaf_parents` runs at the
+end of `create_symbol_nodes` and removes bare-struct parent rows
+before they're written to the YAML. The same "strict prefix +
+followed by `.`" rule the bus-side expander uses, just applied at
+generation. It also remaps `symbol_index_to_pdo` so PDO group
+indices keep binding to the surviving rows.
+
+**Why two filter sites for the same rule:** the YAML feeds two
+parallel pipelines downstream (see `[[symbol-expansion-two-pipelines]]`
+in memory):
+
+1. **Bus side** (`expand_symbols_for_slave`) skips non-leaf rows
+   because TwinCAT can't subscribe to them sensibly.
+2. **PV side** (`catio_dynamic_controller._create_dynamic_controller_class`)
+   only filters by `selected` — no leaf check. Without the
+   generation-time filter, every non-leaf YAML row produced an
+   orphan PV (created at startup, never updated).
+
+**How to apply:**
+
+- New XML→YAML emission paths should route through
+  `create_symbol_nodes` so the filter runs. If you bypass it,
+  mirror `_drop_non_leaf_parents` at the end.
+- If a non-leaf parent *should* survive (e.g. a 1-byte bit-field
+  composite the bus could decode), the bus-side gate (rule 2 above)
+  also has to be relaxed or you'll just get the orphan-PV bug back.
+- Sub-byte rows (`bit_offset % 8 != 0`) *are* still emitted — the
+  generation filter only catches non-leaves. Bus-side rule 3 still
+  catches those.
+- Regenerate after any change with `uv run catio-terminals clean-yaml --all`.
+- Direct test: `tests/test_xml_parser_pdo.py::TestDropNonLeafParents`.
 
 ## PDO groups can share PDOs
 
