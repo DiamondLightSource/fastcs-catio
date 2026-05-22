@@ -201,17 +201,7 @@ class FileService:
                         # Preserve the YAML's selected state (set to True at
                         # load time for entries that came from YAML, False
                         # for XML-only entries from a previous merge).
-                        yaml_coe = yaml_coe_map[xml_coe.index]
-                        if not yaml_coe.fastcs_name and xml_coe.fastcs_name:
-                            yaml_coe.fastcs_name = xml_coe.fastcs_name
-                        # Also update subindex fastcs_names if missing
-                        xml_sub_map = {s.subindex: s for s in xml_coe.subindices}
-                        for yaml_sub in yaml_coe.subindices:
-                            if not yaml_sub.fastcs_name:
-                                xml_sub = xml_sub_map.get(yaml_sub.subindex)
-                                if xml_sub and xml_sub.fastcs_name:
-                                    yaml_sub.fastcs_name = xml_sub.fastcs_name
-                        merged_coe.append(yaml_coe)
+                        merged_coe.append(yaml_coe_map[xml_coe.index])
                 else:
                     xml_coe.selected = False
                     merged_coe.append(xml_coe)

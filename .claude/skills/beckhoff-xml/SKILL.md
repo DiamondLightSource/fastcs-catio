@@ -62,6 +62,39 @@ Override only if the user explicitly asks for a broader scan.
 - Composite type names — assigned by our XML parser.
 - Some symbols like `WcState` are ADS runtime symbols, not XML-defined.
 
+## Derivable fields are stripped on save, refilled on load
+
+`terminal_types.yaml` deliberately omits fields whose values are
+deterministic functions of other fields. Pydantic `@model_validator`s
+on `CoESubIndex` / `CoEObject` (and `SymbolNode._reconcile_channels`)
+fill them on load; `_clean_coe_for_yaml` and the corresponding
+`symbol_nodes` cleanup in `to_yaml` strip them on save **only when the
+stored value equals the derived value**. So hand-edits survive — a
+custom `fastcs_name` that differs from the derived form stays in the
+YAML and wins on load.
+
+Current derivable fields:
+
+| Field | Derivation | Notes |
+|---|---|---|
+| CoE object `fastcs_name` | `make_fastcs_name(name, suffix="idx<hex>")` | filled by `CoEObject._fill_derivable` |
+| CoE subindex `fastcs_name` | `make_subindex_fastcs_name(parent_index, name)` | filled by `CoEObject._fill_derivable` (needs parent's index) |
+| CoE subindex `bit_size` | `_COE_PRIMITIVE_BIT_SIZES[type_name]` | primitives only (BOOL/INT/DINT/REAL/etc.); structured `DT*` types keep their stored size |
+| CoE subindex `default_data` | `'00'` × N — **stripped on save, NOT refilled on load** | the asymmetric one. Result: UI in `terminal_details.py:396` hides "Default: 00…0" labels |
+| `SymbolNode.channel_indices` | `list(range(1, channels + 1))` | filled by `_reconcile_channels` |
+
+How to apply when adding new fields:
+
+1. Make the field optional (`= None` default) on the Pydantic model.
+2. In a `@model_validator(mode="after")`, fill it from the derivation
+   when the YAML omits it.
+3. In `to_yaml` (or `_clean_coe_for_yaml`), pop the field only when
+   `stored == derived`.
+
+Do **not** add defensive "patch up missing fastcs_name from XML" code
+in merge paths (`service_file.merge_xml_for_terminal`) — the loader
+guarantees the field is populated.
+
 ## Supporting a new terminal: YAML is the source of truth
 
 Since issue #54 there is only one thing to do: regenerate the YAML.
