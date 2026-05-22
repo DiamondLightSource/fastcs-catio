@@ -149,13 +149,17 @@ class FileService:
                 xml_symbol_map[xml_sym.name_template] = xml_sym
                 if xml_sym.name_template in yaml_symbol_map:
                     if prefer_xml:
-                        # Use XML version with selected=True
-                        xml_sym.selected = True
+                        # Use XML version. xml_sym.selected defaults to True
+                        # via the model, matching clean-yaml's "select all"
+                        # behaviour.
                         merged_symbols.append(xml_sym)
                     else:
-                        # Use YAML version with selected=True
+                        # Preserve the YAML's selected state. Forcing True
+                        # here would un-deselect anything the user had ticked
+                        # off, and would also re-select XML-only rows that a
+                        # prior merge had already added unselected (breaking
+                        # idempotency on revision changes).
                         yaml_sym = yaml_symbol_map[xml_sym.name_template]
-                        yaml_sym.selected = True
                         merged_symbols.append(yaml_sym)
                 else:
                     # Symbol only in XML
@@ -189,24 +193,15 @@ class FileService:
                 xml_coe_map[xml_coe.index] = xml_coe
                 if xml_coe.index in yaml_coe_map:
                     if prefer_xml:
-                        # Use XML version with selected=True
-                        xml_coe.selected = True
+                        # clean-yaml selects/deselects CoE itself after the
+                        # merge, so the initial state here doesn't matter;
+                        # leave xml_coe.selected at its default (False).
                         merged_coe.append(xml_coe)
                     else:
-                        # Use YAML version with selected=True
-                        # But ensure fastcs_name is populated from XML if missing
-                        yaml_coe = yaml_coe_map[xml_coe.index]
-                        yaml_coe.selected = True
-                        if not yaml_coe.fastcs_name and xml_coe.fastcs_name:
-                            yaml_coe.fastcs_name = xml_coe.fastcs_name
-                        # Also update subindex fastcs_names if missing
-                        xml_sub_map = {s.subindex: s for s in xml_coe.subindices}
-                        for yaml_sub in yaml_coe.subindices:
-                            if not yaml_sub.fastcs_name:
-                                xml_sub = xml_sub_map.get(yaml_sub.subindex)
-                                if xml_sub and xml_sub.fastcs_name:
-                                    yaml_sub.fastcs_name = xml_sub.fastcs_name
-                        merged_coe.append(yaml_coe)
+                        # Preserve the YAML's selected state (set to True at
+                        # load time for entries that came from YAML, False
+                        # for XML-only entries from a previous merge).
+                        merged_coe.append(yaml_coe_map[xml_coe.index])
                 else:
                     xml_coe.selected = False
                     merged_coe.append(xml_coe)

@@ -62,6 +62,7 @@ def consolidate_array_entries(entries: list[dict]) -> list[dict]:
 
     Args:
         entries: List of entry dictionaries with name, index, bit_len, data_type
+            (and optional bit_offset)
 
     Returns:
         List of consolidated entries (array elements merged, non-arrays unchanged)
@@ -105,9 +106,10 @@ def consolidate_array_entries(entries: list[dict]) -> list[dict]:
         consolidated.append(
             {
                 "name": base_name,
-                "index": first["index"],  # Use first element's index
+                "index": first["index"],
                 "bit_len": total_bit_len,
                 "data_type": array_type,
+                "bit_offset": first.get("bit_offset", 0),
             }
         )
 
@@ -127,6 +129,7 @@ def _add_to_groups(
     bit_field_key: tuple | None = None,
     channel_bit_field_map: dict | None = None,
     tooltip: str | None = None,
+    bit_offset: int = 0,
 ) -> None:
     """Add entry to channel_groups or duplicate_tracker.
 
@@ -156,6 +159,7 @@ def _add_to_groups(
                 "ads_type": ads_type,
                 "data_type": data_type,
                 "tooltip": tooltip,
+                "bit_offset": bit_offset,
             }
         channel_groups[group_key]["channels"].append(channel_num)
         # Track max size (for channels with varying bit counts)
@@ -166,6 +170,7 @@ def _add_to_groups(
         # Keep first tooltip encountered (they should be the same across channels)
         if tooltip and not channel_groups[group_key].get("tooltip"):
             channel_groups[group_key]["tooltip"] = tooltip
+        # bit_offset is parent-relative; identical across channels
         # Track bit field key mapping if provided
         if bit_field_key and channel_bit_field_map is not None:
             # Keep the bit field key with the most bits (largest structure)
@@ -175,7 +180,11 @@ def _add_to_groups(
     else:
         dup_key = (name, index_group, size, ads_type, data_type, access, bit_field_key)
         if dup_key not in duplicate_tracker:
-            duplicate_tracker[dup_key] = {"count": 0, "tooltip": tooltip}
+            duplicate_tracker[dup_key] = {
+                "count": 0,
+                "tooltip": tooltip,
+                "bit_offset": bit_offset,
+            }
         duplicate_tracker[dup_key]["count"] += 1
         # Keep first tooltip encountered
         if tooltip and not duplicate_tracker[dup_key].get("tooltip"):
@@ -219,6 +228,9 @@ def _process_bit_entries(
 
     is_output = pdo_type == "RxPdo"
     access = "Read/Write" if is_output else "Read-only"
+
+    # bit_offset of the collapsed composite = position of the first bit entry
+    composite_bit_offset = bit_entries[0].get("bit_offset", 0)
 
     # Calculate total size of bit group (round up to nearest byte)
     total_bits = sum(e["bit_len"] for e in bit_entries)
@@ -297,6 +309,7 @@ def _process_bit_entries(
         access,
         bit_field_key,
         channel_bit_field_map,
+        bit_offset=composite_bit_offset,
     )
 
 
@@ -329,6 +342,7 @@ def _process_value_entry(
     bit_len = entry_data["bit_len"]
     data_type = entry_data["data_type"]
     tooltip = entry_data.get("tooltip")
+    bit_offset = entry_data.get("bit_offset", 0)
 
     index_group = (index >> 16) & 0xFFFF
     if index_group == 0:
@@ -371,6 +385,7 @@ def _process_value_entry(
         data_type,
         access,
         tooltip=tooltip,
+        bit_offset=bit_offset,
     )
 
 
@@ -417,12 +432,20 @@ def process_pdo_entries(
         pdo_index_str = pdo.findtext("Index", "0")
         pdo_index = parse_hex_value(pdo_index_str)
 
-        # Collect all entries for this PDO to analyze grouping
+        # Walk entries in XML order, tracking cumulative bit position within the
+        # PDO so each emitted symbol carries its bit_offset relative to the
+        # parent struct. Padding entries (Index=#x0) still advance the
+        # position but are not emitted as symbols.
         entries = []
+        cumulative_bits = 0
         for entry in pdo.findall("Entry"):
             entry_name = entry.findtext("Name", "")
             index_str = entry.findtext("Index", "0")
             index = parse_hex_value(index_str)
+            bit_len = int(entry.findtext("BitLen", "0"))
+
+            entry_bit_offset = cumulative_bits
+            cumulative_bits += bit_len
 
             # Skip padding/reserved entries (Index=#x0 indicates filler bits)
             if index == 0:
@@ -431,7 +454,6 @@ def process_pdo_entries(
             if not entry_name:
                 continue
 
-            bit_len = int(entry.findtext("BitLen", "0"))
             data_type = entry.findtext("DataType", "UNKNOWN")
 
             # Extract comment/tooltip from XML (normalize whitespace)
@@ -446,6 +468,7 @@ def process_pdo_entries(
                     "bit_len": bit_len,
                     "data_type": data_type,
                     "tooltip": comment_text or None,
+                    "bit_offset": entry_bit_offset,
                 }
             )
 
@@ -558,11 +581,13 @@ def create_symbol_nodes(
 
     for group_key, group_info in channel_groups.items():
         # group_key is (pattern, index_group, access)
-        # group_info has keys: channels, size, ads_type, data_type, tooltip
+        # group_info has keys: channels, size, ads_type, data_type, tooltip,
+        #                      bit_offset
         name_pattern, index_group, access = group_key
         channel_nums = group_info["channels"]
         data_type = group_info["data_type"]
         tooltip = group_info.get("tooltip")
+        bit_offset = group_info.get("bit_offset", 0)
 
         # Look up bit field key from channel_bit_field_map
         bit_field_key = channel_bit_field_map.get(name_pattern)
@@ -572,15 +597,18 @@ def create_symbol_nodes(
             data_type = bit_field_key_to_type_name[bit_field_key]
 
         symbol_idx = len(symbol_nodes)
+        channel_indices = sorted(set(channel_nums))
         symbol_nodes.append(
             SymbolNode(
                 name_template=name_pattern,
                 index_group=index_group,
                 type_name=data_type,
-                channels=len(channel_nums),
+                channels=len(channel_indices),
+                channel_indices=channel_indices,
                 access=access,
                 fastcs_name=make_fastcs_name(name_pattern),
                 tooltip=tooltip,
+                bit_offset=bit_offset,
             )
         )
         # Track PDO index for this symbol
@@ -588,9 +616,10 @@ def create_symbol_nodes(
             symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name_pattern]
 
     for dup_key, dup_info in duplicate_tracker.items():
-        # dup_info is now a dict with 'count' and 'tooltip' keys
+        # dup_info is a dict with 'count', 'tooltip', and 'bit_offset' keys
         count = dup_info["count"]
         tooltip = dup_info.get("tooltip")
+        bit_offset = dup_info.get("bit_offset", 0)
 
         # Unpack with optional bit_field_key (7 elements if present)
         if len(dup_key) == 7:
@@ -623,6 +652,7 @@ def create_symbol_nodes(
                     access=access,
                     fastcs_name=make_fastcs_name(name_pattern),
                     tooltip=tooltip,
+                    bit_offset=bit_offset,
                 )
             )
             # Track PDO index for this symbol
@@ -640,10 +670,48 @@ def create_symbol_nodes(
                     access=access,
                     fastcs_name=make_fastcs_name(name),
                     tooltip=tooltip,
+                    bit_offset=bit_offset,
                 )
             )
             # Track PDO index for this symbol
             if name in symbol_pdo_map:
                 symbol_index_to_pdo[symbol_idx] = symbol_pdo_map[name]
 
+    symbol_nodes, symbol_index_to_pdo = _drop_non_leaf_parents(
+        symbol_nodes, symbol_index_to_pdo
+    )
     return symbol_nodes, composite_types, symbol_index_to_pdo
+
+
+def _drop_non_leaf_parents(
+    symbol_nodes: list[SymbolNode],
+    symbol_index_to_pdo: dict[int, int],
+) -> tuple[list[SymbolNode], dict[int, int]]:
+    """Drop bare-struct parent rows whose template is a strict prefix of a sibling.
+
+    Beckhoff ESI XML expresses composite PDO entries (e.g. EL3314's
+    ``TC Inputs Channel N``) as a parent struct plus per-field children
+    (``.Value``, ``.Status__Limit 1``...). The parent carries no
+    information the children don't already imply, and the bus-side
+    expander in ``fastcs_catio.symbols`` refuses to subscribe to it
+    anyway (TwinCAT reports the full struct size, which mismatches the
+    YAML row's primitive ``type_name`` and trips the notification
+    flush assertion). Emitting it would only produce an orphan PV.
+    """
+    templates = [row.name_template for row in symbol_nodes]
+    non_leaf = {t for t in templates if any(o.startswith(t + ".") for o in templates)}
+
+    kept_nodes: list[SymbolNode] = []
+    old_to_new: dict[int, int] = {}
+    for old_idx, row in enumerate(symbol_nodes):
+        if row.name_template in non_leaf:
+            continue
+        old_to_new[old_idx] = len(kept_nodes)
+        kept_nodes.append(row)
+
+    remapped = {
+        old_to_new[old_idx]: pdo_idx
+        for old_idx, pdo_idx in symbol_index_to_pdo.items()
+        if old_idx in old_to_new
+    }
+    return kept_nodes, remapped

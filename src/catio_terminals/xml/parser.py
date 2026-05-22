@@ -194,6 +194,41 @@ def parse_terminal_details(
         return None
 
 
+def list_revisions_for_terminal(
+    xml_content: str | bytes,
+    terminal_id: str,
+) -> list[int]:
+    """List available revisions for a terminal in an ESI XML document.
+
+    Args:
+        xml_content: ESI XML content (string or bytes).
+        terminal_id: Terminal ID to search for (e.g. "EP4374-0002").
+
+    Returns:
+        Sorted ascending list of unique revision numbers found for the
+        terminal. Empty list if the terminal is not present or the XML
+        cannot be parsed.
+    """
+    try:
+        if isinstance(xml_content, str):
+            root = etree.fromstring(xml_content.encode("utf-8"))
+        else:
+            root = etree.fromstring(xml_content)
+    except etree.ParseError as e:
+        logger.error(f"Failed to parse XML while listing revisions: {e}")
+        return []
+
+    revisions: set[int] = set()
+    for dev in root.findall(".//Device"):
+        type_elem = dev.find("Type")
+        if type_elem is None or type_elem.text != terminal_id:
+            continue
+        revision_str = type_elem.get("RevisionNo") or "0"
+        revisions.add(parse_hex_value(revision_str))
+
+    return sorted(revisions)
+
+
 def create_default_terminal(
     terminal_id: str,
     description: str,

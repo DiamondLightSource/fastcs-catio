@@ -192,3 +192,27 @@ def get_terminal_type(terminal_id: str) -> TerminalType:
             f"Terminal type '{terminal_id}' not found in terminal_types.yaml"
         )
     return config.terminal_types[terminal_id]
+
+
+def get_terminal_type_by_identity(
+    vendor_id: int, product_code: int, revision_number: int
+) -> TerminalType | None:
+    """Look up a terminal definition by its EtherCAT identity.
+
+    Used by the bus-side symbol expansion. Beckhoff bumps the revision
+    number on backward-compatible firmware/silicon updates, so the
+    physical layout (the only thing #54 needs) stays the same. We
+    therefore prefer an exact match but fall back to vendor+product
+    when the rig is at a newer revision than the cached XML.
+    """
+    config = load_terminal_config()
+    fallback: TerminalType | None = None
+    for terminal in config.terminal_types.values():
+        ident = terminal.identity
+        if ident.vendor_id != vendor_id or ident.product_code != product_code:
+            continue
+        if ident.revision_number == revision_number:
+            return terminal
+        if fallback is None:
+            fallback = terminal
+    return fallback

@@ -96,27 +96,29 @@ def clean_yaml(
         bool,
         typer.Option(
             "--include-all-coe",
-            help="Include all CoE objects (default: exclude all CoE)",
+            help="Keep every CoE object from XML (default: settings range only)",
         ),
     ] = False,
-    include_coe: Annotated[
+    remove_coe: Annotated[
         bool,
         typer.Option(
-            "--include-coe",
-            help="Include CoE objects with index 0x8000-0x8FFF (settings)",
+            "--remove-coe",
+            help="Strip all CoE objects (destructive — overrides default)",
         ),
     ] = False,
 ) -> None:
     """Clean up terminal YAML files by syncing with Beckhoff XML.
 
-    This command loads YAML files, merges with XML data (dropping non-XML symbols),
-    selects all symbols, and saves the cleaned file.
+    Loads YAML files, merges fresh data from XML (dropping non-XML symbols),
+    selects all symbols in the active PDO group, and saves the result. By
+    default, CoE objects in the settings range (0x8000-0x8FFF) are kept; use
+    --include-all-coe to keep everything, or --remove-coe to strip all CoE.
     """
-    asyncio.run(_clean_yaml_async(file, all_files, include_all_coe, include_coe))
+    asyncio.run(_clean_yaml_async(file, all_files, include_all_coe, remove_coe))
 
 
 async def _clean_yaml_async(
-    file: Path | None, all_files: bool, include_all_coe: bool, include_coe: bool
+    file: Path | None, all_files: bool, include_all_coe: bool, remove_coe: bool
 ) -> None:
     """Async implementation of clean-yaml command."""
     from catio_terminals.beckhoff import BeckhoffClient
@@ -133,6 +135,9 @@ async def _clean_yaml_async(
         )
         raise typer.Exit(code=1)
 
+    if remove_coe:
+        print("WARNING: --remove-coe will strip all CoE objects from the YAML.")
+
     if all_files:
         # Process all YAML files in the terminals directory
         terminals_dir = Path(__file__).parent / "terminals"
@@ -144,7 +149,7 @@ async def _clean_yaml_async(
 
         for yaml_path in files_to_process:
             await _cleanup_single_yaml(
-                yaml_path, beckhoff_client, FileService, include_all_coe, include_coe
+                yaml_path, beckhoff_client, FileService, include_all_coe, remove_coe
             )
 
     elif file is not None:
@@ -152,7 +157,7 @@ async def _clean_yaml_async(
             print(f"File not found: {file}", file=sys.stderr)
             raise typer.Exit(code=1)
         await _cleanup_single_yaml(
-            file, beckhoff_client, FileService, include_all_coe, include_coe
+            file, beckhoff_client, FileService, include_all_coe, remove_coe
         )
 
     else:
@@ -165,7 +170,7 @@ async def _cleanup_single_yaml(
     beckhoff_client,
     file_service,
     include_all_coe: bool = False,
-    include_coe: bool = False,
+    remove_coe: bool = False,
 ) -> None:
     """Clean up a single YAML file.
 
@@ -202,14 +207,16 @@ async def _cleanup_single_yaml(
             group_name = None
 
         for coe in terminal.coe_objects:
-            if include_all_coe:
-                coe.selected = True
-                coe_count += 1
-            elif include_coe and 0x8000 <= coe.index < 0x9000:
+            if remove_coe:
+                coe.selected = False
+            elif include_all_coe:
                 coe.selected = True
                 coe_count += 1
             else:
-                coe.selected = False
+                # Default: keep settings-range CoEs (0x8000-0x8FFF).
+                coe.selected = 0x8000 <= coe.index < 0x9000
+                if coe.selected:
+                    coe_count += 1
 
         if group_name:
             print(

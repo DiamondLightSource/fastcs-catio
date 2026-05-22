@@ -16,11 +16,16 @@ from catio_terminals.xml.constants import (
     get_ads_type,
     parse_hex_value,
 )
-from catio_terminals.xml.parser import create_default_terminal, parse_terminal_details
+from catio_terminals.xml.parser import (
+    create_default_terminal,
+    list_revisions_for_terminal,
+    parse_terminal_details,
+)
 
 __all__ = [
     "parse_terminal_details",
     "create_default_terminal",
+    "list_revisions_for_terminal",
     "parse_terminal_catalog",
     "generate_terminal_url",
     "get_ads_type",

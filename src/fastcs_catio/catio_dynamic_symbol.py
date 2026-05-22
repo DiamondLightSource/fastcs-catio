@@ -89,7 +89,7 @@ def add_symbol_attribute(
 
     if symbol.channels > 1:
         # Multi-channel symbol - create one attribute per channel
-        for ch in range(1, symbol.channels + 1):
+        for ch in symbol.channel_indices:
             fastcs_name = symbol_to_fastcs_name(symbol, ch)
             ads_name = symbol_to_ads_name(symbol, ch)
             ads_item = SymbolAdsItem(

@@ -1,6 +1,6 @@
 import asyncio
 import time
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Any, Self, SupportsInt
@@ -111,6 +111,11 @@ class CATioStreamConnection:
     """A mapping of device ids to their corresponding notification symbols."""
     _subscribed_symbols: list[AdsSymbol] = field(default_factory=list)
     """The list of currently subscribed notification symbols."""
+    _wanted_attribute_keys: set[str] | None = None
+    """If set, restrict notification subscriptions to symbols whose
+    f"_{symbol.name}" is in this set. Used to gate subscriptions on
+    attribute_map membership so the bus doesn't push notifications for
+    symbols (e.g. _SyncUnits.*) that no PV consumes."""
 
     @property
     def settings(self) -> CATioServerConnectionSettings:
@@ -218,10 +223,23 @@ class CATioStreamConnection:
         # logger.debug(f"CATio client response to '{message}' query: {response}")
         return CATioFastCSResponse(response)
 
+    def set_wanted_attribute_keys(self, keys: Iterable[str]) -> None:
+        """Restrict future subscriptions to symbols whose
+        f"_{symbol.name}" is one of the supplied keys.
+
+        Call this once with the server controller's full attribute_map
+        keys before add_notifications runs. Without it the connection
+        falls back to subscribing every discovered symbol (the
+        pre-#54 behavior).
+        """
+        self._wanted_attribute_keys = set(keys)
+
     async def add_notifications(self, device_id: int) -> None:
         """
         Register symbol notifications with the ads client for a given device.
-        This will include all ads symbols available to this device.
+        Subscribes only to symbols a PV consumer has registered (see
+        :meth:`set_wanted_attribute_keys`); if the filter has never
+        been set, falls back to subscribing every available symbol.
 
         :param device_id: the id of the EtherCAT device to subscribe to
 
@@ -231,7 +249,18 @@ class CATioStreamConnection:
             raise ValueError(
                 f"No notification symbols found for device id {device_id}."
             )
-        subscription_symbols = self.notification_symbols[device_id]
+        all_symbols = self.notification_symbols[device_id]
+        if self._wanted_attribute_keys is None:
+            subscription_symbols: Sequence[AdsSymbol] = list(all_symbols)
+        else:
+            wanted = self._wanted_attribute_keys
+            subscription_symbols = [s for s in all_symbols if f"_{s.name}" in wanted]
+            skipped = len(all_symbols) - len(subscription_symbols)
+            if skipped:
+                logger.info(
+                    f"Skipped {skipped} bus symbols with no PV consumer for "
+                    f"device id {device_id}."
+                )
         self._subscribed_symbols = list(subscription_symbols)
 
         await self.client.add_notifications(
@@ -408,11 +437,19 @@ class CATioConnection(Tracer):
     async def add_notifications(self, device_id: int) -> None:
         """
         Add symbol notifications for a given EtherCAT device on the I/O server.
-        This will include all ads symbols available to this device.
+        Restricts subscriptions to the keys previously registered via
+        :meth:`set_wanted_attribute_keys` if any.
 
         :param device_id: the id of the device whose notifications must be setup
         """
         await self._connection.add_notifications(device_id)
+
+    def set_wanted_attribute_keys(self, keys: Iterable[str]) -> None:
+        """Restrict future notification subscriptions to symbols
+        whose f"_{symbol.name}" is one of the supplied keys (typically
+        the server controller's ``attribute_map`` keys). Without this,
+        every discovered bus symbol gets a subscription."""
+        self._connection.set_wanted_attribute_keys(keys)
 
     async def get_notification_streams(self, timeout: int = 60) -> npt.NDArray:
         """

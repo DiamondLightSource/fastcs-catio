@@ -64,7 +64,7 @@ def show_terminal_details(
         ui.label("Identity").classes("text-caption text-gray-600 mt-2")
         ui.label(f"Vendor ID: {terminal.identity.vendor_id}")
         ui.label(f"Product Code: 0x{terminal.identity.product_code:08X}")
-        ui.label(f"Revision: 0x{terminal.identity.revision_number:08X}")
+        _build_revision_selector(app, terminal_id, terminal)
         if terminal.group_type:
             from catio_terminals.ui_dialogs import GROUP_TYPE_LABELS
 
@@ -574,3 +574,81 @@ def _show_runtime_symbols(
             label_key="label",
             node_key="id",
         ).classes("w-full").props("selected-color=blue-7")
+
+
+def _build_revision_selector(
+    app: "TerminalEditorApp", terminal_id: str, terminal: TerminalType
+) -> None:
+    """Render a revision dropdown that re-merges XML when the user picks one.
+
+    Falls back to a read-only label when only one revision is available in
+    the ESI cache (or none).
+    """
+    current = terminal.identity.revision_number
+    revisions = app.beckhoff_client.list_cached_revisions(terminal_id)
+    # Ensure the currently-pinned revision is always selectable, even if it
+    # is missing from the cached XML (e.g. shipped YAML pins a revision the
+    # local cache no longer holds).
+    if current not in revisions:
+        revisions = sorted({*revisions, current})
+
+    if len(revisions) <= 1:
+        ui.label(f"Revision: 0x{current:08X}")
+        return
+
+    options = {rev: f"0x{rev:08X}" for rev in revisions}
+
+    async def on_revision_change(e):
+        new_revision = int(e.value)
+        if new_revision == terminal.identity.revision_number:
+            return
+
+        from catio_terminals.service_file import FileService
+
+        before_names = {sym.name_template for sym in terminal.symbol_nodes}
+        before_selected = {
+            sym.name_template for sym in terminal.symbol_nodes if sym.selected
+        }
+
+        terminal.identity.revision_number = new_revision
+        success = await FileService.merge_xml_for_terminal(
+            terminal_id,
+            terminal,
+            app.beckhoff_client,
+            app.config,
+        )
+        if not success:
+            ui.notify(
+                f"Failed to merge XML for {terminal_id} at "
+                f"0x{new_revision:08X}; reverting.",
+                type="negative",
+            )
+            return
+
+        after_names = {sym.name_template for sym in terminal.symbol_nodes}
+        dropped = sorted(before_names - after_names)
+        added = sorted(after_names - before_names)
+        kept_selected = sum(
+            1 for sym in terminal.symbol_nodes if sym.name_template in before_selected
+        )
+
+        ui.notify(
+            f"Revision changed to 0x{new_revision:08X}: "
+            f"{len(dropped)} symbol row(s) dropped, "
+            f"{len(added)} new row(s) added unselected, "
+            f"{kept_selected} previously-selected row(s) preserved.",
+            type="warning" if dropped or added else "positive",
+            multi_line=True,
+            timeout=10000,
+        )
+
+        _on_tree_select = _import_on_tree_select()
+        _mark_changed(app, lambda: _on_tree_select(app, terminal_id))
+
+    with ui.row().classes("items-center gap-2"):
+        ui.label("Revision:")
+        ui.select(
+            options=options,
+            value=current,
+            on_change=on_revision_change,
+        ).classes("min-w-48")

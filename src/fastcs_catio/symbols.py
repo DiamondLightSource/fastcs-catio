@@ -1,471 +1,290 @@
+"""YAML-driven bus-side symbol expansion.
+
+For each AdsSymbolNode discovered on the bus we decide how to turn it
+into one or more :class:`AdsSymbol` entries:
+
+* **Non-BIGTYPE primitives** (BIT, UINT16, REAL, ...) are emitted as-is
+  with the dtype implied by their ADS type.
+* **BIGTYPE structs owned by a slave** are expanded by walking the
+  matching terminal's YAML rows: each ``selected: true`` row produces
+  one AdsSymbol at ``parent.offset + row.bit_offset // 8``.
+* **Master-device structs** (``Inputs_TYPE`` / ``Outputs_TYPE``) carry
+  the bus-level frame state used by :mod:`fastcs_catio.catio_hardware`.
+  They are expanded from a tiny built-in layout — they are not
+  user-extensible, so they don't live in YAML.
+
+Replaces the legacy ``AdsSymbolTypePattern`` LUT removed in issue #54.
+"""
+
 import re
-import sys
-from dataclasses import dataclass
-from enum import Enum
+from collections.abc import Iterable
 from logging import getLogger
 
 import numpy as np
 import numpy.typing as npt
 
 from ._constants import AdsDataType
-from .devices import (
-    ELM_OVERSAMPLING_FACTOR,
-    OVERSAMPLING_FACTOR,
-    AdsSymbol,
-    AdsSymbolNode,
-)
-from .utils import add_comment
+from .devices import AdsSymbol, AdsSymbolNode, IOSlave
+from .terminal_config import get_terminal_type_by_identity
 
 logger = getLogger(__name__)
 
 
-@dataclass(kw_only=True)
-class SymbolGroupParam:
+# YAML type_name → (numpy dtype, element size in bytes)
+_DTYPE_MAP: dict[str, tuple[npt.DTypeLike, int]] = {
+    "SINT": (np.int8, 1),
+    "USINT": (np.uint8, 1),
+    "BYTE": (np.uint8, 1),
+    "INT": (np.int16, 2),
+    "UINT": (np.uint16, 2),
+    "WORD": (np.uint16, 2),
+    "DINT": (np.int32, 4),
+    "UDINT": (np.uint32, 4),
+    "DWORD": (np.uint32, 4),
+    "LINT": (np.int64, 8),
+    "ULINT": (np.uint64, 8),
+    "LWORD": (np.uint64, 8),
+    "REAL": (np.float32, 4),
+    "LREAL": (np.float64, 8),
+    "BIT": (np.uint8, 1),
+    "BOOL": (np.uint8, 1),
+    "BIT2": (np.uint8, 1),
+    "BIT3": (np.uint8, 1),
+    "BIT4": (np.uint8, 1),
+}
+
+_ARRAY_RE = re.compile(r"^ARRAY\s*\[\s*(\d+)\s*\.\.\s*(\d+)\s*\]\s*OF\s+(\S+)", re.I)
+
+# AdsDataType (from the bus) → numpy dtype, for primitive (non-BIGTYPE) nodes.
+_PRIMITIVE_DTYPE_MAP: dict[AdsDataType, npt.DTypeLike] = {
+    AdsDataType.ADS_TYPE_BIT: np.uint8,
+    AdsDataType.ADS_TYPE_INT8: np.int8,
+    AdsDataType.ADS_TYPE_UINT8: np.uint8,
+    AdsDataType.ADS_TYPE_INT16: np.int16,
+    AdsDataType.ADS_TYPE_UINT16: np.uint16,
+    AdsDataType.ADS_TYPE_INT32: np.int32,
+    AdsDataType.ADS_TYPE_UINT32: np.uint32,
+    AdsDataType.ADS_TYPE_REAL32: np.float32,
+    AdsDataType.ADS_TYPE_REAL64: np.float64,
+    AdsDataType.ADS_TYPE_INT64: np.int64,
+    AdsDataType.ADS_TYPE_UINT64: np.uint64,
+}
+
+
+# Master-device frame-state struct layouts.
+# Kept tiny and built-in: these structures aren't user-extensible.
+_DEVICE_INPUTS_FIELDS: list[tuple[str, npt.DTypeLike, int]] = [
+    ("Frm0State", np.uint16, 0),
+    ("Frm0WcState", np.uint16, 2),
+    ("Frm0InputToggle", np.uint16, 4),
+    ("SlaveCount", np.uint16, 10),
+    ("DevState", np.uint16, 14),
+]
+_DEVICE_OUTPUTS_FIELDS: list[tuple[str, npt.DTypeLike, int]] = [
+    ("Frm0Ctrl", np.uint16, 0),
+    ("Frm0WcCtrl", np.uint16, 2),
+    ("DevCtrl", np.uint16, 4),
+]
+
+
+def _dtype_for_type_name(type_name: str) -> tuple[npt.DTypeLike, int]:
+    """Resolve a YAML ``type_name`` into ``(numpy dtype, element count)``.
+
+    The second slot in _DTYPE_MAP is bytes-per-element, not count.
+    Scalar primitives always return count=1; array types return the
+    declared element count from the ``ARRAY [a..b] OF X`` syntax.
     """
-    Parameters for defining symbols within a structured AdsSymbolNode.
-    """
-
-    name: str
-    """Name of the symbol within the structured node"""
-    description: str
-    """Description of the symbol within the structured node"""
-    dtype: npt.DTypeLike
-    """Data type of the symbol within the structured node"""
-    offset_shift: int = 0
-    """Offset shift of the symbol within the structured node"""
-    size: int = 1
-    """Size of the symbol within the structured node"""
+    m = _ARRAY_RE.match(type_name)
+    if m:
+        lo, hi = int(m.group(1)), int(m.group(2))
+        element = m.group(3).upper()
+        elem_dtype, _ = _DTYPE_MAP.get(element, (np.uint8, 1))
+        return elem_dtype, hi - lo + 1
+    elem_dtype, _ = _DTYPE_MAP.get(type_name.upper(), (np.uint8, 1))
+    return elem_dtype, 1
 
 
-class AdsSymbolTypePattern:
-    BIT = re.compile(r"^BIT")
-    """e.g. WcState and InputToggle, value common to all terminals on the bus"""
-    ID = re.compile(r"^ID_TYPE")
-    """e.g. EK1110 extension coupler id"""
-    PWR12_STATUS = re.compile(r"^Status Uo_TYPE")
-    """e.g. EL9512 power supply unit converter"""
-    PWR24_STATUS = re.compile(r"^Status Us_TYPE")
-    """e.g. EL9410 power supply terminal for E-bus"""
-    DEV_INPUTS = re.compile(r"^Inputs_TYPE")
-    """e.g. EtherCAT Master device inputs"""
-    DEV_OUTPUTS = re.compile(r"^Outputs_TYPE")
-    """e.g. EtherCAT Master device outputs"""
-    DI_COUNTER = re.compile(r"^CNT Inputs_(\d*_)?TYPE")
-    """e.g. EL1502 digital input counter terminal"""
-    DO_COUNTER = re.compile(r"^CNT Outputs_(\d*_)?TYPE")
-    """e.g. EL1502 digital output counter terminal"""
-    DI_CHANNEL = re.compile(r"^Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. EL1014 digital input channel terminal"""
-    AI16_CHANNEL = re.compile(r"^AI Standard Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. EL3104 16-bit analog input channel terminal"""
-    AO16_CHANNEL = re.compile(r"^AO Outputs Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. EL4134 16-bit analog output channel terminal"""
-    AI24_CHANNEL = re.compile(r"^AI Inputs Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. EL3602 24-bit analog input channel terminal"""
-    AI16_OVSMPL_CYCLE = re.compile(r"^Ch(\d+) CycleCount_(\d*_)?TYPE")
-    """e.g. EL3702 16-bit analog input oversampling terminal cycle count"""
-    AI16_OVSMPL_CHANNEL = re.compile(r"^Ch(\d+) Sample 0_(\d*_)?TYPE_ARR")
-    """e.g. EL3702 16-bit analog input oversampling terminal sample"""
-    AI24_MF_STATUS = re.compile(r"^PAI Status Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. ELM3704-0000 24-bit multi-function analog input terminal status"""
-    AI24_MF_TIMESTAMP = re.compile(r"^PAI Timestamp Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. ELM3704-0000 24-bit multi-function analog input terminal timing"""
-    AI24_MF_SAMPLE = re.compile(r"^PAI Samples (\d+) Channel (\d*_){1}(\d*_)?TYPE")
-    """e.g. ELM3704-0000 24-bit multi-function analog input terminal sample"""
-    AI24_MF_SYNCHRON = re.compile(
-        r"^PAI Synchronous Oversampling Channel (\d*_){1}(\d*_)?TYPE"
+def _find_parent_node(
+    nodes_by_name: dict[str, AdsSymbolNode],
+    full_name: str,
+) -> AdsSymbolNode | None:
+    """Walk up a dotted name to find an enclosing bus node, or None."""
+    name = full_name
+    while name:
+        if name in nodes_by_name:
+            return nodes_by_name[name]
+        dot = name.rfind(".")
+        if dot == -1:
+            return None
+        name = name[:dot]
+    return None
+
+
+def expand_symbols_for_slave(
+    nodes_by_name: dict[str, AdsSymbolNode],
+    slave: IOSlave,
+) -> dict[str, AdsSymbol]:
+    """Emit AdsSymbols for one slave, driven by its YAML rows."""
+    ident = slave.identity
+    terminal = get_terminal_type_by_identity(
+        int(ident.vendor_id),
+        int(ident.product_code),
+        int(ident.revision_number),
     )
-    """e.g. ELM3704-0000 24-bit multi-function analog input terminal synchronisation"""
-
-
-class ReMatchType(Enum):
-    SEARCH = 0
-    MATCH = 1
-    FULLMATCH = 2
-
-
-@dataclass
-class RegexIn:
-    """
-    Enable structural pattern matching using regular expressions.
-    """
-
-    string: str
-    """Input string to validate against a regex pattern"""
-    fn_type: ReMatchType = ReMatchType.SEARCH
-    """Type of regex function to use (i.e. search, match, fullmatch)"""
-    match: re.Match[str] | None = None
-    """Match object returned by the regex function call"""
-    pos: int = 0
-    """Index in the string where the search is to start"""
-    endpos: int = sys.maxsize
-    """Index in the string where the search is to stop"""
-
-    def _match_pattern(self, pattern: re.Pattern):
-        """
-        Call the requested regex function to match a pattern in a string.
-
-        :param pattern: the regex pattern to match
-
-        :return: the result of the regex match
-        """
-        match self.fn_type:
-            case ReMatchType.SEARCH:
-                re_func = pattern.search
-            case ReMatchType.MATCH:
-                re_func = pattern.match
-            case ReMatchType.FULLMATCH:
-                re_func = pattern.fullmatch
-
-        return re_func(self.string, self.pos, self.endpos)
-
-    def __eq__(self, other: object):
-        """
-        Override the equality operator of the string class for evaluating a match.
-        """
-        if not (isinstance(other, str) or isinstance(other, re.Pattern)):
-            return super().__eq__(other)
-
-        if isinstance(other, str):
-            other = re.compile(other)
-        assert isinstance(other, re.Pattern)
-
-        self.match = self._match_pattern(other)
-
-        return self.match is not None
-
-    def __hash__(self):
-        return super().__hash__()
-
-    def __getitem__(self, group: int):
-        return self.match[group] if self.match else None
-
-
-def symbol_lookup(node: AdsSymbolNode) -> dict[str, AdsSymbol]:
-    """
-    Get the symbol(s) associated with the AdsSymbolNode object.
-    Lookup is implemented as a function of the symbol node type which will differ
-    depending on the related I/O terminal.
-
-    ! This LUT may need updating for functionality to expand to new I/O terminals.
-
-    :return: a dictionary of AdsSymbol objects associated to this node
-    """
-    symbols: dict[str, AdsSymbol] = {}
-    params: list[SymbolGroupParam] = []
-
-    match node.ads_type:
-        case AdsDataType.ADS_TYPE_BIT:
-            # This will include most parameters for standard terminals:
-            # e.g. EL1502, EL1004, EL9410, EL2024, EL1014, EL1084, EL3602, EL9512,
-            # EL9505, EL1124, EL2124...
-            params = [
-                SymbolGroupParam(
-                    name="",
-                    dtype=np.uint8,
-                    description="Value symbol for a 1 byte memory block "
-                    "which includes distinct data on given bits.",
-                ),
-            ]
-
-        case AdsDataType.ADS_TYPE_BIGTYPE:
-            # This will be a structured data type which may comprise multiple symbols.
-            # This will apply to few parameters for more complex terminals:
-            # e.g. EK1101.ID, EL1502.CNT, EL9512.Status, EL9505.Status, EL3104.AI,
-            # EL3602.AI, EL3702.Ch, ELM3704.PAI...
-
-            match RegexIn(node.type_name):
-                case AdsSymbolTypePattern.BIT:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint8,
-                            description="Value symbol for a 1 byte memory block "
-                            "which includes distinct data on given bits "
-                            "as part of a combined type.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.ID:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint16,
-                            description="ID symbol for an extension coupler terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.PWR12_STATUS:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint8,
-                            description="Power Status symbol "
-                            "for a 12Vdc power supply unit terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.PWR24_STATUS:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint8,
-                            description="Power Status symbol "
-                            "for a 24Vdc power supply unit terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.DEV_INPUTS:
-                    # !!! This will vary depending on the nb of used communication ports
-                    # TO DO: REVIEW
-                    params = [
-                        SymbolGroupParam(
-                            name="Frm0State",
-                            dtype=np.uint16,
-                            description="Input Frame status symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                        SymbolGroupParam(
-                            name="Frm0WcState",
-                            dtype=np.uint16,
-                            offset_shift=2,
-                            description="Input Frame working counter status symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                        SymbolGroupParam(
-                            name="Frm0InputToggle",
-                            dtype=np.uint16,
-                            offset_shift=4,
-                            description="Input Frame input toggle symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                        SymbolGroupParam(
-                            name="SlaveCount",
-                            dtype=np.uint16,
-                            offset_shift=10,
-                            description="SlaveCount symbol for the EtherCAT "
-                            "Master device.",
-                        ),
-                        SymbolGroupParam(
-                            name="DevState",
-                            dtype=np.uint16,
-                            offset_shift=14,
-                            description="Device Input Status symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.DEV_OUTPUTS:
-                    # !!! This will vary depending on the nb of used communication ports
-                    # TO DO: REVIEW
-                    params = [
-                        SymbolGroupParam(
-                            name="Frm0Ctrl",
-                            dtype=np.uint16,
-                            description="Output Frame control symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                        SymbolGroupParam(
-                            name="Frm0WcCtrl",
-                            dtype=np.uint16,
-                            offset_shift=2,
-                            description="Output Frame working counter control symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                        SymbolGroupParam(
-                            name="DevCtrl",
-                            dtype=np.uint16,
-                            offset_shift=4,
-                            description="Device Output status symbol "
-                            "for the EtherCAT Master device.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.DI_COUNTER:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint16,
-                            description="Status symbol "
-                            "for a digital input counter terminal.",
-                        ),
-                        SymbolGroupParam(
-                            name="Counter value",
-                            dtype=np.uint32,
-                            offset_shift=2,
-                            description="Value symbol "
-                            "for a digital input counter terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.DO_COUNTER:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint16,
-                            description="Status symbol "
-                            "for a digital output counter terminal.",
-                        ),
-                        SymbolGroupParam(
-                            name="Set counter value",
-                            dtype=np.uint32,
-                            offset_shift=2,
-                            description="Value symbol "
-                            "for a digital output counter terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.DI_CHANNEL:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint8,
-                            description="Value symbol "
-                            "for a digital input channel terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI16_CHANNEL:
-                    params = [
-                        SymbolGroupParam(
-                            name="Status",
-                            dtype=np.uint16,
-                            description="Status symbol "
-                            "for a 16-bit analog input terminal.",
-                        ),
-                        SymbolGroupParam(
-                            name="Value",
-                            dtype=np.uint16,
-                            offset_shift=2,
-                            description="Value symbol "
-                            "for a 16-bit analog input terminal channel.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AO16_CHANNEL:
-                    params = [
-                        SymbolGroupParam(
-                            name="Analog output",
-                            dtype=np.int16,
-                            description="Value symbol "
-                            "for a 16-bit analog output terminal channel.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI24_CHANNEL:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint16,
-                            description="Status symbol "
-                            "for a 24-bit analog input terminal.",
-                        ),
-                        SymbolGroupParam(
-                            name="Value",
-                            dtype=np.int32,
-                            offset_shift=2,
-                            description="Value symbol "
-                            "for a 24-bit analog input terminal channel.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI16_OVSMPL_CYCLE:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.uint16,
-                            description="CycleCount symbol "
-                            "for a 16-bit analog input oversampling terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI16_OVSMPL_CHANNEL:
-                    params = [
-                        SymbolGroupParam(
-                            name="",
-                            dtype=np.int16,
-                            size=OVERSAMPLING_FACTOR,
-                            description="Sample symbol "
-                            "for a 16-bit analog input oversampling terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI24_MF_STATUS:
-                    params = [
-                        SymbolGroupParam(
-                            name="Status",
-                            dtype=np.int32,
-                            description="Status symbol "
-                            "for a 24-bit multi-function analog input terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI24_MF_TIMESTAMP:
-                    params = [
-                        SymbolGroupParam(
-                            name="StartTimeNextLatch",
-                            dtype=np.uint32,
-                            size=2,
-                            description="Timing symbol "
-                            "for a 24-bit multi-function analog input terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI24_MF_SAMPLE:
-                    params = [
-                        SymbolGroupParam(
-                            name="Samples",
-                            dtype=np.int32,
-                            size=ELM_OVERSAMPLING_FACTOR,
-                            description="Sample symbol "
-                            "for a 24-bit multi-function analog input terminal.",
-                        ),
-                    ]
-
-                case AdsSymbolTypePattern.AI24_MF_SYNCHRON:
-                    params = [
-                        SymbolGroupParam(
-                            name="SM-Synchron",
-                            dtype=np.uint16,
-                            description="Synchronisation symbol "
-                            "for a 24-bit multi-function analog input terminal.",
-                        ),
-                    ]
-
-                case _:
-                    logger.warning(
-                        "Definition for the structured symbol node type "
-                        + f"'{node.type_name}' in terminal {node.name} is missing. "
-                        + "Symbol node will be ignored."
-                    )
-
-        case AdsDataType.ADS_TYPE_UINT8:
-            """This will include some parameters for standard terminals:
-            e.g. Status_Uo for EL9512, EL9505..."""
-            params = [
-                SymbolGroupParam(
-                    name="",
-                    dtype=np.uint8,
-                    description="Value symbol for a 1 byte unsigned integer.",
-                ),
-            ]
-
-        case _:
-            logger.warning(
-                f"Definition for the symbol node type '{node.ads_type}' in terminal "
-                + f"{node.name} is missing. Symbol node will be ignored."
-            )
-
-    for var in params:
-        node_name = ".".join([node.name, var.name]) if var.name else node.name
-        symbols[node_name] = AdsSymbol(
-            parent_id=node.parent_id,
-            name=node_name,
-            dtype=var.dtype,
-            size=var.size,
-            group=node.index_group,
-            offset=int(node.index_offset) + var.offset_shift,
-            comment=add_comment(var.description, node.comment),
+    if terminal is None:
+        logger.warning(
+            f"No terminal YAML matches slave '{slave.name}' identity "
+            f"(vendor={ident.vendor_id}, product={ident.product_code}, "
+            f"revision={ident.revision_number}); no symbols expanded."
         )
+        return {}
 
+    # Leaf detection: skip a row whose name_template is a strict prefix
+    # of any other row's name_template (followed by '.'). Those non-leaf
+    # rows are bare struct parents — e.g. EL3314's `TC Inputs Channel
+    # {channel}` with children `.Value`, `.Limit 1`. Subscribing to the
+    # bare name asks TwinCAT for the full struct symbol whose size
+    # exceeds what the YAML row claims, and the notification stream's
+    # `symbol.nbytes == sample.size` assertion fails with an empty
+    # message at flush time. Sub-rows already cover the data.
+    templates = [row.name_template for row in terminal.symbol_nodes]
+    non_leaf = {t for t in templates if any(o.startswith(t + ".") for o in templates)}
+
+    symbols: dict[str, AdsSymbol] = {}
+    for row in terminal.symbol_nodes:
+        if not row.selected:
+            continue
+        if row.name_template in non_leaf:
+            continue
+        # ADS addresses are byte-granular. Sub-byte bit-field rows
+        # (e.g. EL3104's `.Status__Limit 1` at bit 2) can't be
+        # subscribed independently — the data lives inside the parent
+        # status byte, and the ADS server rejects the notification
+        # request with ADSERR_DEVICE_SYMBOLVERSIONINVALID. Skip them.
+        if row.bit_offset % 8 != 0:
+            continue
+        # channel_indices carries the real bus channel numbers (e.g. [3, 4]
+        # for EP4374-0002's AO RxPDOs). Single-channel rows use (None,) so
+        # the template's literal name is used unchanged.
+        channels: Iterable[int | None] = (
+            row.channel_indices if row.channels > 1 else (None,)
+        )
+        for ch in channels:
+            resolved = row.name_template
+            if ch is not None and "{channel}" in resolved:
+                resolved = resolved.replace("{channel}", str(ch))
+
+            full_name = f"{slave.name}.{resolved}"
+            parent = _find_parent_node(nodes_by_name, full_name)
+            if parent is None:
+                pdo_hint = ""
+                if terminal.has_dynamic_pdos:
+                    pdo_hint = (
+                        f" Terminal has dynamic PDO groups and the YAML "
+                        f"selects '{terminal.selected_pdo_group}'; the bus "
+                        f"may be configured for a different group."
+                    )
+                logger.warning(
+                    f"No bus node provides offset for '{full_name}'; "
+                    f"YAML row exists but the bus didn't expose a matching "
+                    f"symbol or parent struct. PV will be created but "
+                    f"reads/writes will fail.{pdo_hint}"
+                )
+                continue
+
+            dtype, count = _dtype_for_type_name(row.type_name)
+            byte_offset = int(parent.index_offset) + row.bit_offset // 8
+            symbols[full_name] = AdsSymbol(
+                parent_id=parent.parent_id,
+                name=full_name,
+                dtype=dtype,
+                size=count,
+                group=parent.index_group,
+                offset=byte_offset,
+                comment=parent.comment,
+            )
+    return symbols
+
+
+def expand_device_symbols(
+    nodes: Iterable[AdsSymbolNode],
+    device_name: str,
+) -> dict[str, AdsSymbol]:
+    """Emit AdsSymbols for the EtherCAT master's Inputs / Outputs structs."""
+    symbols: dict[str, AdsSymbol] = {}
+    for node in nodes:
+        if node.ads_type != AdsDataType.ADS_TYPE_BIGTYPE:
+            continue
+        # Match against both bare ("Inputs") and device-prefixed
+        # ("ETH1.Inputs") names — different ADS servers report differently.
+        bare = node.name.rsplit(".", 1)[-1]
+        if bare == "Inputs":
+            fields = _DEVICE_INPUTS_FIELDS
+        elif bare == "Outputs":
+            fields = _DEVICE_OUTPUTS_FIELDS
+        else:
+            continue
+        for field_name, dtype, offset_shift in fields:
+            sym_name = f"{device_name}.{bare}.{field_name}"
+            symbols[sym_name] = AdsSymbol(
+                parent_id=node.parent_id,
+                name=sym_name,
+                dtype=dtype,
+                size=1,
+                group=node.index_group,
+                offset=int(node.index_offset) + offset_shift,
+                comment=node.comment,
+            )
+    return symbols
+
+
+def expand_primitive_node(node: AdsSymbolNode) -> AdsSymbol | None:
+    """Expand a non-BIGTYPE primitive symbol node to an AdsSymbol."""
+    dtype = _PRIMITIVE_DTYPE_MAP.get(node.ads_type)
+    if dtype is None:
+        return None
+    return AdsSymbol(
+        parent_id=node.parent_id,
+        name=node.name,
+        dtype=dtype,
+        size=1,
+        group=node.index_group,
+        offset=int(node.index_offset),
+        comment=node.comment,
+    )
+
+
+def build_symbols_for_device(
+    nodes: Iterable[AdsSymbolNode],
+    slaves: Iterable[IOSlave],
+    device_name: str,
+) -> dict[str, AdsSymbol]:
+    """Compute the full AdsSymbol map for one EtherCAT device.
+
+    Driven by the bus's discovered node list. Order of resolution:
+
+    1. Slave-scoped YAML rows produce AdsSymbols for every BIGTYPE owned
+       by a known slave.
+    2. Master-device Inputs / Outputs structs are expanded from the
+       built-in layouts.
+    3. Any remaining non-BIGTYPE primitive nodes are emitted as-is so
+       runtime symbols (WcState, InputToggle, etc.) still bind.
+    """
+    nodes_list = list(nodes)
+    nodes_by_name = {n.name: n for n in nodes_list}
+    symbols: dict[str, AdsSymbol] = {}
+
+    for slave in slaves:
+        symbols.update(expand_symbols_for_slave(nodes_by_name, slave))
+
+    symbols.update(expand_device_symbols(nodes_list, device_name))
+
+    for node in nodes_list:
+        if node.ads_type == AdsDataType.ADS_TYPE_BIGTYPE:
+            continue
+        if node.name in symbols:
+            continue
+        prim = expand_primitive_node(node)
+        if prim is not None:
+            symbols[prim.name] = prim
     return symbols
