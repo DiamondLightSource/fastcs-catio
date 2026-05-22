@@ -139,6 +139,40 @@ in priority order:
    different dynamic PDO group than `selected_pdo_group` in the YAML
    (see #58 for the per-slave-instance problem).
 
+## PDO groups can share PDOs
+
+A single TxPDO/RxPDO can appear in more than one `AlternativeSmMapping`.
+EL3314's `TC Inputs Channel N` TxPDOs (`#x1a00..#x1a03`) are listed in
+both `Inputs only` (default) and `with ColdJunction Compensation` — the
+CJC group is the inputs group plus four output RxPDOs. After the
+XML→YAML merge, a single symbol index therefore appears in *every*
+`pdo_groups[].symbol_indices` list whose `pdo_indices` contains its
+source PDO. Treat PDO ↔ group as many-to-many, not one-to-one.
+
+`assign_symbols_to_groups` in `src/catio_terminals/xml/pdo_groups.py`
+was last-writer-wins until 8eb4247. The shared PDOs were claimed
+exclusively by the last-iterated group, leaving the *default* group
+with an empty `symbol_indices` — the GUI showed no rows when the
+default group was selected, and `clean-yaml` left every row
+unselected. If you ever rewrite that mapping, the test
+`tests/test_pdo_groups.py::test_assign_symbols_to_groups_shared_pdo`
+nails the invariant.
+
+## `clean-yaml` selection contract
+
+`uv run catio-terminals clean-yaml <file>`:
+
+- Re-merges from XML. For each terminal, sets `symbol.selected = True`
+  on rows in the **active** PDO group (`selected_pdo_group`, or the
+  `is_default` group if unset). Rows outside that group end up
+  `selected: false`. Set `selected_pdo_group` *before* running it.
+- Default: keeps CoE objects in the settings range `0x8000-0x8FFF`,
+  drops the rest. `--include-all-coe` keeps every CoE from XML.
+  `--remove-coe` strips them all and prints a loud warning at start.
+
+To verify a regen is a no-op, re-run with the same flags and confirm
+`git diff --stat` is empty.
+
 ## Type-name → `(numpy dtype, count)` resolution
 
 `_dtype_for_type_name` in `symbols.py` maps a YAML `type_name` to the
