@@ -208,6 +208,30 @@ in memory):
 - Regenerate after any change with `uv run catio-terminals clean-yaml --all`.
 - Direct test: `tests/test_xml_parser_pdo.py::TestDropNonLeafParents`.
 
+## Exclude-element fallback recognises two patterns
+
+When `<AlternativeSmMapping>` is absent, `parse_pdo_groups` falls back to
+`_parse_pdo_excludes` (in `src/catio_terminals/xml/pdo_groups.py`), which
+recognises two distinct exclusion-graph shapes:
+
+1. **Combined ↔ Channel** (EL1502 style) — one "Combined" PDO excludes
+   multiple "Channel" PDOs. Emits groups `Per-Channel` and `Combined`.
+2. **Symmetric pairs** (EP4374-0002, EP3174-0002 Standard/Compact style)
+   — every excluding PDO has exactly one partner that excludes it back.
+   Each pair contributes one PDO to `Standard` (the Sm-assigned side,
+   default) and one to the alternative group (named `Compact` if every
+   alternative PDO's name contains "Compact", else `Alternative`). PDOs
+   with no `Exclude` are neutral and appear in both groups.
+
+Both `<Exclude>` patterns require the Sm attribute on the default-active
+PDOs — that's how default-group assignment is inferred. Pairs without
+any Sm marker fall back to lower-index = default.
+
+If you add a third exclusion-graph pattern, do it in the same fall-back
+chain inside `_parse_pdo_excludes` and add a test in
+`tests/test_pdo_groups.py::TestPdoGroupParsing` alongside the existing
+`test_parse_pdo_groups_symmetric_pairs` / `_from_exclude_elements` cases.
+
 ## PDO groups can share PDOs
 
 A single TxPDO/RxPDO can appear in more than one `AlternativeSmMapping`.

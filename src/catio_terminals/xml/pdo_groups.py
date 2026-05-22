@@ -156,12 +156,19 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
                 channel_pdos.add(pdo_idx)
                 combined_pdos.add(other_idx)
 
-    # If we couldn't identify combined vs channel, try simpler heuristic
+    # If we couldn't identify combined vs channel, try symmetric-pair detection.
+    # Pattern: every excluding PDO has exactly one partner that excludes it back
+    # (e.g. EP4374-0002's #x1a00 AI Inputs ↔ #x1a01 AI Inputs Compact, per
+    # channel). Sm-assigned side is the default; the other is the alternative.
     if not combined_pdos and excludes:
-        # Just check for symmetric exclusions (A excludes B, B excludes A)
-        # Group by what they exclude
-        logger.debug(f"Using symmetric exclusion heuristic for {len(excludes)} PDOs")
-        return []  # Can't determine groups from simple exclusions
+        pairs = _collect_symmetric_pairs(excludes)
+        if pairs is not None:
+            return _build_symmetric_pair_groups(pairs, pdo_has_sm, pdo_names, all_pdos)
+        logger.debug(
+            f"Exclude pattern not recognised for {len(excludes)} PDOs; "
+            "no PDO groups inferred"
+        )
+        return []
 
     # Determine which group is default based on Sm attribute
     # PDOs with Sm attribute are the default active PDOs
@@ -210,6 +217,95 @@ def _parse_pdo_excludes(device: _Element) -> list[PdoGroup]:
         )
 
     return pdo_groups
+
+
+def _collect_symmetric_pairs(
+    excludes: dict[int, set[int]],
+) -> list[tuple[int, int]] | None:
+    """Return symmetric A↔B pairs, or None if the graph isn't a pair-matching.
+
+    Every excluding PDO must exclude exactly one partner, and that partner
+    must exclude it back. Otherwise the pattern doesn't fit symmetric-pair
+    handling.
+    """
+    pairs: list[tuple[int, int]] = []
+    paired: set[int] = set()
+    for pdo_idx, excluded in excludes.items():
+        if len(excluded) != 1:
+            return None
+        (partner,) = excluded
+        if excludes.get(partner) != {pdo_idx}:
+            return None
+        if pdo_idx in paired:
+            continue
+        pairs.append((min(pdo_idx, partner), max(pdo_idx, partner)))
+        paired.add(pdo_idx)
+        paired.add(partner)
+    return pairs
+
+
+def _build_symmetric_pair_groups(
+    pairs: list[tuple[int, int]],
+    pdo_has_sm: dict[int, bool],
+    pdo_names: dict[int, str],
+    all_pdos: set[int],
+) -> list[PdoGroup]:
+    """Build Standard/Alternative groups from symmetric exclusion pairs.
+
+    Within each pair, the Sm-assigned side joins the default group. When
+    neither (or both) sides have Sm, fall back to the lower index — the
+    convention used by Beckhoff's ESI ordering.
+    """
+    default_pdos: set[int] = set()
+    alt_pdos: set[int] = set()
+    for low, high in pairs:
+        low_sm = pdo_has_sm.get(low, False)
+        high_sm = pdo_has_sm.get(high, False)
+        if low_sm and not high_sm:
+            default_pdos.add(low)
+            alt_pdos.add(high)
+        elif high_sm and not low_sm:
+            default_pdos.add(high)
+            alt_pdos.add(low)
+        else:
+            default_pdos.add(low)
+            alt_pdos.add(high)
+
+    neutral_pdos = all_pdos - default_pdos - alt_pdos
+    alt_name = _alternative_group_name(alt_pdos, pdo_names)
+
+    pdo_groups = [
+        PdoGroup(
+            name="Standard",
+            is_default=True,
+            pdo_indices=sorted(default_pdos | neutral_pdos),
+            symbol_indices=[],
+        ),
+        PdoGroup(
+            name=alt_name,
+            is_default=False,
+            pdo_indices=sorted(alt_pdos | neutral_pdos),
+            symbol_indices=[],
+        ),
+    ]
+    logger.info(
+        f"Inferred 2 PDO groups from symmetric Exclude pairs: "
+        f"['Standard', '{alt_name}'] (default: Standard)"
+    )
+    return pdo_groups
+
+
+def _alternative_group_name(alt_pdos: set[int], pdo_names: dict[int, str]) -> str:
+    """Name the alternative group from a discriminator in its PDO names.
+
+    Beckhoff's symmetric Standard/Compact alternatives consistently include
+    'Compact' in the alternative PDO names — name the group accordingly when
+    every alternative carries it. Otherwise fall back to a generic label.
+    """
+    names = [pdo_names.get(idx, "") for idx in alt_pdos]
+    if names and all("Compact" in name for name in names):
+        return "Compact"
+    return "Alternative"
 
 
 def build_pdo_to_group_map(pdo_groups: list[PdoGroup]) -> dict[int, str]:

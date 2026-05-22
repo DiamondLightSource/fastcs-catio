@@ -7530,7 +7530,7 @@ terminal_types:
         channels: 4
         access: Read-only
         fastcs_name: ai_compact_channel_{channel}_value
-        selected: true
+        selected: false
         bit_offset: 0
     coe_objects:
       - index: 32768
@@ -8008,6 +8008,18 @@ terminal_types:
             bit_size: 16
             access: rw
     group_type: AnaIn
+    pdo_groups:
+      - name: Standard
+        is_default: true
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+      - name: Compact
+        is_default: false
+        symbol_indices:
+          - 3
+    selected_pdo_group: Standard
   EP3204-0002:
     description: 4Ch. Ana. Input PT100 (RTD)
     identity:
@@ -9738,7 +9750,7 @@ terminal_types:
     identity:
       vendor_id: 2
       product_code: 286670930
-      revision_number: 1245186
+      revision_number: 1114114
     symbol_nodes:
       - name_template: AI Inputs Channel {channel}.Status__Limit 1
         index_group: 61489
@@ -9746,7 +9758,8 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_ch_{channel}_sts_lim_1
-        tooltip: 'Bit0: Value greater than Limit1 Bit1: Value smaller than Limit1'
+        tooltip: 'Bit0: Value is less than or equal to limit 1 Bit1: Value is greater
+          than or equal to limit 1'
         selected: true
         bit_offset: 2
       - name_template: AI Inputs Channel {channel}.Status__Limit 2
@@ -9755,7 +9768,8 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_ch_{channel}_sts_lim_2
-        tooltip: 'Bit0: Value greater than Limit2 Bit1: Value smaller than Limit2'
+        tooltip: 'Bit0: Value is less than or equal to limit 2 Bit1: Value is greater
+          than or equal to limit 2'
         selected: true
         bit_offset: 4
       - name_template: AI Inputs Channel {channel}.Value
@@ -9772,7 +9786,7 @@ terminal_types:
         channels: 2
         access: Read-only
         fastcs_name: ai_inputs_cpt_ch_{channel}_val
-        selected: true
+        selected: false
         bit_offset: 0
       - name_template: AO Outputs Channel {channel}.Analog output
         index_group: 61473
@@ -9783,7 +9797,6 @@ terminal_types:
           - 4
         access: Read/Write
         fastcs_name: ao_outputs_ch_{channel}_analog_out
-        tooltip: Das analoge Ausgangsdatum
         selected: true
         bit_offset: 0
     coe_objects:
@@ -9867,7 +9880,11 @@ terminal_types:
         type_name: DT800E
         bit_size: 32
         access: ro
-        subindices: []
+        subindices:
+          - subindex: 1
+            name: ADC raw value
+            type_name: INT
+            access: ro
       - index: 32783
         name: AI Vendor data Ch.1
         type_name: DT800F
@@ -9981,7 +9998,11 @@ terminal_types:
         type_name: DT800E
         bit_size: 32
         access: ro
-        subindices: []
+        subindices:
+          - subindex: 1
+            name: ADC raw value
+            type_name: INT
+            access: ro
       - index: 32799
         name: AI Vendor data Ch.2
         type_name: DT800F
@@ -10075,7 +10096,11 @@ terminal_types:
         type_name: DT802E
         bit_size: 32
         access: ro
-        subindices: []
+        subindices:
+          - subindex: 1
+            name: DAC raw value
+            type_name: UINT
+            access: ro
       - index: 32815
         name: AO Vendor data Ch.3
         type_name: DT802F
@@ -10169,7 +10194,11 @@ terminal_types:
         type_name: DT802E
         bit_size: 32
         access: ro
-        subindices: []
+        subindices:
+          - subindex: 1
+            name: DAC raw value
+            type_name: UINT
+            access: ro
       - index: 32831
         name: AO Vendor data Ch.4
         type_name: DT802F
@@ -10204,3 +10233,17 @@ terminal_types:
             access: rw
             default_data: '0040'
     group_type: FieldbusBoxEP4xxx
+    pdo_groups:
+      - name: Standard
+        is_default: true
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 4
+      - name: Compact
+        is_default: false
+        symbol_indices:
+          - 3
+          - 4
+    selected_pdo_group: Standard

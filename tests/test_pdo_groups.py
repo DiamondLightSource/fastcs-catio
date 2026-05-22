@@ -302,6 +302,93 @@ class TestPdoGroupParsing:
         assert set(per_channel.pdo_indices) == {0x1600, 0x1601, 0x1A00, 0x1A01}
         assert set(combined.pdo_indices) == {0x1602, 0x1A02}
 
+    def test_parse_pdo_groups_symmetric_pairs(self):
+        """Symmetric A↔B Exclude pairs (EP4374-0002 Standard/Compact pattern).
+
+        EP4374-0002 declares per-channel Standard vs Compact alternatives:
+        #x1a00 (AI Inputs Ch1, Sm=3) ↔ #x1a01 (AI Inputs Compact Ch1).
+        Each PDO has exactly one Exclude partner and the relation is
+        reciprocal, so the existing combined-vs-channel heuristic finds
+        nothing. Sm-assigned PDOs land in the default group; the others
+        in the alternative group named after the discriminator in their
+        PDO names.
+        """
+        xml_content = """
+        <Device>
+            <Type>EP4374-0002</Type>
+            <TxPdo Fixed="1" Sm="3">
+                <Index>#x1a00</Index>
+                <Name>AI Inputs Channel 1</Name>
+                <Exclude>#x1a01</Exclude>
+            </TxPdo>
+            <TxPdo Fixed="1">
+                <Index>#x1a01</Index>
+                <Name>AI Inputs Compact Channel 1</Name>
+                <Exclude>#x1a00</Exclude>
+            </TxPdo>
+            <TxPdo Fixed="1" Sm="3">
+                <Index>#x1a02</Index>
+                <Name>AI Inputs Channel 2</Name>
+                <Exclude>#x1a03</Exclude>
+            </TxPdo>
+            <TxPdo Fixed="1">
+                <Index>#x1a03</Index>
+                <Name>AI Inputs Compact Channel 2</Name>
+                <Exclude>#x1a02</Exclude>
+            </TxPdo>
+            <RxPdo Fixed="1" Sm="2">
+                <Index>#x1600</Index>
+                <Name>AO Outputs Channel 3</Name>
+            </RxPdo>
+            <RxPdo Fixed="1" Sm="2">
+                <Index>#x1601</Index>
+                <Name>AO Outputs Channel 4</Name>
+            </RxPdo>
+        </Device>
+        """
+        device = etree.fromstring(xml_content)
+        groups = parse_pdo_groups(device)
+
+        assert len(groups) == 2
+        standard = next(g for g in groups if g.name == "Standard")
+        compact = next(g for g in groups if g.name == "Compact")
+
+        assert standard.is_default is True
+        assert compact.is_default is False
+
+        # Sm-assigned PDOs land in Standard. RxPdos have no Exclude and are
+        # neutral — they appear in both groups.
+        assert set(standard.pdo_indices) == {0x1600, 0x1601, 0x1A00, 0x1A02}
+        assert set(compact.pdo_indices) == {0x1600, 0x1601, 0x1A01, 0x1A03}
+
+    def test_parse_pdo_groups_symmetric_pairs_no_sm(self):
+        """Symmetric pairs with no Sm marker fall back to lower-indexed = default."""
+        xml_content = """
+        <Device>
+            <Type>Test</Type>
+            <TxPdo Fixed="1">
+                <Index>#x1a00</Index>
+                <Name>Inputs A</Name>
+                <Exclude>#x1a01</Exclude>
+            </TxPdo>
+            <TxPdo Fixed="1">
+                <Index>#x1a01</Index>
+                <Name>Inputs B</Name>
+                <Exclude>#x1a00</Exclude>
+            </TxPdo>
+        </Device>
+        """
+        device = etree.fromstring(xml_content)
+        groups = parse_pdo_groups(device)
+
+        assert len(groups) == 2
+        standard = next(g for g in groups if g.name == "Standard")
+        alternative = next(g for g in groups if g.name == "Alternative")
+
+        assert standard.is_default is True
+        assert set(standard.pdo_indices) == {0x1A00}
+        assert set(alternative.pdo_indices) == {0x1A01}
+
 
 class TestDynamicPdoYamlSerialization:
     """Tests for YAML serialization of dynamic PDO terminals."""
