@@ -79,7 +79,7 @@ from .messages import (
     SlaveCRC,
     UDPInfo,
 )
-from .symbols import symbol_lookup
+from .symbols import build_symbols_for_device
 from .utils import (
     bytes_to_string,
     check_coe_indices_format,
@@ -1397,15 +1397,17 @@ class AsyncioADSClient:
         print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
+            rev = f"rev=0x{int(slave.identity.revision_number):08x}"
             if ("EK1100" in slave.name) | ("EK1200" in slave.name):
                 print(
                     f"\t|----- {slave.loc_in_chain.node}::"
-                    + f"{slave.loc_in_chain.position} -> {slave.name}"
+                    + f"{slave.loc_in_chain.position} -> {slave.name}\t{rev}"
                 )
             else:
                 print(
                     f"\t\t|----- {slave.loc_in_chain.node}::"
                     + f"{slave.loc_in_chain.position}\t-> {slave.type}\t{slave.name}"
+                    + f"\t{rev}"
                 )
 
     async def _get_ethercat_chains(self) -> None:
@@ -2081,22 +2083,13 @@ class AsyncioADSClient:
             device_id, int(symbol_table.symbol_count), response.data
         )
 
-        # Get a dict of the available symbols
-        symbols: dict[str, AdsSymbol] = {}
-        for node in nodes:
-            symbols.update(symbol_lookup(node))
-
-        # Adjust the device symbol names to include the device name as prefix
-        # Unfortunately, counter correction is required in 'add_device_notification()'
-        names = []
-        device_name = self._ecdevices[device_id].name
-        for name in symbols.keys():
-            if name.startswith("Inputs") or name.startswith("Outputs"):
-                names.append((name, f"{device_name}.{name}"))
-        for old_name, new_name in names:
-            old_symbol = symbols.pop(old_name)
-            symbols[new_name] = old_symbol
-            symbols[new_name].name = new_name
+        device = self._ecdevices[device_id]
+        device_name = device.name
+        symbols = build_symbols_for_device(
+            nodes=nodes,
+            slaves=device.slaves,
+            device_name=device_name,
+        )
 
         self._ecsymbols[device_id] = symbols
         logger.info(
@@ -2788,7 +2781,12 @@ class AsyncioADSClient:
                                 streams_dtype, buffer
                             )
                         )
-                        assert streams_dtype.fields
+                        assert streams_dtype.fields, (
+                            f"Notification stream dtype has no fields "
+                            f"(streams_dtype={streams_dtype!r}); "
+                            f"templates={list(self.__notif_templates.keys())}, "
+                            f"handles={len(self.__device_notification_handles)}."
+                        )
                         logger.debug(
                             f"Notification stream added to the queue: "
                             f"qsize={self.__notification_queue.qsize()}, "

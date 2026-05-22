@@ -469,6 +469,12 @@ class CATioServerController(CATioController):
             f"A map of all attributes linked to controller {self.name} was created."
         )
 
+        # Gate bus subscriptions on attribute_map membership so the IOC
+        # only subscribes to symbols a PV consumes. Closes the seam
+        # behind issue #53 (e.g. _SyncUnits.*) without an ad-hoc
+        # carve-out in the notification handler.
+        self.connection.set_wanted_attribute_keys(self.attribute_map.keys())
+
     async def connect(self) -> None:
         """
         Establish the FastCS connection to the CATio server controller.
@@ -822,14 +828,9 @@ class CATioServerController(CATioController):
                     attr_name = name.rsplit(".", 1)[0]
 
                     if attr_name not in self.attribute_map.keys():
-                        # Upstream marks bus-level fields (e.g. WcState) with
-                        # an '_unreferenced_' segment; they're not exposed as
-                        # PVs, so don't warn about them.
-                        if "._unreferenced_." not in attr_name:
-                            logger.warning(
-                                f"No reference to {attr_name}"
-                                " in the CATio attribute map"
-                            )
+                        logger.warning(
+                            f"No reference to {attr_name} in the CATio attribute map"
+                        )
                         continue
 
                     notif_attribute = self.attribute_map[attr_name]

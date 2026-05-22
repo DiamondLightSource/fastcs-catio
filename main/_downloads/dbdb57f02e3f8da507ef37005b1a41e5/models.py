@@ -2,9 +2,46 @@
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 from catio_terminals.ads_types import get_type_info
+from catio_terminals.utils import make_fastcs_name, make_subindex_fastcs_name
+
+# CoE subindex bit sizes for primitive types. Distinct from ads_types.TYPE_INFO
+# because that table stores bytes (and 0 for bit-addressed types), while CoE
+# subindices report sizes in bits.
+_COE_PRIMITIVE_BIT_SIZES: dict[str, int] = {
+    "BOOL": 1,
+    "BIT": 1,
+    "SINT": 8,
+    "USINT": 8,
+    "BYTE": 8,
+    "INT": 16,
+    "UINT": 16,
+    "WORD": 16,
+    "DINT": 32,
+    "UDINT": 32,
+    "DWORD": 32,
+    "LINT": 64,
+    "ULINT": 64,
+    "LWORD": 64,
+    "REAL": 32,
+    "LREAL": 64,
+}
+
+
+def _coe_primitive_bit_size(type_name: str | None) -> int | None:
+    if type_name is None:
+        return None
+    return _COE_PRIMITIVE_BIT_SIZES.get(type_name.upper())
+
+
+def _coe_default_data_zero(bit_size: int | None) -> str | None:
+    """Zero-valued ``default_data`` string for a given bit size, or None."""
+    if not bit_size:
+        return None
+    n_bytes = max(1, (bit_size + 7) // 8)
+    return "00" * n_bytes
 
 
 class Identity(BaseModel):
@@ -28,6 +65,16 @@ class CoESubIndex(BaseModel):
         default=None, description="snake_case name for FastCS attribute"
     )
 
+    @model_validator(mode="after")
+    def _fill_derivable(self) -> "CoESubIndex":
+        # bit_size is fully determined by the primitive type_name; fill the
+        # field when the YAML omits it so downstream code never has to look it
+        # up itself. fastcs_name needs the parent CoE index, so CoEObject's
+        # validator handles that.
+        if self.bit_size is None:
+            self.bit_size = _coe_primitive_bit_size(self.type_name)
+        return self
+
 
 class CoEObject(BaseModel):
     """CANopen over EtherCAT (CoE) object definition."""
@@ -47,6 +94,19 @@ class CoEObject(BaseModel):
         default=None, description="snake_case name for FastCS attribute"
     )
 
+    @model_validator(mode="after")
+    def _fill_derivable(self) -> "CoEObject":
+        # Both the CoE object's own fastcs_name and each subindex's
+        # fastcs_name follow a deterministic snake_case + idx<hex> pattern,
+        # so we can omit them from YAML and rebuild here.
+        suffix = f"idx{hex(self.index).lstrip('0x')}"
+        if self.fastcs_name is None:
+            self.fastcs_name = make_fastcs_name(self.name, suffix=suffix)
+        for sub in self.subindices:
+            if sub.fastcs_name is None:
+                sub.fastcs_name = make_subindex_fastcs_name(self.index, sub.name)
+        return self
+
 
 class SymbolNode(BaseModel):
     """Symbol node definition.
@@ -61,6 +121,13 @@ class SymbolNode(BaseModel):
     index_group: int = Field(description="ADS index group")
     type_name: str = Field(description="Type name (e.g., INT, BOOL, UINT)")
     channels: int = Field(default=1, description="Number of channels")
+    channel_indices: list[int] = Field(
+        default_factory=list,
+        description=(
+            "Actual channel numbers used in the bus PDO names (e.g. [3, 4] "
+            "for EP4374-0002's AO RxPDOs). Empty list means '[1..channels]'."
+        ),
+    )
     access: str | None = Field(default=None, description="Read-only or Read/Write")
     fastcs_name: str | None = Field(
         default=None, description="Snake case name for FastCS"
@@ -71,10 +138,29 @@ class SymbolNode(BaseModel):
     selected: bool = Field(
         default=True, description="Whether to include in YAML output"
     )
+    bit_offset: int = Field(
+        default=0,
+        description=(
+            "Bit position of this entry within its parent struct. Top-level "
+            "symbols and primitives use 0; dotted sub-fields carry the offset "
+            "of the field within the parent BIGTYPE (e.g. .Value at bit 16)."
+        ),
+    )
 
     # Internal storage for values loaded from YAML (not serialized)
     _size_from_yaml: int | None = None
     _ads_type_from_yaml: int | None = None
+
+    @model_validator(mode="after")
+    def _reconcile_channels(self) -> "SymbolNode":
+        # YAMLs predating the channel_indices field carry only `channels: N`
+        # and expect 1-based numbering. Fill the explicit list so iterators
+        # don't need a fallback path.
+        if not self.channel_indices:
+            self.channel_indices = list(range(1, self.channels + 1))
+        elif self.channels != len(self.channel_indices):
+            self.channels = len(self.channel_indices)
+        return self
 
     @computed_field
     @property
@@ -337,6 +423,51 @@ class TerminalType(BaseModel):
         return set(range(len(self.symbol_nodes)))
 
 
+def _clean_coe_for_yaml(coe: dict) -> dict:
+    """Strip fields whose values can be reconstructed by the load-time
+    validators.
+
+    Derivable, so dropped when stored == derived:
+      - CoE object ``fastcs_name``  (snake_case(name) + ``_idx<hex>``)
+      - subindex ``fastcs_name``   (same pattern with parent's index)
+      - subindex ``bit_size``      (for primitive types)
+      - subindex ``default_data``  (when all zeros — the implicit default)
+
+    Hand-edits survive: any field whose value differs from the derived
+    value is kept verbatim.
+    """
+    coe = {k: v for k, v in coe.items() if k != "selected"}
+
+    index = coe.get("index")
+    if index is not None:
+        suffix = f"idx{hex(index).lstrip('0x')}"
+        derived = make_fastcs_name(coe.get("name", ""), suffix=suffix)
+        if coe.get("fastcs_name") == derived:
+            coe.pop("fastcs_name", None)
+
+    cleaned_subs = []
+    for sub in coe.get("subindices", []) or []:
+        sub = dict(sub)
+        type_name = sub.get("type_name")
+        # bit_size
+        derived_bs = _coe_primitive_bit_size(type_name)
+        if derived_bs is not None and sub.get("bit_size") == derived_bs:
+            sub.pop("bit_size", None)
+        # default_data — drop only if it's all zeros (implicit)
+        dd = sub.get("default_data")
+        if dd is not None and all(c == "0" for c in dd):
+            sub.pop("default_data", None)
+        # fastcs_name
+        if index is not None and sub.get("fastcs_name") == make_subindex_fastcs_name(
+            index, sub.get("name", "")
+        ):
+            sub.pop("fastcs_name", None)
+        cleaned_subs.append(sub)
+    if "subindices" in coe:
+        coe["subindices"] = cleaned_subs
+    return coe
+
+
 # Forward reference for TerminalConfig (defined after CompositeType models)
 class TerminalConfig(BaseModel):
     """Root configuration for terminal types.
@@ -367,7 +498,15 @@ class TerminalConfig(BaseModel):
 
         with path.open() as f:
             data = yaml.safe_load(f)
-        return cls.model_validate(data)
+        config = cls.model_validate(data)
+        # to_yaml filters out unselected CoE objects, so any CoE that round-
+        # trips through YAML was selected at save time. Restore the flag so
+        # downstream merges can preserve user intent instead of having to
+        # guess.
+        for terminal in config.terminal_types.values():
+            for coe in terminal.coe_objects:
+                coe.selected = True
+        return config
 
     def to_yaml(self, path: Path) -> None:
         """Save configuration to YAML file.
@@ -407,14 +546,23 @@ class TerminalConfig(BaseModel):
 
             # Save all symbols with 'selected' field, excluding computed fields
             if "symbol_nodes" in terminal_data:
-                terminal_data["symbol_nodes"] = [
-                    {k: v for k, v in sym.items() if k not in symbol_exclude_fields}
-                    for sym in terminal_data["symbol_nodes"]
-                ]
+                cleaned = []
+                for sym in terminal_data["symbol_nodes"]:
+                    sym = {
+                        k: v for k, v in sym.items() if k not in symbol_exclude_fields
+                    }
+                    # Only emit channel_indices when it diverges from the
+                    # implicit [1..channels] default — keeps the YAML noise-free
+                    # for the vast majority of terminals.
+                    channels = sym.get("channels", 1)
+                    if sym.get("channel_indices") == list(range(1, channels + 1)):
+                        sym.pop("channel_indices", None)
+                    cleaned.append(sym)
+                terminal_data["symbol_nodes"] = cleaned
 
             if "coe_objects" in terminal_data:
                 terminal_data["coe_objects"] = [
-                    {k: v for k, v in coe.items() if k != "selected"}
+                    _clean_coe_for_yaml(coe)
                     for coe in terminal_data["coe_objects"]
                     if coe.get("selected", False)
                 ]
