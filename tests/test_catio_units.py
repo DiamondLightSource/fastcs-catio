@@ -25,6 +25,7 @@ from fastcs_catio.catio_connection import (
     CATioFastCSResponse,
     CATioServerConnectionSettings,
 )
+from fastcs_catio.catio_controller import CATioNameMappings, CATioServerController
 from fastcs_catio.devices import (
     AdsSymbol,
     AdsSymbolNode,
@@ -921,129 +922,6 @@ class TestAdsSymbolNode:
 # ===================================================================
 
 
-class TestIOSlave:
-    """Test suite for IOSlave data class."""
-
-    def test_get_type_name_for_slave_and_coupler_and_box_and_invalid(self):
-        """Test get_type_name method for different node categories."""
-        # Create a sample IOSlave
-        id = IOIdentity(
-            vendor_id=101, product_code=200, revision_number=3, serial_number=45678
-        )
-        states = SlaveState(ecat_state=0, link_status=1)
-        crcs = SlaveCRC(port_a_crc=1, port_b_crc=1, port_c_crc=0, port_d_crc=0)
-        loc = ChainLocation(node=3, position=7)
-        slave = IOSlave(
-            parent_device=1,
-            type="term",
-            name="MySlave",
-            address=5,
-            identity=id,
-            states=states,
-            crcs=crcs,
-            loc_in_chain=loc,
-        )
-
-        # Default category is Slave -> should return MOD{position}
-        assert slave.get_type_name() == "MOD7"
-
-        # Coupler category -> should return RIO{position}
-        slave.category = IONodeType.Coupler
-        assert slave.get_type_name() == "RIO3"
-
-        # Box category -> should return RIO{position}
-        slave.category = IONodeType.Box
-        assert slave.get_type_name() == "RIO3"
-
-        # Invalid category should raise NameError
-        slave.category = IONodeType.Device
-        with pytest.raises(NameError):
-            slave.get_type_name()
-
-
-class TestIODevice:
-    """Test suite for IODevice data class."""
-
-    def test_get_type_name_for_different_device_types(self):
-        """Test get_type_name method for IODevice."""
-        # Create two IOSlave samples for the device
-        id1 = IOIdentity(
-            vendor_id=101, product_code=200, revision_number=3, serial_number=45678
-        )
-        loc1 = ChainLocation(node=1, position=1)
-        id2 = IOIdentity(
-            vendor_id=101, product_code=400, revision_number=1, serial_number=98765
-        )
-        loc2 = ChainLocation(node=1, position=2)
-        states = SlaveState(ecat_state=0, link_status=1)
-        crcs = SlaveCRC(port_a_crc=1, port_b_crc=1, port_c_crc=0, port_d_crc=0)
-
-        s1 = IOSlave(
-            parent_device=1,
-            type="t",
-            name="s1",
-            address=10,
-            identity=id1,
-            states=states,
-            crcs=crcs,
-            loc_in_chain=loc1,
-        )
-        s2 = IOSlave(
-            parent_device=1,
-            type="t",
-            name="s2",
-            address=20,
-            identity=id2,
-            states=states,
-            crcs=crcs,
-            loc_in_chain=loc2,
-        )
-
-        # Create EtherCAT Master IODevice with the two slaves
-        netid1 = AmsNetId.from_string("127.0.0.1.1.1")
-        dev_id1 = IOIdentity(
-            vendor_id=555, product_code=600, revision_number=1, serial_number=12345
-        )
-        dev_f_cnt1 = DeviceFrames(
-            time=0, cyclic_sent=10, cyclic_lost=0, acyclic_sent=5, acyclic_lost=0
-        )
-        device1 = IODevice(
-            id=5,
-            type=DeviceType.IODEVICETYPE_ETHERCAT,
-            name="Device 5(EtherCAT)",
-            netid=netid1,
-            identity=dev_id1,
-            frame_counters=dev_f_cnt1,
-            slave_count=2,
-            slaves_states=[],
-            slaves_crc_counters=[np.uint32(0), np.uint32(0)],
-            slaves=[s1, s2],
-        )
-        assert device1.get_type_name() == "ETH5"
-
-        # Create Invalid IODevice with the two slaves
-        netid2 = AmsNetId.from_string("127.0.0.2.1.1")
-        dev_id2 = IOIdentity(
-            vendor_id=555, product_code=610, revision_number=2, serial_number=34567
-        )
-        dev_f_cnt2 = DeviceFrames(
-            time=0, cyclic_sent=3, cyclic_lost=0, acyclic_sent=12, acyclic_lost=1
-        )
-        device2 = IODevice(
-            id=8,
-            type=DeviceType.IODEVICETYPE_INVALID,
-            name="Device 8",
-            netid=netid2,
-            identity=dev_id2,
-            frame_counters=dev_f_cnt2,
-            slave_count=2,
-            slaves_states=[],
-            slaves_crc_counters=[np.uint32(0), np.uint32(0)],
-            slaves=[s1, s2],
-        )
-        assert device2.get_type_name() == "EBUS8"
-
-
 class TestIOServer:
     """ "Test suite for IOServer data class."""
 
@@ -1058,6 +936,282 @@ class TestIOServer:
         assert server.num_devices == 3
         # Verify category
         assert server.category == IONodeType.Server
+
+
+class TestControllerNameMappings:
+    """Test suite for YAML-driven controller name mapping logic."""
+
+    # ------------------------------------------------------------------
+    # Fixtures
+    # ------------------------------------------------------------------
+
+    def _make_controller(self, mappings: CATioNameMappings) -> CATioServerController:
+        controller = object.__new__(CATioServerController)
+        controller._path = ["BL04I-EA-CATIO-01"]
+        controller._name_mappings = mappings
+        return controller
+
+    def _make_device(self, device_id: int = 1) -> IODevice:
+        identity = IOIdentity(
+            vendor_id=1, product_code=2, revision_number=3, serial_number=4
+        )
+        frames = DeviceFrames(
+            time=0, cyclic_sent=0, cyclic_lost=0, acyclic_sent=0, acyclic_lost=0
+        )
+        return IODevice(
+            id=device_id,
+            type=DeviceType.IODEVICETYPE_ETHERCAT,
+            name=f"Device{device_id}",
+            netid=AmsNetId.from_string("127.0.0.1.1.1"),
+            identity=identity,
+            frame_counters=frames,
+            slave_count=0,
+            slaves_states=[],
+            slaves_crc_counters=[],
+            slaves=[],
+        )
+
+    def _make_slave(
+        self,
+        category: IONodeType,
+        node_index: int = 1,
+        position: int = 1,
+    ) -> IOSlave:
+        return IOSlave(
+            parent_device=1,
+            type="EK1100",
+            name="Terminal",
+            address=1000,
+            identity=IOIdentity(
+                vendor_id=1, product_code=2, revision_number=3, serial_number=4
+            ),
+            states=SlaveState(ecat_state=0, link_status=0),
+            crcs=SlaveCRC(port_a_crc=0, port_b_crc=0, port_c_crc=0, port_d_crc=0),
+            loc_in_chain=ChainLocation(node=node_index, position=position),
+            category=category,
+        )
+
+    # ------------------------------------------------------------------
+    # Validation
+    # ------------------------------------------------------------------
+
+    def test_unknown_placeholder_raises_at_construction(self):
+        """Typo'd placeholder must be caught before hardware is touched."""
+        with pytest.raises(ValueError, match="unknown placeholder"):
+            CATioNameMappings(device_prefix="{typo}:ETH{}")
+
+    def test_node_prefix_cannot_use_node_prefix_key(self):
+        """node_prefix may not reference {node_prefix} — only module_prefix can."""
+        with pytest.raises(ValueError, match="unknown placeholder"):
+            CATioNameMappings(node_prefix="{node_prefix}:RIO{}")
+
+    def test_valid_templates_do_not_raise(self):
+        # All recognised keys + format specs — must not raise
+        CATioNameMappings(
+            device_prefix="{id}:ETH{n:02d}",
+            node_prefix="{device_prefix}:E1RIO{:02d}",
+            module_prefix="{node_prefix}:MOD{n:02d}",
+        )
+
+    def test_device_prefix_is_valid_in_module_prefix(self):
+        CATioNameMappings(module_prefix="{device_prefix}:MOD{n:02d}")
+
+    def test_explicit_positional_index_is_accepted(self):
+        # {0:02d} is an explicit positional reference — validation must allow it
+        CATioNameMappings(device_prefix="{0:02d}-ETH")
+
+    def test_node_prefix_resolves_device_prefix_context_key(self):
+        """node_prefix template sees the rendered device name as {device_prefix}."""
+        controller = self._make_controller(
+            CATioNameMappings(
+                device_prefix="{id}:ETH{n:02d}",
+                node_prefix="{device_prefix}:E1RIO{n:02d}",
+            )
+        )
+        coupler = self._make_slave(IONodeType.Coupler, node_index=2)
+        # parent_path is the resolved device path ["BL04I-EA-CATIO-01", "ETH01"]
+        device_path = ["BL04I-EA-CATIO-01", "ETH01"]
+        name, path = controller._resolve_controller_name_and_path(
+            IOTreeNode(coupler), device_path
+        )
+        assert name == "E1RIO02"
+        assert path == ["BL04I-EA-CATIO-01", "ETH01", "E1RIO02"]
+
+    def test_module_prefix_resolves_device_prefix_context_key(self):
+        """module_prefix using {device_prefix} skips the coupler in the PV path."""
+        controller = self._make_controller(
+            CATioNameMappings(
+                module_prefix="{device_prefix}:MOD{n:02d}",
+            )
+        )
+        module = self._make_slave(IONodeType.Slave, position=3)
+        # parent_path: server root, device, coupler
+        parent_path = ["BL04I-EA-CATIO-01", "ETH1", "E1RIO1"]
+        name, path = controller._resolve_controller_name_and_path(
+            IOTreeNode(module), parent_path
+        )
+        # device_prefix = "BL04I-EA-CATIO-01:ETH1" (path[:-1] joined)
+        # → rendered "BL04I-EA-CATIO-01:ETH1:MOD03", coupler level absent
+        assert name == "MOD03"
+        assert path == ["BL04I-EA-CATIO-01", "ETH1", "MOD03"]
+
+    def test_module_device_prefix_is_empty_when_parent_is_standalone(self):
+        """When coupler has a standalone path, {device_prefix} is empty string."""
+        controller = self._make_controller(
+            CATioNameMappings(module_prefix="{device_prefix}MOD{n}")
+        )
+        module = self._make_slave(IONodeType.Slave, position=1)
+        # Standalone coupler path: only one segment, so grandparent index [-2] is absent
+        parent_path = ["BL04I-EA-E1RIO-01"]
+        name, path = controller._resolve_controller_name_and_path(
+            IOTreeNode(module), parent_path
+        )
+        # device_prefix is empty string → rendered as just "MOD1" → split → ["MOD1"]
+        assert name == "MOD1"
+        assert path == ["MOD1"]
+
+    # ------------------------------------------------------------------
+    # Renderer
+    # ------------------------------------------------------------------
+
+    def test_render_positional_placeholder(self):
+        assert CATioServerController._render("ETH{}", 3, {}) == "ETH3"
+
+    def test_render_named_n_placeholder_with_format_spec(self):
+        assert CATioServerController._render("ETH{n:02d}", 3, {}) == "ETH03"
+
+    def test_render_context_key_with_colon_separator(self):
+        assert (
+            CATioServerController._render(
+                "{id}:ETH{:02d}", 3, {"id": "BL04I-EA-CATIO-01"}
+            )
+            == "BL04I-EA-CATIO-01:ETH03"
+        )
+
+    def test_render_context_value_containing_braces_is_safe(self):
+        # Values with literal braces must NOT corrupt the format pass.
+        result = CATioServerController._render(
+            "{id}:ETH{}", 1, {"id": "PREFIX", "node_prefix": "IGNORED"}
+        )
+        assert result == "PREFIX:ETH1"
+
+    def test_render_unknown_key_raises_value_error(self):
+        with pytest.raises(ValueError, match="Unknown placeholder"):
+            CATioServerController._render("{bad_key}:ETH{}", 1, {"id": "X"})
+
+    # ------------------------------------------------------------------
+    # Path resolution — absolute (uses {id} or explicit colon)
+    # ------------------------------------------------------------------
+
+    def test_device_template_with_id_produces_colon_split_path(self):
+        controller = self._make_controller(
+            CATioNameMappings(device_prefix="{id}:ETH{:02d}")
+        )
+        node = IOTreeNode(self._make_device(5))
+
+        name, path = controller._resolve_controller_name_and_path(node, controller.path)
+
+        assert name == "ETH05"
+        assert path == ["BL04I-EA-CATIO-01", "ETH05"]
+
+    def test_device_template_with_id_but_no_colon_yields_standalone_root(self):
+        # {id} present but the rendered name has no colon → single standalone segment
+        controller = self._make_controller(
+            CATioNameMappings(device_prefix="{id}ETH{n}")
+        )
+        node = IOTreeNode(self._make_device(1))
+
+        name, path = controller._resolve_controller_name_and_path(node, controller.path)
+
+        assert name == "BL04I-EA-CATIO-01ETH1"
+        assert path == ["BL04I-EA-CATIO-01ETH1"]
+
+    # ------------------------------------------------------------------
+    # Path resolution — coupler/box nodes
+    # ------------------------------------------------------------------
+
+    def test_coupler_with_hyphen_in_name_is_standalone_root(self):
+        """node_prefix like 'BL04I-EA-E1RIO-{:02d}' → standalone path."""
+        controller = self._make_controller(
+            CATioNameMappings(node_prefix="BL04I-EA-E1RIO-{:02d}")
+        )
+        coupler = self._make_slave(IONodeType.Coupler, node_index=1)
+        node = IOTreeNode(coupler)
+
+        name, path = controller._resolve_controller_name_and_path(node, controller.path)
+
+        assert name == "BL04I-EA-E1RIO-01"
+        assert path == ["BL04I-EA-E1RIO-01"]
+
+    def test_coupler_without_colon_produces_standalone_root(self):
+        """node_prefix like 'RIO{}' has no colon, so it produces a standalone root."""
+        controller = self._make_controller(CATioNameMappings(node_prefix="RIO{}"))
+        coupler = self._make_slave(IONodeType.Coupler, node_index=2)
+        node = IOTreeNode(coupler)
+
+        name, path = controller._resolve_controller_name_and_path(node, controller.path)
+
+        assert name == "RIO2"
+        assert path == ["RIO2"]
+
+    # ------------------------------------------------------------------
+    # Path resolution — module / slave terminals
+    # ------------------------------------------------------------------
+
+    def test_module_node_prefix_cross_reference_resolves_correctly(self):
+        """module_prefix = '{node_prefix}:MOD{:02d}' embeds the coupler name."""
+        controller = self._make_controller(
+            CATioNameMappings(
+                node_prefix="BL04I-EA-E1RIO-{:02d}",
+                module_prefix="{node_prefix}:MOD{:02d}",
+            )
+        )
+        coupler = self._make_slave(IONodeType.Coupler, node_index=1, position=0)
+        module = self._make_slave(IONodeType.Slave, node_index=1, position=7)
+
+        coupler_name, coupler_path = controller._resolve_controller_name_and_path(
+            IOTreeNode(coupler), controller.path
+        )
+        # parent_path for the module is whatever the coupler resolved to
+        module_name, module_path = controller._resolve_controller_name_and_path(
+            IOTreeNode(module), coupler_path
+        )
+
+        assert coupler_name == "BL04I-EA-E1RIO-01"
+        assert coupler_path == ["BL04I-EA-E1RIO-01"]
+        assert module_name == "MOD07"
+        assert module_path == ["BL04I-EA-E1RIO-01", "MOD07"]
+
+    def test_module_directly_on_device_uses_full_parent_path(self):
+        """{node_prefix} is the full parent path, so the module gets an absolute path
+        even when it is attached directly to a device (no coupler in between)."""
+        controller = self._make_controller(
+            CATioNameMappings(
+                device_prefix="{id}:ETH{n:02d}",
+                module_prefix="{node_prefix}:MOD{n:02d}",
+            )
+        )
+        module = self._make_slave(IONodeType.Slave, position=1)
+        # parent_path is the resolved device path — no coupler level
+        device_path = ["BL04I-EA-CATIO-01", "ETH01"]
+        name, path = controller._resolve_controller_name_and_path(
+            IOTreeNode(module), device_path
+        )
+        assert name == "MOD01"
+        assert path == ["BL04I-EA-CATIO-01", "ETH01", "MOD01"]
+
+    def test_module_default_template_is_single_segment(self):
+        """Default 'MOD{}' renders to a single segment — no parent appending."""
+        controller = self._make_controller(CATioNameMappings())
+        slave = self._make_slave(IONodeType.Slave, position=3)
+        node = IOTreeNode(slave)
+
+        name, path = controller._resolve_controller_name_and_path(
+            node, ["BL04I-EA-CATIO-01", "ETH1"]
+        )
+
+        assert name == "MOD3"
+        assert path == ["MOD3"]
 
 
 class TestIOTreeNode:

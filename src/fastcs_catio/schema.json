@@ -1,5 +1,26 @@
 {
   "$defs": {
+    "CATioNameMappings": {
+      "properties": {
+        "device_prefix": {
+          "default": "ETH{}",
+          "title": "Device Prefix",
+          "type": "string"
+        },
+        "node_prefix": {
+          "default": "ERIO{}",
+          "title": "Node Prefix",
+          "type": "string"
+        },
+        "module_prefix": {
+          "default": "MOD{}",
+          "title": "Module Prefix",
+          "type": "string"
+        }
+      },
+      "title": "CATioNameMappings",
+      "type": "object"
+    },
     "CATioRouteSettings": {
       "properties": {
         "route_name": {
@@ -50,7 +71,7 @@
           "type": "string"
         },
         "type": {
-          "const": "CATioServerController",
+          "const": "fastcs_catio.CATioServerController",
           "title": "Type",
           "type": "string"
         },
@@ -62,6 +83,9 @@
         },
         "scan_timings": {
           "$ref": "#/$defs/CATioScanTimings"
+        },
+        "name_mappings": {
+          "$ref": "#/$defs/CATioNameMappings"
         }
       },
       "required": [
@@ -230,6 +254,37 @@
       "title": "EpicsPVATransport",
       "type": "object"
     },
+    "GraphQLServerOptions": {
+      "properties": {
+        "host": {
+          "default": "localhost",
+          "title": "Host",
+          "type": "string"
+        },
+        "port": {
+          "default": 8080,
+          "title": "Port",
+          "type": "integer"
+        },
+        "log_level": {
+          "default": "info",
+          "title": "Log Level",
+          "type": "string"
+        }
+      },
+      "title": "GraphQLServerOptions",
+      "type": "object"
+    },
+    "GraphQLTransport": {
+      "additionalProperties": false,
+      "properties": {
+        "graphql": {
+          "$ref": "#/$defs/GraphQLServerOptions"
+        }
+      },
+      "title": "GraphQLTransport",
+      "type": "object"
+    },
     "RestServerOptions": {
       "properties": {
         "host": {
@@ -260,6 +315,32 @@
       },
       "title": "RestTransport",
       "type": "object"
+    },
+    "TangoDSROptions": {
+      "properties": {
+        "dsr_instance": {
+          "default": "MY_SERVER_INSTANCE",
+          "title": "Dsr Instance",
+          "type": "string"
+        },
+        "debug": {
+          "default": false,
+          "title": "Debug",
+          "type": "boolean"
+        }
+      },
+      "title": "TangoDSROptions",
+      "type": "object"
+    },
+    "TangoTransport": {
+      "additionalProperties": false,
+      "properties": {
+        "tango": {
+          "$ref": "#/$defs/TangoDSROptions"
+        }
+      },
+      "title": "TangoTransport",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -281,7 +362,13 @@
             "$ref": "#/$defs/EpicsPVATransport"
           },
           {
+            "$ref": "#/$defs/GraphQLTransport"
+          },
+          {
             "$ref": "#/$defs/RestTransport"
+          },
+          {
+            "$ref": "#/$defs/TangoTransport"
           }
         ]
       },
