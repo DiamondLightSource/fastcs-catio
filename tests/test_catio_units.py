@@ -1126,6 +1126,16 @@ class TestControllerNameMappings:
         assert name == "BL04I-EA-CATIO-01ETH1"
         assert path == ["BL04I-EA-CATIO-01ETH1"]
 
+    def test_device_default_template_nests_under_root(self):
+        """Default '{id}:ETH{:02d}' nests the device under the IOC root."""
+        controller = self._make_controller(CATioNameMappings())
+        node = IOTreeNode(self._make_device(2))
+
+        name, path = controller._resolve_controller_name_and_path(node, controller.path)
+
+        assert name == "ETH02"
+        assert path == ["BL04I-EA-CATIO-01", "ETH02"]
+
     # ------------------------------------------------------------------
     # Path resolution — coupler/box nodes
     # ------------------------------------------------------------------
@@ -1153,6 +1163,19 @@ class TestControllerNameMappings:
 
         assert name == "RIO2"
         assert path == ["RIO2"]
+
+    def test_node_default_template_nests_under_device(self):
+        """Default '{device_prefix}:E1RIO{:02d}' nests the coupler under its device."""
+        controller = self._make_controller(CATioNameMappings())
+        coupler = self._make_slave(IONodeType.Coupler, node_index=1)
+        node = IOTreeNode(coupler)
+
+        name, path = controller._resolve_controller_name_and_path(
+            node, ["BL04I-EA-CATIO-01", "ETH1"]
+        )
+
+        assert name == "E1RIO01"
+        assert path == ["BL04I-EA-CATIO-01", "ETH1", "E1RIO01"]
 
     # ------------------------------------------------------------------
     # Path resolution — module / slave terminals
@@ -1200,8 +1223,8 @@ class TestControllerNameMappings:
         assert name == "MOD01"
         assert path == ["BL04I-EA-CATIO-01", "ETH01", "MOD01"]
 
-    def test_module_default_template_is_single_segment(self):
-        """Default 'MOD{}' renders to a single segment — no parent appending."""
+    def test_module_default_template_nests_under_node(self):
+        """Default '{node_prefix}:MOD{:02d}' nests the module under its parent node."""
         controller = self._make_controller(CATioNameMappings())
         slave = self._make_slave(IONodeType.Slave, position=3)
         node = IOTreeNode(slave)
@@ -1210,8 +1233,8 @@ class TestControllerNameMappings:
             node, ["BL04I-EA-CATIO-01", "ETH1"]
         )
 
-        assert name == "MOD3"
-        assert path == ["MOD3"]
+        assert name == "MOD03"
+        assert path == ["BL04I-EA-CATIO-01", "ETH1", "MOD03"]
 
 
 class TestIOTreeNode:

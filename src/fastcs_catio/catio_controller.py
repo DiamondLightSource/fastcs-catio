@@ -419,9 +419,9 @@ class CATioNameMappings:
     construction — before any hardware connection is attempted.
     """
 
-    device_prefix: str = "ETH{}"
-    node_prefix: str = "E1RIO{}"
-    module_prefix: str = "MOD{}"
+    device_prefix: str = "{id}:ETH{:02d}"
+    node_prefix: str = "{device_prefix}:E1RIO{:02d}"
+    module_prefix: str = "{node_prefix}:MOD{:02d}"
 
     def __post_init__(self) -> None:
         for field_name, valid_keys in _VALID_TEMPLATE_KEYS.items():
