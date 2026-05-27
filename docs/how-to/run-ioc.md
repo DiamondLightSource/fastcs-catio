@@ -86,6 +86,17 @@ underscores (e.g. `{node_prefix}`).  This is intentional: hyphens are not
 valid in Python identifier syntax and cannot be used as `str.format()` keys.
 :::
 
+:::{warning}
+Underscores are **not** allowed in PV name components.  This applies to:
+
+- Template literal text — e.g. `"ETH_{:02d}"` is invalid.
+- The IOC root prefix (`id` in YAML / `pv_prefix` in the `ioc` command) —
+  e.g. `BL04I-EA_CATIO-01` is invalid.
+
+Use hyphens instead.  CATio validates both at startup and raises a
+`ValueError` before any hardware connection is attempted.
+:::
+
 When a rendered template contains a colon (`:`) the result is split on `:`
 into path segments, making the component a child of whatever comes before the
 colon.  For example, `"{id}:ETH{:02d}"` rendered with id `BL04I-EA-CATIO-01`

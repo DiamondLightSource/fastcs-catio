@@ -1005,6 +1005,18 @@ class TestControllerNameMappings:
         with pytest.raises(ValueError, match="unknown placeholder"):
             CATioNameMappings(node_prefix="{node_prefix}:RIO{}")
 
+    def test_underscore_in_template_literal_raises_at_construction(self):
+        """Underscore in a template's literal text must be caught immediately."""
+        with pytest.raises(ValueError, match="underscore"):
+            CATioNameMappings(device_prefix="ETH_{:02d}")
+
+    def test_underscore_in_id_raises_at_render_time(self):
+        """Underscore in the substituted {id} value must be caught at render time."""
+        with pytest.raises(ValueError, match="underscore"):
+            CATioServerController._render(
+                "{id}:ETH{:02d}", 1, {"id": "BL04I_EA_CATIO_01"}
+            )
+
     def test_valid_templates_do_not_raise(self):
         # All recognised keys + format specs — must not raise
         CATioNameMappings(

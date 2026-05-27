@@ -426,7 +426,13 @@ class CATioNameMappings:
     def __post_init__(self) -> None:
         for field_name, valid_keys in _VALID_TEMPLATE_KEYS.items():
             template = getattr(self, field_name)
-            for _, key, _, _ in string.Formatter().parse(template):
+            for literal_text, key, _, _ in string.Formatter().parse(template):
+                if literal_text and "_" in literal_text:
+                    raise ValueError(
+                        f"name_mappings.{field_name!r}: underscore in template "
+                        f"literal text {literal_text!r}. "
+                        "PV name components must use hyphens, not underscores."
+                    )
                 # key is None for literal text; '' for positional {}; digit-only
                 # strings for explicit positional indices like {0:02d} — all fine.
                 if key and not key.isdigit() and key not in valid_keys:
@@ -654,7 +660,7 @@ class CATioServerController(CATioController):
         pairs are forwarded as additional keyword arguments.
         """
         try:
-            return template.format(index, n=index, **context)
+            result = template.format(index, n=index, **context)
         except KeyError as err:
             raise ValueError(
                 f"Unknown placeholder {err} in name mapping template {template!r}. "
@@ -664,6 +670,14 @@ class CATioServerController(CATioController):
             raise ValueError(
                 f"Invalid name mapping template {template!r}: {err}"
             ) from err
+        if "_" in result:
+            raise ValueError(
+                f"Rendered PV name segment {result!r} contains an underscore. "
+                "PV name components must use hyphens, not underscores. "
+                "Check that the 'id' / 'pv_prefix' value and all name_mappings "
+                "templates use hyphens."
+            )
+        return result
 
     def _resolve_controller_name_and_path(
         self,
