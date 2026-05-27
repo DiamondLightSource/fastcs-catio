@@ -365,15 +365,15 @@ class TestTrimEcatName:
 
     def test_trim_name_with_hyphens(self):
         """Test trimming hyphenated module names (e.g. EPICS device names)."""
-        result = trim_ecat_name("BL04I-EA-ERIO-01")
-        assert result == "Bl04iEaErio01"
+        result = trim_ecat_name("BL04I-EA-E1RIO-01")
+        assert result == "Bl04iEaE1rio01"
 
     def test_trim_name_with_hyphens_different_numbers(self):
         """Test that different numeric suffixes produce different results."""
-        result1 = trim_ecat_name("BL04I-EA-ERIO-01")
-        result2 = trim_ecat_name("BL04I-EA-ERIO-02")
-        assert result1 == "Bl04iEaErio01"
-        assert result2 == "Bl04iEaErio02"
+        result1 = trim_ecat_name("BL04I-EA-E1RIO-01")
+        result2 = trim_ecat_name("BL04I-EA-E1RIO-02")
+        assert result1 == "Bl04iEaE1rio01"
+        assert result2 == "Bl04iEaE1rio02"
         assert result1 != result2
 
     def test_trim_empty_name(self):

@@ -167,10 +167,7 @@ For example:
 | `CATIO:IOServer:ETH1:RIO1:MOD5:Value` | Value from module 5 on remote I/O node 1 |
 | `CATIO:IOServer:ETH1:RIO1:MOD5:EcatState` | EtherCAT state of that module |
 
-The naming components come from:
-
-- **ecat_name**: The name configured in TwinCAT (e.g., "Device1", "Term 5 (EL3064)")
-- **get_type_name()**: A method that converts Beckhoff names to PV-friendly format (e.g., "ETH1", "RIO1", "MOD5")
+The naming components come from the `CATioNameMappings` templates configured in the YAML (e.g., `device_prefix`, `node_prefix`, `module_prefix`).
 
 ## Lifecycle Management
 

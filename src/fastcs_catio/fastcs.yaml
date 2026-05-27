@@ -21,5 +21,4 @@ controllers:
 transport:
   - epicsca: {}
     gui:
-      title: "CATio Demo"
       output_dir: ./screens

@@ -186,7 +186,7 @@ def trim_ecat_name(name: str) -> str:
        (``"Term2"``).
     2. **General sanitization**: if the result still contains characters
        outside the fastcs pattern ``^([A-Z][a-z0-9]*)*$`` (e.g. hyphens
-       as in ``"BL04I-EA-ERIO-01"``), the name is split on every run of
+       as in ``"BL04I-EA-E1RIO-01"``), the name is split on every run of
        non-alphanumeric characters. Letter-starting segments are
        title-cased. Numeric-only segments are appended to the last
        letter-starting segment to preserve them and avoid collisions.
@@ -198,8 +198,8 @@ def trim_ecat_name(name: str) -> str:
     Examples:
         >>> trim_ecat_name("Term 2 (EK1110)")
         'Term2'
-        >>> trim_ecat_name("BL04I-EA-ERIO-01")
-        'Bl04iEaErio01'
+        >>> trim_ecat_name("BL04I-EA-E1RIO-01")
+        'Bl04iEaE1rio01'
         >>> trim_ecat_name("Device_Name_With_Underscores")
         'DeviceNameWithUnderscores'
         >>> trim_ecat_name("")
@@ -321,9 +321,9 @@ def make_node_prefix(parent_path: list[str], substitution: str) -> list[str]:
     """
     Create a node prefix for the CATio controller based on the parent path.
     If the server prefix matches the beamline pattern, the substitution string is used \
-        to create a new prefix based on that pattern (e.g. "BL04I-EA-ERIO-01").
+        to create a new prefix based on that pattern (e.g. "BL04I-EA-E1RIO-01").
     Otherwise, the substitution is simply appended to the parent path \
-        (e.g. "BL04I-EA-CATIO-01:ETH1:ERIO1").
+        (e.g. "BL04I-EA-CATIO-01:ETH1:E1RIO1").
 
     :param parent_path: the parent path provided by the user
     :param substitution: the substitution string to use if the server prefix matches \
