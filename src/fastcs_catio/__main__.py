@@ -23,6 +23,7 @@ from fastcs_catio.terminal_config import set_terminal_types_patterns
 
 from . import __version__
 from .catio_controller import (
+    CATioNameMappings,
     CATioRouteSettings,
     CATioScanTimings,
     CATioServerController,
@@ -117,6 +118,36 @@ def ioc(
             rich_help_panel="Secondary Arguments",
         ),
     ] = Path("./screens"),
+    device_prefix: Annotated[
+        str,
+        typer.Option(
+            help=(
+                "Name template for the EtherCAT device (coupler) controller. "
+                "Supports {} / {n:02d} (numeric index) and {id} (IOC root prefix)."
+            ),
+            rich_help_panel="Name Mappings",
+        ),
+    ] = CATioNameMappings.device_prefix,
+    node_prefix: Annotated[
+        str,
+        typer.Option(
+            help=(
+                "Name template for EtherCAT node (Box/E-bus) controllers. "
+                "Supports {} / {n:02d}, {id}, and {device_prefix}."
+            ),
+            rich_help_panel="Name Mappings",
+        ),
+    ] = CATioNameMappings.node_prefix,
+    module_prefix: Annotated[
+        str,
+        typer.Option(
+            help=(
+                "Name template for module controllers inside a node. "
+                "Supports {} / {n:02d}, {id}, {device_prefix}, and {node_prefix}."
+            ),
+            rich_help_panel="Name Mappings",
+        ),
+    ] = CATioNameMappings.module_prefix,
 ):
     """
     Run the EtherCAT IOC with the given PREFIX on a HOST server, e.g.
@@ -178,6 +209,11 @@ def ioc(
         scan_timings=CATioScanTimings(
             poll_period=poll_period,
             notification_period=notification_period,
+        ),
+        name_mappings=CATioNameMappings(
+            device_prefix=device_prefix,
+            node_prefix=node_prefix,
+            module_prefix=module_prefix,
         ),
     )
     controller = CATioServerController(options, path=[pv_prefix])
