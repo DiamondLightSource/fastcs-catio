@@ -26,6 +26,8 @@ from fastcs_catio.catio_connection import (
     CATioServerConnectionSettings,
 )
 from fastcs_catio.catio_controller import CATioNameMappings, CATioServerController
+from fastcs_catio.catio_hardware import get_supported_devices
+from fastcs_catio.client import AsyncioADSClient
 from fastcs_catio.devices import (
     AdsSymbol,
     AdsSymbolNode,
@@ -1455,3 +1457,84 @@ class TestCATioFastCSResponse:
         # Verify string representation
         str_repr = response.to_string()
         assert "status" in str_repr or "ok" in str_repr
+
+
+class TestGetSupportedDevices:
+    """Tests for the get_supported_devices utility."""
+
+    def test_does_not_raise(self):
+        """get_supported_devices() must be callable with no arguments."""
+        get_supported_devices()  # must not raise TypeError or any other exception
+
+
+class TestEtherCATChainCategorisation:
+    """Unit tests for _get_ethercat_chains slave categorisation."""
+
+    def _make_client_with_device(self, slaves: list[IOSlave]) -> AsyncioADSClient:
+        """Build a minimal AsyncioADSClient with one IODevice injected."""
+        identity = IOIdentity(
+            vendor_id=1, product_code=2, revision_number=3, serial_number=4
+        )
+        frames = DeviceFrames(
+            time=0, cyclic_sent=0, cyclic_lost=0, acyclic_sent=0, acyclic_lost=0
+        )
+        device = IODevice(
+            id=1,
+            type=DeviceType.IODEVICETYPE_ETHERCAT,
+            name="TestDevice",
+            netid=AmsNetId.from_string("127.0.0.1.1.1"),
+            identity=identity,
+            frame_counters=frames,
+            slave_count=len(slaves),
+            slaves_states=[],
+            slaves_crc_counters=[],
+            slaves=slaves,
+        )
+        client = object.__new__(AsyncioADSClient)
+        client._ecdevices = {1: device}
+        return client
+
+    def _make_slave(self, slave_type: str) -> IOSlave:
+        return IOSlave(
+            parent_device=1,
+            type=slave_type,
+            name=slave_type,
+            address=1000,
+            identity=IOIdentity(
+                vendor_id=1, product_code=2, revision_number=3, serial_number=4
+            ),
+            states=SlaveState(ecat_state=0, link_status=0),
+            crcs=SlaveCRC(port_a_crc=0, port_b_crc=0, port_c_crc=0, port_d_crc=0),
+            loc_in_chain=ChainLocation(node=0, position=0),
+            category=IONodeType.Slave,
+        )
+
+    @pytest.mark.asyncio
+    async def test_box_slave_is_categorised_as_box(self):
+        """A slave whose type matches _BOX_TYPE_RE is classified as IONodeType.Box."""
+        box_slave = self._make_slave("EP2308")  # matches E[PQR]P?\d{4}
+        client = self._make_client_with_device([box_slave])
+
+        await client._get_ethercat_chains()
+
+        assert box_slave.category == IONodeType.Box
+
+    @pytest.mark.asyncio
+    async def test_coupler_slave_is_categorised_as_coupler(self):
+        """A slave of type EK1100 must be classified as IONodeType.Coupler."""
+        coupler_slave = self._make_slave("EK1100")
+        client = self._make_client_with_device([coupler_slave])
+
+        await client._get_ethercat_chains()
+
+        assert coupler_slave.category == IONodeType.Coupler
+
+    @pytest.mark.asyncio
+    async def test_plain_slave_keeps_slave_category(self):
+        """A plain terminal must retain its IONodeType.Slave category."""
+        plain_slave = self._make_slave("EL2004")
+        client = self._make_client_with_device([plain_slave])
+
+        await client._get_ethercat_chains()
+
+        assert plain_slave.category == IONodeType.Slave

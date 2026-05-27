@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import itertools
 import re
 import socket
 from collections.abc import Callable, Iterable
@@ -17,7 +16,6 @@ logger = getLogger(__name__)
 
 
 _FASTCS_GROUP_NAME_RE = re.compile(r"^([A-Z][a-z0-9]*)*$")
-_BEAMLINE_NAME_RE = re.compile(r"^(BL[0-9]+[A-Z])-([A-Z]+)-([A-Z]+)-([0-9]+)")
 
 
 def get_localhost_name() -> str:
@@ -315,36 +313,3 @@ def get_parent_class_attributes(cls: type) -> dict[str, object]:
         for k, v in attributes.items()
         if not (k.startswith("__") or inspect.isfunction(v) or inspect.ismethod(v))
     }
-
-
-def make_node_prefix(parent_path: list[str], substitution: str) -> list[str]:
-    """
-    Create a node prefix for the CATio controller based on the parent path.
-    If the server prefix matches the beamline pattern, the substitution string is used \
-        to create a new prefix based on that pattern (e.g. "BL04I-EA-E1RIO-01").
-    Otherwise, the substitution is simply appended to the parent path \
-        (e.g. "BL04I-EA-CATIO-01:ETH1:E1RIO1").
-
-    :param parent_path: the parent path provided by the user
-    :param substitution: the substitution string to use if the server prefix matches \
-        the beamline pattern
-
-    :returns: a list of strings representing the node path for the controller
-    """
-    server_prefix = parent_path[0]
-    if _BEAMLINE_NAME_RE.match(server_prefix):
-        formatted_sub = "-".join(
-            p.zfill(2) if p.isdigit() else p
-            for p in [
-                "".join(x) for _, x in itertools.groupby(substitution, key=str.isdigit)
-            ]
-        )
-        return [
-            re.sub(
-                _BEAMLINE_NAME_RE,
-                r"\1-\2-" + formatted_sub,
-                server_prefix,
-            )
-        ]
-
-    return parent_path + [substitution]

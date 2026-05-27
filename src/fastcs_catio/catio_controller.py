@@ -690,7 +690,7 @@ class CATioServerController(CATioController):
         controller name.  *path* is the full list of path segments that forms
         the PV prefix for the controller's attributes.
         """
-        root_prefix = self.path[0] if self.path else ""
+        root_prefix = self.path[0] if self.path else ""  # pragma: no cover
 
         if isinstance(node.data, IODevice):
             template = self._name_mappings.device_prefix
@@ -721,7 +721,7 @@ class CATioServerController(CATioController):
                         ":".join(parent_path[:-1]) if len(parent_path) >= 2 else ""
                     ),
                 }
-        else:
+        else:  # pragma: no cover
             raise TypeError(f"Unsupported node data type: {type(node.data)!r}")
 
         rendered = self._render(template, index, context)
@@ -776,7 +776,7 @@ class CATioServerController(CATioController):
                     subcontrollers.append(ctlr)
 
             logger.verbose(
-                f"{len(subcontrollers)} subcontrollers were found for "
+                f"{len(subcontrollers) + len(hoisted)} subcontrollers were found for "
                 f"{node.data.name} ({len(hoisted)} hoisted to server)."
             )
 

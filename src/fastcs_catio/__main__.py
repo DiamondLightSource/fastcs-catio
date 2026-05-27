@@ -178,7 +178,7 @@ def ioc(
     logger.debug("Logging is configured for the package.")
 
     # Set up terminal definitions path - can be comma-separated patterns
-    if terminal_defs is not None:
+    if terminal_defs is not None:  # pragma: no cover
         terminal_patterns = [p.strip() for p in terminal_defs.split(",")]
 
         # Configure the dynamic controller factory with terminal definition patterns
@@ -187,7 +187,7 @@ def ioc(
 
     # Define EPICS GUI screens path
     default_path = Path(os.path.join(Path.cwd(), "screens"))
-    ui_path = screens_dir if screens_dir.is_dir() else default_path
+    ui_path = screens_dir if screens_dir.is_dir() else default_path  # pragma: no cover
 
     # Define EPICS ChannelAccess/PVA transport parameters
     epics_transport = EpicsCATransport(

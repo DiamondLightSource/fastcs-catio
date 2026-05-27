@@ -1175,11 +1175,11 @@ SUPPORTED_DEVICE_CONTROLLERS: dict[
 }
 
 
-def get_supported_devices(self) -> None:
+def get_supported_devices() -> None:
     """
-    Log the list of I/O ETherCAT devices currently supported by the CATio driver.
+    Log the list of I/O EtherCAT devices currently supported by the CATio driver.
     """
     logger.info(
-        "List of I/O ETherCAT devices currently supported by the CATio driver:\n "
+        "List of I/O EtherCAT devices currently supported by the CATio driver:\n "
         + f"{list(SUPPORTED_DEVICE_CONTROLLERS.keys())}"
     )
