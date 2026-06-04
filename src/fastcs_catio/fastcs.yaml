@@ -22,3 +22,5 @@ transport:
   - epicsca: {}
     gui:
       output_dir: ./screens
+      title: "BL04I: DCM heater + fluorescent screens"
+  # - epicspva: {}

@@ -762,15 +762,14 @@ class CATioServerController(CATioController):
                 ctlr = await self.get_subcontrollers_from_node(child, current_path)
                 assert (ctlr is not None) and (isinstance(ctlr, CATioController))
                 # Hoist couplers/boxes with a root-level (1-segment) path to the
-                # server so PVI can render them as inline Grid groups on the top-level
-                # screen.  Multi-segment paths stay as SubScreen children of the device.
+                # server so they get their own top-level screen in the index.
+                # Multi-segment paths stay as SubScreen children of the device.
                 if (
                     isinstance(node.data, IODevice)
                     and isinstance(child.data, IOSlave)
                     and child.data.category in (IONodeType.Coupler, IONodeType.Box)
                     and len(ctlr.path) == 1
                 ):
-                    ctlr.group_layout = GroupLayout.INLINE
                     hoisted.append(ctlr)
                 else:
                     subcontrollers.append(ctlr)
