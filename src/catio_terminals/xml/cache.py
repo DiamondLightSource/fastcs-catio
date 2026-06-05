@@ -87,12 +87,13 @@ class XmlCache:
         try:
             if not self.zip_file.exists():
                 logger.info(f"Downloading Beckhoff XML files from {XML_DOWNLOAD_URL}")
-                response = self.client.get(XML_DOWNLOAD_URL)
-                response.raise_for_status()
+                with self.client.stream("GET", XML_DOWNLOAD_URL) as response:
+                    response.raise_for_status()
+                    content = response.read()
 
                 with self.zip_file.open("wb") as f:
-                    f.write(response.content)
-                logger.info(f"Downloaded {len(response.content)} bytes")
+                    f.write(content)
+                logger.info(f"Downloaded {len(content)} bytes")
 
             logger.info(f"Extracting XML files to {self.xml_dir}")
             self.xml_dir.mkdir(parents=True, exist_ok=True)
