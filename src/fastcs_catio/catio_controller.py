@@ -738,11 +738,17 @@ class CATioServerController(CATioController):
         Once registered, each subcontroller is then initialised
         (attributes are created).
 
-        Couplers/boxes whose resolved path is a single segment (i.e. they have a
-        beamline-level PV prefix such as ``BL04I-EA-E1RIO-01``) are *hoisted*:
-        they are registered as direct sub-controllers of the server rather than
-        of the device, so that PVI can render them inline on the top-level screen
-        instead of nesting a Grid inside a SubScreen (which PVI forbids).
+        When a device node is encountered, its slave children are *hoisted* to the
+        server so that PVI renders them at the server-screen level rather than inside
+        the device's inline Grid box:
+
+        - Couplers/boxes whose resolved path has exactly one segment (i.e. a
+          beamline-level PV prefix such as ``BL04I-EA-E1RIO-01``) are hoisted so
+          they get their own top-level screen file and index entry.
+        - Slave terminals (modules, e.g. ``MOD01``) are always hoisted so they
+          appear as SubScreen navigation buttons directly on the combined
+          server+device screen, rather than nested inside the device's Grid box.
+        - Multi-segment coupler/box paths stay as SubScreen children of the device.
 
         :param node: the tree node to extract available subcontrollers from.
 
@@ -761,18 +767,37 @@ class CATioServerController(CATioController):
             for child in node.children:
                 ctlr = await self.get_subcontrollers_from_node(child, current_path)
                 assert (ctlr is not None) and (isinstance(ctlr, CATioController))
-                # Hoist couplers/boxes with a root-level (1-segment) path to the
-                # server so they get their own top-level screen in the index.
-                # Multi-segment paths stay as SubScreen children of the device.
-                if (
-                    isinstance(node.data, IODevice)
-                    and isinstance(child.data, IOSlave)
-                    and child.data.category in (IONodeType.Coupler, IONodeType.Box)
-                    and len(ctlr.path) == 1
-                ):
-                    hoisted.append(ctlr)
+
+                # Hoist to the server (registered via self.add_sub_controller) so
+                # that they appear at the server-screen level rather than nested
+                # inside the device's inline Grid box:
+                #   • Couplers/boxes with a root-level (1-segment) path get their
+                #     own top-level screen and index entry.
+                #   • Slave terminals (modules) which are directly attached to
+                #     the device (via Ebus) become SubScreen navigation buttons
+                #     directly on the server+device combined screen.
+                # Multi-segment coupler/box paths stay as SubScreen children of
+                # the device (they have their own PV prefix hierarchy).
+                if isinstance(node.data, IODevice) and isinstance(child.data, IOSlave):
+                    if (
+                        child.data.category in (IONodeType.Coupler, IONodeType.Box)
+                        and len(ctlr.path) == 1
+                    ) or child.data.category == IONodeType.Slave:
+                        hoisted.append(ctlr)
+                    else:
+                        subcontrollers.append(ctlr)
                 else:
                     subcontrollers.append(ctlr)
+
+                # Set the layout of device controllers to INLINE so that they appear
+                # in the same screen file as the server and not in a separate SubScreen
+                # (which would be the default for a subcontroller).
+                if (
+                    isinstance(node.data, IOServer)
+                    and isinstance(child.data, IODevice)
+                    and child.data.category == IONodeType.Device
+                ):
+                    ctlr.group_layout = GroupLayout.INLINE
 
             logger.verbose(
                 f"{len(subcontrollers) + len(hoisted)} subcontrollers were found for "
