@@ -9815,3 +9815,427 @@ terminal_types:
           - 3
           - 4
     selected_pdo_group: Standard
+  EL3314-0002:
+    description: 4Ch. Ana Input Thermocouple (TC), Isolated Channels
+    identity:
+      vendor_id: 2
+      product_code: 217198674
+      revision_number: 1048578
+    symbol_nodes:
+      - name_template: TC Inputs Channel {channel}.Status__Limit 1
+        index_group: 61489
+        type_name: BIT2
+        channels: 4
+        access: Read-only
+        fastcs_name: tc_inputs_ch_{channel}_sts_lim_1
+        selected: true
+        bit_offset: 2
+      - name_template: TC Inputs Channel {channel}.Status__Limit 2
+        index_group: 61489
+        type_name: BIT2
+        channels: 4
+        access: Read-only
+        fastcs_name: tc_inputs_ch_{channel}_sts_lim_2
+        selected: true
+        bit_offset: 4
+      - name_template: TC Inputs Channel {channel}.Value
+        index_group: 61489
+        type_name: DINT
+        channels: 4
+        access: Read-only
+        fastcs_name: tc_inputs_channel_{channel}_value
+        selected: true
+        bit_offset: 16
+      - name_template: TC Outputs Channel {channel}.CJCompensation
+        index_group: 61473
+        type_name: INT
+        channels: 4
+        access: Read/Write
+        fastcs_name: tc_outputs_ch_{channel}_cjcompensation
+        selected: false
+        bit_offset: 0
+    coe_objects:
+      - index: 32768
+        name: TC Settings Ch.1
+        type_name: DT8000
+        bit_size: 224
+        access: rw
+        subindices:
+          - subindex: 1
+            name: Enable user scale
+            type_name: BOOL
+            access: rw
+          - subindex: 2
+            name: Presentation
+            type_name: DT0800EN03
+            bit_size: 3
+            access: rw
+            default_data: '02'
+          - subindex: 5
+            name: Siemens bits
+            type_name: BOOL
+            access: rw
+          - subindex: 6
+            name: Enable filter
+            type_name: BOOL
+            access: rw
+          - subindex: 7
+            name: Enable limit 1
+            type_name: BOOL
+            access: rw
+          - subindex: 8
+            name: Enable limit 2
+            type_name: BOOL
+            access: rw
+          - subindex: 10
+            name: Enable user calibration
+            type_name: BOOL
+            access: rw
+          - subindex: 11
+            name: Enable vendor calibration
+            type_name: BOOL
+            access: rw
+            default_data: '01'
+          - subindex: 12
+            name: Coldjunction compensation
+            type_name: DT0801EN02
+            bit_size: 2
+            access: rw
+          - subindex: 14
+            name: Disable wire break detection
+            type_name: BOOL
+            access: rw
+          - subindex: 17
+            name: User scale offset
+            type_name: INT
+            access: rw
+          - subindex: 18
+            name: User scale gain
+            type_name: DINT
+            access: rw
+            default_data: '00000100'
+          - subindex: 19
+            name: Limit 1
+            type_name: DINT
+            access: rw
+          - subindex: 20
+            name: Limit 2
+            type_name: DINT
+            access: rw
+          - subindex: 21
+            name: Filter settings
+            type_name: DT0802EN16
+            bit_size: 16
+            access: rw
+            default_data: '1400'
+          - subindex: 23
+            name: User calibration offset
+            type_name: INT
+            access: rw
+          - subindex: 24
+            name: user calibration gain
+            type_name: UINT
+            access: rw
+            default_data: ffff
+          - subindex: 25
+            name: TC Element
+            type_name: DT0803EN16
+            bit_size: 16
+            access: rw
+          - subindex: 26
+            name: MC Filter
+            type_name: DT0804EN16
+            bit_size: 16
+            access: rw
+      - index: 32784
+        name: TC Settings Ch.2
+        type_name: DT8000
+        bit_size: 224
+        access: rw
+        subindices:
+          - subindex: 1
+            name: Enable user scale
+            type_name: BOOL
+            access: rw
+          - subindex: 2
+            name: Presentation
+            type_name: DT0800EN03
+            bit_size: 3
+            access: rw
+            default_data: '02'
+          - subindex: 5
+            name: Siemens bits
+            type_name: BOOL
+            access: rw
+          - subindex: 6
+            name: Enable filter
+            type_name: BOOL
+            access: rw
+          - subindex: 7
+            name: Enable limit 1
+            type_name: BOOL
+            access: rw
+          - subindex: 8
+            name: Enable limit 2
+            type_name: BOOL
+            access: rw
+          - subindex: 10
+            name: Enable user calibration
+            type_name: BOOL
+            access: rw
+          - subindex: 11
+            name: Enable vendor calibration
+            type_name: BOOL
+            access: rw
+            default_data: '01'
+          - subindex: 12
+            name: Coldjunction compensation
+            type_name: DT0801EN02
+            bit_size: 2
+            access: rw
+          - subindex: 14
+            name: Disable wire break detection
+            type_name: BOOL
+            access: rw
+          - subindex: 17
+            name: User scale offset
+            type_name: INT
+            access: rw
+          - subindex: 18
+            name: User scale gain
+            type_name: DINT
+            access: rw
+            default_data: '00000100'
+          - subindex: 19
+            name: Limit 1
+            type_name: DINT
+            access: rw
+          - subindex: 20
+            name: Limit 2
+            type_name: DINT
+            access: rw
+          - subindex: 21
+            name: Filter settings
+            type_name: DT0802EN16
+            bit_size: 16
+            access: rw
+            default_data: '1400'
+          - subindex: 23
+            name: User calibration offset
+            type_name: INT
+            access: rw
+          - subindex: 24
+            name: user calibration gain
+            type_name: UINT
+            access: rw
+            default_data: ffff
+          - subindex: 25
+            name: TC Element
+            type_name: DT0803EN16
+            bit_size: 16
+            access: rw
+          - subindex: 26
+            name: MC Filter
+            type_name: DT0804EN16
+            bit_size: 16
+            access: rw
+      - index: 32800
+        name: TC Settings Ch.3
+        type_name: DT8000
+        bit_size: 224
+        access: rw
+        subindices:
+          - subindex: 1
+            name: Enable user scale
+            type_name: BOOL
+            access: rw
+          - subindex: 2
+            name: Presentation
+            type_name: DT0800EN03
+            bit_size: 3
+            access: rw
+            default_data: '02'
+          - subindex: 5
+            name: Siemens bits
+            type_name: BOOL
+            access: rw
+          - subindex: 6
+            name: Enable filter
+            type_name: BOOL
+            access: rw
+          - subindex: 7
+            name: Enable limit 1
+            type_name: BOOL
+            access: rw
+          - subindex: 8
+            name: Enable limit 2
+            type_name: BOOL
+            access: rw
+          - subindex: 10
+            name: Enable user calibration
+            type_name: BOOL
+            access: rw
+          - subindex: 11
+            name: Enable vendor calibration
+            type_name: BOOL
+            access: rw
+            default_data: '01'
+          - subindex: 12
+            name: Coldjunction compensation
+            type_name: DT0801EN02
+            bit_size: 2
+            access: rw
+          - subindex: 14
+            name: Disable wire break detection
+            type_name: BOOL
+            access: rw
+          - subindex: 17
+            name: User scale offset
+            type_name: INT
+            access: rw
+          - subindex: 18
+            name: User scale gain
+            type_name: DINT
+            access: rw
+            default_data: '00000100'
+          - subindex: 19
+            name: Limit 1
+            type_name: DINT
+            access: rw
+          - subindex: 20
+            name: Limit 2
+            type_name: DINT
+            access: rw
+          - subindex: 21
+            name: Filter settings
+            type_name: DT0802EN16
+            bit_size: 16
+            access: rw
+            default_data: '1400'
+          - subindex: 23
+            name: User calibration offset
+            type_name: INT
+            access: rw
+          - subindex: 24
+            name: user calibration gain
+            type_name: UINT
+            access: rw
+            default_data: ffff
+          - subindex: 25
+            name: TC Element
+            type_name: DT0803EN16
+            bit_size: 16
+            access: rw
+          - subindex: 26
+            name: MC Filter
+            type_name: DT0804EN16
+            bit_size: 16
+            access: rw
+      - index: 32816
+        name: TC Settings Ch.4
+        type_name: DT8000
+        bit_size: 224
+        access: rw
+        subindices:
+          - subindex: 1
+            name: Enable user scale
+            type_name: BOOL
+            access: rw
+          - subindex: 2
+            name: Presentation
+            type_name: DT0800EN03
+            bit_size: 3
+            access: rw
+            default_data: '02'
+          - subindex: 5
+            name: Siemens bits
+            type_name: BOOL
+            access: rw
+          - subindex: 6
+            name: Enable filter
+            type_name: BOOL
+            access: rw
+          - subindex: 7
+            name: Enable limit 1
+            type_name: BOOL
+            access: rw
+          - subindex: 8
+            name: Enable limit 2
+            type_name: BOOL
+            access: rw
+          - subindex: 10
+            name: Enable user calibration
+            type_name: BOOL
+            access: rw
+          - subindex: 11
+            name: Enable vendor calibration
+            type_name: BOOL
+            access: rw
+            default_data: '01'
+          - subindex: 12
+            name: Coldjunction compensation
+            type_name: DT0801EN02
+            bit_size: 2
+            access: rw
+          - subindex: 14
+            name: Disable wire break detection
+            type_name: BOOL
+            access: rw
+          - subindex: 17
+            name: User scale offset
+            type_name: INT
+            access: rw
+          - subindex: 18
+            name: User scale gain
+            type_name: DINT
+            access: rw
+            default_data: '00000100'
+          - subindex: 19
+            name: Limit 1
+            type_name: DINT
+            access: rw
+          - subindex: 20
+            name: Limit 2
+            type_name: DINT
+            access: rw
+          - subindex: 21
+            name: Filter settings
+            type_name: DT0802EN16
+            bit_size: 16
+            access: rw
+            default_data: '1400'
+          - subindex: 23
+            name: User calibration offset
+            type_name: INT
+            access: rw
+          - subindex: 24
+            name: user calibration gain
+            type_name: UINT
+            access: rw
+            default_data: ffff
+          - subindex: 25
+            name: TC Element
+            type_name: DT0803EN16
+            bit_size: 16
+            access: rw
+          - subindex: 26
+            name: MC Filter
+            type_name: DT0804EN16
+            bit_size: 16
+            access: rw
+    group_type: AnaIn
+    pdo_groups:
+      - name: standard
+        is_default: true
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+      - name: external coldjunction compensation
+        is_default: false
+        symbol_indices:
+          - 0
+          - 1
+          - 2
+          - 3
+    selected_pdo_group: standard
