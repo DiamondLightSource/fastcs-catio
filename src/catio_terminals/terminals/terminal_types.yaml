@@ -1516,7 +1516,7 @@ terminal_types:
             access: rw
             default_data: '0040'
     group_type: AnaIn
-    group_alias: AI
+    group_alias: 10VAI
     pdo_groups:
       - name: Standard
         is_default: true
@@ -3915,7 +3915,7 @@ terminal_types:
             access: rw
             default_data: '00409400'
     group_type: AnaIn
-    group_alias: AI
+    group_alias: 10VAI
   EL3702:
     description: 2-channel Analog Input 16-bit Oversampling
     identity:
@@ -4307,7 +4307,7 @@ terminal_types:
             access: rw
             default_data: ffff
     group_type: AnaOut
-    group_alias: AO
+    group_alias: 10VAO
   EL4732:
     description: 2Ch. Ana. Output +/-10V, Oversample
     identity:
@@ -4349,7 +4349,7 @@ terminal_types:
         bit_offset: 16
     coe_objects: []
     group_type: AnaOut
-    group_alias: AO
+    group_alias: 10VAO
   EL9410:
     description: E-Bus Power Supply
     identity:
@@ -7309,7 +7309,7 @@ terminal_types:
         access: rw
         subindices: []
     group_type: AnaIn
-    group_alias: AI
+    group_alias: 60VAI
     pdo_groups:
       - name: Oversampling 1 (24Bit)
         is_default: true
@@ -8035,7 +8035,7 @@ terminal_types:
             bit_size: 16
             access: rw
     group_type: AnaIn
-    group_alias: AI
+    group_alias: 10VAI
     pdo_groups:
       - name: Standard
         is_default: true
@@ -9714,7 +9714,7 @@ terminal_types:
             access: rw
             default_data: '0040'
     group_type: AnaOut
-    group_alias: AO
+    group_alias: 10VAO
   EL1004:
     description: 4Ch. Dig. Input 24V, 3ms
     identity:
@@ -10268,7 +10268,7 @@ terminal_types:
             access: rw
             default_data: '0040'
     group_type: FieldbusBoxEP4xxx
-    group_alias: BOX
+    group_alias: 10VBOX
     pdo_groups:
       - name: Standard
         is_default: true

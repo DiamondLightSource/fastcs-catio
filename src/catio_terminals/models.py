@@ -54,13 +54,11 @@ GROUP_TYPE_ALIASES: dict[str, str] = {
     "Other": "OTH",
 }
 
-# Capture a 1- or 2-digit supply voltage from a terminal description. Matches
-# patterns like "24V DC", "24V,", or trailing "24V"; rejects measurement-range
-# forms ("+/-10V", "0-10V") by excluding leading +, -, / or digit chars.
-_SUPPLY_VOLTAGE_RE = re.compile(
-    r"(?<![\d/+\-])\b(\d{1,2})V(?=\s+DC\b|,|\s*\)|\s*$)",
-    re.IGNORECASE,
-)
+# Capture a 1- or 2-digit voltage from a terminal description. Matches
+# digital supply forms ("24V DC", "24V,"), bipolar/unipolar analog ranges
+# ("+/-10V", "0-10V"), and trailing "24V". Word boundaries prevent picking
+# up 2-digit substrings of 3+-digit numbers like "125V".
+_SUPPLY_VOLTAGE_RE = re.compile(r"\b(\d{1,2})V\b", re.IGNORECASE)
 
 
 def compute_group_alias(description: str | None, group_type: str | None) -> str | None:
