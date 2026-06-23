@@ -1,11 +1,86 @@
 """Data models for terminal description YAML files."""
 
+import re
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
 from catio_terminals.ads_types import get_type_info
 from catio_terminals.utils import make_fastcs_name, make_subindex_fastcs_name
+
+# Short aliases for terminal group_types, used to derive PV-name fragments.
+# These are hand-picked guesses; feel free to edit. compute_group_alias()
+# concatenates an optional voltage prefix (e.g. "24V") with the short name.
+# Beckhoff's catalog splits "Fieldbus Box" into many EPxxxx/EPPxxxx/EPXxxxx
+# sub-buckets; per project convention every box variant collapses to "BOX".
+GROUP_TYPE_ALIASES: dict[str, str] = {
+    "AnaIn": "AI",
+    "AnaOut": "AO",
+    "AnaOutFast": "AO",
+    "DigIn": "DI",
+    "DigOut": "DO",
+    "CpBk": "CPL",
+    "SystemBk": "SYS",
+    "EJ_Coupler": "CPL",
+    "PowerSupply": "PSU",
+    "Measuring": "MSR",
+    "Multifunction": "MUL",
+    "Communication": "COM",
+    "System": "SYS",
+    "Safety": "SAF",
+    "SafetyTerminals": "SAF",
+    "SafetyCoupler": "SAF",
+    "SafetyFieldbusBoxes": "BOX",
+    "FieldbusBoxEP": "BOX",
+    "FieldbusBoxEP1xxx": "BOX",
+    "FieldbusBoxEP2xxx": "BOX",
+    "FieldbusBoxEP3xxx": "BOX",
+    "FieldbusBoxEP4xxx": "BOX",
+    "FieldbusBoxEP5xxx": "BOX",
+    "FieldbusBoxEP6xxx": "BOX",
+    "FieldbusBoxEP7xxx": "BOX",
+    "FieldbusBoxEP8xxx": "BOX",
+    "FieldbusBoxEPP1xxx": "BOX",
+    "FieldbusBoxEPP2xxx": "BOX",
+    "FieldbusBoxEPP3xxx": "BOX",
+    "FieldbusBoxEPP4xxx": "BOX",
+    "FieldbusBoxEPP5xxx": "BOX",
+    "FieldbusBoxEPP6xxx": "BOX",
+    "FieldbusBoxEPP7xxx": "BOX",
+    "FieldbusBoxEPX1xxx": "BOX",
+    "EKM": "EKM",
+    "ELM": "MSR",
+    "DriveAxisTerminals": "DRV",
+    "Other": "OTH",
+}
+
+# Capture a 1- or 2-digit supply voltage from a terminal description. Matches
+# patterns like "24V DC", "24V,", or trailing "24V"; rejects measurement-range
+# forms ("+/-10V", "0-10V") by excluding leading +, -, / or digit chars.
+_SUPPLY_VOLTAGE_RE = re.compile(
+    r"(?<![\d/+\-])\b(\d{1,2})V(?=\s+DC\b|,|\s*\)|\s*$)",
+    re.IGNORECASE,
+)
+
+
+def compute_group_alias(description: str | None, group_type: str | None) -> str | None:
+    """Build the short PV-name alias from a terminal's description and group.
+
+    The result is `<NN>V<SHORT>` when a supply voltage is present in the
+    description, otherwise just `<SHORT>`. Returns None if no group_type
+    abbreviation is known and no voltage is found.
+    """
+    parts: list[str] = []
+    if description:
+        m = _SUPPLY_VOLTAGE_RE.search(description)
+        if m:
+            parts.append(f"{int(m.group(1)):02d}V")
+    if group_type:
+        short = GROUP_TYPE_ALIASES.get(group_type)
+        if short:
+            parts.append(short)
+    return "".join(parts) if parts else None
+
 
 # CoE subindex bit sizes for primitive types. Distinct from ads_types.TYPE_INFO
 # because that table stores bytes (and 0 for bit-addressed types), while CoE
@@ -372,6 +447,13 @@ class TerminalType(BaseModel):
         default_factory=list, description="CoE object dictionary"
     )
     group_type: str | None = Field(default=None, description="Terminal group type")
+    group_alias: str | None = Field(
+        default=None,
+        description=(
+            "Short PV-name fragment derived from description (supply voltage) "
+            "and group_type. Recomputed on load; do not hand-edit."
+        ),
+    )
     pdo_groups: list[PdoGroup] = Field(
         default_factory=list,
         description="Mutually exclusive PDO groups (empty = static PDOs)",
@@ -380,6 +462,11 @@ class TerminalType(BaseModel):
         default=None,
         description="Currently selected PDO group name (None = all symbols available)",
     )
+
+    @model_validator(mode="after")
+    def _recompute_group_alias(self) -> "TerminalType":
+        self.group_alias = compute_group_alias(self.description, self.group_type)
+        return self
 
     @property
     def has_dynamic_pdos(self) -> bool:
