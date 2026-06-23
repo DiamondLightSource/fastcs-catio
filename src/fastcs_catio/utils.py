@@ -226,6 +226,34 @@ def trim_ecat_name(name: str) -> str:
     return name
 
 
+def max_attribute_name_length(path: list[str], *, is_rw: bool) -> int:
+    """Max snake-case attribute name length that fits the EPICS PV budget.
+
+    Computes the budget from the controller's PV prefix (derived from
+    ``path``) and the 60-char EPICS PV name limit, leaving room for the
+    ``:`` separator and for ``_RBV`` when the attribute is read/write.
+
+    PascalCase is never longer than its snake_case source, so using the
+    snake length here is conservative — names that fit by this measure
+    always fit the actual PV.
+
+    :param path: the controller's path segments (as on
+        :class:`~fastcs.controllers.BaseController`).
+    :param is_rw: True if the attribute is AttrRW (needs ``_RBV``).
+
+    :returns: maximum snake_case name length, or 0 if the path already
+        consumes the entire budget.
+    """
+    from fastcs.transports.epics.util import (
+        EPICS_MAX_NAME_LENGTH,
+        pv_prefix_from_path,
+    )
+
+    pv_prefix_len = len(pv_prefix_from_path(path))
+    limit = EPICS_MAX_NAME_LENGTH - (4 if is_rw else 0)
+    return max(0, limit - pv_prefix_len - 1)
+
+
 def check_ndarray(
     obj: npt.NDArray,
     expected_dtype: npt.DTypeLike,
