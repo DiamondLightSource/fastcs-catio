@@ -1168,37 +1168,18 @@ class ELM3704v0000Controller(CATioTerminalController):
 
 
 # Map of supported controllers available to the FastCS CATio system
-SUPPORTED_CONTROLLERS: dict[
+SUPPORTED_DEVICE_CONTROLLERS: dict[
     str, type[CATioDeviceController | CATioTerminalController]
 ] = {
-    # "EK1100": EK1100Controller,
-    # "EK1101": EK1101Controller,
-    # "EK1110": EK1110Controller,
-    # "EL1004": EL1004Controller,
-    # "EL1014": EL1014Controller,
-    # "EL1084": EL1084Controller,
-    # "EL1124": EL1124Controller,
-    # "EL1502": EL1502Controller,
-    # "EL2024": EL2024Controller,
-    # "EL2024-0010": EL2024v0010Controller,
-    # "EL2124": EL2124Controller,
-    # "EL3104": EL3104Controller,
-    # "EL3602": EL3602Controller,
-    # "EL3702": EL3702Controller,
-    # "EL4134": EL4134Controller,
-    # "EL9410": EL9410Controller,
-    # "EL9505": EL9505Controller,
-    # "EL9512": EL9512Controller,
-    # "ELM3704-0000": ELM3704v0000Controller,
     "ETHERCAT": EtherCATMasterController,
 }
 
 
-def get_supported_hardware(self) -> None:
+def get_supported_devices() -> None:
     """
-    Log the list of I/O hardware currently supported by the CATio driver.
+    Log the list of I/O EtherCAT devices currently supported by the CATio driver.
     """
     logger.info(
-        "List of I/O hardware currently supported by the CATio driver:\n "
-        + f"{list(SUPPORTED_CONTROLLERS.keys())}"
+        "List of I/O EtherCAT devices currently supported by the CATio driver:\n "
+        + f"{list(SUPPORTED_DEVICE_CONTROLLERS.keys())}"
     )

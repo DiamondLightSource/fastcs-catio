@@ -270,7 +270,8 @@ async def test_xml_cache_download_and_parse(tmp_path: Path):
 
     # Ensure XML files are available
     success = standard_cache.download_and_extract()
-    assert success, "Failed to download/extract XML files"
+    if not success:
+        pytest.skip("Cannot download Beckhoff XML files (network unavailable)")
 
     # Create a test cache that uses temp dir for terminals_cache.json
     # but shares the XML files from standard cache

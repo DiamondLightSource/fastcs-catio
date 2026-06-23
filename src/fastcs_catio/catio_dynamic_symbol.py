@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from fastcs.attributes import AttrR, AttrRW
 
 from catio_terminals.models import SymbolNode
+from catio_terminals.utils import shorten_fastcs_name
 from fastcs_catio.catio_attribute_io import CATioControllerSymbolAttributeIORef
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.catio_dynamic_types import AdsItemBase
@@ -16,6 +17,7 @@ from fastcs_catio.terminal_config import (
     symbol_to_ads_name,
     symbol_to_fastcs_name,
 )
+from fastcs_catio.utils import max_attribute_name_length
 
 
 @dataclass
@@ -49,6 +51,8 @@ def _add_attribute(
         ads_item: The ADS item containing name, type, fastcs_name, and access.
         desc: The attribute description.
     """
+    budget = max_attribute_name_length(controller.path, is_rw=not ads_item.readonly)
+    ads_item.fastcs_name = shorten_fastcs_name(ads_item.fastcs_name, budget)
     if ads_item.readonly:
         controller.add_attribute(
             ads_item.fastcs_name,

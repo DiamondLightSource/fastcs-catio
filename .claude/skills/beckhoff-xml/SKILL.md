@@ -61,6 +61,18 @@ Override only if the user explicitly asks for a broader scan.
 
 - Composite type names — assigned by our XML parser.
 - Some symbols like `WcState` are ADS runtime symbols, not XML-defined.
+- **Field-supply voltage for EL/EP terminals.** EL terminals only declare
+  `<Info><Electrical><EBusCurrent>` (mA on the 5 V E-bus); their 24 V
+  field supply isn't a structured field — only mentioned in the
+  human-readable `<Name LcId="1033">` description ("24V DC", "+/-10V").
+  Standard fieldbus boxes (EP2xxx/EP3xxx/EP4xxx) have **no** electrical
+  block at all. Only **EtherCAT P** terminals (EP9xxx couplers, EPP3xxx,
+  ERP6xxx, MSxxxx) carry structured `<Electrical><EtherCATp><Us|Up>`
+  with `<MinVoltage>` (e.g. 20.4 = 24 V nominal -15%) and
+  `<MaxCurrent>` per supply rail. So any "what voltage does this slice
+  need?" query has to fall back to description-text regex for the
+  families this repo currently uses. See `compute_group_alias()` in
+  `src/catio_terminals/models.py` for the regex.
 
 ## Derivable fields are stripped on save, refilled on load
 

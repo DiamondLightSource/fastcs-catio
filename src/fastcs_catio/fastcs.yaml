@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=schema.json
 
 controllers:
-  - id: CATIO_TEST
-    type: CATioServerController
+  - id: BL04I-EA-CATIO-01
+    type: fastcs_catio.CATioServerController
     tcp_settings:
       target_ip: "172.23.242.42"
       target_port: 27905
@@ -13,9 +13,14 @@ controllers:
     scan_timings:
       poll_period: 1.0
       notification_period: 0.2
+    name_mappings:
+      device_prefix: "{id}:ETH{:02d}"
+      node_prefix: "BL04I-EA-E1RIO-{:02d}"
+      module_prefix: "{node_prefix}:{group_alias}{:02d}"
 
 transport:
   - epicsca: {}
     gui:
-      title: "CATio Demo"
       output_dir: ./screens
+      title: "BL04I: DCM heater + fluorescent screens"
+  # - epicspva: {}

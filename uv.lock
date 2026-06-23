@@ -760,7 +760,7 @@ wheels = [
 
 [[package]]
 name = "fastcs"
-version = "0.14.0"
+version = "0.15.0b5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioserial" },
@@ -773,9 +773,9 @@ dependencies = [
     { name = "ruamel-yaml" },
     { name = "stdio-socket" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0e/5e/58bda0b55981560e0d0484baf5249c12c86792ded39d3ee240b03668d8a8/fastcs-0.14.0.tar.gz", hash = "sha256:633f504b02828a5df662039a7a0e9706dcd9b4c6926b74d5538e965b5dd6916b", size = 416304, upload-time = "2026-05-19T15:18:30.666Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/59/3f1b70a1d649e4992c4e159ebdd99649d940ad93b6256e8496ba81d4ee9d/fastcs-0.15.0b5.tar.gz", hash = "sha256:592ae5ab4b3a7d6aba4e991c2e39498ab8b6fe21a7c57420ad9de6ae073a3fa2", size = 418583, upload-time = "2026-06-04T22:01:16.485Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/63/98061586236deb4067ba87780cd6a622b4936b710090a31f26bf0488cb75/fastcs-0.14.0-py3-none-any.whl", hash = "sha256:878aa2e8a7d56c427f769df971dbc1124133125dd2d119b7db34d0dcf1e100f3", size = 94136, upload-time = "2026-05-19T15:18:29.691Z" },
+    { url = "https://files.pythonhosted.org/packages/89/c8/948467055de79da1d120762ee7d06cc057f14b96b85e29120650321b12db/fastcs-0.15.0b5-py3-none-any.whl", hash = "sha256:55975ed57f42ad059bfd05cb75ce5da6f4d768531b4cf27bdca32a80f2a40e61", size = 95673, upload-time = "2026-06-04T22:01:15.019Z" },
 ]
 
 [package.optional-dependencies]
@@ -827,12 +827,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastcs", extras = ["epics"], specifier = "==0.14.0" },
+    { name = "fastcs", extras = ["epics"], specifier = "==0.15.0b5" },
     { name = "httpx", marker = "extra == 'terminals'", specifier = ">=0.27.0" },
     { name = "nicegui", specifier = ">=3.6.1" },
     { name = "nicegui", marker = "extra == 'terminals'", specifier = ">=2.0.0" },
     { name = "numpy" },
-    { name = "pvi" },
+    { name = "pvi", specifier = "==0.14.0b3" },
     { name = "pydantic", marker = "extra == 'terminals'", specifier = ">=2.0.0" },
     { name = "pyyaml", marker = "extra == 'terminals'", specifier = ">=6.0" },
     { name = "ruamel-yaml", marker = "extra == 'terminals'", specifier = ">=0.18.0" },
@@ -1611,11 +1611,11 @@ wheels = [
 
 [[package]]
 name = "nose2"
-version = "0.15.1"
+version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9b/a6/f29c21026c40476ce3994ac55e16ef60b9c1d2a88d02c3fc20b07d253dab/nose2-0.15.1.tar.gz", hash = "sha256:36770f519df5becd3cbfe0bee4abbfbf9b9f6b4eb4e03361d282b7efcfc4f0df", size = 169809, upload-time = "2024-06-01T03:20:11.435Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/51/b2/73553c0e19c4bfe174940de03c2e1814f407e3524628690800f2536bf7f7/nose2-0.16.0.tar.gz", hash = "sha256:19db5ad20e264501a8ee64e3e157a3766a5e744170e54ceecb4e5ca09b08655a", size = 172667, upload-time = "2026-03-02T00:49:52.122Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/e6/6babe53a1dbfa55f6d30eb7408f4c4994658e5f27e3dbbb2b437912e5a32/nose2-0.15.1-py3-none-any.whl", hash = "sha256:564450c0c4f1602dfe171902ceb4726cc56658af7a620ae1826f1ffc86b09a86", size = 211274, upload-time = "2024-06-01T03:20:04.423Z" },
+    { url = "https://files.pythonhosted.org/packages/60/3b/e93d177001ac3ba3cb2ebed7727442e1ee61990271f2bf39caef63798ead/nose2-0.16.0-py3-none-any.whl", hash = "sha256:a637c508b1fff5882c5f0f573226abe6f43b2f8005fef8896f57174d7d0e0c31", size = 213451, upload-time = "2026-03-02T00:49:50.609Z" },
 ]
 
 [[package]]
@@ -2019,7 +2019,7 @@ wheels = [
 
 [[package]]
 name = "pvi"
-version = "0.12.0"
+version = "0.14.0b3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
@@ -2029,9 +2029,9 @@ dependencies = [
     { name = "ruamel-yaml" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/91/3808872d96de8dac33069bf97f94f6ff430841ceaa8398db122ffe9d4244/pvi-0.12.0.tar.gz", hash = "sha256:1fb288dd863f31c276c0e119b57a36788f2b6c2e1324f88f1fac2c8ae1a8bb03", size = 189219, upload-time = "2025-12-22T14:11:02.545Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/12/bd82d129d8981d46bf8fbd0b2fe6d2054e2fa21e406245856759eaa08839/pvi-0.14.0b3.tar.gz", hash = "sha256:20f3e7e865a9f607a00a34d8d4c07083a9a9ba4468013cf36e8f307ab8e04a60", size = 287449, upload-time = "2026-06-04T21:22:13.046Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/b9/ffdd156df74460300c7e0483662670ed2826b7c09c59ba6a3a1b8c83b05d/pvi-0.12.0-py3-none-any.whl", hash = "sha256:b578a513fbbfe2368623eb6a75d84daf8b3176d4e46d3bc506f0ee3a1dbbfd80", size = 57072, upload-time = "2025-12-22T14:11:01.254Z" },
+    { url = "https://files.pythonhosted.org/packages/37/21/6ca76b5b7eb289e9a50811b15a5c2b46dd31ae7e828b512523734c21b959/pvi-0.14.0b3-py3-none-any.whl", hash = "sha256:4fbc461fb6edd9274f48cd6853991ee1062d5d559311eaa4a64b7b7af69f98de", size = 58773, upload-time = "2026-06-04T21:22:12.085Z" },
 ]
 
 [[package]]
@@ -2907,14 +2907,14 @@ wheels = [
 
 [[package]]
 name = "stdio-socket"
-version = "1.3.1"
+version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/6c/288d8095c4bebeb34fda8d573c6e25ddd973541cce2264d87229372ad305/stdio_socket-1.3.1.tar.gz", hash = "sha256:aebd682c345eeccec4715ac8546f27859212d8cfd6ab971b76b1e36594ba93bb", size = 26314, upload-time = "2025-09-12T11:59:57.245Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4a/7b/ea34ec394e3ca4b60de1538f2e80ec1e1f8c1acdc4cde61c30debf953298/stdio_socket-1.4.0.tar.gz", hash = "sha256:a7c0735624365031dbe1df9d23f38331261b1bda40c2f40916f42f70cb4e7a21", size = 74805, upload-time = "2026-01-14T08:45:44.484Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/72/ad2e96e2469ee040fb5f5f97ca2f45d11352add139eaa992fa8da5f282e0/stdio_socket-1.3.1-py3-none-any.whl", hash = "sha256:30a1465d71d44e4ebf8e571179935364253ef2aec931ea4c41c00e4f77e50367", size = 15690, upload-time = "2025-09-12T11:59:56.422Z" },
+    { url = "https://files.pythonhosted.org/packages/be/16/dec7ff35833eef742791aa48fee09a6873689dd9a0e72a11195167ce06aa/stdio_socket-1.4.0-py3-none-any.whl", hash = "sha256:8443cac5f742dfe97580b46c3948535202acf1daa0165bea190370402733de30", size = 16307, upload-time = "2026-01-14T08:45:43.505Z" },
 ]
 
 [[package]]
