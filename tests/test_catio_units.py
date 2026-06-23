@@ -1250,6 +1250,121 @@ class TestControllerNameMappings:
         assert name == "MOD03"
         assert path == ["BL04I-EA-CATIO-01", "ETH1", "MOD03"]
 
+    # ------------------------------------------------------------------
+    # group_alias placeholder — per-coupler-per-alias sequence numbering
+    # ------------------------------------------------------------------
+
+    def test_group_alias_is_valid_in_module_prefix(self):
+        """{group_alias} is accepted by the module_prefix validator."""
+        CATioNameMappings(module_prefix="{node_prefix}:{group_alias}{:02d}")
+
+    def test_group_alias_not_valid_in_other_templates(self):
+        """{group_alias} only makes sense at the slave level."""
+        with pytest.raises(ValueError, match="unknown placeholder"):
+            CATioNameMappings(device_prefix="{group_alias}{:02d}")
+        with pytest.raises(ValueError, match="unknown placeholder"):
+            CATioNameMappings(node_prefix="{group_alias}{:02d}")
+
+    def test_module_falls_back_to_mod_when_alias_unknown(self):
+        """Without an entry in the alias map, the template renders "MOD" as
+        the fallback alias and the chain position as the numeric index."""
+        controller = self._make_controller(
+            CATioNameMappings(module_prefix="{node_prefix}:{group_alias}{:02d}")
+        )
+        slave = self._make_slave(IONodeType.Slave, node_index=1, position=7)
+        name, path = controller._resolve_controller_name_and_path(
+            IOTreeNode(slave), ["BL04I-EA-CATIO-01", "ETH1"]
+        )
+        assert name == "MOD07"
+        assert path == ["BL04I-EA-CATIO-01", "ETH1", "MOD07"]
+
+    def test_module_uses_alias_and_per_alias_sequence(self):
+        """{group_alias}{:02d} renders the alias + 1-based count among
+        same-alias siblings on the same coupler node."""
+        controller = self._make_controller(
+            CATioNameMappings(module_prefix="{node_prefix}:{group_alias}{:02d}")
+        )
+        controller._module_alias_indices = {
+            (1, 1): ("24VDO", 1),
+            (1, 2): ("24VDO", 2),
+            (1, 3): ("10VAI", 1),
+            (1, 4): ("24VDO", 3),
+        }
+        results = [
+            controller._resolve_controller_name_and_path(
+                IOTreeNode(
+                    self._make_slave(IONodeType.Slave, node_index=1, position=pos)
+                ),
+                ["BL04I-EA-CATIO-01", "E1RIO01"],
+            )[0]
+            for pos in (1, 2, 3, 4)
+        ]
+        assert results == ["24VDO01", "24VDO02", "10VAI01", "24VDO03"]
+
+    def test_compute_module_alias_indices_counts_per_coupler_per_alias(
+        self, monkeypatch
+    ):
+        """Walk a fake tree and confirm the static helper assigns 1-based
+        sequence numbers scoped to (coupler-node, alias)."""
+
+        def fake_lookup(vendor_id, product_code, revision_number):
+            # Encode alias in product_code for the test
+            mapping = {10: "24VDO", 20: "10VAI"}
+            alias = mapping.get(product_code)
+
+            class _Stub:
+                group_alias = alias
+
+            return _Stub() if alias else None
+
+        monkeypatch.setattr(
+            "fastcs_catio.terminal_config.get_terminal_type_by_identity",
+            fake_lookup,
+        )
+
+        def slave(alias_code: int, node_idx: int, position: int) -> IOSlave:
+            return IOSlave(
+                parent_device=1,
+                type="ANY",
+                name=f"S{position}",
+                address=position,
+                identity=IOIdentity(
+                    vendor_id=1,
+                    product_code=alias_code,
+                    revision_number=1,
+                    serial_number=position,
+                ),
+                states=SlaveState(ecat_state=0, link_status=0),
+                crcs=SlaveCRC(port_a_crc=0, port_b_crc=0, port_c_crc=0, port_d_crc=0),
+                loc_in_chain=ChainLocation(node=node_idx, position=position),
+                category=IONodeType.Slave,
+            )
+
+        server_node = IOTreeNode(
+            IOServer(name="srv", version="v", build=1, num_devices=1)
+        )
+        # Coupler 1: DO DO AI DO  → alias seqs 1,2,1,3
+        # Coupler 2: AI DO         → alias seqs 1,1 (independent of coupler 1)
+        for s in [
+            slave(10, 1, 1),
+            slave(10, 1, 2),
+            slave(20, 1, 3),
+            slave(10, 1, 4),
+            slave(20, 2, 1),
+            slave(10, 2, 2),
+        ]:
+            server_node.add_child(IOTreeNode(s, path=server_node.path[:]))
+
+        result = CATioServerController._compute_module_alias_indices(server_node)
+        assert result == {
+            (1, 1): ("24VDO", 1),
+            (1, 2): ("24VDO", 2),
+            (1, 3): ("10VAI", 1),
+            (1, 4): ("24VDO", 3),
+            (2, 1): ("10VAI", 1),
+            (2, 2): ("24VDO", 1),
+        }
+
 
 class TestIOTreeNode:
     """Test suite for IOTreeNode data class."""

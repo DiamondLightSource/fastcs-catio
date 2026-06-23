@@ -377,16 +377,22 @@ class CATioScanTimings:
 
 
 # Keys that are valid inside each template field.
-# {} / {n} / {n:02d}  → numeric index (id, chain node, or chain position)
+# {} / {n} / {n:02d}  → numeric index (id, chain node, or chain position;
+#                      for module_prefix using {group_alias}, this becomes
+#                      the per-coupler-per-alias 1-based sequence number)
 # {id}               → the IOC root prefix (from the YAML `id:` field)
 # {device_prefix}    → rendered name of the parent device
 #                      (node_prefix and module_prefix only)
 # {node_prefix}      → rendered name of the parent coupler/box
 #                      (module_prefix only)
+# {group_alias}      → short alias for the slave's terminal type, e.g.
+#                      "24VDO" / "10VAI" / "CPL" (module_prefix only)
 _VALID_TEMPLATE_KEYS: dict[str, frozenset[str]] = {
     "device_prefix": frozenset({"id", "n"}),
     "node_prefix": frozenset({"id", "n", "device_prefix"}),
-    "module_prefix": frozenset({"id", "n", "node_prefix", "device_prefix"}),
+    "module_prefix": frozenset(
+        {"id", "n", "node_prefix", "device_prefix", "group_alias"}
+    ),
 }
 
 
@@ -503,6 +509,10 @@ class CATioServerController(CATioController):
         """Cached notification stream from the CATio client."""
         self._name_mappings = options.name_mappings
         """Naming templates for device/node/module subcontrollers."""
+        self._module_alias_indices: dict[tuple[int, int], tuple[str | None, int]] = {}
+        """Per-(coupler-node, chain-position) lookup of (group_alias, 1-based
+        sequence number among siblings on the same coupler sharing that alias).
+        Populated by register_subcontrollers once the tree is known."""
 
         # Update the global period variables
         global STANDARD_POLL_UPDATE_PERIOD, NOTIFICATION_UPDATE_PERIOD
@@ -648,7 +658,59 @@ class CATioServerController(CATioController):
     async def register_subcontrollers(self) -> None:
         """Register all subcontrollers available in the EtherCAT system tree."""
         server_node: IOTreeNode = await self.get_root_node()
+        self._module_alias_indices = self._compute_module_alias_indices(server_node)
         await self.get_subcontrollers_from_node(server_node, self.path)
+
+    @staticmethod
+    def _compute_module_alias_indices(
+        root: IOTreeNode,
+    ) -> dict[tuple[int, int], tuple[str | None, int]]:
+        """Number each module slave per (coupler-node, group_alias) pair.
+
+        Walks the tree, picks out every non-coupler/non-box IOSlave, looks up
+        its terminal type's ``group_alias``, and assigns a 1-based sequence
+        number among siblings on the same coupler that share that alias.
+        The returned map is keyed by ``(loc_in_chain.node, loc_in_chain.position)``
+        so :meth:`_resolve_controller_name_and_path` can look it up directly
+        from the slave it is rendering.
+        """
+        from fastcs_catio.terminal_config import get_terminal_type_by_identity
+
+        modules: list[IOSlave] = []
+        stack: list[IOTreeNode] = [root]
+        while stack:
+            current = stack.pop()
+            data = current.data
+            if isinstance(data, IOSlave) and data.category not in (
+                IONodeType.Coupler,
+                IONodeType.Box,
+            ):
+                modules.append(data)
+            stack.extend(reversed(current.children))
+
+        modules.sort(
+            key=lambda s: (int(s.loc_in_chain.node), int(s.loc_in_chain.position))
+        )
+
+        counters: dict[tuple[int, str], int] = {}
+        result: dict[tuple[int, int], tuple[str | None, int]] = {}
+        for slave in modules:
+            ident = slave.identity
+            try:
+                terminal_type = get_terminal_type_by_identity(
+                    int(ident.vendor_id),
+                    int(ident.product_code),
+                    int(ident.revision_number),
+                )
+            except Exception:
+                terminal_type = None
+            alias = terminal_type.group_alias if terminal_type else None
+            node_idx = int(slave.loc_in_chain.node)
+            position = int(slave.loc_in_chain.position)
+            key = (node_idx, alias or "")
+            counters[key] = counters.get(key, 0) + 1
+            result[(node_idx, position)] = (alias, counters[key])
+        return result
 
     @staticmethod
     def _render(template: str, index: int, context: dict[str, str]) -> str:
@@ -708,7 +770,21 @@ class CATioServerController(CATioController):
                 }
             else:
                 template = self._name_mappings.module_prefix
-                index = int(node.data.loc_in_chain.position)
+                node_idx = int(node.data.loc_in_chain.node)
+                position = int(node.data.loc_in_chain.position)
+                alias, alias_seq = getattr(self, "_module_alias_indices", {}).get(
+                    (node_idx, position), (None, position)
+                )
+                # When the template references {group_alias}, the positional
+                # index becomes the per-coupler-per-alias sequence number so
+                # "{group_alias}{:02d}" → "24VDO01", "24VDO02", ... Otherwise
+                # we keep the chain position for backward compatibility with
+                # "MOD{:02d}"-style templates.
+                uses_alias = any(
+                    key == "group_alias"
+                    for _, key, _, _ in string.Formatter().parse(template)
+                )
+                index = alias_seq if uses_alias else position
                 context = {
                     "id": root_prefix,
                     # full parent path colon-joined, so {node_prefix}:MOD{n} produces
@@ -720,6 +796,9 @@ class CATioServerController(CATioController):
                     "device_prefix": (
                         ":".join(parent_path[:-1]) if len(parent_path) >= 2 else ""
                     ),
+                    # "MOD" preserves the legacy default when the terminal type
+                    # has no alias (unknown identity / missing YAML entry).
+                    "group_alias": alias or "MOD",
                 }
         else:  # pragma: no cover
             raise TypeError(f"Unsupported node data type: {type(node.data)!r}")

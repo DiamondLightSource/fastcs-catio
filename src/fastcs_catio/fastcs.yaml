@@ -16,7 +16,7 @@ controllers:
     name_mappings:
       device_prefix: "{id}:ETH{:02d}"
       node_prefix: "BL04I-EA-E1RIO-{:02d}"
-      module_prefix: "{node_prefix}:MOD{:02d}"
+      module_prefix: "{node_prefix}:{group_alias}{:02d}"
 
 transport:
   - epicsca: {}
