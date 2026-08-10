@@ -100,26 +100,27 @@ def _make_client(chain: list[str], device_id: int = 1) -> AsyncioADSClient:
 
 
 def _drive(coro):
-    """Run *coro* to completion without disturbing the suite's event loop.
+    """Run *coro* to completion on a private loop, leaving the global one alone.
 
-    ``asyncio.run`` clears the process-wide loop when it finishes. Other tests
-    here -- ``test_system.py`` in particular, which drives a real ADS simulator
-    -- install a loop of their own, and clearing it strands that loop with its
-    sockets still open. It is then collected at some arbitrary later point and
-    pytest reports the unraisable ResourceWarning against whichever test is
-    running at the time, which is never this one. So use a private loop, close
-    it, and put back whatever was installed before.
+    Deliberately not ``asyncio.run``: that clears the process-wide loop when it
+    finishes. ``test_system.py`` installs a loop of its own to drive the ADS
+    simulator, and clearing it strands that loop with its sockets still open --
+    it is collected at some arbitrary later point and pytest reports the
+    unraisable ResourceWarning against whichever test happens to be running,
+    which is never this one.
+
+    Reading the previous loop to restore it afterwards is no good either:
+    ``get_event_loop()`` is deprecated from 3.12, and with
+    ``filterwarnings = "error"`` the warning becomes an exception raised before
+    the coroutine is ever awaited. So never touch the global loop at all --
+    ``new_event_loop()`` does not install one, and ``run_until_complete``
+    drives the loop object directly.
     """
-    try:
-        previous = asyncio.get_event_loop_policy().get_event_loop()
-    except RuntimeError:
-        previous = None
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-        asyncio.set_event_loop(previous)
 
 
 def _runtime_names(
