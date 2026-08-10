@@ -772,7 +772,7 @@ terminal_types:
         channels: 1
         access: Read/Write
         fastcs_name: dox_current_output_current
-        selected: false
+        selected: true
         bit_offset: 0
       - name_template: DOX Impulse length.Impulse length
         index_group: 61473
