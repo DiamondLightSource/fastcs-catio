@@ -10,6 +10,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 description = "Control system integration of EtherCAT I/O devices running under TwinCAT using pyads and FastCS"
 dependencies = [
@@ -37,7 +38,6 @@ terminals = [
 
 [dependency-groups]
 dev = [
-    "copier",
     "myst-parser",
     "pre-commit",
     "pydata-sphinx-theme>=0.12",

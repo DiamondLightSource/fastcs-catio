@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         exclude: ^uv.lock
@@ -31,8 +31,15 @@ repos:
         entry: uv sync
         files: ^(uv\.lock|pyproject\.toml)$
 
+<<<<<<< before updating
   # TODO restore this when gitleaks site is back up
   # - repo: https://github.com/gitleaks/gitleaks
   #   rev: v8.28.0
   #   hooks:
   #     - id: gitleaks
+=======
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+>>>>>>> after updating
