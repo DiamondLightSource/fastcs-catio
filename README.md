@@ -7,8 +7,9 @@
 
 CATio provides control system integration for Beckhoff EtherCAT I/O devices running under TwinCAT. It uses the ADS protocol to communicate with TwinCAT PLCs and exposes device data as EPICS Process Variables through the FastCS framework.
 
-Source          | <https://github.com/DiamondLightSource/fastcs-catio>
+What            | Where
 :---:           | :---:
+Source          | <https://github.com/DiamondLightSource/fastcs-catio>
 PyPI            | `pip install fastcs-catio`
 Docker          | `docker run ghcr.io/diamondlightsource/fastcs-catio:latest`
 Documentation   | <https://diamondlightsource.github.io/fastcs-catio>
