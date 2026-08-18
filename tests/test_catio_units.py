@@ -925,7 +925,7 @@ class TestAdsSymbolNode:
 
 
 class TestIOServer:
-    """ "Test suite for IOServer data class."""
+    """Test suite for IOServer data class."""
 
     def test_server_fields_and_category(self):
         """Test server fields and category."""

@@ -122,7 +122,7 @@ def ioc(
         str,
         typer.Option(
             help=(
-                "Name template for the EtherCAT device (coupler) controller. "
+                "Name template for the EtherCAT device (Master) controller. "
                 "Supports {} / {n:02d} (numeric index) and {id} (IOC root prefix)."
             ),
             rich_help_panel="Name Mappings",
@@ -132,7 +132,7 @@ def ioc(
         str,
         typer.Option(
             help=(
-                "Name template for EtherCAT node (Box/E-bus) controllers. "
+                "Name template for EtherCAT node (Coupler/Box/E-bus) controllers. "
                 "Supports {} / {n:02d}, {id}, and {device_prefix}."
             ),
             rich_help_panel="Name Mappings",

@@ -21,6 +21,5 @@ controllers:
 transport:
   - epicsca: {}
     gui:
+      title: "CATio Demo"
       output_dir: ./screens
-      title: "BL04I: DCM heater + fluorescent screens"
-  # - epicspva: {}

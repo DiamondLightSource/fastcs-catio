@@ -3,17 +3,14 @@
     "CATioNameMappings": {
       "properties": {
         "device_prefix": {
-          "default": "ETH{}",
           "title": "Device Prefix",
           "type": "string"
         },
         "node_prefix": {
-          "default": "E1RIO{}",
           "title": "Node Prefix",
           "type": "string"
         },
         "module_prefix": {
-          "default": "MOD{}",
           "title": "Module Prefix",
           "type": "string"
         }

@@ -65,7 +65,7 @@ EtherCAT hardware hierarchy:
 
 | Template field | Controls |
 |---|---|
-| `device_prefix` | EtherCAT device (coupler bus) |
+| `device_prefix` | EtherCAT device |
 | `node_prefix`   | Coupler or Box node |
 | `module_prefix` | Individual I/O module (terminal) |
 
@@ -74,10 +74,11 @@ placeholders are available in each field:
 
 | Placeholder | Available in | Description |
 |---|---|---|
-| `{}` / `{n}` / `{n:02d}` | all | Numeric index of the component |
+| `{}` / `{n}` / `{n:02d}` | all | Numeric index of the component (see note on `{group_alias}` below) |
 | `{id}` | all | The IOC root prefix (e.g. `BL04I-EA-CATIO-01`) |
 | `{device_prefix}` | `node_prefix`, `module_prefix` | Rendered name of the parent device |
 | `{node_prefix}` | `module_prefix` | Rendered name of the parent node |
+| `{group_alias}` | `module_prefix` | Short type alias for the terminal (e.g. `24VDO`, `10VAI`, `CPL`).  When this placeholder is present the numeric index counts per-coupler per alias (1-based), so all terminals of the same type on the same coupler are numbered in order: `24VDO01`, `24VDO02`, etc.  Falls back to `MOD` if the terminal type has no alias defined. |
 
 :::{note}
 The `ioc` command follows Unix CLI convention and spells option names with
