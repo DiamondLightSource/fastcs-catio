@@ -73,6 +73,11 @@ _ABBREVIATIONS = {
 # so the parent CoE index survives any further shortening pass.
 _IDX_SUFFIX_RE = re.compile(r"_idx[0-9a-f]+$")
 
+# Matches a + or - immediately preceding a digit, e.g. the "+5"/"-5" in
+# "Calibration gain +5 V". Without this, both names would collapse to the
+# same FastCS attribute name.
+_SIGNED_NUMBER_RE = re.compile(r"(?<![a-zA-Z0-9])([+-])(?=\d)")
+
 
 def to_snake_case(name: str) -> str:
     """Convert symbol name to snake_case for FastCS attribute.
@@ -93,6 +98,10 @@ def to_snake_case(name: str) -> str:
         'status_word'
         >>> to_snake_case("Channel {channel} Value")
         'channel_{channel}_value'
+        >>> to_snake_case("Calibration gain +5 V")
+        'calibration_gain_p5_v'
+        >>> to_snake_case("Calibration gain -5 V")
+        'calibration_gain_m5_v'
 
     Notes:
         The above '>>>' are picked up as test cases by doctest. And they pass!
@@ -102,6 +111,11 @@ def to_snake_case(name: str) -> str:
 
     # Remove {channel} temporarily for processing
     name_without_placeholder = name.replace("{channel}", "")
+
+    # Keep the sign of signed numbers, e.g. "+5 V" -> "p5 V", "-5 V" -> "m5 V"
+    name_without_placeholder = _SIGNED_NUMBER_RE.sub(
+        lambda m: "p" if m.group(1) == "+" else "m", name_without_placeholder
+    )
 
     # Replace special characters with spaces
     name_clean = re.sub(r"[^a-zA-Z0-9]+", " ", name_without_placeholder)
