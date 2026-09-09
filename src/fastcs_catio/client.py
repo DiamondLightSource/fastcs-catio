@@ -3488,7 +3488,7 @@ class AsyncioADSClient:
 
     async def read_io_coe_parameter(
         self, address: AmsAddress, index: str, subindex: str, dtype: npt.DTypeLike
-    ) -> npt.NDArray[Any]:
+    ) -> npt.NDArray[Any] | None:
         """
         Read the value of a CANopen-over-EtherCAT parameter.
 
@@ -3498,7 +3498,7 @@ class AsyncioADSClient:
         :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
         :param dtype: the data type of the CoE parameter
 
-        :returns: the value of the CoE parameter
+        :returns: the value of the CoE parameter, or None if the read failed
         """
         index, subindex = check_coe_indices_format(index, subindex)
         response = await self._ads_command(
@@ -3506,6 +3506,21 @@ class AsyncioADSClient:
             netid=address.net_id,
             port=address.port,
         )
+        if response.result != ErrorCode.ERR_NOERROR:
+            logger.warning(
+                f"CoE read of '{index}:{subindex}' from {address.to_string()} failed "
+                + f"with {ErrorCode(response.result).name}. "
+                + "The parameter value will be left uninitialised."
+            )
+            return None
+
+        if not response.data:
+            logger.warning(
+                f"CoE read of '{index}:{subindex}' from {address.to_string()} "
+                + "returned no data. The parameter value will be left uninitialised."
+            )
+            return None
+
         # Adjust dtype for byte string types of variable length
         if (
             np.dtype(dtype).kind == "S"
@@ -3555,14 +3570,13 @@ class AsyncioADSClient:
         :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
         :param dtype: the data type of the CoE parameter
 
-        :returns: the value of the CoE parameter
+        :returns: the value of the CoE parameter, or None if the read failed
         """
         response = await self.read_io_coe_parameter(address, index, subindex, dtype)
-        result = (
-            response[0].item()
-            if isinstance(response, np.ndarray) and response.size == 1
-            else response
-        )
+        if response is None:
+            return None
+
+        result = response[0].item() if response.size == 1 else response
         return result
 
     async def set_coe_param(
