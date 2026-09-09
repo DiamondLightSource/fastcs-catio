@@ -10,7 +10,8 @@ from catio_terminals.utils import make_fastcs_name, make_subindex_fastcs_name
 
 # Short aliases for terminal group_types, used to derive PV-name fragments.
 # These are hand-picked guesses; feel free to edit. compute_group_alias()
-# concatenates an optional voltage prefix (e.g. "24V") with the short name.
+# concatenates the short name with an optional voltage suffix (e.g. "DO24V"),
+# putting the type first so the alias always starts with a letter.
 # Beckhoff's catalog splits "Fieldbus Box" into many EPxxxx/EPPxxxx/EPXxxxx
 # sub-buckets; per project convention every box variant collapses to "BOX".
 GROUP_TYPE_ALIASES: dict[str, str] = {
@@ -64,20 +65,25 @@ _SUPPLY_VOLTAGE_RE = re.compile(r"\b(\d{1,2})V\b", re.IGNORECASE)
 def compute_group_alias(description: str | None, group_type: str | None) -> str | None:
     """Build the short PV-name alias from a terminal's description and group.
 
-    The result is `<NN>V<SHORT>` when a supply voltage is present in the
+    The result is `<SHORT><NN>V` when a supply voltage is present in the
     description, otherwise just `<SHORT>`. Returns None if no group_type
     abbreviation is known and no voltage is found.
+
+    The type short name is placed first so the alias always starts with a
+    letter, which is required for fastcs controller names (numeric-leading
+    names are rejected by ``Controller.add_sub_controller``).
     """
-    parts: list[str] = []
+    short: str | None = None
+    voltage: str | None = None
+    if group_type:
+        short = GROUP_TYPE_ALIASES.get(group_type)
     if description:
         m = _SUPPLY_VOLTAGE_RE.search(description)
         if m:
-            parts.append(f"{int(m.group(1)):02d}V")
-    if group_type:
-        short = GROUP_TYPE_ALIASES.get(group_type)
-        if short:
-            parts.append(short)
-    return "".join(parts) if parts else None
+            voltage = f"{int(m.group(1)):02d}V"
+    if short is None and voltage is None:
+        return None
+    return (short or "") + (voltage or "")
 
 
 # CoE subindex bit sizes for primitive types. Distinct from ads_types.TYPE_INFO
