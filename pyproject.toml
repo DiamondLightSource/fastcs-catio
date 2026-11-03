@@ -10,14 +10,15 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 description = "Control system integration of EtherCAT I/O devices running under TwinCAT using pyads and FastCS"
 dependencies = [
     "typing-extensions;python_version<'3.8'",
     "numpy",
-    "pvi==0.14.0b3",
+    "pvi==0.14.5b1",
     "typer",
-    "fastcs[epics]==0.15.0b5",
+    "fastcs[epics]==0.14.5b1",
     "softioc>=4.7.0",
     "nicegui>=3.6.1",
 ]
@@ -37,7 +38,6 @@ terminals = [
 
 [dependency-groups]
 dev = [
-    "copier",
     "myst-parser",
     "pre-commit",
     "pydata-sphinx-theme>=0.12",
@@ -65,6 +65,10 @@ GitHub = "https://github.com/DiamondLightSource/fastcs-catio"
 email = "gregory.gay@diamond.ac.uk"
 name = "Greg Gay"
 
+[tool.uv]
+# Minimum uv to fix eMudhra CA cert incident (see discuss.python.org/t/109576)
+required-version = ">=0.13.5"
+
 [tool.setuptools_scm]
 version_file = "src/fastcs_catio/_version.py"
 
@@ -81,7 +85,11 @@ addopts = """
     --tb=native -vv --doctest-modules --doctest-glob="*.rst"
     """
 # https://iscinumpy.gitlab.io/post/bound-version-constraints/#watch-for-warnings
-filterwarnings = "error"
+filterwarnings = [
+    "error",
+    # fastcs 0.14.5b1 uses asyncio.iscoroutinefunction (removed in Python 3.16)
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:fastcs",
+]
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "docs src tests"
 # Enable auto mode for pytest-asyncio to handle async fixtures

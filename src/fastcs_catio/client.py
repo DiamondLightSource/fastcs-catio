@@ -6,6 +6,7 @@ https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/1129
 from __future__ import annotations
 
 import asyncio
+import inspect
 import re
 import socket
 import time
@@ -3033,7 +3034,7 @@ class AsyncioADSClient:
         if hasattr(self, set) and callable(func := getattr(self, set)):
             # assignment := means 'set the value of variable \
             # and evaluate the result of expression in a single line'
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
@@ -3053,7 +3054,7 @@ class AsyncioADSClient:
         """
         get = f"get_{message.lower()}"
         if hasattr(self, get) and callable(func := getattr(self, get)):
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)

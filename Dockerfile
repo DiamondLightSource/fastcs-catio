@@ -1,6 +1,10 @@
 # The devcontainer should use the developer target and run as root with podman
 # or docker with user namespaces.
-FROM ghcr.io/diamondlightsource/ubuntu-devcontainer:noble AS developer
+FROM ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute AS developer
+
+# The base image's uv is older than pyproject.toml's tool.uv.required-version
+# (occurred when updating to copier template v5.5.0)
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /usr/bin/
 
 # Add any system dependencies for the developer/build environment here
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
@@ -21,11 +25,10 @@ ENV UV_PYTHON_INSTALL_DIR=/python
 
 # Sync the project without its dev dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-editable --no-dev
-
+    uv sync --locked --no-editable --no-dev --managed-python
 
 # The runtime stage copies the built venv into a runtime container
-FROM ubuntu:noble AS runtime
+FROM ubuntu:resolute AS runtime
 
 # Add apt-get system dependecies for runtime here if needed
 # RUN apt-get update -y && apt-get install -y --no-install-recommends \

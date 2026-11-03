@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=schema.json
 
 controllers:
-  - id: BL04I-EA-CATIO-01
+  - id: BLxxI-EA-CATIO-01
     type: fastcs_catio.CATioServerController
     tcp_settings:
-      target_ip: "172.23.242.42"
+      target_ip: "replace_with_embedded_pc_IP_address"
       target_port: 27905
     route:
       route_name: ""
@@ -15,7 +15,7 @@ controllers:
       notification_period: 0.2
     name_mappings:
       device_prefix: "{id}:ETH{:02d}"
-      node_prefix: "BL04I-EA-E1RIO-{:02d}"
+      node_prefix: "BLxxI-EA-E1RIO-{:02d}"
       module_prefix: "{node_prefix}:{group_alias}{:02d}"
 
 transport:

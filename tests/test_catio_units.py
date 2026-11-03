@@ -1689,3 +1689,46 @@ class TestEtherCATChainCategorisation:
             for c in device_node.children
         ] == [["EL3602"], ["EL3602"]]
         assert len(client._ecdevices[1].slaves) == 6
+
+
+class TestClientApiDispatch:
+    """Unit tests for AsyncioADSClient.command() and query() method dispatch."""
+
+    @staticmethod
+    def _make_client() -> AsyncioADSClient:
+        return object.__new__(AsyncioADSClient)
+
+    @pytest.mark.asyncio
+    async def test_command_calls_sync_and_async_handlers(self):
+        client = self._make_client()
+
+        async def set_async(value, *, scale=1):
+            return value * scale
+
+        client.set_sync = lambda value: value + 1  # type: ignore[attr-defined]
+        client.set_async = set_async  # type: ignore[attr-defined]
+
+        assert await client.command("SYNC", 1) == 2
+        assert await client.command("async", 2, scale=3) == 6
+
+    @pytest.mark.asyncio
+    async def test_query_calls_sync_and_async_handlers(self):
+        client = self._make_client()
+
+        async def get_async(value):
+            return value * 2
+
+        client.get_sync = lambda value: value + 1  # type: ignore[attr-defined]
+        client.get_async = get_async  # type: ignore[attr-defined]
+
+        assert await client.query("SYNC", 1) == 2
+        assert await client.query("async", 2) == 4
+
+    @pytest.mark.asyncio
+    async def test_unknown_command_and_query_raise_value_error(self):
+        client = self._make_client()
+
+        with pytest.raises(ValueError, match="No API method found for command"):
+            await client.command("missing")
+        with pytest.raises(ValueError, match="No API method found for query"):
+            await client.query("missing")
