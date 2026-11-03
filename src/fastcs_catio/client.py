@@ -106,6 +106,9 @@ REMOTE_UDP_PORT: int = 48899
 # Pattern for valid Beckhoff EtherCAT Box (e.g. "EP1234", "EPP2008", "EQ5678", "ER3184")
 _BOX_TYPE_RE = re.compile(r"(E[PQR]{1}P?\d{4})")
 
+# Passive topology terminals (EtherCAT star junctions) which get no controller
+_IGNORED_TERMINAL_TYPES = frozenset({"EK1122"})
+
 MessageT = TypeVar("MessageT", bound=Message)
 FuncType = Callable[[Any, Any], Awaitable[Any]]
 
@@ -1400,6 +1403,8 @@ class AsyncioADSClient:
         print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
+            if slave.type in _IGNORED_TERMINAL_TYPES:
+                continue
             rev = f"rev=0x{int(slave.identity.revision_number):08x}"
             if (
                 ("EK1100" in slave.name)
@@ -1434,6 +1439,8 @@ class AsyncioADSClient:
             node_count = 0
             node, node_position = 0, 0
             for slave in device.slaves:
+                if slave.type in _IGNORED_TERMINAL_TYPES:
+                    continue
                 if slave.type == "EK1110" and node == 0:
                     node_position += 1
                 if slave.type == "EK1100":
@@ -1469,6 +1476,8 @@ class AsyncioADSClient:
             server_node.add_child(device_node)
             coupler_node = None
             for slave in device.slaves:
+                if slave.type in _IGNORED_TERMINAL_TYPES:
+                    continue
                 if slave.type == "EK1100":
                     parent_path = deepcopy(device_node.path)
                     coupler_node = IOTreeNode(slave, parent_path)

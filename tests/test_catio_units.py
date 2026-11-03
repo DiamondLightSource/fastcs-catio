@@ -1653,3 +1653,36 @@ class TestEtherCATChainCategorisation:
         await client._get_ethercat_chains()
 
         assert plain_slave.category == IONodeType.Slave
+
+    @pytest.mark.asyncio
+    async def test_ek1122_junction_is_ignored(self):
+        """EK1122 junctions consume no node/position and are absent from the tree."""
+        slaves = [
+            self._make_slave("EK1122"),
+            self._make_slave("EK1100"),
+            self._make_slave("EL3602"),
+            self._make_slave("EK1122"),
+            self._make_slave("EK1100"),
+            self._make_slave("EL3602"),
+        ]
+        client = self._make_client_with_device(slaves)
+        client.ioserver = IOServer(name="Server", version="1", build=1, num_devices=1)
+
+        await client._get_ethercat_chains()
+
+        assert client._ecdevices[1].node_count == 2
+        assert [
+            (int(s.loc_in_chain.node), int(s.loc_in_chain.position))
+            for s in slaves[1:3]
+        ] == [(1, 0), (1, 1)]
+        assert [
+            (int(s.loc_in_chain.node), int(s.loc_in_chain.position)) for s in slaves[4:]
+        ] == [(2, 0), (2, 1)]
+
+        device_node = client._generate_system_tree().children[0]
+        assert [c.data.type for c in device_node.children] == ["EK1100", "EK1100"]
+        assert [[g.data.type for g in c.children] for c in device_node.children] == [
+            ["EL3602"],
+            ["EL3602"],
+        ]
+        assert len(client._ecdevices[1].slaves) == 6
