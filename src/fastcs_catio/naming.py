@@ -26,6 +26,7 @@ import string
 from dataclasses import dataclass, field
 
 from fastcs_catio.catio_controller import CATioNameMappings
+from fastcs_catio.client import _IGNORED_TERMINAL_TYPES
 from fastcs_catio.terminal_config import get_terminal_type
 
 __all__ = [
@@ -110,16 +111,22 @@ class PredictedSlave:
 
 
 def _as_entries(chain) -> list[ChainEntry]:
-    """Accept ``ChainEntry``, ``(type_name, revision)`` or a bare type name."""
+    """Accept ``ChainEntry``, ``(type_name, revision)`` or a bare type name.
+
+    Types the runtime ignores (e.g. ``EK1122``) are dropped, so they take no
+    position and get no name.
+    """
     entries: list[ChainEntry] = []
     for item in chain:
         if isinstance(item, ChainEntry):
-            entries.append(item)
+            entry = item
         elif isinstance(item, str):
-            entries.append(ChainEntry(item))
+            entry = ChainEntry(item)
         else:
             type_name, revision = item
-            entries.append(ChainEntry(type_name, revision))
+            entry = ChainEntry(type_name, revision)
+        if entry.type_name not in _IGNORED_TERMINAL_TYPES:
+            entries.append(entry)
     return entries
 
 
@@ -237,7 +244,7 @@ def predict_chain(
     ]
 
     # Number the modules on each coupler per alias, so "{group_alias}{:02d}"
-    # yields 24VDI01, 24VDI02, ... independently of the chain position. Keyed
+    # yields DI24V01, DI24V02, ... independently of the chain position. Keyed
     # as the runtime keys it, including the empty-string bucket for no alias.
     alias_seq: dict[tuple[int, int], int] = {}
     counters: dict[tuple[int, str], int] = {}
@@ -329,9 +336,9 @@ def predict_names(
     ...     root_id="BL21I-VA-CATIO-01",
     ... )
     >>> names[(1, 1)]
-    'BL21I-VA-E1RIO-01:10VAI01'
+    'BL21I-VA-E1RIO-01:AI10V01'
     >>> names[(1, 2)]
-    'BL21I-VA-E1RIO-01:24VDI01'
+    'BL21I-VA-E1RIO-01:DI24V01'
     """
     return {
         key: slave.prefix

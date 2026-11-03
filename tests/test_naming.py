@@ -188,19 +188,19 @@ def test_i21_worked_examples():
     names = predict_names(I21_VA_IOC_01, DLS_MAPPINGS, root_id=ROOT_ID)
 
     # legacy BL21I-VA-ERIO-01:MOD1 -- 5th coupler, 1st terminal
-    assert names[(5, 1)] == "BL21I-VA-E1RIO-05:10VAI01"
+    assert names[(5, 1)] == "BL21I-VA-E1RIO-05:AI10V01"
     # legacy BL21I-VA-ERIO-01:MOD5 -- the EL1014s restart the alias sequence
-    assert names[(5, 5)] == "BL21I-VA-E1RIO-05:24VDI01"
+    assert names[(5, 5)] == "BL21I-VA-E1RIO-05:DI24V01"
     # legacy BL21I-VA-ERIO-04:MOD1 -- 1st coupler, so ERIO-04 becomes E1RIO-01
-    assert names[(1, 1)] == "BL21I-VA-E1RIO-01:10VAI01"
+    assert names[(1, 1)] == "BL21I-VA-E1RIO-01:AI10V01"
 
 
 def test_alias_sequence_is_per_coupler_not_per_chain():
     """Each coupler restarts the per-alias numbering."""
     names = predict_names(I21_VA_IOC_01, DLS_MAPPINGS, root_id=ROOT_ID)
-    assert names[(1, 1)] == "BL21I-VA-E1RIO-01:10VAI01"
-    assert names[(2, 1)] == "BL21I-VA-E1RIO-02:10VAI01"
-    assert names[(3, 1)] == "BL21I-VA-E1RIO-03:10VAI01"
+    assert names[(1, 1)] == "BL21I-VA-E1RIO-01:AI10V01"
+    assert names[(2, 1)] == "BL21I-VA-E1RIO-02:AI10V01"
+    assert names[(3, 1)] == "BL21I-VA-E1RIO-03:AI10V01"
 
 
 def test_coupler_is_position_zero():
@@ -225,9 +225,9 @@ def test_group_aliases_of_the_i21_terminal_types():
         for t in ("EL3104", "EL1014", "EL2024-0010", "EL3356-0010")
     }
     assert aliases == {
-        "EL3104": "10VAI",
-        "EL1014": "24VDI",
-        "EL2024-0010": "12VDO",
+        "EL3104": "AI10V",
+        "EL1014": "DI24V",
+        "EL2024-0010": "DO12V",
         "EL3356-0010": "AI",
     }
 
@@ -239,7 +239,7 @@ def test_revision_is_ignored_for_alias_lookup():
         DLS_MAPPINGS,
         root_id=ROOT_ID,
     )
-    assert declared[(1, 1)] == "BL21I-VA-E1RIO-01:10VAI01"
+    assert declared[(1, 1)] == "BL21I-VA-E1RIO-01:AI10V01"
 
 
 def test_unknown_terminal_type_raises_in_strict_mode():
