@@ -6,19 +6,27 @@ import re
 _ABBREVIATIONS = {
     "activate": "act",
     "assign": "asn",
+    "average": "avg",
     "backup": "bak",
+    "calibration": "cal",
     "channel": "ch",
+    "coldjunction": "cj",
     "compact": "cpt",
+    "compensation": "comp",
     "checksum": "csum",
     "counter": "cnt",
     "current": "cur",
     "default": "def",
+    "detection": "det",
     "device": "dev",
     "diagnosis": "diag",
+    "differentiator": "diff",
     "disable": "dis",
     "delay": "dly",
+    "dynamic": "dyn",
     "enable": "en",
     "feedback": "fb",
+    "frequency": "freq",
     "function": "fn",
     "functions": "fns",
     "hardware": "hw",
@@ -34,13 +42,17 @@ _ABBREVIATIONS = {
     "minimum": "min",
     "modular": "mod",
     "number": "num",
+    "offset": "off",
     "output": "out",
     "parameter": "par",
     "parameters": "pars",
+    "presentation": "pres",
     "product": "prod",
     "reload": "rld",
+    "resistance": "res",
     "revision": "rev",
     "restore": "rst",
+    "samples": "smpl",
     "serial": "ser",
     "settings": "set",
     "subindex": "si",
@@ -56,6 +68,15 @@ _ABBREVIATIONS = {
     "vendor": "vnd",
     "version": "ver",
 }
+
+# Matches the trailing "_idx<hex>" suffix appended to CoE attribute names
+# so the parent CoE index survives any further shortening pass.
+_IDX_SUFFIX_RE = re.compile(r"_idx[0-9a-f]+$")
+
+# Matches a + or - immediately preceding a digit, e.g. the "+5"/"-5" in
+# "Calibration gain +5 V". Without this, both names would collapse to the
+# same FastCS attribute name.
+_SIGNED_NUMBER_RE = re.compile(r"(?<![a-zA-Z0-9])([+-])(?=\d)")
 
 
 def to_snake_case(name: str) -> str:
@@ -77,6 +98,10 @@ def to_snake_case(name: str) -> str:
         'status_word'
         >>> to_snake_case("Channel {channel} Value")
         'channel_{channel}_value'
+        >>> to_snake_case("Calibration gain +5 V")
+        'calibration_gain_p5_v'
+        >>> to_snake_case("Calibration gain -5 V")
+        'calibration_gain_m5_v'
 
     Notes:
         The above '>>>' are picked up as test cases by doctest. And they pass!
@@ -86,6 +111,11 @@ def to_snake_case(name: str) -> str:
 
     # Remove {channel} temporarily for processing
     name_without_placeholder = name.replace("{channel}", "")
+
+    # Keep the sign of signed numbers, e.g. "+5 V" -> "p5 V", "-5 V" -> "m5 V"
+    name_without_placeholder = _SIGNED_NUMBER_RE.sub(
+        lambda m: "p" if m.group(1) == "+" else "m", name_without_placeholder
+    )
 
     # Replace special characters with spaces
     name_clean = re.sub(r"[^a-zA-Z0-9]+", " ", name_without_placeholder)
@@ -280,3 +310,58 @@ def make_subindex_fastcs_name(
         result = truncated
 
     return final_result()
+
+
+def shorten_fastcs_name(snake_name: str, max_length: int) -> str:
+    """Shorten an already snake_case fastcs_name to fit a length budget.
+
+    Preserves any trailing ``_idx<hex>`` suffix so CoE attribute names keep
+    their parent-index disambiguator after abbreviation/truncation. Returns
+    the input unchanged when it already fits.
+
+    Args:
+        snake_name: A snake_case attribute name, optionally ending in
+            ``_idx<hex>``.
+        max_length: Maximum allowed length of the result.
+
+    Returns:
+        A snake_case name no longer than ``max_length`` characters.
+
+    Examples:
+        >>> shorten_fastcs_name("user_calibration_offset_idx8030", 23)
+        'user_cal_off_idx8030'
+        >>> shorten_fastcs_name("disable_wire_break_detection_idx8000", 26)
+        'dis_wire_break_det_idx8000'
+        >>> shorten_fastcs_name("enable_filter_idx8000", 30)
+        'enable_filter_idx8000'
+    """
+    if len(snake_name) <= max_length:
+        return snake_name
+
+    match = _IDX_SUFFIX_RE.search(snake_name)
+    if match:
+        suffix = match.group(0)  # includes leading underscore
+        body = snake_name[: match.start()]
+    else:
+        suffix = ""
+        body = snake_name
+
+    body_max = max_length - len(suffix)
+    if body_max < 1:
+        return snake_name[:max_length]
+
+    if len(body) <= body_max:
+        return body + suffix
+
+    words = body.split("_")
+    abbreviated = _abbreviate_words(words)
+    abbreviated = _remove_duplicate_words(abbreviated)
+    body = "_".join(abbreviated)
+    if len(body) <= body_max:
+        return body + suffix
+
+    truncated = body[:body_max]
+    last_underscore = truncated.rfind("_")
+    if last_underscore > body_max // 2:
+        truncated = truncated[:last_underscore]
+    return truncated + suffix

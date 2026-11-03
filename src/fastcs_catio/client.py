@@ -103,6 +103,12 @@ SYSTEM_SERVICE_PORT: int = 10000
 REMOTE_UDP_PORT: int = 48899
 
 
+# Pattern for valid Beckhoff EtherCAT Box (e.g. "EP1234", "EPP2008", "EQ5678", "ER3184")
+_BOX_TYPE_RE = re.compile(r"(E[PQR]{1}P?\d{4})")
+
+# Passive topology terminals (EtherCAT star junctions) which get no controller
+_IGNORED_TERMINAL_TYPES = frozenset({"EK1122"})
+
 MessageT = TypeVar("MessageT", bound=Message)
 FuncType = Callable[[Any, Any], Awaitable[Any]]
 
@@ -1397,8 +1403,14 @@ class AsyncioADSClient:
         print(f"|----EtherCAT Master '{self._ecdevices[device_id].name}'")
         print("\t|")
         for slave in self._ecdevices[device_id].slaves:
+            if slave.type in _IGNORED_TERMINAL_TYPES:
+                continue
             rev = f"rev=0x{int(slave.identity.revision_number):08x}"
-            if ("EK1100" in slave.name) | ("EK1200" in slave.name):
+            if (
+                ("EK1100" in slave.name)
+                or ("EK1200" in slave.name)
+                or (_BOX_TYPE_RE.search(slave.name) is not None)
+            ):
                 print(
                     f"\t|----- {slave.loc_in_chain.node}::"
                     + f"{slave.loc_in_chain.position} -> {slave.name}\t{rev}"
@@ -1427,8 +1439,17 @@ class AsyncioADSClient:
             node_count = 0
             node, node_position = 0, 0
             for slave in device.slaves:
+                if slave.type in _IGNORED_TERMINAL_TYPES:
+                    continue
+                if slave.type == "EK1110" and node == 0:
+                    node_position += 1
                 if slave.type == "EK1100":
                     slave.category = IONodeType.Coupler
+                    node_count += 1
+                    node += 1
+                    node_position = 0
+                if _BOX_TYPE_RE.match(slave.type) is not None:
+                    slave.category = IONodeType.Box
                     node_count += 1
                     node += 1
                     node_position = 0
@@ -1441,9 +1462,10 @@ class AsyncioADSClient:
         """
         Generate a tree structure from the components available on the EtherCAT system.
         The root node is the I/O server whose child nodes are the EtherCAT devices.
-        Each device node may comprise either coupler terminals as child nodes or
+        Each device node may comprise either coupler or box terminals as child nodes or
         slave terminals as leaf nodes.
         Coupler nodes may comprise slave terminals as leaf nodes.
+        Box nodes don't have leaf nodes as they are themselves acting as leaf nodes.
 
         :returns: the root node of the EtherCAT system tree
         """
@@ -1454,6 +1476,8 @@ class AsyncioADSClient:
             server_node.add_child(device_node)
             coupler_node = None
             for slave in device.slaves:
+                if slave.type in _IGNORED_TERMINAL_TYPES:
+                    continue
                 if slave.type == "EK1100":
                     parent_path = deepcopy(device_node.path)
                     coupler_node = IOTreeNode(slave, parent_path)
@@ -3473,7 +3497,7 @@ class AsyncioADSClient:
 
     async def read_io_coe_parameter(
         self, address: AmsAddress, index: str, subindex: str, dtype: npt.DTypeLike
-    ) -> npt.NDArray[Any]:
+    ) -> npt.NDArray[Any] | None:
         """
         Read the value of a CANopen-over-EtherCAT parameter.
 
@@ -3483,7 +3507,7 @@ class AsyncioADSClient:
         :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
         :param dtype: the data type of the CoE parameter
 
-        :returns: the value of the CoE parameter
+        :returns: the value of the CoE parameter, or None if the read failed
         """
         index, subindex = check_coe_indices_format(index, subindex)
         response = await self._ads_command(
@@ -3491,6 +3515,21 @@ class AsyncioADSClient:
             netid=address.net_id,
             port=address.port,
         )
+        if response.result != ErrorCode.ERR_NOERROR:
+            logger.warning(
+                f"CoE read of '{index}:{subindex}' from {address.to_string()} failed "
+                + f"with {ErrorCode(response.result).name}. "
+                + "The parameter value will be left uninitialised."
+            )
+            return None
+
+        if not response.data:
+            logger.warning(
+                f"CoE read of '{index}:{subindex}' from {address.to_string()} "
+                + "returned no data. The parameter value will be left uninitialised."
+            )
+            return None
+
         # Adjust dtype for byte string types of variable length
         if (
             np.dtype(dtype).kind == "S"
@@ -3540,14 +3579,13 @@ class AsyncioADSClient:
         :param subindex: the CoE subindex assigned to the parameter (LOBYTE=0x____00YY)
         :param dtype: the data type of the CoE parameter
 
-        :returns: the value of the CoE parameter
+        :returns: the value of the CoE parameter, or None if the read failed
         """
         response = await self.read_io_coe_parameter(address, index, subindex, dtype)
-        result = (
-            response[0].item()
-            if isinstance(response, np.ndarray) and response.size == 1
-            else response
-        )
+        if response is None:
+            return None
+
+        result = response[0].item() if response.size == 1 else response
         return result
 
     async def set_coe_param(

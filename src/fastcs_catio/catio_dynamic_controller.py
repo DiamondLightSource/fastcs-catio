@@ -17,7 +17,7 @@ Usage:
 from fastcs.logging import logger as _fastcs_logger
 
 from catio_terminals.models import SymbolNode
-from catio_terminals.utils import snake_to_pascal
+from catio_terminals.utils import shorten_fastcs_name, snake_to_pascal
 from fastcs_catio.catio_controller import CATioTerminalController
 from fastcs_catio.catio_dynamic_coe import (
     CoEAdsItem,
@@ -29,6 +29,7 @@ from fastcs_catio.terminal_config import (
     get_terminal_type,
     load_runtime_symbols,
 )
+from fastcs_catio.utils import max_attribute_name_length
 
 logger = _fastcs_logger.bind(logger_name=__name__)
 
@@ -119,6 +120,10 @@ def _create_dynamic_controller_class(
                     access=coe_obj.access,
                     bit_size=coe_obj.bit_size,
                 )
+                budget = max_attribute_name_length(
+                    self.path, is_rw=not ads_item.readonly
+                )
+                ads_item.fastcs_name = shorten_fastcs_name(ads_item.fastcs_name, budget)
                 add_coe_attribute(self, ads_item)
                 # TODO use this to make sure all names are unique
                 created_coe_attrs.add(ads_item.fastcs_name)
@@ -134,6 +139,12 @@ def _create_dynamic_controller_class(
                         access=subindex.access,
                         bit_size=subindex.bit_size,
                         group=snake_to_pascal(coe_obj.fastcs_name),
+                    )
+                    budget = max_attribute_name_length(
+                        self.path, is_rw=not ads_item.readonly
+                    )
+                    ads_item.fastcs_name = shorten_fastcs_name(
+                        ads_item.fastcs_name, budget
                     )
                     if ads_item.fastcs_name in created_coe_attrs:
                         logger.warning(

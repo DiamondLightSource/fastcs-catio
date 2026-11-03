@@ -1,11 +1,90 @@
 """Data models for terminal description YAML files."""
 
+import re
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
 from catio_terminals.ads_types import get_type_info
 from catio_terminals.utils import make_fastcs_name, make_subindex_fastcs_name
+
+# Short aliases for terminal group_types, used to derive PV-name fragments.
+# These are hand-picked guesses; feel free to edit. compute_group_alias()
+# concatenates the short name with an optional voltage suffix (e.g. "DO24V"),
+# putting the type first so the alias always starts with a letter.
+# Beckhoff's catalog splits "Fieldbus Box" into many EPxxxx/EPPxxxx/EPXxxxx
+# sub-buckets; per project convention every box variant collapses to "BOX".
+GROUP_TYPE_ALIASES: dict[str, str] = {
+    "AnaIn": "AI",
+    "AnaOut": "AO",
+    "AnaOutFast": "AO",
+    "DigIn": "DI",
+    "DigOut": "DO",
+    "CpBk": "CPL",
+    "SystemBk": "SYS",
+    "EJ_Coupler": "CPL",
+    "PowerSupply": "PSU",
+    "Measuring": "MSR",
+    "Multifunction": "MUL",
+    "Communication": "COM",
+    "System": "SYS",
+    "Safety": "SAF",
+    "SafetyTerminals": "SAF",
+    "SafetyCoupler": "SAF",
+    "SafetyFieldbusBoxes": "BOX",
+    "FieldbusBoxEP": "BOX",
+    "FieldbusBoxEP1xxx": "BOX",
+    "FieldbusBoxEP2xxx": "BOX",
+    "FieldbusBoxEP3xxx": "BOX",
+    "FieldbusBoxEP4xxx": "BOX",
+    "FieldbusBoxEP5xxx": "BOX",
+    "FieldbusBoxEP6xxx": "BOX",
+    "FieldbusBoxEP7xxx": "BOX",
+    "FieldbusBoxEP8xxx": "BOX",
+    "FieldbusBoxEPP1xxx": "BOX",
+    "FieldbusBoxEPP2xxx": "BOX",
+    "FieldbusBoxEPP3xxx": "BOX",
+    "FieldbusBoxEPP4xxx": "BOX",
+    "FieldbusBoxEPP5xxx": "BOX",
+    "FieldbusBoxEPP6xxx": "BOX",
+    "FieldbusBoxEPP7xxx": "BOX",
+    "FieldbusBoxEPX1xxx": "BOX",
+    "EKM": "EKM",
+    "ELM": "MSR",
+    "DriveAxisTerminals": "DRV",
+    "Other": "OTH",
+}
+
+# Capture a 1- or 2-digit voltage from a terminal description. Matches
+# digital supply forms ("24V DC", "24V,"), bipolar/unipolar analog ranges
+# ("+/-10V", "0-10V"), and trailing "24V". Word boundaries prevent picking
+# up 2-digit substrings of 3+-digit numbers like "125V".
+_SUPPLY_VOLTAGE_RE = re.compile(r"\b(\d{1,2})V\b", re.IGNORECASE)
+
+
+def compute_group_alias(description: str | None, group_type: str | None) -> str | None:
+    """Build the short PV-name alias from a terminal's description and group.
+
+    The result is `<SHORT><NN>V` when a supply voltage is present in the
+    description, otherwise just `<SHORT>`. Returns None if no group_type
+    abbreviation is known and no voltage is found.
+
+    The type short name is placed first so the alias always starts with a
+    letter, which is required for fastcs controller names (numeric-leading
+    names are rejected by ``Controller.add_sub_controller``).
+    """
+    short: str | None = None
+    voltage: str | None = None
+    if group_type:
+        short = GROUP_TYPE_ALIASES.get(group_type)
+    if description:
+        m = _SUPPLY_VOLTAGE_RE.search(description)
+        if m:
+            voltage = f"{int(m.group(1)):02d}V"
+    if short is None and voltage is None:
+        return None
+    return (short or "") + (voltage or "")
+
 
 # CoE subindex bit sizes for primitive types. Distinct from ads_types.TYPE_INFO
 # because that table stores bytes (and 0 for bit-addressed types), while CoE
@@ -372,6 +451,13 @@ class TerminalType(BaseModel):
         default_factory=list, description="CoE object dictionary"
     )
     group_type: str | None = Field(default=None, description="Terminal group type")
+    group_alias: str | None = Field(
+        default=None,
+        description=(
+            "Short PV-name fragment derived from description (supply voltage) "
+            "and group_type. Recomputed on load; do not hand-edit."
+        ),
+    )
     pdo_groups: list[PdoGroup] = Field(
         default_factory=list,
         description="Mutually exclusive PDO groups (empty = static PDOs)",
@@ -380,6 +466,11 @@ class TerminalType(BaseModel):
         default=None,
         description="Currently selected PDO group name (None = all symbols available)",
     )
+
+    @model_validator(mode="after")
+    def _recompute_group_alias(self) -> "TerminalType":
+        self.group_alias = compute_group_alias(self.description, self.group_type)
+        return self
 
     @property
     def has_dynamic_pdos(self) -> bool:

@@ -82,6 +82,8 @@ async def beckhoff_xml_cache() -> list[Any]:
 
         # Download and parse all XML files into the cache
         terminals = await client.fetch_and_parse_xml()
+        if not terminals:
+            pytest.skip("Beckhoff XML cache unavailable (network unreachable)")
         return terminals
     finally:
         client.close()
