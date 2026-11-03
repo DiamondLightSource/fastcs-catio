@@ -10,6 +10,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 description = "Control system integration of EtherCAT I/O devices running under TwinCAT using pyads and FastCS"
 dependencies = [
@@ -37,7 +38,6 @@ terminals = [
 
 [dependency-groups]
 dev = [
-    "copier",
     "myst-parser",
     "pre-commit",
     "pydata-sphinx-theme>=0.12",
@@ -64,6 +64,10 @@ GitHub = "https://github.com/DiamondLightSource/fastcs-catio"
 [[project.authors]] # Further authors may be added by duplicating this section
 email = "gregory.gay@diamond.ac.uk"
 name = "Greg Gay"
+
+[tool.uv]
+# Minimum uv to fix eMudhra CA cert incident (see discuss.python.org/t/109576)
+required-version = ">=0.13.5"
 
 [tool.setuptools_scm]
 version_file = "src/fastcs_catio/_version.py"
