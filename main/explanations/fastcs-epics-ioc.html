@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a4.dev184+gc36e26b8f documentation</title>
+    <title>FastCS EPICS IOC Implementation &#8212; fastcs-catio 1.1a4.dev213+gb00fe27ea documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=0e54ba7d"></script>
+    <script src="../_static/documentation_options.js?v=c84af3bc"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -492,11 +492,11 @@
 <h2>The Controller Hierarchy<a class="headerlink" href="#the-controller-hierarchy" title="Link to this heading">#</a></h2>
 <p>CATio organizes its FastCS controllers in a tree structure that reflects the physical EtherCAT network:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>CATioServerController (root)
-└── CATioDeviceController (EtherCAT Master)
-    ├── CATioTerminalController (EK1100 Coupler)
-    │   ├── CATioTerminalController (EL3064 Analog Input)
-    │   └── CATioTerminalController (EL2008 Digital Output)
-    └── CATioTerminalController (EK1101 Coupler)
+└── EtherCATMasterController (EtherCAT Master device)
+    ├── Dynamic EK1100 controller (Coupler, hoisted to server if single-segment path)
+    │   ├── Dynamic EL3064 controller (Analog Input)
+    │   └── Dynamic EL2008 controller (Digital Output)
+    └── Dynamic EK1101 controller (Coupler)
         └── ...
 </pre></div>
 </div>
@@ -505,16 +505,37 @@
 <li><p><strong>Each level corresponds to physical hardware</strong>: The server represents the Beckhoff PLC, devices represent EtherCAT Masters, and terminals represent individual I/O modules</p></li>
 <li><p><strong>Attributes are scoped appropriately</strong>: Server-level attributes (like version info) are separate from terminal-level attributes (like input values)</p></li>
 <li><p><strong>The tree is auto-generated</strong>: CATio introspects the hardware and builds controllers dynamically</p></li>
+<li><p><strong>Couplers with top-level paths are hoisted</strong>: When a coupler or box resolves to a single-segment PV path (e.g., <code class="docutils literal notranslate"><span class="pre">BL04I-EA-E1RIO-01</span></code>), it is registered directly under the server rather than nested under the device, enabling PVI to render it as a top-level screen</p></li>
 </ol>
 <section id="the-base-controller">
 <h3>The Base Controller<a class="headerlink" href="#the-base-controller" title="Link to this heading">#</a></h3>
 <p>All CATio controllers inherit from <code class="docutils literal notranslate"><span class="pre">CATioController</span></code>, which extends the FastCS <code class="docutils literal notranslate"><span class="pre">Controller</span></code> class. The base class provides:</p>
 <ul class="simple">
-<li><p>A shared TCP connection to the TwinCAT server (class-level singleton)</p></li>
-<li><p>Unique identifiers for API dispatch</p></li>
+<li><p>A shared TCP connection to the TwinCAT server (class-level singleton <code class="docutils literal notranslate"><span class="pre">_tcp_connection</span></code>)</p></li>
+<li><p>Unique integer identifiers for API dispatch (class-level counter <code class="docutils literal notranslate"><span class="pre">_identifier</span></code>)</p></li>
 <li><p>References to corresponding hardware objects (<code class="docutils literal notranslate"><span class="pre">IOServer</span></code>, <code class="docutils literal notranslate"><span class="pre">IODevice</span></code>, or <code class="docutils literal notranslate"><span class="pre">IOSlave</span></code>)</p></li>
 <li><p>Attribute grouping for organized PV naming</p></li>
 </ul>
+<p>Each controller instance registers three IO handler objects that route attribute reads and writes to the appropriate ADS mechanism:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>IO class</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerAttributeIO</span></code></p></td>
+<td><p>Standard polled controller attributes (device/terminal metadata)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerSymbolAttributeIO</span></code></p></td>
+<td><p>PDO symbol attributes from ADS symbol read/write</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerCoEAttributeIO</span></code></p></td>
+<td><p>CoE configuration parameter attributes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p>The <code class="docutils literal notranslate"><span class="pre">CATioController</span></code> class is defined in <a class="reference download internal" download="" href="../_downloads/d453519b38dd3cd661057992cd854acb/catio_controller.py"><span class="xref download myst">catio_controller.py</span></a>. It includes connection management, attribute registration, and the core interface for communicating with the ADS client.</p>
 </section>
 <section id="the-server-controller">
@@ -526,11 +547,34 @@
 <li><p><strong>Hardware discovery</strong>: Introspects the I/O server to find all devices and terminals</p></li>
 <li><p><strong>Subcontroller creation</strong>: Instantiates the appropriate controller classes for discovered hardware</p></li>
 </ul>
-<p>During initialization, the server controller queries the TwinCAT system and builds the complete controller tree automatically. The key method is <code class="docutils literal notranslate"><span class="pre">register_subcontrollers()</span></code> which traverses the discovered hardware tree and creates corresponding FastCS controllers.</p>
+<p>All server settings are packaged in a <code class="docutils literal notranslate"><span class="pre">CATioServerControllerOptions</span></code> dataclass, which groups:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sub-dataclass</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATioTCPSettings</span></code></p></td>
+<td><p>Target IP and port for the TwinCAT server</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATioRouteSettings</span></code></p></td>
+<td><p>UDP route credentials (user name, password)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATioScanTimings</span></code></p></td>
+<td><p>Polling and notification update periods</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATioNameMappings</span></code></p></td>
+<td><p>PV name templates for device, node, and module controllers</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>During initialization, the server controller queries the TwinCAT system and builds the complete controller tree automatically. The key method is <code class="docutils literal notranslate"><span class="pre">register_subcontrollers()</span></code> which traverses the discovered hardware tree and calls <code class="docutils literal notranslate"><span class="pre">get_subcontrollers_from_node()</span></code> recursively to create corresponding FastCS controllers. Couplers and boxes whose resolved path consists of a single segment are <em>hoisted</em> from the device level up to the server level, so PVI can render them inline on the top-level screen.</p>
 </section>
 <section id="device-and-terminal-controllers">
 <h3>Device and Terminal Controllers<a class="headerlink" href="#device-and-terminal-controllers" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">CATioDeviceController</span></code> represents EtherCAT Master devices and exposes attributes like:</p>
+<p>The concrete device controller for an EtherCAT master is <code class="docutils literal notranslate"><span class="pre">EtherCATMasterController</span></code> (a <code class="docutils literal notranslate"><span class="pre">CATioDeviceController</span></code> subclass defined in <a class="reference download internal" download="" href="../_downloads/ee31b0379f455f18c0dfd76139638f5a/catio_hardware.py"><span class="xref download myst">catio_hardware.py</span></a>). The set of supported device types is stored in <code class="docutils literal notranslate"><span class="pre">SUPPORTED_DEVICE_CONTROLLERS</span></code>. <code class="docutils literal notranslate"><span class="pre">CATioDeviceController</span></code> exposes attributes including:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Attribute</p></th>
@@ -547,13 +591,29 @@
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SlavesCrcCounters</span></code></p></td>
 <td><p>CRC error counters for network diagnostics</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FrameCounters</span></code></p></td>
-<td><p>Statistics on cyclic and acyclic EtherCAT frames</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NodeCount</span></code></p></td>
+<td><p>Number of EtherCAT nodes registered on the device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SystemTime</span></code></p></td>
+<td><p>EtherCAT frame timestamp</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SentCyclicFrames</span></code></p></td>
+<td><p>Count of sent cyclic EtherCAT frames</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LostCyclicFrames</span></code></p></td>
+<td><p>Count of lost cyclic EtherCAT frames</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SentAcyclicFrames</span></code></p></td>
+<td><p>Count of sent acyclic EtherCAT frames</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LostAcyclicFrames</span></code></p></td>
+<td><p>Count of lost acyclic EtherCAT frames</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">CATioTerminalController</span></code> represents individual I/O modules (EK couplers, EL terminals) with attributes like:</p>
+<p><code class="docutils literal notranslate"><span class="pre">EtherCATMasterController</span></code> adds further notification-stream attributes (<code class="docutils literal notranslate"><span class="pre">InFrm0State</span></code>, <code class="docutils literal notranslate"><span class="pre">InFrm0WcState</span></code>, <code class="docutils literal notranslate"><span class="pre">InFrm0InpToggle</span></code>, <code class="docutils literal notranslate"><span class="pre">OutFrm0Ctrl</span></code>, <code class="docutils literal notranslate"><span class="pre">OutFrm0WcCtrl</span></code>, <code class="docutils literal notranslate"><span class="pre">InputsDevState</span></code>, <code class="docutils literal notranslate"><span class="pre">OutputsDevCtrl</span></code>, <code class="docutils literal notranslate"><span class="pre">InputsSlaveCount</span></code>) that are updated via ADS notifications rather than polling.</p>
+<p><code class="docutils literal notranslate"><span class="pre">CATioTerminalController</span></code> represents individual I/O modules (EK couplers, EL terminals) with attributes including:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Attribute</p></th>
@@ -561,14 +621,26 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EcatState</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">StateMachine</span></code></p></td>
 <td><p>The terminal’s EtherCAT state machine value</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LinkStatus</span></code></p></td>
 <td><p>Network link health indicator</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CrcErrorSum</span></code></p></td>
-<td><p>Accumulated CRC errors for this terminal</p></td>
+<td><p>Accumulated CRC errors (sum across all ports)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CrcErrorPortA/B/C/D</span></code></p></td>
+<td><p>Per-port CRC error counters</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Node</span></code></p></td>
+<td><p>Chain node index for this terminal</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Position</span></code></p></td>
+<td><p>Chain position index for this terminal</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Address</span></code></p></td>
+<td><p>EtherCAT address</p></td>
 </tr>
 </tbody>
 </table>
@@ -582,11 +654,12 @@
 <h3>How Dynamic Generation Works<a class="headerlink" href="#how-dynamic-generation-works" title="Link to this heading">#</a></h3>
 <p>When CATio discovers a terminal, it calls <code class="docutils literal notranslate"><span class="pre">get_terminal_controller_class(terminal_id)</span></code> from <code class="docutils literal notranslate"><span class="pre">catio_dynamic_controller.py</span></code>. This factory function:</p>
 <ol class="arabic simple">
-<li><p>Looks up the terminal type (e.g., “EL3064”) in <code class="docutils literal notranslate"><span class="pre">terminal_types.yaml</span></code></p></li>
-<li><p>Creates a controller class dynamically based on the YAML definition</p></li>
-<li><p>Adds symbol attributes for process data (from <code class="docutils literal notranslate"><span class="pre">catio_dynamic_symbol.py</span></code>)</p></li>
+<li><p>Looks up the terminal type (e.g., “EL3064”) across all YAML files in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/</span></code></p></li>
+<li><p>Creates a controller class dynamically based on the YAML definition (<code class="docutils literal notranslate"><span class="pre">DynamicEL3064Controller</span></code>, etc.)</p></li>
+<li><p>Adds runtime symbol attributes (e.g., <code class="docutils literal notranslate"><span class="pre">WcState</span></code>, <code class="docutils literal notranslate"><span class="pre">InfoData</span></code>) applicable to this terminal type</p></li>
+<li><p>Adds PDO symbol attributes for process data (from <code class="docutils literal notranslate"><span class="pre">catio_dynamic_symbol.py</span></code>)</p></li>
 <li><p>Adds CoE attributes for configuration parameters (from <code class="docutils literal notranslate"><span class="pre">catio_dynamic_coe.py</span></code>)</p></li>
-<li><p>Caches the class for reuse</p></li>
+<li><p>Caches the class for reuse across multiple instances of the same terminal type</p></li>
 </ol>
 <p>The key modules involved:</p>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -614,7 +687,7 @@
 </section>
 <section id="terminal-yaml-definitions">
 <h3>Terminal YAML Definitions<a class="headerlink" href="#terminal-yaml-definitions" title="Link to this heading">#</a></h3>
-<p>Each terminal type is defined in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/terminal_types.yaml</span></code> with:</p>
+<p>Each terminal type is defined in <code class="docutils literal notranslate"><span class="pre">src/catio_terminals/terminals/terminal_types.yaml</span></code> (the terminal config loader supports multiple YAML files via glob patterns) with:</p>
 <ul class="simple">
 <li><p><strong>Symbol nodes</strong>: Process data accessible via ADS (inputs/outputs)</p></li>
 <li><p><strong>CoE objects</strong>: Configuration parameters with subindices</p></li>
@@ -629,13 +702,13 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>PDO symbols</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">symbol_nodes</span></code> in YAML</p></td>
-<td><p>Input values, status bits</p></td>
-</tr>
-<tr class="row-odd"><td><p>Runtime symbols</p></td>
+<tr class="row-even"><td><p>Runtime symbols</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">runtime_symbols.yaml</span></code></p></td>
 <td><p>WcState, InfoData</p></td>
+</tr>
+<tr class="row-odd"><td><p>PDO symbols</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">symbol_nodes</span></code> in YAML</p></td>
+<td><p>Input values, status bits</p></td>
 </tr>
 <tr class="row-even"><td><p>CoE parameters</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">coe_objects</span></code> in YAML</p></td>
@@ -649,19 +722,42 @@
 </section>
 <section id="the-attribute-i-o-system">
 <h2>The Attribute I/O System<a class="headerlink" href="#the-attribute-i-o-system" title="Link to this heading">#</a></h2>
-<p>FastCS attributes need to know how to read (and optionally write) their values. CATio implements this through <code class="docutils literal notranslate"><span class="pre">CATioControllerAttributeIO</span></code>, which bridges FastCS attributes to the ADS client API.</p>
+<p>FastCS attributes need to know how to read (and optionally write) their values. CATio implements this through three IO classes in <a class="reference download internal" download="" href="../_downloads/5a638c979b79861a78644d0de13c237c/catio_attribute_io.py"><span class="xref download myst">catio_attribute_io.py</span></a>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Ref class</p></th>
+<th class="head"><p>Used for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerAttributeIO</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerAttributeIORef</span></code></p></td>
+<td><p>Standard polled controller attributes (metadata, counters)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerSymbolAttributeIO</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerSymbolAttributeIORef</span></code></p></td>
+<td><p>PDO symbol read/write via ADS symbol names</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerCoEAttributeIO</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CATioControllerCoEAttributeIORef</span></code></p></td>
+<td><p>CoE configuration parameters read/write</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All three are registered with every controller instance in <code class="docutils literal notranslate"><span class="pre">CATioController.__init__</span></code>, and FastCS dispatches each attribute’s update or send call to the appropriate IO object based on the <code class="docutils literal notranslate"><span class="pre">io_ref</span></code> type.</p>
 <section id="how-attribute-updates-work">
 <h3>How Attribute Updates Work<a class="headerlink" href="#how-attribute-updates-work" title="Link to this heading">#</a></h3>
-<p>The update flow for a CATio attribute follows these steps:</p>
+<p>The update flow for a standard polled attribute follows these steps:</p>
 <ol class="arabic simple">
-<li><p>FastCS calls the <code class="docutils literal notranslate"><span class="pre">update()</span></code> method on an attribute’s I/O handler at the configured polling interval</p></li>
-<li><p>The I/O handler constructs an API query string based on the attribute name and controller context</p></li>
+<li><p>FastCS calls the <code class="docutils literal notranslate"><span class="pre">update()</span></code> method on an attribute’s IO handler at the configured polling interval</p></li>
+<li><p>The IO handler constructs an API query string based on the attribute name and controller context</p></li>
 <li><p>The query is sent through <code class="docutils literal notranslate"><span class="pre">CATioConnection</span></code> to the <code class="docutils literal notranslate"><span class="pre">AsyncioADSClient</span></code></p></li>
 <li><p>The client dispatches to the appropriate <code class="docutils literal notranslate"><span class="pre">get_*</span></code> method</p></li>
 <li><p>The response flows back and the attribute value is updated</p></li>
 </ol>
-<p>This indirection means attributes don’t need to know ADS protocol details - they just specify their name and polling period.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">CATioControllerAttributeIO</span></code> class in <a class="reference download internal" download="" href="../_downloads/5a638c979b79861a78644d0de13c237c/catio_attribute_io.py"><span class="xref download myst">catio_attribute_io.py</span></a> implements this bridge between FastCS attributes and the ADS client API.</p>
+<p>For symbol attributes, the <code class="docutils literal notranslate"><span class="pre">CATioControllerSymbolAttributeIO</span></code> handler looks up the ADS symbol name via <code class="docutils literal notranslate"><span class="pre">ads_name_map</span></code> on the controller, then issues a <code class="docutils literal notranslate"><span class="pre">SYMBOL_PARAM</span></code> request to read or write the value directly by symbol name.</p>
 </section>
 <section id="polling-vs-notifications">
 <h3>Polling vs Notifications<a class="headerlink" href="#polling-vs-notifications" title="Link to this heading">#</a></h3>
@@ -700,11 +796,39 @@
 </section>
 <section id="pv-naming-convention">
 <h2>PV Naming Convention<a class="headerlink" href="#pv-naming-convention" title="Link to this heading">#</a></h2>
-<p>CATio generates EPICS PV names that reflect the hardware hierarchy:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">PREFIX</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Server</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Device</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Coupler</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Terminal</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">Attribute</span><span class="o">&gt;</span>
+<p>CATio generates EPICS PV names that reflect the hardware hierarchy. The naming is configured via <code class="docutils literal notranslate"><span class="pre">CATioNameMappings</span></code> (part of <code class="docutils literal notranslate"><span class="pre">CATioServerControllerOptions</span></code>) using three Python <code class="docutils literal notranslate"><span class="pre">str.format</span></code>-style templates:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Template field</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Controls</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">device_prefix</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ETH{}</span></code></p></td>
+<td><p>EtherCAT master devices</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">node_prefix</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">E1RIO{}</span></code></p></td>
+<td><p>EtherCAT couplers/boxes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">module_prefix</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MOD{}</span></code></p></td>
+<td><p>Individual I/O terminals</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Templates may use <code class="docutils literal notranslate"><span class="pre">{}</span></code> or <code class="docutils literal notranslate"><span class="pre">{n}</span></code> for the numeric index, <code class="docutils literal notranslate"><span class="pre">{id}</span></code> for the IOC root prefix, <code class="docutils literal notranslate"><span class="pre">{device_prefix}</span></code> (inside <code class="docutils literal notranslate"><span class="pre">node_prefix</span></code> and <code class="docutils literal notranslate"><span class="pre">module_prefix</span></code>), and <code class="docutils literal notranslate"><span class="pre">{node_prefix}</span></code> (inside <code class="docutils literal notranslate"><span class="pre">module_prefix</span></code>). Rendered results are split on <code class="docutils literal notranslate"><span class="pre">:</span></code> to produce multi-segment controller paths.</p>
+<p>In the shipped <code class="docutils literal notranslate"><span class="pre">fastcs.yaml</span></code> the site configuration is:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name_mappings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">device_prefix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{id}:ETH{:02d}&quot;</span>
+<span class="w">  </span><span class="nt">node_prefix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;BL04I-EA-E1RIO-{:02d}&quot;</span>
+<span class="w">  </span><span class="nt">module_prefix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{node_prefix}:MOD{:02d}&quot;</span>
 </pre></div>
 </div>
-<p>For example:</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">id:</span> <span class="pre">BL04I-EA-CATIO-01</span></code>, this produces PV names like:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>PV Name</p></th>
@@ -712,26 +836,22 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:Name</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BL04I-EA-CATIO-01:Name</span></code></p></td>
 <td><p>I/O server name</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:ETH1:SlaveCount</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BL04I-EA-CATIO-01:ETH01:SlaveCount</span></code></p></td>
 <td><p>Number of slaves on EtherCAT Master 1</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:ETH1:RIO1:MOD5:Value</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BL04I-EA-E1RIO-01:MOD05:Value</span></code></p></td>
 <td><p>Value from module 5 on remote I/O node 1</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CATIO:IOServer:ETH1:RIO1:MOD5:EcatState</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BL04I-EA-E1RIO-01:MOD05:StateMachine</span></code></p></td>
 <td><p>EtherCAT state of that module</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>The naming components come from:</p>
-<ul class="simple">
-<li><p><strong>ecat_name</strong>: The name configured in TwinCAT (e.g., “Device1”, “Term 5 (EL3064)”)</p></li>
-<li><p><strong>get_type_name()</strong>: A method that converts Beckhoff names to PV-friendly format (e.g., “ETH1”, “RIO1”, “MOD5”)</p></li>
-</ul>
+<p>Since <code class="docutils literal notranslate"><span class="pre">node_prefix</span></code> here does not include <code class="docutils literal notranslate"><span class="pre">{device_prefix}</span></code>, node controllers resolve to a single path segment (e.g., <code class="docutils literal notranslate"><span class="pre">BL04I-EA-E1RIO-01</span></code>) and are hoisted directly under the server controller.</p>
 </section>
 <section id="lifecycle-management">
 <h2>Lifecycle Management<a class="headerlink" href="#lifecycle-management" title="Link to this heading">#</a></h2>
@@ -740,26 +860,28 @@
 <h3>Initialization Phase<a class="headerlink" href="#initialization-phase" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p><strong>Route addition</strong>: UDP message registers this client with the TwinCAT router</p></li>
-<li><p><strong>TCP connection</strong>: Establishes persistent ADS communication channel</p></li>
-<li><p><strong>Introspection</strong>: Queries server for devices, terminals, and symbols</p></li>
-<li><p><strong>Controller creation</strong>: Builds the controller tree matching discovered hardware</p></li>
-<li><p><strong>Attribute registration</strong>: Creates FastCS attributes for each controller</p></li>
+<li><p><strong>TCP connection</strong>: Establishes persistent ADS communication channel via <code class="docutils literal notranslate"><span class="pre">create_tcp_connection()</span></code></p></li>
+<li><p><strong>Introspection</strong>: Queries server for devices, terminals, and symbols via <code class="docutils literal notranslate"><span class="pre">CATioConnection.initialise()</span></code></p></li>
+<li><p><strong>Controller creation</strong>: <code class="docutils literal notranslate"><span class="pre">register_subcontrollers()</span></code> traverses the hardware tree and calls <code class="docutils literal notranslate"><span class="pre">get_subcontrollers_from_node()</span></code> recursively</p></li>
+<li><p><strong>Attribute registration</strong>: Each subcontroller’s <code class="docutils literal notranslate"><span class="pre">initialise()</span></code> creates FastCS attributes</p></li>
+<li><p><strong>Attribute map</strong>: <code class="docutils literal notranslate"><span class="pre">get_complete_attribute_map()</span></code> builds a flat map of all PV keys, used to gate notification subscriptions</p></li>
 </ol>
 </section>
 <section id="runtime-phase">
 <h3>Runtime Phase<a class="headerlink" href="#runtime-phase" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p>Polling handlers execute at their configured intervals</p></li>
-<li><p>Notification streams are processed and distributed to attributes</p></li>
+<li><p>Polling handlers execute at their configured intervals (default <code class="docutils literal notranslate"><span class="pre">poll_period:</span> <span class="pre">1.0</span></code> seconds)</p></li>
+<li><p>Notification streams are processed via the <code class="docutils literal notranslate"><span class="pre">&#64;scan(NOTIFICATION_UPDATE_PERIOD)</span></code> method on the server controller (default every 0.2 seconds)</p></li>
+<li><p>Subscriptions are gated to only the attributes present in the attribute map — symbols unused by any PV are not subscribed to</p></li>
 <li><p>The controller tree remains stable (hot-plugging is not supported)</p></li>
 </ul>
 </section>
 <section id="shutdown-phase">
 <h3>Shutdown Phase<a class="headerlink" href="#shutdown-phase" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
-<li><p><strong>Notification cleanup</strong>: Unsubscribes from all ADS notifications</p></li>
-<li><p><strong>Connection closure</strong>: Closes the TCP connection gracefully</p></li>
-<li><p><strong>Route removal</strong>: Optionally removes the route from TwinCAT</p></li>
+<li><p><strong>Notification cleanup</strong>: Disables notification monitoring and clears the cached stream</p></li>
+<li><p><strong>Connection closure</strong>: Closes the TCP connection gracefully via <code class="docutils literal notranslate"><span class="pre">CATioConnection.close()</span></code></p></li>
+<li><p><strong>Route removal</strong>: Currently disabled in code (route deletion is commented out)</p></li>
 </ol>
 </section>
 </section>

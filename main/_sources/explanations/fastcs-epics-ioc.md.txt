@@ -19,11 +19,11 @@ CATio organizes its FastCS controllers in a tree structure that reflects the phy
 
 ```
 CATioServerController (root)
-└── CATioDeviceController (EtherCAT Master)
-    ├── CATioTerminalController (EK1100 Coupler)
-    │   ├── CATioTerminalController (EL3064 Analog Input)
-    │   └── CATioTerminalController (EL2008 Digital Output)
-    └── CATioTerminalController (EK1101 Coupler)
+└── EtherCATMasterController (EtherCAT Master device)
+    ├── Dynamic EK1100 controller (Coupler, hoisted to server if single-segment path)
+    │   ├── Dynamic EL3064 controller (Analog Input)
+    │   └── Dynamic EL2008 controller (Digital Output)
+    └── Dynamic EK1101 controller (Coupler)
         └── ...
 ```
 
@@ -32,15 +32,24 @@ This hierarchy is significant because:
 1. **Each level corresponds to physical hardware**: The server represents the Beckhoff PLC, devices represent EtherCAT Masters, and terminals represent individual I/O modules
 2. **Attributes are scoped appropriately**: Server-level attributes (like version info) are separate from terminal-level attributes (like input values)
 3. **The tree is auto-generated**: CATio introspects the hardware and builds controllers dynamically
+4. **Couplers with top-level paths are hoisted**: When a coupler or box resolves to a single-segment PV path (e.g., `BL04I-EA-E1RIO-01`), it is registered directly under the server rather than nested under the device, enabling PVI to render it as a top-level screen
 
 ### The Base Controller
 
 All CATio controllers inherit from `CATioController`, which extends the FastCS `Controller` class. The base class provides:
 
-- A shared TCP connection to the TwinCAT server (class-level singleton)
-- Unique identifiers for API dispatch
+- A shared TCP connection to the TwinCAT server (class-level singleton `_tcp_connection`)
+- Unique integer identifiers for API dispatch (class-level counter `_identifier`)
 - References to corresponding hardware objects (`IOServer`, `IODevice`, or `IOSlave`)
 - Attribute grouping for organized PV naming
+
+Each controller instance registers three IO handler objects that route attribute reads and writes to the appropriate ADS mechanism:
+
+| IO class | Purpose |
+|----------|---------|
+| `CATioControllerAttributeIO` | Standard polled controller attributes (device/terminal metadata) |
+| `CATioControllerSymbolAttributeIO` | PDO symbol attributes from ADS symbol read/write |
+| `CATioControllerCoEAttributeIO` | CoE configuration parameter attributes |
 
 The `CATioController` class is defined in [catio_controller.py](../../src/fastcs_catio/catio_controller.py). It includes connection management, attribute registration, and the core interface for communicating with the ADS client.
 
@@ -53,26 +62,46 @@ The `CATioController` class is defined in [catio_controller.py](../../src/fastcs
 - **Hardware discovery**: Introspects the I/O server to find all devices and terminals
 - **Subcontroller creation**: Instantiates the appropriate controller classes for discovered hardware
 
-During initialization, the server controller queries the TwinCAT system and builds the complete controller tree automatically. The key method is `register_subcontrollers()` which traverses the discovered hardware tree and creates corresponding FastCS controllers.
+All server settings are packaged in a `CATioServerControllerOptions` dataclass, which groups:
+
+| Sub-dataclass | Purpose |
+|---------------|---------|
+| `CATioTCPSettings` | Target IP and port for the TwinCAT server |
+| `CATioRouteSettings` | UDP route credentials (user name, password) |
+| `CATioScanTimings` | Polling and notification update periods |
+| `CATioNameMappings` | PV name templates for device, node, and module controllers |
+
+During initialization, the server controller queries the TwinCAT system and builds the complete controller tree automatically. The key method is `register_subcontrollers()` which traverses the discovered hardware tree and calls `get_subcontrollers_from_node()` recursively to create corresponding FastCS controllers. Couplers and boxes whose resolved path consists of a single segment are *hoisted* from the device level up to the server level, so PVI can render them inline on the top-level screen.
 
 ### Device and Terminal Controllers
 
-`CATioDeviceController` represents EtherCAT Master devices and exposes attributes like:
+The concrete device controller for an EtherCAT master is `EtherCATMasterController` (a `CATioDeviceController` subclass defined in [catio_hardware.py](../../src/fastcs_catio/catio_hardware.py)). The set of supported device types is stored in `SUPPORTED_DEVICE_CONTROLLERS`. `CATioDeviceController` exposes attributes including:
 
 | Attribute | Description |
 |-----------|-------------|
 | `SlaveCount` | Number of terminals connected to this master |
 | `SlavesStates` | Array of EtherCAT state machine values for all terminals |
 | `SlavesCrcCounters` | CRC error counters for network diagnostics |
-| `FrameCounters` | Statistics on cyclic and acyclic EtherCAT frames |
+| `NodeCount` | Number of EtherCAT nodes registered on the device |
+| `SystemTime` | EtherCAT frame timestamp |
+| `SentCyclicFrames` | Count of sent cyclic EtherCAT frames |
+| `LostCyclicFrames` | Count of lost cyclic EtherCAT frames |
+| `SentAcyclicFrames` | Count of sent acyclic EtherCAT frames |
+| `LostAcyclicFrames` | Count of lost acyclic EtherCAT frames |
 
-`CATioTerminalController` represents individual I/O modules (EK couplers, EL terminals) with attributes like:
+`EtherCATMasterController` adds further notification-stream attributes (`InFrm0State`, `InFrm0WcState`, `InFrm0InpToggle`, `OutFrm0Ctrl`, `OutFrm0WcCtrl`, `InputsDevState`, `OutputsDevCtrl`, `InputsSlaveCount`) that are updated via ADS notifications rather than polling.
+
+`CATioTerminalController` represents individual I/O modules (EK couplers, EL terminals) with attributes including:
 
 | Attribute | Description |
 |-----------|-------------|
-| `EcatState` | The terminal's EtherCAT state machine value |
+| `StateMachine` | The terminal's EtherCAT state machine value |
 | `LinkStatus` | Network link health indicator |
-| `CrcErrorSum` | Accumulated CRC errors for this terminal |
+| `CrcErrorSum` | Accumulated CRC errors (sum across all ports) |
+| `CrcErrorPortA/B/C/D` | Per-port CRC error counters |
+| `Node` | Chain node index for this terminal |
+| `Position` | Chain position index for this terminal |
+| `Address` | EtherCAT address |
 
 ## Dynamic Terminal Controllers
 
@@ -82,11 +111,12 @@ Not all terminals are alike. A digital input module exposes different data than 
 
 When CATio discovers a terminal, it calls `get_terminal_controller_class(terminal_id)` from `catio_dynamic_controller.py`. This factory function:
 
-1. Looks up the terminal type (e.g., "EL3064") in `terminal_types.yaml`
-2. Creates a controller class dynamically based on the YAML definition
-3. Adds symbol attributes for process data (from `catio_dynamic_symbol.py`)
-4. Adds CoE attributes for configuration parameters (from `catio_dynamic_coe.py`)
-5. Caches the class for reuse
+1. Looks up the terminal type (e.g., "EL3064") across all YAML files in `src/catio_terminals/terminals/`
+2. Creates a controller class dynamically based on the YAML definition (`DynamicEL3064Controller`, etc.)
+3. Adds runtime symbol attributes (e.g., `WcState`, `InfoData`) applicable to this terminal type
+4. Adds PDO symbol attributes for process data (from `catio_dynamic_symbol.py`)
+5. Adds CoE attributes for configuration parameters (from `catio_dynamic_coe.py`)
+6. Caches the class for reuse across multiple instances of the same terminal type
 
 The key modules involved:
 
@@ -99,7 +129,7 @@ The key modules involved:
 
 ### Terminal YAML Definitions
 
-Each terminal type is defined in `src/catio_terminals/terminals/terminal_types.yaml` with:
+Each terminal type is defined in `src/catio_terminals/terminals/terminal_types.yaml` (the terminal config loader supports multiple YAML files via glob patterns) with:
 
 - **Symbol nodes**: Process data accessible via ADS (inputs/outputs)
 - **CoE objects**: Configuration parameters with subindices
@@ -109,29 +139,35 @@ For example, a digital input terminal might expose:
 
 | Attribute Type | Source | Examples |
 |----------------|--------|----------|
-| PDO symbols | `symbol_nodes` in YAML | Input values, status bits |
 | Runtime symbols | `runtime_symbols.yaml` | WcState, InfoData |
+| PDO symbols | `symbol_nodes` in YAML | Input values, status bits |
 | CoE parameters | `coe_objects` in YAML | Filter settings, calibration |
 
 This approach allows adding new terminal types by editing YAML files without changing Python code. See [Terminal YAML Definitions](terminal-yaml-definitions.md) for details on the YAML format.
 
 ## The Attribute I/O System
 
-FastCS attributes need to know how to read (and optionally write) their values. CATio implements this through `CATioControllerAttributeIO`, which bridges FastCS attributes to the ADS client API.
+FastCS attributes need to know how to read (and optionally write) their values. CATio implements this through three IO classes in [catio_attribute_io.py](../../src/fastcs_catio/catio_attribute_io.py):
+
+| Class | Ref class | Used for |
+|-------|-----------|----------|
+| `CATioControllerAttributeIO` | `CATioControllerAttributeIORef` | Standard polled controller attributes (metadata, counters) |
+| `CATioControllerSymbolAttributeIO` | `CATioControllerSymbolAttributeIORef` | PDO symbol read/write via ADS symbol names |
+| `CATioControllerCoEAttributeIO` | `CATioControllerCoEAttributeIORef` | CoE configuration parameters read/write |
+
+All three are registered with every controller instance in `CATioController.__init__`, and FastCS dispatches each attribute's update or send call to the appropriate IO object based on the `io_ref` type.
 
 ### How Attribute Updates Work
 
-The update flow for a CATio attribute follows these steps:
+The update flow for a standard polled attribute follows these steps:
 
-1. FastCS calls the `update()` method on an attribute's I/O handler at the configured polling interval
-2. The I/O handler constructs an API query string based on the attribute name and controller context
+1. FastCS calls the `update()` method on an attribute's IO handler at the configured polling interval
+2. The IO handler constructs an API query string based on the attribute name and controller context
 3. The query is sent through `CATioConnection` to the `AsyncioADSClient`
 4. The client dispatches to the appropriate `get_*` method
 5. The response flows back and the attribute value is updated
 
-This indirection means attributes don't need to know ADS protocol details - they just specify their name and polling period.
-
-The `CATioControllerAttributeIO` class in [catio_attribute_io.py](../../src/fastcs_catio/catio_attribute_io.py) implements this bridge between FastCS attributes and the ADS client API.
+For symbol attributes, the `CATioControllerSymbolAttributeIO` handler looks up the ADS symbol name via `ads_name_map` on the controller, then issues a `SYMBOL_PARAM` request to read or write the value directly by symbol name.
 
 ### Polling vs Notifications
 
@@ -152,25 +188,35 @@ The choice depends on the attribute's requirements:
 
 ## PV Naming Convention
 
-CATio generates EPICS PV names that reflect the hardware hierarchy:
+CATio generates EPICS PV names that reflect the hardware hierarchy. The naming is configured via `CATioNameMappings` (part of `CATioServerControllerOptions`) using three Python `str.format`-style templates:
 
-```
-<PREFIX>:<Server>:<Device>:<Coupler>:<Terminal>:<Attribute>
+| Template field | Default | Controls |
+|----------------|---------|---------|
+| `device_prefix` | `ETH{}` | EtherCAT master devices |
+| `node_prefix` | `E1RIO{}` | EtherCAT couplers/boxes |
+| `module_prefix` | `MOD{}` | Individual I/O terminals |
+
+Templates may use `{}` or `{n}` for the numeric index, `{id}` for the IOC root prefix, `{device_prefix}` (inside `node_prefix` and `module_prefix`), and `{node_prefix}` (inside `module_prefix`). Rendered results are split on `:` to produce multi-segment controller paths.
+
+In the shipped `fastcs.yaml` the site configuration is:
+
+```yaml
+name_mappings:
+  device_prefix: "{id}:ETH{:02d}"
+  node_prefix: "BL04I-EA-E1RIO-{:02d}"
+  module_prefix: "{node_prefix}:MOD{:02d}"
 ```
 
-For example:
+With `id: BL04I-EA-CATIO-01`, this produces PV names like:
 
 | PV Name | Description |
 |---------|-------------|
-| `CATIO:IOServer:Name` | I/O server name |
-| `CATIO:IOServer:ETH1:SlaveCount` | Number of slaves on EtherCAT Master 1 |
-| `CATIO:IOServer:ETH1:RIO1:MOD5:Value` | Value from module 5 on remote I/O node 1 |
-| `CATIO:IOServer:ETH1:RIO1:MOD5:EcatState` | EtherCAT state of that module |
+| `BL04I-EA-CATIO-01:Name` | I/O server name |
+| `BL04I-EA-CATIO-01:ETH01:SlaveCount` | Number of slaves on EtherCAT Master 1 |
+| `BL04I-EA-E1RIO-01:MOD05:Value` | Value from module 5 on remote I/O node 1 |
+| `BL04I-EA-E1RIO-01:MOD05:StateMachine` | EtherCAT state of that module |
 
-The naming components come from:
-
-- **ecat_name**: The name configured in TwinCAT (e.g., "Device1", "Term 5 (EL3064)")
-- **get_type_name()**: A method that converts Beckhoff names to PV-friendly format (e.g., "ETH1", "RIO1", "MOD5")
+Since `node_prefix` here does not include `{device_prefix}`, node controllers resolve to a single path segment (e.g., `BL04I-EA-E1RIO-01`) and are hoisted directly under the server controller.
 
 ## Lifecycle Management
 
@@ -179,22 +225,24 @@ CATio controllers follow a specific lifecycle managed by FastCS:
 ### Initialization Phase
 
 1. **Route addition**: UDP message registers this client with the TwinCAT router
-2. **TCP connection**: Establishes persistent ADS communication channel
-3. **Introspection**: Queries server for devices, terminals, and symbols
-4. **Controller creation**: Builds the controller tree matching discovered hardware
-5. **Attribute registration**: Creates FastCS attributes for each controller
+2. **TCP connection**: Establishes persistent ADS communication channel via `create_tcp_connection()`
+3. **Introspection**: Queries server for devices, terminals, and symbols via `CATioConnection.initialise()`
+4. **Controller creation**: `register_subcontrollers()` traverses the hardware tree and calls `get_subcontrollers_from_node()` recursively
+5. **Attribute registration**: Each subcontroller's `initialise()` creates FastCS attributes
+6. **Attribute map**: `get_complete_attribute_map()` builds a flat map of all PV keys, used to gate notification subscriptions
 
 ### Runtime Phase
 
-- Polling handlers execute at their configured intervals
-- Notification streams are processed and distributed to attributes
+- Polling handlers execute at their configured intervals (default `poll_period: 1.0` seconds)
+- Notification streams are processed via the `@scan(NOTIFICATION_UPDATE_PERIOD)` method on the server controller (default every 0.2 seconds)
+- Subscriptions are gated to only the attributes present in the attribute map — symbols unused by any PV are not subscribed to
 - The controller tree remains stable (hot-plugging is not supported)
 
 ### Shutdown Phase
 
-1. **Notification cleanup**: Unsubscribes from all ADS notifications
-2. **Connection closure**: Closes the TCP connection gracefully
-3. **Route removal**: Optionally removes the route from TwinCAT
+1. **Notification cleanup**: Disables notification monitoring and clears the cached stream
+2. **Connection closure**: Closes the TCP connection gracefully via `CATioConnection.close()`
+3. **Route removal**: Currently disabled in code (route deletion is commented out)
 
 ## Testing Considerations
 

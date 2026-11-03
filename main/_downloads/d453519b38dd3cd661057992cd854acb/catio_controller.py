@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 from fastcs.attributes import Attribute, AttrR
-from fastcs.controllers import Controller
+from fastcs.controllers import Controller, GroupLayout
 from fastcs.datatypes import Int, String, Waveform
 from fastcs.methods import scan
 from fastcs.tracer import Tracer
@@ -71,6 +71,9 @@ class CATioController(Controller, Tracer):
         description: str | None = None,
         group: str = "",
         # comments: str = ""    # TO DO: can comments attribute be written to hardware?
+        *,
+        path: list[str] | None = None,
+        group_layout: GroupLayout | None = None,
     ):
         # tracer.log_event("CATio controller creation", topic=self, name=name)
 
@@ -119,6 +122,8 @@ class CATioController(Controller, Tracer):
                     self.group,
                 ),
             ],
+            path=path,
+            group_layout=group_layout,
         )
 
     @property
@@ -242,7 +247,7 @@ class CATioController(Controller, Tracer):
                     f"Registering sub-controller {subctrl.name} with controller "
                     + f"{self.name}."
                 )
-                self.add_sub_controller(subctrl.name, subctrl)
+                self.add_sub_controller(trim_ecat_name(subctrl.name), subctrl)
 
     def attribute_dict_generator(
         self,
@@ -371,17 +376,96 @@ class CATioScanTimings:
     notification_period: float = 0.2
 
 
+# Keys that are valid inside each template field.
+# {} / {n} / {n:02d}  → numeric index (id, chain node, or chain position;
+#                      for module_prefix using {group_alias}, this becomes
+#                      the per-coupler-per-alias 1-based sequence number)
+# {id}               → the IOC root prefix (from the YAML `id:` field)
+# {device_prefix}    → rendered name of the parent device
+#                      (node_prefix and module_prefix only)
+# {node_prefix}      → rendered name of the parent coupler/box
+#                      (module_prefix only)
+# {group_alias}      → short alias for the slave's terminal type, e.g.
+#                      "24VDO" / "10VAI" / "CPL" (module_prefix only)
+_VALID_TEMPLATE_KEYS: dict[str, frozenset[str]] = {
+    "device_prefix": frozenset({"id", "n"}),
+    "node_prefix": frozenset({"id", "n", "device_prefix"}),
+    "module_prefix": frozenset(
+        {"id", "n", "node_prefix", "device_prefix", "group_alias"}
+    ),
+}
+
+
+@dataclass
+class CATioNameMappings:
+    """User-configurable name templates for EtherCAT subcontrollers.
+
+    Every template is rendered with Python's :meth:`str.format` using:
+
+    * ``{}`` / ``{n}`` / ``{n:02d}``  — numeric index for the node
+      (device id, chain-node index, or chain-position index).
+    * ``{id}``          — the IOC root prefix from the YAML ``id:`` field
+      (e.g. ``BL04I-EA-CATIO-01``).  When this key is present the rendered
+      result is treated as an *absolute* PV path and split on ``:`` into
+      path segments.
+    * ``{device_prefix}`` — the rendered name of the parent EtherCAT device.
+      Valid inside ``node_prefix`` and ``module_prefix``.
+    * ``{node_prefix}``  — the full path to the parent node (coupler/box, or device
+      when no coupler is present) joined with ``:``.  Only valid inside
+      ``module_prefix``.  Using this key always yields an absolute path after
+      splitting, regardless of whether the parent is a multi-segment device path
+      or a standalone coupler root.
+
+    The rendered result is split on ``:`` to produce the controller's path
+    segments.  The last segment becomes ``controller.name``.  For example,
+    ``"{id}:ETH{n:02d}"`` rendered with id ``BL04I-EA-CATIO-01`` and n=1
+    gives path ``["BL04I-EA-CATIO-01", "ETH01"]`` and name ``"ETH01"``.
+
+    Unknown placeholder keys raise :exc:`ValueError` immediately on
+    construction — before any hardware connection is attempted.
+    """
+
+    device_prefix: str = "{id}:ETH{:02d}"
+    node_prefix: str = "{device_prefix}:E1RIO{:02d}"
+    module_prefix: str = "{node_prefix}:MOD{:02d}"
+
+    def __post_init__(self) -> None:
+        for field_name, valid_keys in _VALID_TEMPLATE_KEYS.items():
+            template = getattr(self, field_name)
+            for literal_text, key, _, _ in string.Formatter().parse(template):
+                if literal_text and "_" in literal_text:
+                    raise ValueError(
+                        f"name_mappings.{field_name!r}: underscore in template "
+                        f"literal text {literal_text!r}. "
+                        "PV name components must use hyphens, not underscores."
+                    )
+                # key is None for literal text; '' for positional {}; digit-only
+                # strings for explicit positional indices like {0:02d} — all fine.
+                if key and not key.isdigit() and key not in valid_keys:
+                    raise ValueError(
+                        f"name_mappings.{field_name!r}: unknown placeholder "
+                        f"'{{{key}}}' in template {template!r}. "
+                        f"Valid keys: {sorted(valid_keys)}"
+                    )
+
+
 @dataclass
 class CATioServerControllerOptions:
     tcp_settings: CATioTCPSettings
     route: CATioRouteSettings = field(default_factory=CATioRouteSettings)
     scan_timings: CATioScanTimings = field(default_factory=CATioScanTimings)
+    name_mappings: CATioNameMappings = field(default_factory=CATioNameMappings)
 
 
 class CATioServerController(CATioController):
     """A root controller for an ADS-based EtherCAT I/O server."""
 
-    def __init__(self, options: CATioServerControllerOptions) -> None:
+    def __init__(
+        self,
+        options: CATioServerControllerOptions,
+        *,
+        path=None,
+    ) -> None:
         target_ip = options.tcp_settings.target_ip
 
         route = RemoteRoute(
@@ -423,6 +507,12 @@ class CATioServerController(CATioController):
         """Flag indicating if notification monitoring is enabled."""
         self.notification_stream: npt.NDArray | None = None
         """Cached notification stream from the CATio client."""
+        self._name_mappings = options.name_mappings
+        """Naming templates for device/node/module subcontrollers."""
+        self._module_alias_indices: dict[tuple[int, int], tuple[str | None, int]] = {}
+        """Per-(coupler-node, chain-position) lookup of (group_alias, 1-based
+        sequence number among siblings on the same coupler sharing that alias).
+        Populated by register_subcontrollers once the tree is known."""
 
         # Update the global period variables
         global STANDARD_POLL_UPDATE_PERIOD, NOTIFICATION_UPDATE_PERIOD
@@ -434,12 +524,17 @@ class CATioServerController(CATioController):
             + f"{NOTIFICATION_UPDATE_PERIOD} seconds."
         )
 
+        # The launcher framework injects 'path=[entry.id]' from fastcs.yaml
+        # and the direct ioc command line injection uses 'path=[pv_prefix]'
+        name = path[0] if path else "ROOT"
+
         # Initialise the base controller
         super().__init__(
-            name="ROOT",
+            name=name,
             ecat_name="IOServer",
             description="Root controller for an ADS-based EtherCAT I/O server",
             group="server",
+            path=path,
         )
 
     async def initialise(self) -> None:
@@ -563,10 +658,157 @@ class CATioServerController(CATioController):
     async def register_subcontrollers(self) -> None:
         """Register all subcontrollers available in the EtherCAT system tree."""
         server_node: IOTreeNode = await self.get_root_node()
-        await self.get_subcontrollers_from_node(server_node)
+        self._module_alias_indices = self._compute_module_alias_indices(server_node)
+        await self.get_subcontrollers_from_node(server_node, self.path)
+
+    @staticmethod
+    def _compute_module_alias_indices(
+        root: IOTreeNode,
+    ) -> dict[tuple[int, int], tuple[str | None, int]]:
+        """Number each module slave per (coupler-node, group_alias) pair.
+
+        Walks the tree, picks out every non-coupler/non-box IOSlave, looks up
+        its terminal type's ``group_alias``, and assigns a 1-based sequence
+        number among siblings on the same coupler that share that alias.
+        The returned map is keyed by ``(loc_in_chain.node, loc_in_chain.position)``
+        so :meth:`_resolve_controller_name_and_path` can look it up directly
+        from the slave it is rendering.
+        """
+        from fastcs_catio.terminal_config import get_terminal_type_by_identity
+
+        modules: list[IOSlave] = []
+        stack: list[IOTreeNode] = [root]
+        while stack:
+            current = stack.pop()
+            data = current.data
+            if isinstance(data, IOSlave) and data.category not in (
+                IONodeType.Coupler,
+                IONodeType.Box,
+            ):
+                modules.append(data)
+            stack.extend(reversed(current.children))
+
+        modules.sort(
+            key=lambda s: (int(s.loc_in_chain.node), int(s.loc_in_chain.position))
+        )
+
+        counters: dict[tuple[int, str], int] = {}
+        result: dict[tuple[int, int], tuple[str | None, int]] = {}
+        for slave in modules:
+            ident = slave.identity
+            try:
+                terminal_type = get_terminal_type_by_identity(
+                    int(ident.vendor_id),
+                    int(ident.product_code),
+                    int(ident.revision_number),
+                )
+            except Exception:
+                terminal_type = None
+            alias = terminal_type.group_alias if terminal_type else None
+            node_idx = int(slave.loc_in_chain.node)
+            position = int(slave.loc_in_chain.position)
+            key = (node_idx, alias or "")
+            counters[key] = counters.get(key, 0) + 1
+            result[(node_idx, position)] = (alias, counters[key])
+        return result
+
+    @staticmethod
+    def _render(template: str, index: int, context: dict[str, str]) -> str:
+        """Render a name template in a single :meth:`str.format` pass.
+
+        Passes *index* both as the first positional argument (so ``{}``
+        and ``{:02d}`` work) and as the keyword argument ``n`` (so
+        ``{n}`` and ``{n:02d}`` also work).  All *context* key/value
+        pairs are forwarded as additional keyword arguments.
+        """
+        try:
+            result = template.format(index, n=index, **context)
+        except KeyError as err:
+            raise ValueError(
+                f"Unknown placeholder {err} in name mapping template {template!r}. "
+                f"Available keys: {sorted(context)}"
+            ) from err
+        except (IndexError, ValueError) as err:
+            raise ValueError(
+                f"Invalid name mapping template {template!r}: {err}"
+            ) from err
+        if "_" in result:
+            raise ValueError(
+                f"Rendered PV name segment {result!r} contains an underscore. "
+                "PV name components must use hyphens, not underscores. "
+                "Check that the 'id' / 'pv_prefix' value and all name_mappings "
+                "templates use hyphens."
+            )
+        return result
+
+    def _resolve_controller_name_and_path(
+        self,
+        node: IOTreeNode,
+        parent_path: list[str],
+    ) -> tuple[str, list[str]]:
+        """Return ``(controller_name, path)`` for a non-server tree node.
+
+        *controller_name* is the last path segment and is used as the FastCS
+        controller name.  *path* is the full list of path segments that forms
+        the PV prefix for the controller's attributes.
+        """
+        root_prefix = self.path[0] if self.path else ""  # pragma: no cover
+
+        if isinstance(node.data, IODevice):
+            template = self._name_mappings.device_prefix
+            index = int(node.data.id)
+            context: dict[str, str] = {"id": root_prefix}
+        elif isinstance(node.data, IOSlave):
+            if node.data.category in (IONodeType.Coupler, IONodeType.Box):
+                template = self._name_mappings.node_prefix
+                index = int(node.data.loc_in_chain.node)
+                context = {
+                    "id": root_prefix,
+                    # full path to the parent device joined as a colon-separated string
+                    # so {device_prefix}:E1RIO{n} renders to a splittable absolute name
+                    "device_prefix": ":".join(parent_path) if parent_path else "",
+                }
+            else:
+                template = self._name_mappings.module_prefix
+                node_idx = int(node.data.loc_in_chain.node)
+                position = int(node.data.loc_in_chain.position)
+                alias, alias_seq = getattr(self, "_module_alias_indices", {}).get(
+                    (node_idx, position), (None, position)
+                )
+                # When the template references {group_alias}, the positional
+                # index becomes the per-coupler-per-alias sequence number so
+                # "{group_alias}{:02d}" → "24VDO01", "24VDO02", ... Otherwise
+                # we keep the chain position for backward compatibility with
+                # "MOD{:02d}"-style templates.
+                uses_alias = any(
+                    key == "group_alias"
+                    for _, key, _, _ in string.Formatter().parse(template)
+                )
+                index = alias_seq if uses_alias else position
+                context = {
+                    "id": root_prefix,
+                    # full parent path colon-joined, so {node_prefix}:MOD{n} produces
+                    # an absolute path regardless of whether the parent is a standalone
+                    # coupler root or a multi-segment device path
+                    "node_prefix": ":".join(parent_path) if parent_path else "",
+                    # device path: everything except the immediate parent segment;
+                    # empty string when the coupler resolved to a standalone root
+                    "device_prefix": (
+                        ":".join(parent_path[:-1]) if len(parent_path) >= 2 else ""
+                    ),
+                    # "MOD" preserves the legacy default when the terminal type
+                    # has no alias (unknown identity / missing YAML entry).
+                    "group_alias": alias or "MOD",
+                }
+        else:  # pragma: no cover
+            raise TypeError(f"Unsupported node data type: {type(node.data)!r}")
+
+        rendered = self._render(template, index, context)
+        path = [s for s in rendered.split(":") if s]
+        return path[-1], path
 
     async def get_subcontrollers_from_node(
-        self, node: IOTreeNode
+        self, node: IOTreeNode, parent_path: list[str]
     ) -> None | CATioController:
         """
         Recursively register all subcontrollers available from a system node \
@@ -575,27 +817,92 @@ class CATioServerController(CATioController):
         Once registered, each subcontroller is then initialised
         (attributes are created).
 
+        When a device node is encountered, its slave children are *hoisted* to the
+        server so that PVI renders them at the server-screen level rather than inside
+        the device's inline Grid box:
+
+        - Couplers/boxes whose resolved path has exactly one segment (i.e. a
+          beamline-level PV prefix such as ``BL04I-EA-E1RIO-01``) are hoisted so
+          they get their own top-level screen file and index entry.
+        - Slave terminals (modules, e.g. ``MOD01``) are always hoisted so they
+          appear as SubScreen navigation buttons directly on the combined
+          server+device screen, rather than nested inside the device's Grid box.
+        - Multi-segment coupler/box paths stay as SubScreen children of the device.
+
         :param node: the tree node to extract available subcontrollers from.
 
         :returns: the (sub)controller object created for the current node.
         """
-        subcontrollers: list[CATioController] = []
-        if node.has_children():
-            for child in node.children:
-                ctlr = await self.get_subcontrollers_from_node(child)
-                assert (ctlr is not None) and (isinstance(ctlr, CATioController))
-                subcontrollers.append(ctlr)
-
-            logger.verbose(
-                f"{len(subcontrollers)} subcontrollers were found for {node.data.name}."
+        current_path = parent_path
+        controller_name = self.name
+        if not isinstance(node.data, IOServer):
+            controller_name, current_path = self._resolve_controller_name_and_path(
+                node, parent_path
             )
 
-        return await self._get_subcontroller_object(node, subcontrollers)
+        subcontrollers: list[CATioController] = []
+        hoisted: list[CATioController] = []
+        if node.has_children():
+            for child in node.children:
+                ctlr = await self.get_subcontrollers_from_node(child, current_path)
+                assert (ctlr is not None) and (isinstance(ctlr, CATioController))
+
+                # Hoist to the server (registered via self.add_sub_controller) so
+                # that they appear at the server-screen level rather than nested
+                # inside the device's inline Grid box:
+                #   • Couplers/boxes with a root-level (1-segment) path get their
+                #     own top-level screen and index entry.
+                #   • Slave terminals (modules) which are directly attached to
+                #     the device (via Ebus) become SubScreen navigation buttons
+                #     directly on the server+device combined screen.
+                # Multi-segment coupler/box paths stay as SubScreen children of
+                # the device (they have their own PV prefix hierarchy).
+                if isinstance(node.data, IODevice) and isinstance(child.data, IOSlave):
+                    if (
+                        child.data.category in (IONodeType.Coupler, IONodeType.Box)
+                        and len(ctlr.path) == 1
+                    ) or child.data.category == IONodeType.Slave:
+                        hoisted.append(ctlr)
+                    else:
+                        subcontrollers.append(ctlr)
+                else:
+                    subcontrollers.append(ctlr)
+
+                # Set the layout of device controllers to INLINE so that they appear
+                # in the same screen file as the server and not in a separate SubScreen
+                # (which would be the default for a subcontroller).
+                if (
+                    isinstance(node.data, IOServer)
+                    and isinstance(child.data, IODevice)
+                    and child.data.category == IONodeType.Device
+                ):
+                    ctlr.group_layout = GroupLayout.INLINE
+
+            logger.verbose(
+                f"{len(subcontrollers) + len(hoisted)} subcontrollers were found for "
+                f"{node.data.name} ({len(hoisted)} hoisted to server)."
+            )
+
+        result = await self._get_subcontroller_object(
+            node,
+            subcontrollers,
+            controller_name,
+            current_path,
+        )
+
+        # Register hoisted couplers directly with the server after the device
+        # controller has been created (so path/name are already resolved).
+        for h in hoisted:
+            self.add_sub_controller(trim_ecat_name(h.name), h)
+
+        return result
 
     async def _get_subcontroller_object(
         self,
         node: IOTreeNode,
         subcontrollers: list[CATioController],
+        controller_name: str,
+        controller_path: list[str],
     ) -> None | CATioController:
         """
         Create the associated CATio controller/subcontroller object for the given node \
@@ -608,7 +915,7 @@ class CATioServerController(CATioController):
         """
         # Lazy import to prevent circular import reference
         from fastcs_catio.catio_dynamic_controller import get_terminal_controller_class
-        from fastcs_catio.catio_hardware import SUPPORTED_CONTROLLERS
+        from fastcs_catio.catio_hardware import SUPPORTED_DEVICE_CONTROLLERS
 
         match node.data.category:
             case IONodeType.Server:
@@ -626,30 +933,28 @@ class CATioServerController(CATioController):
                 logger.verbose(
                     f"Implementing I/O device '{key}' as CATioSubController."
                 )
-                ctlr = SUPPORTED_CONTROLLERS[key](
-                    name=node.data.get_type_name(),
+                ctlr = SUPPORTED_DEVICE_CONTROLLERS[key](
+                    name=controller_name,
                     ecat_name=node.data.name,
                     description=f"Controller for EtherCAT device #{node.data.id}",
+                    path=controller_path,
                 )
                 await ctlr.initialise()
 
-            case IONodeType.Coupler | IONodeType.Slave:
+            case IONodeType.Coupler | IONodeType.Box | IONodeType.Slave:
                 assert isinstance(node.data, IOSlave)
                 logger.verbose(
                     f"Implementing I/O terminal '{node.data.name}' as "
                     f"CATioSubController."
                 )
-                # First check explicit controllers, then fall back to dynamic factory
-                if node.data.type in SUPPORTED_CONTROLLERS:
-                    ctlr_class = SUPPORTED_CONTROLLERS[node.data.type]
-                else:
-                    ctlr_class = get_terminal_controller_class(node.data.type)
+                ctlr_class = get_terminal_controller_class(node.data.type)
 
                 ctlr = ctlr_class(
-                    name=node.data.get_type_name(),
+                    name=controller_name,
                     ecat_name=node.data.name,
                     description=f"Controller for {node.data.category.value} terminal "
                     + f"'{node.data.name}'",
+                    path=controller_path,
                 )
                 await ctlr.initialise()
 
@@ -892,12 +1197,16 @@ class CATioDeviceController(CATioController):
         name: str,
         ecat_name: str = "",
         description: str | None = None,
+        path: list[str] | None = None,
+        group_layout: GroupLayout | None = None,
     ) -> None:
         super().__init__(
             name=name,
             ecat_name=ecat_name,
             description=description,
             group="device",
+            path=path,
+            group_layout=group_layout,
         )
         self.notification_ready: bool = False
         """Flag indicating if the device is ready to provide notifications."""
@@ -1144,12 +1453,16 @@ class CATioTerminalController(CATioController):
         name: str,
         ecat_name: str = "",
         description: str | None = None,
+        path: list[str] | None = None,
+        group_layout: GroupLayout | None = None,
     ) -> None:
         super().__init__(
             name=name,
             ecat_name=ecat_name,
             description=description,
             group="terminal",
+            path=path,
+            group_layout=group_layout,
         )
 
     async def get_io_attributes(self) -> None:

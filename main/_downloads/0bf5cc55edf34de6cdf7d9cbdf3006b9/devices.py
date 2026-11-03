@@ -1,8 +1,7 @@
-from collections import namedtuple
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Self, SupportsInt
+from typing import Any, NamedTuple, Self, SupportsInt
 
 import numpy as np
 import numpy.typing as npt
@@ -15,14 +14,23 @@ from ._constants import (
 from ._types import AmsNetId
 from .messages import DeviceFrames, IOIdentity, SlaveCRC, SlaveState
 
-ChainLocation = namedtuple("ChainLocation", ["node", "position"])
-
 STD_UPDATE_POLL_PERIOD: float = 2.0
 FAST_UPDATE_POLL_PERIOD: float = 0.2
 NOTIF_UPDATE_POLL_PERIOD: float = 1.0
 
 OVERSAMPLING_FACTOR = 100
 ELM_OVERSAMPLING_FACTOR = 50
+
+
+class ChainLocation(NamedTuple):
+    """
+    Define the position of a slave terminal within the EtherCAT device chain.
+    """
+
+    node: int
+    """The node number of the slave terminal in the EtherCAT device chain."""
+    position: int
+    """The position number of the slave terminal in the EtherCAT device chain."""
 
 
 # ===================================================================
@@ -38,6 +46,7 @@ class IONodeType(str, Enum):
     Server = "server"
     Device = "device"
     Coupler = "coupler"
+    Box = "box"
     Slave = "slave"
 
 
@@ -142,18 +151,6 @@ class IOSlave:
     category: IONodeType = IONodeType.Slave
     """The component category the object belongs to in the EtherCAT system"""
 
-    def get_type_name(self) -> str:
-        """
-        Translate the Beckhoff terminal type name into a more suitable PV name.
-        """
-        if self.category == "coupler":
-            return f"RIO{self.loc_in_chain.node}"
-        elif self.category == "slave":
-            # This name could be updated by the actual Terminal Class (ai,ao,di,do...)?
-            return f"MOD{self.loc_in_chain.position}"
-        else:
-            raise NameError(f"I/O terminal category '{self.category}' isn't valid.")
-
 
 @dataclass
 class IODevice:
@@ -192,15 +189,6 @@ class IODevice:
             + f"netid={self.netid}, slaveCount={self.slave_count}, "
             + f"slaveAdresses=[{self.slaves[0].address}...{self.slaves[-1].address}])"
         )
-
-    def get_type_name(self) -> str:
-        """
-        Translate the Beckhoff device type code into a more suitable PV name.
-        """
-        if self.type == DeviceType.IODEVICETYPE_ETHERCAT:
-            return f"ETH{self.id}"
-        else:
-            return f"EBUS{self.id}"
 
 
 @dataclass
