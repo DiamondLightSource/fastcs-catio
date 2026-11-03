@@ -13,7 +13,7 @@ python -m pytest tests/test_catio_units.py -v
 """
 
 from datetime import datetime
-from typing import Literal, get_type_hints
+from typing import Literal, cast, get_type_hints
 
 import numpy as np
 import pytest
@@ -1680,9 +1680,12 @@ class TestEtherCATChainCategorisation:
         ] == [(2, 0), (2, 1)]
 
         device_node = client._generate_system_tree().children[0]
-        assert [c.data.type for c in device_node.children] == ["EK1100", "EK1100"]
-        assert [[g.data.type for g in c.children] for c in device_node.children] == [
-            ["EL3602"],
-            ["EL3602"],
+        assert [cast(IOSlave, c.data).type for c in device_node.children] == [
+            "EK1100",
+            "EK1100",
         ]
+        assert [
+            [cast(IOSlave, g.data).type for g in c.children]
+            for c in device_node.children
+        ] == [["EL3602"], ["EL3602"]]
         assert len(client._ecdevices[1].slaves) == 6
