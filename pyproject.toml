@@ -16,7 +16,7 @@ description = "Control system integration of EtherCAT I/O devices running under 
 dependencies = [
     "typing-extensions;python_version<'3.8'",
     "numpy",
-    "pvi==0.14.5b1",
+    "pvi==0.14.5",
     "typer",
     "fastcs[epics]==0.14.5b1",
     "softioc>=4.7.0",
