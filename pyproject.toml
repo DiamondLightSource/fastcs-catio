@@ -1,12 +1,11 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
+requires = ["setuptools>=77.0.3", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastcs-catio"
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -23,7 +22,8 @@ dependencies = [
     "nicegui>=3.6.1",
 ]
 dynamic = ["version"]
-license.file = "LICENSE"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11"
 
@@ -49,8 +49,12 @@ dev = [
     "sphinx-autobuild",
     "sphinx-copybutton",
     "sphinx-design",
+<<<<<<< before updating
     "sphinxcontrib-mermaid",
     "tox-uv",
+=======
+    "tox-uv-bare",
+>>>>>>> after updating
     "types-mock",
 ]
 
@@ -111,6 +115,13 @@ env_list = ["pre-commit", "type-checking", "tests", "docs"]
 [tool.tox.env_run_base]
 # Pass all environment variables to the test environments
 passenv = ["*"]
+allowlist_externals = [
+    "pyright",
+    "pytest",
+    "pre-commit",
+    "sphinx-build",
+    "sphinx-autobuild",
+]
 
 [tool.tox.env.pre-commit]
 description = "Run pre-commit on all files"
