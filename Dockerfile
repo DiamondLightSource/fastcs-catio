@@ -4,7 +4,7 @@ FROM ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute AS developer
 
 # The base image's uv is older than pyproject.toml's tool.uv.required-version
 # (occurred when updating to copier template v5.5.0)
-COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /usr/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.13.9 /uv /uvx /usr/bin/
 
 # Add any system dependencies for the developer/build environment here
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
