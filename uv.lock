@@ -727,12 +727,13 @@ wheels = [
 
 [[package]]
 name = "fastcs"
-version = "0.14.5b1"
+version = "0.14.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioserial" },
     { name = "fastapi", extra = ["standard"] },
     { name = "ipython" },
+    { name = "jinja2" },
     { name = "loguru" },
     { name = "numpy" },
     { name = "pydantic" },
@@ -740,9 +741,9 @@ dependencies = [
     { name = "ruamel-yaml" },
     { name = "stdio-socket" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d2/8d/2ce6c9a1b11df5d7f4a3259f81eac16f26d145485ba4d9672bff8b4a801e/fastcs-0.14.5b1.tar.gz", hash = "sha256:5c0ee8af5ceae04d5994b30651ff67bc96d9a2bebf7f995b4b28746050f78d07", size = 421586, upload-time = "2026-11-03T17:17:26.622Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d2/c2/dbda80166badfa47b36cd19dbb8b83d533237a15d48cf6e38db25ad14745/fastcs-0.14.5.tar.gz", hash = "sha256:91bf761c5cb0febb0e31d55c76d9e9b5c48b487eeff5b89b3c720eb2bd12e433", size = 424645, upload-time = "2026-11-24T12:13:13.35Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/e3/cf7473a197ae116c2205f29ce32c096ff1db8209a79f751924081566dc5f/fastcs-0.14.5b1-py3-none-any.whl", hash = "sha256:a69412ca709a995993935f28fab273ab280fc05d4a332c7950e73a3a7ff10a68", size = 96376, upload-time = "2026-11-03T17:17:24.998Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/63/ffd14848a6ffc8c19b59a666e9032ef9655717332431661bfcb094af5fb9/fastcs-0.14.5-py3-none-any.whl", hash = "sha256:8835d3cf2cf211519b765f8c7526c8d81f8d811c0c53bf505c55a3415e7f6384", size = 98116, upload-time = "2026-11-24T12:13:12.208Z" },
 ]
 
 [package.optional-dependencies]
@@ -793,7 +794,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastcs", extras = ["epics"], specifier = "==0.14.5b1" },
+    { name = "fastcs", extras = ["epics"], specifier = "==0.14.5" },
     { name = "httpx", marker = "extra == 'terminals'", specifier = ">=0.27.0" },
     { name = "nicegui", specifier = ">=3.6.1" },
     { name = "nicegui", marker = "extra == 'terminals'", specifier = ">=2.0.0" },
